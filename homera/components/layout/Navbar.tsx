@@ -96,7 +96,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="w-full bg-transparent text-white py-4 px-4 sm:px-8 transition-colors duration-300 relative z-50 border-0">
+    <header className="homera-header absolute top-0 inset-x-0 w-full bg-transparent text-white py-4 px-4 sm:px-8 transition-colors duration-300 z-50 border-0">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Brand Logo - White Serif Text with Glow Effect */}
         <Link href="/" className="flex items-center group">
