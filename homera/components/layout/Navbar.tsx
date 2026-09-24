@@ -100,7 +100,7 @@ export function Navbar() {
       <div className="homera-header-container mx-auto flex items-center justify-between">
         {/* Brand Logo - White Serif Text with Glow Effect */}
         <Link href="/" className="flex items-center group">
-          <span className="font-serif text-2xl sm:text-3xl font-extrabold tracking-widest text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.7)] group-hover:scale-105 transition-transform">
+          <span className="font-brand text-2xl sm:text-3xl font-extrabold tracking-widest text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.7)] group-hover:scale-105 transition-transform">
             HOMERA
           </span>
         </Link>

@@ -14,7 +14,7 @@ export function Footer() {
                 H
               </div>
               <div className="flex flex-col">
-                <span className="font-serif text-2xl font-bold tracking-tight text-white">
+                <span className="font-brand text-2xl font-bold tracking-tight text-white">
                   HOMERA
                 </span>
                 <span className="text-[10px] uppercase font-sans tracking-widest text-homera-terracotta font-semibold -mt-1">

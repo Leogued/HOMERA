@@ -2,6 +2,22 @@
 
 /* Tailwind v4 : le mode sombre suit la classe .dark (next-themes) */
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* =================================
+   POLICE DE MARQUE — Cakecafe (Khurasan)
+   Réservée au mot-symbole « HOMERA ».
+   Fichier attendu : public/fonts/Cakecafe.woff2 (ou .ttf)
+   ================================= */
+
+@font-face {
+  font-family: "Cakecafe";
+  src:
+    url("/fonts/Cakecafe.woff2") format("woff2"),
+    url("/fonts/Cakecafe.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 :root {
   /* ================================
      HOMERA — COULEURS
@@ -111,6 +127,7 @@
 
   --font-sans: var(--font-inter);
   --font-serif: var(--font-playfair);
+  --font-brand: "Cakecafe", var(--font-playfair), serif;
 
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
