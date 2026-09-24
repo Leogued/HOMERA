@@ -9,6 +9,7 @@ const nextConfig: NextConfig = {
     "192.168.*.*", // réseau local (Wi-Fi / box)
     "10.*.*.*", // réseau local
     "172.*.*.*", // réseau local / WSL / Docker
+    "169.254.*.*", // adresse lien-local (carte virtuelle Windows / APIPA)
     "*.e2b.app", // preview Arena
   ],
 };
