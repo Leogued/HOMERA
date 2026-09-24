@@ -157,3 +157,13 @@ a {
   color: inherit;
   text-decoration: none;
 }
+/* =================================
+   HEADER — toujours transparent
+   Indépendant du thème (clair ET sombre) :
+   aucune variable de thème ici.
+   ================================= */
+
+.homera-header,
+.dark .homera-header {
+  background: transparent !important;
+}
