@@ -1,0 +1,141 @@
+@import "tailwindcss";
+
+:root {
+  /* ================================
+     HOMERA — COULEURS
+     ================================ */
+
+  --background: #ffffff;
+  --foreground: #0a2540;
+
+  --homera-blue: #0a2540;
+  --homera-blue-light: #123b61;
+
+  --homera-gold: #c9a227;
+  --homera-gold-light: #e1c45a;
+
+  /* ================================
+     INTERFACE
+     ================================ */
+
+  --muted: #64748b;
+  --muted-light: #94a3b8;
+
+  --border: #e2e8f0;
+  --card: #ffffff;
+
+  --success: #15803d;
+  --warning: #b45309;
+  --error: #b91c1c;
+
+  /* ================================
+     DESIGN
+     ================================ */
+
+  --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.5rem;
+
+  --shadow-card: 0 4px 20px rgba(10, 37, 64, 0.08);
+  --shadow-card-hover: 0 12px 35px rgba(10, 37, 64, 0.14);
+}
+
+/* =================================
+   DARK MODE
+   ================================= */
+
+.dark {
+  --background: #071a2d;
+  --foreground: #f8fafc;
+
+  --homera-blue: #0a2540;
+  --homera-blue-light: #163e63;
+
+  --homera-gold: #d4af37;
+  --homera-gold-light: #e4c766;
+
+  --muted: #94a3b8;
+  --muted-light: #cbd5e1;
+
+  --border: #1e3a52;
+  --card: #0d2944;
+
+  --success: #4ade80;
+  --warning: #fbbf24;
+  --error: #f87171;
+}
+
+/* =================================
+   TAILWIND THEME
+   ================================= */
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-homera-blue: var(--homera-blue);
+  --color-homera-blue-light: var(--homera-blue-light);
+
+  --color-homera-gold: var(--homera-gold);
+  --color-homera-gold-light: var(--homera-gold-light);
+
+  --color-muted: var(--muted);
+  --color-muted-light: var(--muted-light);
+
+  --color-border: var(--border);
+  --color-card: var(--card);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-playfair);
+
+  --radius-sm: var(--radius-sm);
+  --radius-md: var(--radius-md);
+  --radius-lg: var(--radius-lg);
+  --radius-xl: var(--radius-xl);
+  --radius-2xl: var(--radius-2xl);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-card-hover: var(--shadow-card-hover);
+}
+
+/* =================================
+   BASE
+   ================================= */
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
