@@ -22,7 +22,7 @@ export function Hero() {
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-white/5 text-homera-terracotta border border-homera-terracotta/30 backdrop-blur-md">
           <Sparkles className="w-3.5 h-3.5 text-homera-terracotta" />
           <span className="uppercase tracking-widest text-[11px]">
-            PAYSAGE D&apos;INVESTISSEMENT BÉNINOIS • COTONOU & CALAVI
+            L&apos;ÈRE DE L&apos;IMMOBILIER NUMÉRIQUE
           </span>
         </div>
 
