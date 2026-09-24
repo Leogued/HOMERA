@@ -22,14 +22,14 @@ export function ThemeToggle() {
   return (
     <button
       onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="inline-flex items-center justify-center p-2.5 rounded-lg border border-border bg-card text-foreground hover:bg-muted/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-gold"
+      className="inline-flex items-center justify-center p-2.5 rounded-lg border border-border bg-card text-foreground hover:bg-muted/10 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-terracotta"
       aria-label="Changer le mode d'affichage"
       title={isDark ? "Passer au mode clair" : "Passer au mode sombre"}
     >
       {isDark ? (
         /* Icon Soleil (Mode Clair) */
         <svg
-          className="w-5 h-5 text-homera-gold"
+          className="w-5 h-5 text-homera-terracotta"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -44,7 +44,7 @@ export function ThemeToggle() {
       ) : (
         /* Icon Lune (Mode Sombre) */
         <svg
-          className="w-5 h-5 text-homera-blue"
+          className="w-5 h-5 text-homera-brown"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"

@@ -101,7 +101,7 @@ export function FeaturedProperties() {
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div className="space-y-3">
-            <div className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold bg-homera-gold/10 text-homera-gold border border-homera-gold/30 uppercase tracking-widest">
+            <div className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold bg-homera-terracotta/10 text-homera-terracotta border border-homera-terracotta/30 uppercase tracking-widest">
               Sélection Certifiée
             </div>
             <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground">
@@ -125,7 +125,7 @@ export function FeaturedProperties() {
                 onClick={() => setFilterType(tab.id)}
                 className={`px-4 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap ${
                   filterType === tab.id
-                    ? "bg-homera-blue text-white shadow-sm"
+                    ? "bg-homera-brown text-white shadow-sm"
                     : "bg-card border border-border text-muted hover:text-foreground"
                 }`}
               >
@@ -143,16 +143,16 @@ export function FeaturedProperties() {
               className="bg-card border border-border rounded-2xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300 flex flex-col justify-between group"
             >
               {/* Image Container with Badges */}
-              <div className="relative h-56 bg-slate-800 overflow-hidden flex items-center justify-center">
+              <div className="relative h-56 bg-stone-800 overflow-hidden flex items-center justify-center">
                 {/* Fallback gradient placeholder */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
-                <div className="text-slate-400 text-xs font-mono uppercase tracking-widest z-0">
+                <div className="text-stone-400 text-xs font-mono uppercase tracking-widest z-0">
                   {property.title}
                 </div>
 
                 {/* Intent Tag (Top Left) */}
                 <div className="absolute top-4 left-4 z-20">
-                  <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-homera-blue/90 backdrop-blur-md text-white border border-white/20">
+                  <span className="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider bg-homera-brown/90 backdrop-blur-md text-white border border-white/20">
                     {property.intent === "louer" && "À Louer"}
                     {property.intent === "acheter" && "À Vendre"}
                     {property.intent === "sejour" && "Séjour"}
@@ -169,7 +169,7 @@ export function FeaturedProperties() {
 
                 {/* Homera Unique ID Overlay (Bottom Left) */}
                 <div className="absolute bottom-4 left-4 z-20 flex items-center gap-2">
-                  <span className="font-mono text-xs font-bold text-homera-gold bg-black/60 px-2.5 py-1 rounded-md border border-homera-gold/40">
+                  <span className="font-mono text-xs font-bold text-homera-terracotta bg-black/60 px-2.5 py-1 rounded-md border border-homera-terracotta/40">
                     {property.homeraId}
                   </span>
                 </div>
@@ -180,14 +180,14 @@ export function FeaturedProperties() {
                 <div className="space-y-2">
                   {/* Location */}
                   <div className="flex items-center text-xs text-muted font-medium gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-homera-gold" />
+                    <MapPin className="w-3.5 h-3.5 text-homera-terracotta" />
                     <span>
                       {property.location}, {property.city}
                     </span>
                   </div>
 
                   {/* Title */}
-                  <h3 className="font-serif text-lg font-bold text-foreground group-hover:text-homera-gold transition-colors line-clamp-2">
+                  <h3 className="font-serif text-lg font-bold text-foreground group-hover:text-homera-terracotta transition-colors line-clamp-2">
                     {property.title}
                   </h3>
                 </div>
@@ -196,18 +196,18 @@ export function FeaturedProperties() {
                 <div className="grid grid-cols-3 gap-2 py-3 border-y border-border text-xs text-muted">
                   {property.bedrooms > 0 && (
                     <div className="flex items-center gap-1.5">
-                      <Bed className="w-4 h-4 text-homera-blue dark:text-homera-gold" />
+                      <Bed className="w-4 h-4 text-homera-brown dark:text-homera-terracotta" />
                       <span>{property.bedrooms} ch.</span>
                     </div>
                   )}
                   {property.bathrooms > 0 && (
                     <div className="flex items-center gap-1.5">
-                      <Bath className="w-4 h-4 text-homera-blue dark:text-homera-gold" />
+                      <Bath className="w-4 h-4 text-homera-brown dark:text-homera-terracotta" />
                       <span>{property.bathrooms} sdb.</span>
                     </div>
                   )}
                   <div className="flex items-center gap-1.5">
-                    <Maximize className="w-4 h-4 text-homera-blue dark:text-homera-gold" />
+                    <Maximize className="w-4 h-4 text-homera-brown dark:text-homera-terracotta" />
                     <span>{property.surface} m²</span>
                   </div>
                 </div>
@@ -215,7 +215,7 @@ export function FeaturedProperties() {
                 {/* Price & Action */}
                 <div className="pt-2 flex items-center justify-between">
                   <div>
-                    <span className="font-serif text-xl font-bold text-homera-blue dark:text-homera-gold">
+                    <span className="font-serif text-xl font-bold text-homera-brown dark:text-homera-terracotta">
                       {property.price}
                     </span>
                     {property.pricePeriod && (
@@ -234,7 +234,7 @@ export function FeaturedProperties() {
               {/* Card Footer Verification Info */}
               <div className="bg-muted/20 px-6 py-2.5 border-t border-border flex items-center justify-between text-[11px] text-muted">
                 <span className="flex items-center gap-1">
-                  <Calendar className="w-3 h-3 text-homera-gold" />
+                  <Calendar className="w-3 h-3 text-homera-terracotta" />
                   Vérifié le {property.verificationDate}
                 </span>
                 <span className="text-emerald-600 dark:text-emerald-400 font-medium">

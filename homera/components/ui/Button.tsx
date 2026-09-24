@@ -1,6 +1,6 @@
 import type { ButtonHTMLAttributes } from "react";
 
-type ButtonVariant = "primary" | "gold" | "outline" | "ghost";
+type ButtonVariant = "primary" | "accent" | "outline" | "ghost";
 type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -10,11 +10,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variants: Record<ButtonVariant, string> = {
   primary:
-    "bg-homera-blue text-white hover:bg-homera-blue-light dark:bg-homera-blue-light dark:hover:bg-homera-blue",
-  gold:
-    "bg-homera-gold text-white hover:bg-homera-gold-light dark:bg-homera-gold dark:hover:bg-homera-gold-light",
+    "bg-homera-brown text-white hover:bg-homera-brown-light dark:bg-homera-brown-light dark:hover:bg-homera-brown",
+  accent:
+    "bg-homera-terracotta text-white hover:bg-homera-terracotta-light dark:bg-homera-terracotta dark:hover:bg-homera-terracotta-light",
   outline:
-    "border border-border bg-transparent text-foreground hover:border-homera-blue hover:text-homera-blue dark:hover:border-homera-gold dark:hover:text-homera-gold",
+    "border border-border bg-transparent text-foreground hover:border-homera-brown hover:text-homera-brown dark:hover:border-homera-terracotta dark:hover:text-homera-terracotta",
   ghost:
     "bg-transparent text-foreground hover:bg-black/5 dark:hover:bg-white/5",
 };
@@ -40,7 +40,7 @@ export function Button({
         transition-all duration-200
         focus-visible:outline-none
         focus-visible:ring-2
-        focus-visible:ring-homera-gold
+        focus-visible:ring-homera-terracotta
         disabled:pointer-events-none
         disabled:opacity-50
         ${variants[variant]}
