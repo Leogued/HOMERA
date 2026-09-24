@@ -96,7 +96,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="w-full bg-transparent text-white py-4 px-4 sm:px-8 border-b border-white/10 transition-colors duration-300 relative z-50">
+    <header className="w-full bg-transparent text-white py-4 px-4 sm:px-8 transition-colors duration-300 relative z-50 border-0">
       <div className="max-w-7xl mx-auto flex items-center justify-between">
         {/* Brand Logo - White Serif Text with Glow Effect */}
         <Link href="/" className="flex items-center group">
@@ -106,7 +106,7 @@ export function Navbar() {
         </Link>
 
         {/* Center Navigation Pill Capsule (Desktop/Tablet landscape with Dropdowns) */}
-        <nav className="hidden lg:flex items-center bg-[#F1E6D6] px-6 py-2.5 rounded-full shadow-md gap-6 text-sm font-semibold text-stone-700 lg:ml-auto lg:mr-8 relative">
+        <nav className="hidden lg:flex items-center bg-white/5 backdrop-blur-sm border border-white/10 px-6 py-2.5 rounded-full shadow-[0_0_0_1px_rgba(255,255,255,0.04)] gap-6 text-sm font-semibold text-white lg:ml-auto lg:mr-8 relative">
           {navItems.map((item) => (
             <div
               key={item.title}
@@ -123,13 +123,13 @@ export function Navbar() {
                   }
                   handleNavClick(e, item.href);
                 }}
-                className="hover:text-stone-900 transition-colors inline-flex items-center gap-1 py-1"
+                className="hover:text-white/90 transition-colors inline-flex items-center gap-1 py-1"
               >
                 <span>{item.title}</span>
                 {item.submenu && (
                   <ChevronDown
-                    className={`w-3.5 h-3.5 text-stone-500 group-hover:text-stone-900 transition-transform duration-200 ${
-                      openDropdown === item.title ? "rotate-180 text-stone-900" : ""
+                    className={`w-3.5 h-3.5 text-white/60 group-hover:text-white transition-transform duration-200 ${
+                      openDropdown === item.title ? "rotate-180 text-white" : ""
                     }`}
                   />
                 )}
@@ -144,13 +144,13 @@ export function Navbar() {
                       : "opacity-0 invisible -translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:pointer-events-auto"
                   }`}
                 >
-                  <div className="bg-[#3E2418] border border-stone-700/60 rounded-2xl shadow-2xl p-2.5 min-w-55 w-max text-white flex flex-col items-center space-y-1">
+                  <div className="bg-black/20 border border-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-2.5 min-w-55 w-max text-white flex flex-col items-center space-y-1">
                     {item.submenu.map((sub) => (
                       <Link
                         key={sub.label}
                         href={sub.href}
                         onClick={(e) => handleNavClick(e, sub.href)}
-                        className="w-full text-center px-5 py-2 rounded-xl text-xs font-medium text-stone-200 hover:bg-white/10 hover:text-homera-terracotta transition-all whitespace-nowrap"
+                        className="w-full text-center px-5 py-2 rounded-xl text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
                       >
                         {sub.label}
                       </Link>
@@ -167,7 +167,7 @@ export function Navbar() {
           <Link
             href="#login"
             onClick={(e) => handleNavClick(e, "#login")}
-            className="bg-homera-terracotta hover:bg-homera-terracotta-light text-[#2A170F] font-semibold text-sm px-5 py-2.5 rounded-full transition-all shadow-sm"
+            className="bg-white/8 hover:bg-white/12 text-white font-semibold text-sm px-5 py-2.5 rounded-full border border-white/15 backdrop-blur-sm transition-all shadow-sm"
           >
             Se connecter
           </Link>
@@ -175,7 +175,7 @@ export function Navbar() {
           <Link
             href="#register"
             onClick={(e) => handleNavClick(e, "#register")}
-            className="bg-[#4A2C1D]/90 hover:bg-[#5A3726] text-white font-semibold text-sm px-5 py-2.5 rounded-full border border-stone-600/50 transition-all shadow-sm"
+            className="bg-black/15 hover:bg-black/25 text-white font-semibold text-sm px-5 py-2.5 rounded-full border border-white/15 backdrop-blur-sm transition-all shadow-sm"
           >
             Créer un compte
           </Link>
@@ -183,7 +183,7 @@ export function Navbar() {
           {mounted && (
             <button
               onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="w-10 h-10 rounded-full bg-[#F1E6D6]/20 hover:bg-[#F1E6D6]/30 text-white flex items-center justify-center transition-colors border border-white/10"
+              className="w-10 h-10 rounded-full bg-white/8 hover:bg-white/12 text-white flex items-center justify-center transition-colors border border-white/10 backdrop-blur-sm"
               aria-label="Changer le mode d'affichage"
             >
               {isDark ? (
