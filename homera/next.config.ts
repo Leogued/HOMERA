@@ -1,8 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  // Autoriser l'accès au dev server et HMR depuis les IP locales / tunnels de preview
-  allowedDevOrigins: ["172.19.64.1", "localhost", "127.0.0.1", "*.e2b.app"],
+  // Dev uniquement : origines autorisées à charger le JS du serveur de dev (HMR, hydratation).
+  // Sans ça, la page s'affiche mais rien n'est cliquable (menu hamburger, bouton thème...).
+  allowedDevOrigins: [
+    "localhost",
+    "127.0.0.1",
+    "192.168.*.*", // réseau local (Wi-Fi / box)
+    "10.*.*.*", // réseau local
+    "172.*.*.*", // réseau local / WSL / Docker
+    "*.e2b.app", // preview Arena
+  ],
 };
 
 export default nextConfig;
