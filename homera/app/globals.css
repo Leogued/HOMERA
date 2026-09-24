@@ -167,3 +167,15 @@ a {
 .dark .homera-header {
   background: transparent !important;
 }
+
+/* Largeur maîtrisée du contenu du header (grands / très grands écrans) */
+.homera-header-container {
+  width: 100%;
+  max-width: 80rem;            /* 1280px — desktop standard */
+}
+@media (min-width: 1536px) {
+  .homera-header-container { max-width: 86rem; }   /* ~1376px — grands écrans */
+}
+@media (min-width: 1920px) {
+  .homera-header-container { max-width: 92rem; }   /* ~1472px — ultrawide / Full HD+ */
+}

@@ -96,8 +96,8 @@ export function Navbar() {
   };
 
   return (
-    <header className="homera-header absolute top-0 inset-x-0 w-full bg-transparent text-white py-4 px-4 sm:px-8 transition-colors duration-300 z-50 border-0">
-      <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <header className="homera-header absolute top-0 inset-x-0 w-full bg-transparent text-white py-4 px-4 sm:px-8 xl:px-12 2xl:px-16 transition-colors duration-300 z-50 border-0">
+      <div className="homera-header-container mx-auto flex items-center justify-between">
         {/* Brand Logo - White Serif Text with Glow Effect */}
         <Link href="/" className="flex items-center group">
           <span className="font-serif text-2xl sm:text-3xl font-extrabold tracking-widest text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.7)] group-hover:scale-105 transition-transform">
@@ -106,7 +106,7 @@ export function Navbar() {
         </Link>
 
         {/* Center Navigation Pill Capsule (Desktop/Tablet landscape with Dropdowns) */}
-        <nav className="hidden lg:flex items-center bg-white/5 backdrop-blur-sm border border-white/10 px-6 py-2.5 rounded-full shadow-[0_0_0_1px_rgba(255,255,255,0.04)] gap-6 text-sm font-semibold text-white lg:ml-auto lg:mr-8 relative">
+        <nav className="hidden lg:flex items-center bg-white/5 backdrop-blur-sm border border-white/10 px-5 xl:px-6 2xl:px-7 py-2.5 rounded-full shadow-[0_0_0_1px_rgba(255,255,255,0.04)] gap-4 xl:gap-6 2xl:gap-7 text-sm font-semibold text-white lg:ml-auto lg:mr-4 xl:mr-6 2xl:mr-8 relative">
           {navItems.map((item) => (
             <div
               key={item.title}
@@ -144,13 +144,13 @@ export function Navbar() {
                       : "opacity-0 invisible -translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:pointer-events-auto"
                   }`}
                 >
-                  <div className="bg-black/20 border border-white/10 backdrop-blur-md rounded-2xl shadow-2xl p-2.5 min-w-55 w-max text-white flex flex-col items-center space-y-1">
+                  <div className="bg-[#2A170F]/90 border border-white/10 ring-1 ring-black/20 backdrop-blur-xl rounded-2xl shadow-[0_18px_40px_-12px_rgba(0,0,0,0.55)] p-2.5 min-w-55 w-max text-white flex flex-col items-center space-y-1">
                     {item.submenu.map((sub) => (
                       <Link
                         key={sub.label}
                         href={sub.href}
                         onClick={(e) => handleNavClick(e, sub.href)}
-                        className="w-full text-center px-5 py-2 rounded-xl text-xs font-medium text-white/80 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
+                        className="w-full text-center px-5 py-2 rounded-xl text-xs font-medium text-white/90 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
                       >
                         {sub.label}
                       </Link>
@@ -222,7 +222,7 @@ export function Navbar() {
 
       {/* Mobile & Tablet Dropdown Drawer Container */}
       {mobileMenuOpen && (
-        <div className="lg:hidden max-w-7xl mx-auto mt-4 pt-4 border-t border-white/10 space-y-4 max-h-[75vh] overflow-y-auto pr-1">
+        <div className="lg:hidden homera-header-container mx-auto mt-4 pt-4 border-t border-white/10 space-y-4 max-h-[75vh] overflow-y-auto pr-1">
           <div className="bg-[#F1E6D6] p-4 rounded-2xl text-stone-800 flex flex-col space-y-2 font-semibold text-sm shadow-xl">
             {navItems.map((item) => (
               <div key={item.title} className="border-b border-stone-300/40 last:border-0 py-1">
