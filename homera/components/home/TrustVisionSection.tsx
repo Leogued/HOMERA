@@ -29,15 +29,15 @@ export function TrustVisionSection() {
     <section className="py-20 bg-background text-foreground">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
         {/* Manifest Statement */}
-        <div className="bg-homera-blue text-white rounded-3xl p-8 sm:p-12 text-center space-y-6 relative overflow-hidden shadow-card-hover">
-          <div className="absolute top-0 right-0 w-80 h-80 bg-homera-gold/10 rounded-full blur-3xl pointer-events-none" />
-          <span className="inline-block text-xs uppercase tracking-widest font-semibold text-homera-gold border border-homera-gold/30 px-3.5 py-1 rounded-full">
+        <div className="bg-homera-brown text-white rounded-3xl p-8 sm:p-12 text-center space-y-6 relative overflow-hidden shadow-card-hover">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-homera-terracotta/10 rounded-full blur-3xl pointer-events-none" />
+          <span className="inline-block text-xs uppercase tracking-widest font-semibold text-homera-terracotta border border-homera-terracotta/30 px-3.5 py-1 rounded-full">
             Notre Déclaration
           </span>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold max-w-2xl mx-auto leading-tight">
             Une conviction fondatrice : restaurer la confiance dans la pierre béninoise
           </h2>
-          <p className="text-slate-300 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
+          <p className="text-stone-300 text-sm sm:text-base max-w-xl mx-auto leading-relaxed">
             « HOMERA ne cherche pas simplement à afficher des annonces. L&apos;objectif est de créer une véritable infrastructure numérique autour du bien immobilier. »
           </p>
         </div>
@@ -49,9 +49,9 @@ export function TrustVisionSection() {
             return (
               <div
                 key={idx}
-                className="bg-card border border-border p-6 rounded-2xl shadow-card hover:border-homera-gold transition-all duration-300 space-y-4"
+                className="bg-card border border-border p-6 rounded-2xl shadow-card hover:border-homera-terracotta transition-all duration-300 space-y-4"
               >
-                <div className="w-10 h-10 rounded-xl bg-homera-gold/10 text-homera-gold flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-homera-terracotta/10 text-homera-terracotta flex items-center justify-center">
                   <Icon className="w-5 h-5" />
                 </div>
                 <h3 className="font-serif text-lg font-bold text-foreground">
@@ -66,7 +66,7 @@ export function TrustVisionSection() {
         </div>
 
         {/* Final Conversion Banner */}
-        <div className="bg-gradient-to-r from-homera-blue via-homera-blue-light to-slate-900 text-white rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-card">
+        <div className="bg-gradient-to-r from-homera-brown via-homera-brown-light to-stone-900 text-white rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-card">
           <h3 className="font-serif text-2xl sm:text-3xl font-bold">
             Votre prochain bien est peut-être ici.
           </h3>
@@ -74,7 +74,7 @@ export function TrustVisionSection() {
             Découvrez nos logements et parcelles certifiés à Cotonou et Abomey-Calavi dès aujourd&apos;hui.
           </p>
           <div>
-            <Button variant="gold" size="lg" className="gap-2">
+            <Button variant="accent" size="lg" className="gap-2">
               Rechercher maintenant
               <ArrowRight className="w-4 h-4" />
             </Button>

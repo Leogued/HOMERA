@@ -30,7 +30,7 @@ export function ServicesSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         {/* Section Header */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold bg-homera-gold/10 text-homera-gold border border-homera-gold/30 uppercase tracking-widest">
+          <div className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold bg-homera-terracotta/10 text-homera-terracotta border border-homera-terracotta/30 uppercase tracking-widest">
             Écosystème Complémentaire
           </div>
           <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground">
@@ -51,7 +51,7 @@ export function ServicesSection() {
                 className="bg-card border border-border p-6 rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 space-y-4 flex flex-col justify-between group"
               >
                 <div className="space-y-4">
-                  <div className="w-12 h-12 rounded-xl bg-homera-gold/10 text-homera-gold flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <div className="w-12 h-12 rounded-xl bg-homera-terracotta/10 text-homera-terracotta flex items-center justify-center group-hover:scale-110 transition-transform">
                     <Icon className="w-6 h-6" />
                   </div>
                   <h3 className="font-serif text-xl font-bold text-foreground">
@@ -62,7 +62,7 @@ export function ServicesSection() {
                   </p>
                 </div>
                 <div className="pt-2">
-                  <button className="text-xs font-semibold text-homera-blue dark:text-homera-gold hover:underline flex items-center gap-1">
+                  <button className="text-xs font-semibold text-homera-brown dark:text-homera-terracotta hover:underline flex items-center gap-1">
                     En savoir plus
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>

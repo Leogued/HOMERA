@@ -51,7 +51,7 @@ export function VerificationProtocol() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         {/* Title Header */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-homera-gold/10 text-homera-gold border border-homera-gold/30 uppercase tracking-widest">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-homera-terracotta/10 text-homera-terracotta border border-homera-terracotta/30 uppercase tracking-widest">
             <ShieldCheck className="w-4 h-4" />
             Transparence & Rigueur
           </div>
@@ -70,13 +70,13 @@ export function VerificationProtocol() {
             return (
               <div
                 key={idx}
-                className="bg-card border border-border p-5 rounded-2xl shadow-card hover:border-homera-gold transition-all duration-300 flex flex-col justify-between space-y-4 group"
+                className="bg-card border border-border p-5 rounded-2xl shadow-card hover:border-homera-terracotta transition-all duration-300 flex flex-col justify-between space-y-4 group"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-serif text-xl font-bold text-homera-gold">
+                  <span className="font-serif text-xl font-bold text-homera-terracotta">
                     {step.num}
                   </span>
-                  <div className="p-2 rounded-lg bg-homera-blue/10 dark:bg-white/10 text-homera-blue dark:text-homera-gold group-hover:scale-110 transition-transform">
+                  <div className="p-2 rounded-lg bg-homera-brown/10 dark:bg-white/10 text-homera-brown dark:text-homera-terracotta group-hover:scale-110 transition-transform">
                     <Icon className="w-4 h-4" />
                   </div>
                 </div>
@@ -94,8 +94,8 @@ export function VerificationProtocol() {
         </div>
 
         {/* Clarification Alert Box */}
-        <div className="bg-homera-blue/5 dark:bg-homera-blue/20 border border-homera-blue/20 rounded-2xl p-6 flex flex-col sm:flex-row items-start gap-4">
-          <div className="p-3 rounded-xl bg-homera-blue text-homera-gold flex-shrink-0">
+        <div className="bg-homera-brown/5 dark:bg-homera-brown/20 border border-homera-brown/20 rounded-2xl p-6 flex flex-col sm:flex-row items-start gap-4">
+          <div className="p-3 rounded-xl bg-homera-brown text-homera-terracotta flex-shrink-0">
             <AlertCircle className="w-6 h-6" />
           </div>
           <div className="space-y-1.5 text-sm">

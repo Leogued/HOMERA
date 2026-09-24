@@ -10,7 +10,7 @@ import { Footer } from "@/components/layout/Footer";
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-background text-foreground flex flex-col justify-between transition-colors duration-300">
+    <div className="relative min-h-screen bg-background text-foreground flex flex-col justify-between transition-colors duration-300">
       {/* Navbar Header */}
       <Navbar />
 

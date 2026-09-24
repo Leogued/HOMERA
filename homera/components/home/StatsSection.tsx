@@ -7,28 +7,28 @@ export function StatsSection() {
       label: "Biens vérifiés",
       description: "Villas, studios, appartements avec identifiant unique traçable.",
       icon: ShieldCheck,
-      color: "text-homera-gold bg-homera-gold/10",
+      color: "text-homera-terracotta bg-homera-terracotta/10",
     },
     {
       number: "+80",
       label: "Propriétaires enregistrés",
       description: "Propriétaires enregistrés et titulaires certifiés au Bénin.",
       icon: UserCheck,
-      color: "text-homera-blue dark:text-foreground bg-homera-blue/10 dark:bg-white/10",
+      color: "text-homera-brown dark:text-foreground bg-homera-brown/10 dark:bg-white/10",
     },
     {
       number: "+45",
       label: "Agents & Mandataires",
       description: "Mandataires habilités aux visites et dossiers de location.",
       icon: Users,
-      color: "text-homera-gold bg-homera-gold/10",
+      color: "text-homera-terracotta bg-homera-terracotta/10",
     },
     {
       number: "4",
       label: "Villes couvertes",
       description: "Cotonou, Abomey-Calavi, Porto-Novo, Ouidah.",
       icon: MapPin,
-      color: "text-homera-blue dark:text-foreground bg-homera-blue/10 dark:bg-white/10",
+      color: "text-homera-brown dark:text-foreground bg-homera-brown/10 dark:bg-white/10",
     },
   ];
 
@@ -53,7 +53,7 @@ export function StatsSection() {
                 className="bg-card border border-border p-6 rounded-2xl shadow-card hover:shadow-card-hover transition-all duration-300 space-y-4 relative overflow-hidden group"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-serif text-4xl font-bold text-homera-blue dark:text-homera-gold">
+                  <span className="font-serif text-4xl font-bold text-homera-brown dark:text-homera-terracotta">
                     {stat.number}
                   </span>
                   <div className={`p-3 rounded-xl ${stat.color} group-hover:scale-110 transition-transform`}>

@@ -1,32 +1,56 @@
 @import "tailwindcss";
 
+/* Tailwind v4 : le mode sombre suit la classe .dark (next-themes) */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* =================================
+   POLICE DE MARQUE — Cakecafe (Khurasan)
+   Réservée au mot-symbole « HOMERA ».
+   Fichier attendu : public/fonts/Cakecafe.woff2 (ou .ttf)
+   ================================= */
+
+@font-face {
+  font-family: "Cakecafe";
+  src:
+    url("/fonts/Cakecafe.woff2") format("woff2"),
+    url("/fonts/Cakecafe.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
 :root {
   /* ================================
      HOMERA — COULEURS
+     Terracotta + Brun profond + Crème
      ================================ */
 
-  --background: #ffffff;
-  --foreground: #0a2540;
+  --background: #faf6ef;          /* crème clair */
+  --foreground: #3e2418;          /* brun profond */
 
-  --homera-blue: #0a2540;
-  --homera-blue-light: #123b61;
+  --homera-brown: #3e2418;        /* brun profond */
+  --homera-brown-light: #5a3726;
+  --homera-brown-dark: #2a170f;
 
-  --homera-gold: #c9a227;
-  --homera-gold-light: #e1c45a;
+  --homera-terracotta: #c65d3b;   /* terracotta */
+  --homera-terracotta-light: #e07a55;
+  --homera-terracotta-dark: #a4482a;
+
+  --homera-cream: #f5ede0;        /* crème */
+  --homera-cream-dark: #ebdcc6;
 
   /* ================================
      INTERFACE
      ================================ */
 
-  --muted: #64748b;
-  --muted-light: #94a3b8;
+  --muted: #7a6353;
+  --muted-light: #a8927f;
 
-  --border: #e2e8f0;
-  --card: #ffffff;
+  --border: #e8dccb;
+  --card: #fffdf9;
 
-  --success: #15803d;
-  --warning: #b45309;
-  --error: #b91c1c;
+  --success: #4d7c3a;
+  --warning: #b7791f;
+  --error: #b3261e;
 
   /* ================================
      DESIGN
@@ -38,8 +62,8 @@
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
 
-  --shadow-card: 0 4px 20px rgba(10, 37, 64, 0.08);
-  --shadow-card-hover: 0 12px 35px rgba(10, 37, 64, 0.14);
+  --shadow-card: 0 4px 20px rgba(62, 36, 24, 0.08);
+  --shadow-card-hover: 0 12px 35px rgba(62, 36, 24, 0.16);
 }
 
 /* =================================
@@ -47,24 +71,29 @@
    ================================= */
 
 .dark {
-  --background: #071a2d;
-  --foreground: #f8fafc;
+  --background: #1e120c;
+  --foreground: #f5ede0;
 
-  --homera-blue: #0a2540;
-  --homera-blue-light: #163e63;
+  --homera-brown: #3e2418;
+  --homera-brown-light: #5a3726;
+  --homera-brown-dark: #2a170f;
 
-  --homera-gold: #d4af37;
-  --homera-gold-light: #e4c766;
+  --homera-terracotta: #d9734e;
+  --homera-terracotta-light: #e8906f;
+  --homera-terracotta-dark: #b85a37;
 
-  --muted: #94a3b8;
-  --muted-light: #cbd5e1;
+  --homera-cream: #f5ede0;
+  --homera-cream-dark: #ebdcc6;
 
-  --border: #1e3a52;
-  --card: #0d2944;
+  --muted: #b8a391;
+  --muted-light: #d6c5b4;
 
-  --success: #4ade80;
-  --warning: #fbbf24;
-  --error: #f87171;
+  --border: #4a2f22;
+  --card: #2b1a12;
+
+  --success: #8fbf6f;
+  --warning: #e0b050;
+  --error: #ef7a6e;
 }
 
 /* =================================
@@ -75,11 +104,16 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
 
-  --color-homera-blue: var(--homera-blue);
-  --color-homera-blue-light: var(--homera-blue-light);
+  --color-homera-brown: var(--homera-brown);
+  --color-homera-brown-light: var(--homera-brown-light);
+  --color-homera-brown-dark: var(--homera-brown-dark);
 
-  --color-homera-gold: var(--homera-gold);
-  --color-homera-gold-light: var(--homera-gold-light);
+  --color-homera-terracotta: var(--homera-terracotta);
+  --color-homera-terracotta-light: var(--homera-terracotta-light);
+  --color-homera-terracotta-dark: var(--homera-terracotta-dark);
+
+  --color-homera-cream: var(--homera-cream);
+  --color-homera-cream-dark: var(--homera-cream-dark);
 
   --color-muted: var(--muted);
   --color-muted-light: var(--muted-light);
@@ -93,6 +127,7 @@
 
   --font-sans: var(--font-inter);
   --font-serif: var(--font-playfair);
+  --font-brand: "Cakecafe", var(--font-playfair), serif;
 
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
@@ -138,4 +173,26 @@ button {
 a {
   color: inherit;
   text-decoration: none;
+}
+/* =================================
+   HEADER — toujours transparent
+   Indépendant du thème (clair ET sombre) :
+   aucune variable de thème ici.
+   ================================= */
+
+.homera-header,
+.dark .homera-header {
+  background: transparent !important;
+}
+
+/* Largeur maîtrisée du contenu du header (grands / très grands écrans) */
+.homera-header-container {
+  width: 100%;
+  max-width: 80rem;            /* 1280px — desktop standard */
+}
+@media (min-width: 1536px) {
+  .homera-header-container { max-width: 86rem; }   /* ~1376px — grands écrans */
+}
+@media (min-width: 1920px) {
+  .homera-header-container { max-width: 92rem; }   /* ~1472px — ultrawide / Full HD+ */
 }
