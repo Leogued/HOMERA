@@ -4,8 +4,9 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* =================================
-   POLICE DE MARQUE — Cakecafe (Khurasan)
-   Réservée au mot-symbole « HOMERA ».
+   POLICE DE MARQUE — mot-symbole « HOMERA »
+   Primaire : Script MT Bold (police système)
+   Secours : Cakecafe (Khurasan) — fichier local requis
    Fichier attendu : public/fonts/Cakecafe.woff2 (ou .ttf)
    ================================= */
 
@@ -127,7 +128,7 @@
 
   --font-sans: var(--font-inter);
   --font-serif: var(--font-playfair);
-  --font-brand: "Cakecafe", var(--font-playfair), serif;
+  --font-brand: "Script MT Bold", "Cakecafe", "Brush Script MT", cursive;
 
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
@@ -183,6 +184,22 @@ a {
 .homera-header,
 .dark .homera-header {
   background: transparent !important;
+}
+
+/* =================================
+   HEADER — HIÉRARCHIE TYPOGRAPHIQUE
+   - Perpetua  → police principale (menu et textes, lisibilité)
+   - Script MT Bold → uniquement le mot-symbole « HOMERA » (via --font-brand)
+   - Brush Script MT → accent stylistique ponctuel (.homera-font-script)
+   ================================= */
+
+.homera-header {
+  font-family: "Perpetua", "Perpetua Titling MT", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+}
+
+/* Accent manuscrit réservé à quelques éléments (ex. boutons d'action) */
+.homera-font-script {
+  font-family: "Brush Script MT", "Segoe Script", "Snell Roundhand", cursive;
 }
 
 /* Largeur maîtrisée du contenu du header (grands / très grands écrans) */
