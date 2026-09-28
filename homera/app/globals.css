@@ -191,15 +191,29 @@ a {
    - Perpetua  → police principale (menu et textes, lisibilité)
    - Script MT Bold → uniquement le mot-symbole « HOMERA » (via --font-brand)
    - Brush Script MT → accent stylistique ponctuel (.homera-font-script)
+
+   Ces trois polices sont des polices Windows / Office. Chaque pile
+   embarque donc un équivalent web auto-hébergé (déclaré dans
+   app/layout.tsx via next/font) qui n'est utilisé QUE si la police
+   système manque — Android, iOS, macOS, Linux :
+   - Perpetua        → Cormorant Garamond   (--font-cormorant)
+   - Script MT Bold  → Cakecafe              (public/fonts/, voir plus haut)
+   - Brush Script MT → Yellowtail            (--font-yellowtail)
    ================================= */
 
 .homera-header {
-  font-family: "Perpetua", "Perpetua Titling MT", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+  font-family:
+    "Perpetua", "Perpetua Titling MT",
+    var(--font-cormorant),
+    "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
 }
 
 /* Accent manuscrit réservé à quelques éléments (ex. boutons d'action) */
 .homera-font-script {
-  font-family: "Brush Script MT", "Segoe Script", "Snell Roundhand", cursive;
+  font-family:
+    "Brush Script MT",
+    var(--font-yellowtail),
+    "Segoe Script", "Snell Roundhand", cursive;
 }
 
 /* Largeur maîtrisée du contenu du header (grands / très grands écrans) */
