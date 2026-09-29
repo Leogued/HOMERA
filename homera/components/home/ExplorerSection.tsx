@@ -39,7 +39,7 @@ export function ExplorerSection() {
               </li>
               <li className="flex items-center gap-2.5">
                 <CheckCircle2 className="w-5 h-5 text-homera-terracotta flex-shrink-0" />
-                <span>Parcours de location structuré (Demande $\rightarrow$ Contrat $\rightarrow$ Remise des clés)</span>
+                <span>Parcours de location structuré (Demande → Contrat → Remise des clés)</span>
               </li>
             </ul>
             <div className="pt-2">

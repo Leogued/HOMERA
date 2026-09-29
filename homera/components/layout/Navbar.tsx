@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 import { Menu, X, Moon, Sun, ChevronDown, UserRound } from "lucide-react";
@@ -62,16 +62,20 @@ const navItems: NavItem[] = [
   },
 ];
 
+// Indicateur de montage hydratation-safe : faux au rendu serveur, vrai dès
+// l'hydratation côté client — sans setState dans un effet
+// (règle react-hooks/set-state-in-effect). Rendu visuel identique.
+const emptySubscribe = () => () => {};
+function useMounted() {
+  return useSyncExternalStore(emptySubscribe, () => true, () => false);
+}
+
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeMobileSubmenu, setActiveMobileSubmenu] = useState<string | null>(null);
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const isDark = resolvedTheme === "dark" || theme === "dark";
 
