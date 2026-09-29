@@ -1,9 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef, useSyncExternalStore } from "react";
 import { Search, MapPin, Building2, Wallet } from "lucide-react";
 
 type IntentType = "acheter" | "louer" | "sejour";
+
+const HERO_VIDEO = "/video/background_video.mp4";
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)";
+
+function subscribeReducedMotion(onChange: () => void) {
+  const query = window.matchMedia(REDUCED_MOTION_QUERY);
+  query.addEventListener("change", onChange);
+  return () => query.removeEventListener("change", onChange);
+}
+
+// Côté serveur on suppose le mouvement autorisé : le HTML rendu est
+// identique des deux côtés, la préférence réelle s'applique à l'hydratation.
+const getReducedMotion = () => window.matchMedia(REDUCED_MOTION_QUERY).matches;
+const getReducedMotionServer = () => false;
 
 export function Hero() {
   const [activeIntent, setActiveIntent] = useState<IntentType>("acheter");
@@ -11,8 +25,59 @@ export function Hero() {
   const [propertyType, setPropertyType] = useState("");
   const [budget, setBudget] = useState("");
 
+  // Fond vidéo : purement décoratif, jamais lu par un lecteur d'écran.
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [videoReady, setVideoReady] = useState(false);
+  // « prefers-reduced-motion » : on garde le fond brun uni de la section
+  // et on ne télécharge pas les 4 Mo de la vidéo.
+  const videoEnabled = !useSyncExternalStore(
+    subscribeReducedMotion,
+    getReducedMotion,
+    getReducedMotionServer
+  );
+
+  useEffect(() => {
+    if (!videoEnabled) return;
+    const video = videoRef.current;
+    if (!video) return;
+    // iOS Safari n'autorise la lecture automatique que sans piste sonore :
+    // on force la propriété avant play() pour éviter un rejet.
+    video.muted = true;
+    video.play().catch(() => {
+      // Autoplay bloqué (économie de données, onglet en arrière-plan…) :
+      // le fond uni de la section reste visible, rien ne casse.
+    });
+  }, [videoEnabled]);
+
   return (
     <section className="relative overflow-hidden bg-[#2A170F] text-white pt-34 pb-16 sm:pt-42 sm:pb-24">
+      {/* Fond vidéo (public/video/background_video.mp4) — décoratif */}
+      {videoEnabled && (
+        <video
+          ref={videoRef}
+          className={`absolute inset-0 h-full w-full object-cover pointer-events-none transition-opacity duration-1000 ease-out ${
+            videoReady ? "opacity-100" : "opacity-0"
+          }`}
+          src={HERO_VIDEO}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          disablePictureInPicture
+          tabIndex={-1}
+          aria-hidden="true"
+          onCanPlay={() => setVideoReady(true)}
+        />
+      )}
+
+      {/* Voile de lisibilité : le dégradé sombre du haut (sous la navbar)
+          au bas (jonction avec la section suivante) garde le titre et le
+          widget de recherche en contraste, et préserve l'identité brun/terracotta. */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#2A170F]/85 via-[#2A170F]/50 to-[#2A170F]/95 pointer-events-none" />
+      {/* Vignettage : centre dégagé pour laisser respirer la vidéo */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,transparent_0%,rgba(42,23,15,0.55)_100%)] pointer-events-none" />
+
       {/* Subtle Background Glows */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-150 h-75 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-10 w-96 h-96 bg-homera-terracotta/5 rounded-full blur-3xl pointer-events-none" />
