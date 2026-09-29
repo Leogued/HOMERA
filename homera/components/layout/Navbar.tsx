@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { Menu, X, Moon, Sun, ChevronDown } from "lucide-react";
+import { Menu, X, Moon, Sun, ChevronDown, UserRound } from "lucide-react";
 
 interface SubMenuItem {
   label: string;
@@ -42,7 +42,7 @@ const navItems: NavItem[] = [
     ],
   },
   {
-    title: "Séjour",
+    title: "Séjourner",
     href: "#sejour",
     submenu: [
       { label: "À la nuitée", href: "#sejour-nuitee" },
@@ -97,16 +97,16 @@ export function Navbar() {
 
   return (
     <header className="homera-header absolute top-0 inset-x-0 w-full bg-transparent text-white py-4 px-4 sm:px-8 xl:px-12 2xl:px-16 transition-colors duration-300 z-50 border-0">
-      <div className="homera-header-container mx-auto flex items-center justify-between">
-        {/* Brand Logo — mot-symbole « HOMERA » en Script MT Bold (exclusif) */}
+      <div className="homera-header-container mx-auto flex items-center justify-between lg:grid lg:grid-cols-3">
+        {/* Brand Logo — mot-symbole « Homera » en Brush Script MT */}
         <Link href="/" className="flex items-center group">
-          <span className="homera-brand text-[1.1875rem] sm:text-[1.3125rem] text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.7)] group-hover:scale-105 transition-transform">
-            HOMERA
+          <span className="homera-brand text-[3.125rem] text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.7)] group-hover:scale-105 transition-transform">
+            Homera
           </span>
         </Link>
 
         {/* Center Navigation Pill Capsule (Desktop/Tablet landscape with Dropdowns) */}
-        <nav className="hidden lg:flex items-center bg-white/5 backdrop-blur-sm border border-white/10 px-5 xl:px-6 2xl:px-7 py-2.5 rounded-full shadow-[0_0_0_1px_rgba(255,255,255,0.04)] gap-4 xl:gap-6 2xl:gap-7 text-[12.5px] font-medium text-white lg:ml-auto lg:mr-4 xl:mr-6 2xl:mr-8 relative">
+        <nav className="hidden lg:flex lg:justify-self-center items-center bg-white/5 backdrop-blur-sm border border-white/10 px-5 xl:px-6 2xl:px-7 py-2.5 rounded-full shadow-[0_0_0_1px_rgba(255,255,255,0.04)] gap-4 xl:gap-6 2xl:gap-7 text-[12.5px] font-medium text-white relative">
           {navItems.map((item) => (
             <div
               key={item.title}
@@ -144,7 +144,7 @@ export function Navbar() {
                       : "opacity-0 invisible -translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:pointer-events-auto"
                   }`}
                 >
-                  <div className="bg-[#2A170F]/90 border border-white/10 ring-1 ring-black/20 backdrop-blur-xl rounded-2xl shadow-[0_18px_40px_-12px_rgba(0,0,0,0.55)] p-2.5 min-w-55 w-max text-white flex flex-col items-center space-y-1">
+                  <div className="bg-[#2A170F]/90 border border-white/10 ring-1 ring-black/20 backdrop-blur-xl rounded-2xl shadow-[0_18px_40px_-12px_rgba(0,0,0,0.55)] p-2.5 w-max text-white flex flex-col items-center space-y-1">
                     {item.submenu.map((sub) => (
                       <Link
                         key={sub.label}
@@ -163,23 +163,7 @@ export function Navbar() {
         </nav>
 
         {/* Right Action Buttons (Desktop) */}
-        <div className="hidden lg:flex items-center space-x-3">
-          <Link
-            href="#login"
-            onClick={(e) => handleNavClick(e, "#login")}
-            className="bg-white/8 hover:bg-white/12 text-white font-medium text-[12.5px] tracking-[0.01em] px-5 py-2.5 rounded-full border border-white/15 backdrop-blur-sm transition-all shadow-sm"
-          >
-            Se connecter
-          </Link>
-
-          <Link
-            href="#register"
-            onClick={(e) => handleNavClick(e, "#register")}
-            className="bg-black/15 hover:bg-black/25 text-white font-medium text-[12.5px] tracking-[0.01em] px-5 py-2.5 rounded-full border border-white/15 backdrop-blur-sm transition-all shadow-sm"
-          >
-            Créer un compte
-          </Link>
-
+        <div className="hidden lg:flex lg:justify-self-end items-center space-x-3">
           {mounted && (
             <button
               onClick={() => setTheme(isDark ? "light" : "dark")}
@@ -193,6 +177,16 @@ export function Navbar() {
               )}
             </button>
           )}
+
+          <Link
+            href="#login"
+            onClick={(e) => handleNavClick(e, "#login")}
+            className="w-10 h-10 inline-flex items-center justify-center bg-white/8 hover:bg-white/12 text-white rounded-full border border-white/15 backdrop-blur-sm transition-all shadow-sm"
+            aria-label="Se connecter"
+            title="Se connecter"
+          >
+            <UserRound className="w-5 h-5" aria-hidden="true" />
+          </Link>
         </div>
 
         {/* Mobile & Tablet Hamburger Controls */}
@@ -280,13 +274,6 @@ export function Navbar() {
               className="w-full text-center bg-homera-terracotta hover:bg-homera-terracotta-light text-[#2A170F] font-medium text-[13px] tracking-[0.01em] py-3 rounded-full shadow-md"
             >
               Se connecter
-            </Link>
-            <Link
-              href="#register"
-              onClick={(e) => handleNavClick(e, "#register")}
-              className="w-full text-center bg-[#4A2C1D] hover:bg-[#5A3726] text-white font-medium text-[13px] tracking-[0.01em] py-3 rounded-full border border-stone-600/50 shadow-md"
-            >
-              Créer un compte
             </Link>
           </div>
         </div>

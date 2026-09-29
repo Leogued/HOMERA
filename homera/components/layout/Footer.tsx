@@ -15,7 +15,7 @@ export function Footer() {
               </div>
               <div className="flex flex-col">
                 <span className="homera-brand text-[1.3125rem] text-white">
-                  HOMERA
+                  Homera
                 </span>
                 <span className="text-[10px] uppercase font-sans tracking-[0.18em] text-homera-terracotta font-semibold -mt-1">
                   Bénin • Confiance

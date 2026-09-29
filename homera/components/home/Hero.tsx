@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, MapPin, Building2, Wallet, Sparkles } from "lucide-react";
+import { Search, MapPin, Building2, Wallet } from "lucide-react";
 
 type IntentType = "acheter" | "louer" | "sejour";
 
@@ -18,14 +18,6 @@ export function Hero() {
       <div className="absolute bottom-0 right-10 w-96 h-96 bg-homera-terracotta/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-8 text-center">
-        {/* Top Terracotta Pill Tag */}
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-white/5 text-homera-terracotta border border-homera-terracotta/30 backdrop-blur-md">
-          <Sparkles className="w-3.5 h-3.5 text-homera-terracotta" />
-          <span className="uppercase tracking-[0.16em] text-[11px]">
-            L&apos;ÈRE DE L&apos;IMMOBILIER NUMÉRIQUE
-          </span>
-        </div>
-
         {/* Main Title — DM Serif Display, graisse 400 (aucun faux gras) */}
         <h1 className="font-serif text-display-sm sm:text-display-lg lg:text-display-xl text-white max-w-4xl mx-auto">
           L&apos;immobilier au Bénin en toute <br />

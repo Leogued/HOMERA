@@ -5,7 +5,7 @@
 
 /* =================================
    POLICE DE MARQUE — mot-symbole « HOMERA »
-   Primaire : Script MT Bold (police système Windows / Office)
+  Primaire : Brush Script MT (police système)
    Secours : Cakecafe (Khurasan) — fichier local requis
    Fichier attendu : public/fonts/Cakecafe.woff2 (ou .ttf)
 
@@ -131,12 +131,12 @@
 
   --font-sans: var(--font-manrope);
   --font-serif: var(--font-dm-serif);
-  --font-brand: "Script MT Bold", "Cakecafe", "Brush Script MT", cursive;
+  --font-brand: "Brush Script MT", "Cakecafe", cursive;
   --font-accent: var(--font-cormorant);
 
   /* ================================
      HIÉRARCHIE TYPOGRAPHIQUE
-     Mot-symbole   → Script MT Bold        (.homera-brand)
+    Mot-symbole   → Brush Script MT       (.homera-brand)
      Grands titres → DM Serif Display       (.font-serif + --text-display-*)
      UI / textes   → Manrope 400 · 500 · 600
      Accents       → Cormorant Garamond Italic (.homera-accent)
@@ -257,7 +257,7 @@ a {
 
 /* =================================
    HIÉRARCHIE TYPOGRAPHIQUE GLOBALE
-   1. « HOMERA » (mot-symbole)  → Script MT Bold ....... .homera-brand
+  1. « HOMERA » (mot-symbole)  → Brush Script MT ...... .homera-brand
    2. Grands titres             → DM Serif Display ..... .font-serif + text-display-*
    3. Navigation / boutons /
       textes                    → Manrope .............. base du site
@@ -270,13 +270,13 @@ a {
    ================================= */
 
 /* ---------------------------------------------------------------
-   MOT-SYMBOLLE — Script MT Bold
+  MOT-SYMBOLLE — Brush Script MT
    Taille portée par les classes utilitaires (responsive) : la classe
    ne définit que la famille, le graisse et l'interlettrage.
    --------------------------------------------------------------- */
 .homera-brand {
   font-family: var(--font-brand);
-  font-weight: 400;         /* Script MT Bold est déjà un dessin gras */
+  font-weight: 400;
   font-style: normal;
   font-synthesis-weight: none;
   line-height: 1;
