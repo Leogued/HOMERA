@@ -18,7 +18,25 @@ Open [http://localhost:3000](http://localhost:3000) with your browser to see the
 
 You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+This project uses [`next/font`](https://nextjs.org/docs/app/api-reference/components/font) to self-host the four brand fonts (Manrope, DM Serif Display, Cormorant Garamond Italic, Cakecafe) — see the *Typographie* section below.
+
+## Typographie
+
+Quatre polices, quatre rôles — la hiérarchie est centralisée dans `app/globals.css`
+(tokens `--font-*` et échelle `--text-display-*`) et déclarée dans `app/layout.tsx` :
+
+| Rôle | Police | Poids | Usage |
+| --- | --- | --- | --- |
+| Mot-symbole | `Script MT Bold` (secours web `Cakecafe`) | unique | le mot « HOMERA » uniquement, via `.homera-brand` |
+| Grands titres | DM Serif Display | 400 | `font-serif` + `text-display-xs → xl` : `h1`/`h2` de section, chiffres clés |
+| Interface | Manrope | 400 · 500 · 600 | texte courant (Regular), menus & boutons (Medium), éléments importants (SemiBold) |
+| Accents éditoriaux | Cormorant Garamond Italic | 400 | très ponctuel, via `.homera-accent` |
+
+Règles : pas de `font-bold` sur `font-serif` (DM Serif n'existe qu'en 400, le navigateur
+fabriquerait un faux gras) ; le script n'apparaît jamais ailleurs que sur le nom HOMERA ;
+les titres utilisent l'échelle `text-display-*` pour que corps, interlignage, interlettrage
+et graisse restent cohérents d'une page à l'autre. Les polices sont auto-hébergées
+(`next/font/local`, sous-ensembles latin) — voir `public/fonts/README.md`.
 
 ## Learn More
 

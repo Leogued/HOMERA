@@ -1,54 +1,72 @@
 import type { Metadata } from "next";
-import { Inter, Playfair_Display } from "next/font/google";
 import localFont from "next/font/local";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const playfair = Playfair_Display({
-  variable: "--font-playfair",
-  subsets: ["latin"],
-  display: "swap",
-});
-
 /* ---------------------------------------------------------------
-   Typographie du header — équivalents web des polices système.
-   Perpetua, Script MT Bold et Brush Script MT n'existent que sur
-   Windows / Office : sur Android, iOS, macOS et Linux le navigateur
-   retombait sur une police serif / cursive quelconque.
-   Ces deux polices prennent le relais UNIQUEMENT quand la police
-   système est absente — le rendu Windows reste inchangé.
-   Fichiers embarqués dans public/fonts/ (sous-ensemble latin, WOFF2) :
-   le build ne dépend pas de Google Fonts et fonctionne hors ligne.
+   TYPOGRAPHIE HOMERA — 4 rôles, 4 polices (voir app/globals.css)
+
+   1. Mot-symbole « HOMERA » → Script MT Bold (police système
+      Windows / Office). Non chargeable : le secours web Cakecafe est
+      déclaré en @font-face dans globals.css. Jamais utilisée
+      ailleurs sur le site.
+   2. Navigation, boutons, textes → Manrope (variable 200–800)
+   3. Grands titres → DM Serif Display (400)
+   4. Accents éditoriaux → Cormorant Garamond Italic (variable 300–700)
+
+   Les polices 2 à 4 sont auto-hébergées via next/font/local :
+   sous-ensembles latin (accents français inclus) commités dans
+   public/fonts/. Aucun réseau au build, aucun appel externe au
+   navigateur, pas de layout shift.
    --------------------------------------------------------------- */
 
-// Perpetua → Cormorant Garamond (serif classique aux empattements fins,
-// même petite hauteur d'x). Police variable : un seul fichier couvre 300–700.
-const cormorant = localFont({
-  src: "../public/fonts/CormorantGaramond-latin-wght.woff2",
-  variable: "--font-cormorant",
-  weight: "300 700",
+// Manrope — police principale : Regular (textes), Medium (menus, boutons),
+// SemiBold (éléments importants). Grande hauteur d'x = très lisible sur mobile.
+const manrope = localFont({
+  src: "../public/fonts/Manrope-latin-wght.woff2",
+  variable: "--font-manrope",
+  weight: "200 800",
   style: "normal",
   display: "swap",
+  fallback: [
+    "ui-sans-serif",
+    "system-ui",
+    "Segoe UI",
+    "Roboto",
+    "Arial",
+    "Helvetica",
+    "sans-serif",
+  ],
+  adjustFontFallback: "Arial",
 });
 
-// Brush Script MT → Yellowtail (script au pinceau, lié et penché).
-const yellowtail = localFont({
-  src: "../public/fonts/Yellowtail-latin.woff2",
-  variable: "--font-yellowtail",
+// DM Serif Display — grands titres only. Un seul poids (400) : les
+// titres n'affichent donc jamais de faux gras synthétique.
+const dmSerif = localFont({
+  src: "../public/fonts/DMSerifDisplay-latin-400.woff2",
+  variable: "--font-dm-serif",
   weight: "400",
   style: "normal",
   display: "swap",
+  fallback: ["Palatino Linotype", "Book Antiqua", "Palatino", "Georgia", "serif"],
+  adjustFontFallback: "Times New Roman",
+});
+
+// Cormorant Garamond Italic — accents éditoriaux, usage très limité.
+const cormorant = localFont({
+  src: "../public/fonts/CormorantGaramond-latin-wght-italic.woff2",
+  variable: "--font-cormorant",
+  weight: "300 700",
+  style: "italic",
+  display: "swap",
+  fallback: ["Palatino Linotype", "Georgia", "serif"],
+  adjustFontFallback: "Times New Roman",
 });
 
 export const metadata: Metadata = {
   title: "HOMERA — Plateforme Immobilière de Confiance au Bénin",
-  description: "Plateforme immobilière de confiance au Bénin. Retrouvez des biens certifiés et sécurisés.",
+  description:
+    "Plateforme immobilière de confiance au Bénin. Retrouvez des biens certifiés et sécurisés.",
 };
 
 export default function RootLayout({
@@ -58,7 +76,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="fr" suppressHydrationWarning>
-      <body className={`${inter.variable} ${playfair.variable} ${cormorant.variable} ${yellowtail.variable}`}>
+      <body
+        className={`${manrope.variable} ${dmSerif.variable} ${cormorant.variable}`}
+      >
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

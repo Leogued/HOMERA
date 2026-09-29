@@ -5,9 +5,12 @@
 
 /* =================================
    POLICE DE MARQUE — mot-symbole « HOMERA »
-   Primaire : Script MT Bold (police système)
+   Primaire : Script MT Bold (police système Windows / Office)
    Secours : Cakecafe (Khurasan) — fichier local requis
    Fichier attendu : public/fonts/Cakecafe.woff2 (ou .ttf)
+
+   ⚠️  Réservée EXCLUSIVEMENT au nom « HOMERA » (classe .homera-brand).
+   Jamais sur un autre texte du site.
    ================================= */
 
 @font-face {
@@ -126,9 +129,46 @@
   --color-warning: var(--warning);
   --color-error: var(--error);
 
-  --font-sans: var(--font-inter);
-  --font-serif: var(--font-playfair);
+  --font-sans: var(--font-manrope);
+  --font-serif: var(--font-dm-serif);
   --font-brand: "Script MT Bold", "Cakecafe", "Brush Script MT", cursive;
+  --font-accent: var(--font-cormorant);
+
+  /* ================================
+     HIÉRARCHIE TYPOGRAPHIQUE
+     Mot-symbole   → Script MT Bold        (.homera-brand)
+     Grands titres → DM Serif Display       (.font-serif + --text-display-*)
+     UI / textes   → Manrope 400 · 500 · 600
+     Accents       → Cormorant Garamond Italic (.homera-accent)
+
+     DM Serif Display n'existe qu'en 400 : l'échelle embarque donc le
+     graisse, l'interlignage et l'interlettrage corrects pour éviter tout
+     faux gras synthétique (rendu baveux) et tout titre surchargé.
+     ================================ */
+  --text-display-xs: 1.375rem; /* 22px — titres de blocs secondaires */
+  --text-display-xs--line-height: 1.35;
+  --text-display-xs--letter-spacing: 0.005em;
+  --text-display-xs--font-weight: 400;
+
+  --text-display-sm: 1.75rem; /* 28px — titres de section (mobile) */
+  --text-display-sm--line-height: 1.22;
+  --text-display-sm--letter-spacing: 0.005em;
+  --text-display-sm--font-weight: 400;
+
+  --text-display-md: 2rem; /* 32px — titres de section (desktop) */
+  --text-display-md--line-height: 1.16;
+  --text-display-md--letter-spacing: 0.006em;
+  --text-display-md--font-weight: 400;
+
+  --text-display-lg: 2.5rem; /* 40px — très grands titres */
+  --text-display-lg--line-height: 1.12;
+  --text-display-lg--letter-spacing: 0.008em;
+  --text-display-lg--font-weight: 400;
+
+  --text-display-xl: 3.1rem; /* ~50px — titre du hero */
+  --text-display-xl--line-height: 1.08;
+  --text-display-xl--letter-spacing: 0.01em;
+  --text-display-xl--font-weight: 400;
 
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
@@ -150,14 +190,43 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
+
+/* =================================
+   TEXTE COURANT — Manrope Regular
+   Base de 15px : lisible sur mobile sans donner l'impression
+   d'un site « grossi ». Les espacements (padding / margin en rem)
+   restent calculés sur la racine : ils ne bougent pas.
+   ================================= */
 
 body {
   margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, "Segoe UI",
+    Roboto, Arial, Helvetica, sans-serif;
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  font-weight: 400;
+  letter-spacing: 0.002em;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Jamais de graisse fabriquée par le navigateur : si un poids n'existe
+   pas dans la police, on le laisse tel quel (rendu net, pas « baveux »). */
+h1, h2, h3, h4, h5, h6 {
+  font-synthesis-weight: none;
+  font-synthesis-style: none;
+  text-wrap: balance;
+}
+
+p {
+  text-wrap: pretty;
 }
 
 button,
@@ -187,33 +256,74 @@ a {
 }
 
 /* =================================
-   HEADER — HIÉRARCHIE TYPOGRAPHIQUE
-   - Perpetua  → police principale (menu et textes, lisibilité)
-   - Script MT Bold → uniquement le mot-symbole « HOMERA » (via --font-brand)
-   - Brush Script MT → accent stylistique ponctuel (.homera-font-script)
+   HIÉRARCHIE TYPOGRAPHIQUE GLOBALE
+   1. « HOMERA » (mot-symbole)  → Script MT Bold ....... .homera-brand
+   2. Grands titres             → DM Serif Display ..... .font-serif + text-display-*
+   3. Navigation / boutons /
+      textes                    → Manrope .............. base du site
+   4. Accents éditoriaux        → Cormorant Garamond
+                                  Italic .............. .homera-accent
 
-   Ces trois polices sont des polices Windows / Office. Chaque pile
-   embarque donc un équivalent web auto-hébergé (déclaré dans
-   app/layout.tsx via next/font) qui n'est utilisé QUE si la police
-   système manque — Android, iOS, macOS, Linux :
-   - Perpetua        → Cormorant Garamond   (--font-cormorant)
-   - Script MT Bold  → Cakecafe              (public/fonts/, voir plus haut)
-   - Brush Script MT → Yellowtail            (--font-yellowtail)
+   Toutes les polices 2 à 4 sont auto-hébergées (next/font/local,
+   sous-ensemble latin) : aucun réseau requis au build ni au runtime,
+   rendu identique sur Android, iOS, macOS et Linux.
+   ================================= */
+
+/* ---------------------------------------------------------------
+   MOT-SYMBOLLE — Script MT Bold
+   Taille portée par les classes utilitaires (responsive) : la classe
+   ne définit que la famille, le graisse et l'interlettrage.
+   --------------------------------------------------------------- */
+.homera-brand {
+  font-family: var(--font-brand);
+  font-weight: 400;         /* Script MT Bold est déjà un dessin gras */
+  font-style: normal;
+  font-synthesis-weight: none;
+  line-height: 1;
+  letter-spacing: 0.035em;  /* le script a besoin d'un léger souffle */
+  font-kerning: normal;
+}
+
+/* ---------------------------------------------------------------
+   ACCENTS ÉDITORIAUX — Cormorant Garamond Italic
+   Utilisation très limitée : 3 occurrences dans tout le site
+   (le mot « simplicité » du hero, un segment de titre, la citation
+   du manifeste). Jamais de paragraphes ni de menus dans cette police.
+   La taille reste dans les classes utilitaires pour éviter toute
+   collision avec l'échelle de titres.
+   --------------------------------------------------------------- */
+.homera-accent {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-weight: 400;
+  font-synthesis-style: none;
+  letter-spacing: 0.012em;
+}
+
+/* Chiffres, prix, dates et identifiants : alignement tabulaire */
+.homera-num {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+}
+
+/* =================================
+   HEADER — TYPOGRAPHIE
+   Structure, positionnement, couleurs et espacements inchangés.
+   Seuls la famille, les tailles, les graisses et la hiérarchie
+   sont revus : un header compact et discret, comme sur un site
+   éditorial professionnel.
+   - menus / boutons ....... Manrope Medium   (12,5 px)
+   - libellés & sur-titres .. Manrope SemiBold (11 px)
+   - mot-symbole ........... .homera-brand    (19 → 21 px)
    ================================= */
 
 .homera-header {
-  font-family:
-    "Perpetua", "Perpetua Titling MT",
-    var(--font-cormorant),
-    "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
-}
-
-/* Accent manuscrit réservé à quelques éléments (ex. boutons d'action) */
-.homera-font-script {
-  font-family:
-    "Brush Script MT",
-    var(--font-yellowtail),
-    "Segoe Script", "Snell Roundhand", cursive;
+  font-family: var(--font-manrope), ui-sans-serif, system-ui, "Segoe UI",
+    Roboto, Arial, Helvetica, sans-serif;
+  font-weight: 500;
+  line-height: 1.35;
+  letter-spacing: 0.012em;
+  font-feature-settings: "kern" 1, "liga" 1, "calt" 1;
 }
 
 /* Largeur maîtrisée du contenu du header (grands / très grands écrans) */

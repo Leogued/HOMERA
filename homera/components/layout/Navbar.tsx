@@ -98,15 +98,15 @@ export function Navbar() {
   return (
     <header className="homera-header absolute top-0 inset-x-0 w-full bg-transparent text-white py-4 px-4 sm:px-8 xl:px-12 2xl:px-16 transition-colors duration-300 z-50 border-0">
       <div className="homera-header-container mx-auto flex items-center justify-between">
-        {/* Brand Logo — mot-symbole « HOMERA » en Script MT Bold */}
+        {/* Brand Logo — mot-symbole « HOMERA » en Script MT Bold (exclusif) */}
         <Link href="/" className="flex items-center group">
-          <span className="font-brand text-xl sm:text-2xl font-bold tracking-wide text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.7)] group-hover:scale-105 transition-transform">
+          <span className="homera-brand text-[1.1875rem] sm:text-[1.3125rem] text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.7)] group-hover:scale-105 transition-transform">
             HOMERA
           </span>
         </Link>
 
         {/* Center Navigation Pill Capsule (Desktop/Tablet landscape with Dropdowns) */}
-        <nav className="hidden lg:flex items-center bg-white/5 backdrop-blur-sm border border-white/10 px-5 xl:px-6 2xl:px-7 py-2.5 rounded-full shadow-[0_0_0_1px_rgba(255,255,255,0.04)] gap-4 xl:gap-6 2xl:gap-7 text-[13px] font-semibold text-white lg:ml-auto lg:mr-4 xl:mr-6 2xl:mr-8 relative">
+        <nav className="hidden lg:flex items-center bg-white/5 backdrop-blur-sm border border-white/10 px-5 xl:px-6 2xl:px-7 py-2.5 rounded-full shadow-[0_0_0_1px_rgba(255,255,255,0.04)] gap-4 xl:gap-6 2xl:gap-7 text-[12.5px] font-medium text-white lg:ml-auto lg:mr-4 xl:mr-6 2xl:mr-8 relative">
           {navItems.map((item) => (
             <div
               key={item.title}
@@ -123,7 +123,7 @@ export function Navbar() {
                   }
                   handleNavClick(e, item.href);
                 }}
-                className="hover:text-white/90 transition-colors inline-flex items-center gap-1 py-1"
+                className="hover:text-white/90 transition-colors inline-flex items-center gap-1 py-1 font-medium"
               >
                 <span>{item.title}</span>
                 {item.submenu && (
@@ -150,7 +150,7 @@ export function Navbar() {
                         key={sub.label}
                         href={sub.href}
                         onClick={(e) => handleNavClick(e, sub.href)}
-                        className="w-full text-center px-5 py-2 rounded-xl text-[11px] font-medium text-white/90 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
+                        className="w-full text-center px-5 py-2 rounded-xl text-[11.5px] font-medium tracking-[0.01em] text-white/90 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
                       >
                         {sub.label}
                       </Link>
@@ -167,7 +167,7 @@ export function Navbar() {
           <Link
             href="#login"
             onClick={(e) => handleNavClick(e, "#login")}
-            className="homera-font-script bg-white/8 hover:bg-white/12 text-white font-semibold text-[13px] px-5 py-2.5 rounded-full border border-white/15 backdrop-blur-sm transition-all shadow-sm"
+            className="bg-white/8 hover:bg-white/12 text-white font-medium text-[12.5px] tracking-[0.01em] px-5 py-2.5 rounded-full border border-white/15 backdrop-blur-sm transition-all shadow-sm"
           >
             Se connecter
           </Link>
@@ -175,7 +175,7 @@ export function Navbar() {
           <Link
             href="#register"
             onClick={(e) => handleNavClick(e, "#register")}
-            className="homera-font-script bg-black/15 hover:bg-black/25 text-white font-semibold text-[13px] px-5 py-2.5 rounded-full border border-white/15 backdrop-blur-sm transition-all shadow-sm"
+            className="bg-black/15 hover:bg-black/25 text-white font-medium text-[12.5px] tracking-[0.01em] px-5 py-2.5 rounded-full border border-white/15 backdrop-blur-sm transition-all shadow-sm"
           >
             Créer un compte
           </Link>
@@ -223,7 +223,7 @@ export function Navbar() {
       {/* Mobile & Tablet Dropdown Drawer Container */}
       {mobileMenuOpen && (
         <div className="lg:hidden homera-header-container mx-auto mt-4 pt-4 border-t border-white/10 space-y-4 max-h-[75vh] overflow-y-auto pr-1">
-          <div className="bg-[#F1E6D6] p-4 rounded-2xl text-stone-800 flex flex-col space-y-2 font-semibold text-[13px] shadow-xl">
+          <div className="bg-[#F1E6D6] p-4 rounded-2xl text-stone-800 flex flex-col space-y-2 font-medium text-[13px] tracking-[0.01em] shadow-xl">
             {navItems.map((item) => (
               <div key={item.title} className="border-b border-stone-300/40 last:border-0 py-1">
                 {item.submenu ? (
@@ -233,11 +233,11 @@ export function Navbar() {
                       onClick={() => toggleMobileSubmenu(item.title)}
                       className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 ${
                         activeMobileSubmenu === item.title
-                          ? "bg-[#C65D3B]/20 text-[#3E2418] font-bold border-l-4 border-[#C65D3B]"
+                          ? "bg-[#C65D3B]/20 text-[#3E2418] font-semibold border-l-4 border-[#C65D3B]"
                           : "text-stone-800 hover:text-[#3E2418] hover:bg-[#C65D3B]/10 active:bg-[#C65D3B]/15"
                       }`}
                     >
-                      <span className="text-sm">{item.title}</span>
+                      <span className="text-[13px]">{item.title}</span>
                       <ChevronDown
                         className={`w-4 h-4 transition-transform duration-200 ${
                           activeMobileSubmenu === item.title ? "rotate-180 text-[#C65D3B]" : "text-stone-500"
@@ -252,7 +252,7 @@ export function Navbar() {
                             key={sub.label}
                             href={sub.href}
                             onClick={(e) => handleNavClick(e, sub.href)}
-                            className="block py-2 px-3 text-xs text-stone-700 font-medium hover:text-[#3E2418] hover:bg-[#C65D3B]/20 active:bg-[#C65D3B]/30 rounded-lg text-left transition-all"
+                            className="block py-2 px-3 text-[12.5px] text-stone-700 font-medium hover:text-[#3E2418] hover:bg-[#C65D3B]/20 active:bg-[#C65D3B]/30 rounded-lg text-left transition-all"
                           >
                             {sub.label}
                           </Link>
@@ -264,7 +264,7 @@ export function Navbar() {
                   <Link
                     href={item.href}
                     onClick={(e) => handleNavClick(e, item.href)}
-                    className="block px-3 py-2.5 rounded-xl text-stone-800 text-sm hover:text-[#3E2418] hover:bg-[#C65D3B]/10 active:bg-[#C65D3B]/15 transition-all"
+                    className="block px-3 py-2.5 rounded-xl text-stone-800 text-[13px] hover:text-[#3E2418] hover:bg-[#C65D3B]/10 active:bg-[#C65D3B]/15 transition-all"
                   >
                     {item.title}
                   </Link>
@@ -277,14 +277,14 @@ export function Navbar() {
             <Link
               href="#login"
               onClick={(e) => handleNavClick(e, "#login")}
-              className="homera-font-script w-full text-center bg-homera-terracotta hover:bg-homera-terracotta-light text-[#2A170F] font-semibold text-[13px] py-3 rounded-full shadow-md"
+              className="w-full text-center bg-homera-terracotta hover:bg-homera-terracotta-light text-[#2A170F] font-medium text-[13px] tracking-[0.01em] py-3 rounded-full shadow-md"
             >
               Se connecter
             </Link>
             <Link
               href="#register"
               onClick={(e) => handleNavClick(e, "#register")}
-              className="homera-font-script w-full text-center bg-[#4A2C1D] hover:bg-[#5A3726] text-white font-semibold text-[13px] py-3 rounded-full border border-stone-600/50 shadow-md"
+              className="w-full text-center bg-[#4A2C1D] hover:bg-[#5A3726] text-white font-medium text-[13px] tracking-[0.01em] py-3 rounded-full border border-stone-600/50 shadow-md"
             >
               Créer un compte
             </Link>

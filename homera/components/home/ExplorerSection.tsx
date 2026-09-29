@@ -7,14 +7,14 @@ export function ExplorerSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-16">
         {/* Section Header */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold bg-homera-terracotta/10 text-homera-terracotta border border-homera-terracotta/30 uppercase tracking-widest">
+          <div className="inline-block px-4 py-1.5 rounded-full text-[11px] font-semibold bg-homera-terracotta/10 text-homera-terracotta border border-homera-terracotta/30 uppercase tracking-[0.16em]">
             Explorer par intention
           </div>
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground">
+          <h2 className="font-serif text-display-sm sm:text-display-md text-foreground">
             Une vision fluide de vos ambitions <br className="hidden sm:block" />
-            <span className="text-homera-terracotta italic">de vie au Bénin</span>
+            <span className="text-homera-terracotta homera-accent">de vie au Bénin</span>
           </h2>
-          <p className="text-muted text-base">
+          <p className="text-muted text-[13px] sm:text-[0.9375rem] leading-relaxed">
             Trouver, acheter ou louer un bien immobilier ne devrait jamais ressembler à un parcours du combattant.
           </p>
         </div>
@@ -22,14 +22,14 @@ export function ExplorerSection() {
         {/* 1. LOUER */}
         <div id="louer" className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center bg-card border border-border p-8 rounded-3xl shadow-card scroll-mt-24">
           <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-homera-brown/10 dark:bg-white/10 text-homera-brown dark:text-foreground text-xs font-semibold uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-homera-brown/10 dark:bg-white/10 text-homera-brown dark:text-foreground text-[11px] font-semibold uppercase tracking-[0.1em]">
               <Key className="w-4 h-4 text-homera-terracotta" />
               Louer • Habitation
             </div>
-            <h3 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
+            <h3 className="font-serif text-display-xs sm:text-display-sm text-foreground">
               Résidences de standing & appartements sans mauvaise surprise
             </h3>
-            <p className="text-muted leading-relaxed">
+            <p className="text-muted text-[0.9375rem] leading-relaxed">
               Pour se loger au quotidien à Cotonou ou Abomey-Calavi, accédez à des fiches descriptives complètes, des photos fidèles et une prise de rendez-vous de visite transparente.
             </p>
             <ul className="space-y-3 text-sm font-medium text-foreground">
@@ -55,7 +55,7 @@ export function ExplorerSection() {
             <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#c9a227_1px,transparent_1px)] [background-size:16px_16px]" />
             <div className="relative z-10 space-y-3">
               <Home className="w-12 h-12 text-homera-terracotta mx-auto" />
-              <h4 className="font-serif text-xl font-bold">Appartements & Villas</h4>
+              <h4 className="font-sans text-[15px] font-semibold tracking-[0.01em]">Appartements & Villas</h4>
               <p className="text-xs text-stone-300 max-w-xs mx-auto">
                 Du studio moderne à la villa familiale avec jardin à Fidjrossè ou Calavi.
               </p>
@@ -70,7 +70,7 @@ export function ExplorerSection() {
             <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#c9a227_1px,transparent_1px)] [background-size:16px_16px]" />
             <div className="relative z-10 space-y-3">
               <Key className="w-12 h-12 text-homera-terracotta mx-auto" />
-              <h4 className="font-serif text-xl font-bold">Terrains & Titres vérifiés</h4>
+              <h4 className="font-sans text-[15px] font-semibold tracking-[0.01em]">Terrains & Titres vérifiés</h4>
               <p className="text-xs text-stone-300 max-w-xs mx-auto">
                 Acquisitions sécurisées pour résidents au Bénin et diaspora.
               </p>
@@ -78,14 +78,14 @@ export function ExplorerSection() {
           </div>
 
           <div className="space-y-6 lg:order-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-homera-terracotta/10 text-homera-terracotta text-xs font-semibold uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-homera-terracotta/10 text-homera-terracotta text-[11px] font-semibold uppercase tracking-[0.1em]">
               <Home className="w-4 h-4 text-homera-terracotta" />
               Acheter • Patrimoine
             </div>
-            <h3 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
+            <h3 className="font-serif text-display-xs sm:text-display-sm text-foreground">
               Acquérir un bien ou du foncier avec traçabilité intégrée
             </h3>
-            <p className="text-muted leading-relaxed">
+            <p className="text-muted text-[0.9375rem] leading-relaxed">
               Investissez en toute confiance. HOMERA identifie les propriétaires réels et s&apos;assure des autorisations de vente avant toute mise en relation.
             </p>
             <ul className="space-y-3 text-sm font-medium text-foreground">
@@ -110,14 +110,14 @@ export function ExplorerSection() {
         {/* 3. SÉJOURNER */}
         <div id="sejour" className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center bg-card border border-border p-8 rounded-3xl shadow-card scroll-mt-24">
           <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-homera-brown/10 dark:bg-white/10 text-homera-brown dark:text-foreground text-xs font-semibold uppercase tracking-wider">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-homera-brown/10 dark:bg-white/10 text-homera-brown dark:text-foreground text-[11px] font-semibold uppercase tracking-[0.1em]">
               <Hotel className="w-4 h-4 text-homera-terracotta" />
               Séjour • Court Terme
             </div>
-            <h3 className="font-serif text-2xl sm:text-3xl font-bold text-foreground">
+            <h3 className="font-serif text-display-xs sm:text-display-sm text-foreground">
               L&apos;hospitalité béninoise dans des espaces de charme
             </h3>
-            <p className="text-muted leading-relaxed">
+            <p className="text-muted text-[0.9375rem] leading-relaxed">
               Voyageurs, professionnels en déplacement ou membres de la diaspora de passage au pays : réservez vos nuits ou semaines en toute tranquillité.
             </p>
             <ul className="space-y-3 text-sm font-medium text-foreground">
@@ -143,7 +143,7 @@ export function ExplorerSection() {
             <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#c9a227_1px,transparent_1px)] [background-size:16px_16px]" />
             <div className="relative z-10 space-y-3">
               <Hotel className="w-12 h-12 text-homera-terracotta mx-auto" />
-              <h4 className="font-serif text-xl font-bold">Séjours Meublés</h4>
+              <h4 className="font-sans text-[15px] font-semibold tracking-[0.01em]">Séjours Meublés</h4>
               <p className="text-xs text-stone-300 max-w-xs mx-auto">
                 Des hébergements prêts à vivre pour vos déplacements à Cotonou et Calavi.
               </p>

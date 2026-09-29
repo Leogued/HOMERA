@@ -21,19 +21,19 @@ export function Hero() {
         {/* Top Terracotta Pill Tag */}
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-white/5 text-homera-terracotta border border-homera-terracotta/30 backdrop-blur-md">
           <Sparkles className="w-3.5 h-3.5 text-homera-terracotta" />
-          <span className="uppercase tracking-widest text-[11px]">
+          <span className="uppercase tracking-[0.16em] text-[11px]">
             L&apos;ÈRE DE L&apos;IMMOBILIER NUMÉRIQUE
           </span>
         </div>
 
-        {/* Main Title */}
-        <h1 className="font-serif text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight max-w-4xl mx-auto">
+        {/* Main Title — DM Serif Display, graisse 400 (aucun faux gras) */}
+        <h1 className="font-serif text-display-sm sm:text-display-lg lg:text-display-xl text-white max-w-4xl mx-auto">
           L&apos;immobilier au Bénin en toute <br />
-          <span className="text-white italic">simplicité</span>
+          <span className="homera-accent text-[1.06em]">simplicité</span>
         </h1>
 
         {/* Subtitle */}
-        <p className="text-stone-300 text-sm sm:text-base max-w-2xl mx-auto font-sans leading-relaxed">
+        <p className="text-stone-300 text-sm sm:text-[0.9375rem] max-w-2xl mx-auto font-sans font-normal leading-relaxed">
           Immobilier en toute sérénité, sans surprise ni intermédiaire douteux — la plateforme de confiance pour tous vos projets au Bénin.
         </p>
 
@@ -43,7 +43,7 @@ export function Hero() {
           <div className="flex border-b border-stone-200 dark:border-white/10 pb-3 gap-2">
             <button
               onClick={() => setActiveIntent("acheter")}
-              className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${
+              className={`px-5 py-2 rounded-xl text-[13px] font-medium transition-all ${
                 activeIntent === "acheter"
                   ? "bg-[#2A170F] text-white shadow-md"
                   : "text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5"
@@ -53,7 +53,7 @@ export function Hero() {
             </button>
             <button
               onClick={() => setActiveIntent("louer")}
-              className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${
+              className={`px-5 py-2 rounded-xl text-[13px] font-medium transition-all ${
                 activeIntent === "louer"
                   ? "bg-[#2A170F] text-white shadow-md"
                   : "text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5"
@@ -63,7 +63,7 @@ export function Hero() {
             </button>
             <button
               onClick={() => setActiveIntent("sejour")}
-              className={`px-5 py-2 rounded-xl text-sm font-bold transition-all ${
+              className={`px-5 py-2 rounded-xl text-[13px] font-medium transition-all ${
                 activeIntent === "sejour"
                   ? "bg-[#2A170F] text-white shadow-md"
                   : "text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white hover:bg-stone-100 dark:hover:bg-white/5"
@@ -77,14 +77,14 @@ export function Hero() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
             {/* Localisation */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-stone-500 dark:text-stone-400 flex items-center gap-1">
+              <label className="text-[11px] font-semibold tracking-[0.02em] text-stone-500 dark:text-stone-400 flex items-center gap-1">
                 <MapPin className="w-3.5 h-3.5 text-homera-terracotta" />
                 Localisation
               </label>
               <select
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-[#2A170F] border border-stone-200 dark:border-white/10 text-stone-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-homera-terracotta"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-[#2A170F] border border-stone-200 dark:border-white/10 text-stone-800 dark:text-white text-[13px] font-normal focus:outline-none focus:ring-2 focus:ring-homera-terracotta"
               >
                 <option value="Cotonou">Cotonou (Fidjrossè, Akpakpa...)</option>
                 <option value="Abomey-Calavi">Abomey-Calavi (Tankpè, Akassato...)</option>
@@ -95,14 +95,14 @@ export function Hero() {
 
             {/* Type de bien */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-stone-500 dark:text-stone-400 flex items-center gap-1">
+              <label className="text-[11px] font-semibold tracking-[0.02em] text-stone-500 dark:text-stone-400 flex items-center gap-1">
                 <Building2 className="w-3.5 h-3.5 text-homera-terracotta" />
                 Type de bien
               </label>
               <select
                 value={propertyType}
                 onChange={(e) => setPropertyType(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-[#2A170F] border border-stone-200 dark:border-white/10 text-stone-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-homera-terracotta"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-[#2A170F] border border-stone-200 dark:border-white/10 text-stone-800 dark:text-white text-[13px] font-normal focus:outline-none focus:ring-2 focus:ring-homera-terracotta"
               >
                 <option value="">Tous les types</option>
                 <option value="appartement">Appartement / Studio</option>
@@ -114,14 +114,14 @@ export function Hero() {
 
             {/* Budget */}
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-stone-500 dark:text-stone-400 flex items-center gap-1">
+              <label className="text-[11px] font-semibold tracking-[0.02em] text-stone-500 dark:text-stone-400 flex items-center gap-1">
                 <Wallet className="w-3.5 h-3.5 text-homera-terracotta" />
                 Budget max (XOF)
               </label>
               <select
                 value={budget}
                 onChange={(e) => setBudget(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-[#2A170F] border border-stone-200 dark:border-white/10 text-stone-800 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-homera-terracotta"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-stone-50 dark:bg-[#2A170F] border border-stone-200 dark:border-white/10 text-stone-800 dark:text-white text-[13px] font-normal focus:outline-none focus:ring-2 focus:ring-homera-terracotta"
               >
                 <option value="">Indifférent</option>
                 <option value="100k">100 000 FCFA</option>
@@ -133,7 +133,7 @@ export function Hero() {
 
             {/* Submit Button */}
             <div>
-              <button className="w-full bg-[#2A170F] hover:bg-[#3A2116] text-white font-bold text-sm py-2.5 px-5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl">
+              <button className="w-full bg-[#2A170F] hover:bg-[#3A2116] text-white font-medium text-[13px] py-2.5 px-5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-xl">
                 <Search className="w-4 h-4 text-white" />
                 Rechercher
               </button>
