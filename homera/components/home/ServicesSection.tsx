@@ -30,13 +30,13 @@ export function ServicesSection() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         {/* Section Header */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-block px-4 py-1.5 rounded-full text-xs font-semibold bg-homera-terracotta/10 text-homera-terracotta border border-homera-terracotta/30 uppercase tracking-widest">
+          <div className="inline-block px-4 py-1.5 rounded-full text-[11px] font-semibold bg-homera-terracotta/10 text-homera-terracotta border border-homera-terracotta/30 uppercase tracking-[0.16em]">
             Écosystème Complémentaire
           </div>
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground">
+          <h2 className="font-serif text-display-sm sm:text-display-md text-foreground">
             Services sur-mesure pour votre habitat
           </h2>
-          <p className="text-muted text-base">
+          <p className="text-muted text-[13px] sm:text-[0.9375rem] leading-relaxed">
             Trouver un bien n&apos;est que la première étape. HOMERA vous accompagne au quotidien dans la gestion, l&apos;entretien et la valorisation de votre patrimoine.
           </p>
         </div>
@@ -54,15 +54,15 @@ export function ServicesSection() {
                   <div className="w-12 h-12 rounded-xl bg-homera-terracotta/10 text-homera-terracotta flex items-center justify-center group-hover:scale-110 transition-transform">
                     <Icon className="w-6 h-6" />
                   </div>
-                  <h3 className="font-serif text-xl font-bold text-foreground">
+                  <h3 className="text-[15px] font-semibold text-foreground leading-snug">
                     {service.title}
                   </h3>
-                  <p className="text-xs text-muted leading-relaxed">
+                  <p className="text-[12.5px] text-muted leading-relaxed">
                     {service.desc}
                   </p>
                 </div>
                 <div className="pt-2">
-                  <button className="text-xs font-semibold text-homera-brown dark:text-homera-terracotta hover:underline flex items-center gap-1">
+                  <button className="text-[12.5px] font-medium text-homera-brown dark:text-homera-terracotta hover:underline flex items-center gap-1">
                     En savoir plus
                     <ArrowRight className="w-3.5 h-3.5" />
                   </button>

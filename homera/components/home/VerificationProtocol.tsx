@@ -51,14 +51,14 @@ export function VerificationProtocol() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-12">
         {/* Title Header */}
         <div className="text-center space-y-4 max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-semibold bg-homera-terracotta/10 text-homera-terracotta border border-homera-terracotta/30 uppercase tracking-widest">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-[11px] font-semibold bg-homera-terracotta/10 text-homera-terracotta border border-homera-terracotta/30 uppercase tracking-[0.16em]">
             <ShieldCheck className="w-4 h-4" />
             Transparence & Rigueur
           </div>
-          <h2 className="font-serif text-3xl sm:text-4xl font-bold text-foreground">
+          <h2 className="font-serif text-display-sm sm:text-display-md text-foreground">
             Le protocole de vérification rigoureux HOMERA
           </h2>
-          <p className="text-muted text-base">
+          <p className="text-muted text-[13px] sm:text-[0.9375rem] leading-relaxed">
             Parce que la confiance ne se décrète pas, HOMERA applique une méthode structurée en 7 étapes avant d&apos;accorder l&apos;autorisation de publication.
           </p>
         </div>
@@ -73,7 +73,7 @@ export function VerificationProtocol() {
                 className="bg-card border border-border p-5 rounded-2xl shadow-card hover:border-homera-terracotta transition-all duration-300 flex flex-col justify-between space-y-4 group"
               >
                 <div className="flex items-center justify-between">
-                  <span className="font-serif text-xl font-bold text-homera-terracotta">
+                  <span className="font-serif text-display-xs text-homera-terracotta homera-num">
                     {step.num}
                   </span>
                   <div className="p-2 rounded-lg bg-homera-brown/10 dark:bg-white/10 text-homera-brown dark:text-homera-terracotta group-hover:scale-110 transition-transform">
@@ -81,7 +81,7 @@ export function VerificationProtocol() {
                   </div>
                 </div>
                 <div>
-                  <h3 className="font-bold text-sm text-foreground font-sans">
+                  <h3 className="text-[13px] font-semibold text-foreground font-sans leading-snug">
                     {step.title}
                   </h3>
                   <p className="text-xs text-muted mt-1 leading-relaxed">
@@ -98,8 +98,8 @@ export function VerificationProtocol() {
           <div className="p-3 rounded-xl bg-homera-brown text-homera-terracotta flex-shrink-0">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <div className="space-y-1.5 text-sm">
-            <h4 className="font-bold text-foreground font-sans">
+          <div className="space-y-1.5 text-[13px]">
+            <h4 className="text-[15px] font-semibold text-foreground font-sans leading-snug">
               Attention : Ce que « Vérifié par HOMERA » signifie réellement
             </h4>
             <p className="text-muted leading-relaxed">
