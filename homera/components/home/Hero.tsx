@@ -12,9 +12,9 @@ export function Hero() {
   const [budget, setBudget] = useState("");
 
   return (
-    <section className="relative overflow-hidden bg-[#2A170F] text-white pt-[calc(4rem+72px)] pb-16 sm:pt-[calc(6rem+72px)] sm:pb-24">
+    <section className="relative overflow-hidden bg-[#2A170F] text-white pt-34 pb-16 sm:pt-42 sm:pb-24">
       {/* Subtle Background Glows */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-150 h-75 bg-orange-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 right-10 w-96 h-96 bg-homera-terracotta/5 rounded-full blur-3xl pointer-events-none" />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-8 text-center">
