@@ -66,7 +66,7 @@ export function TrustVisionSection() {
         </div>
 
         {/* Final Conversion Banner */}
-        <div className="bg-gradient-to-r from-homera-brown via-homera-brown-light to-stone-900 text-white rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-card">
+        <div className="bg-linear-to-r from-homera-brown via-homera-brown-light to-stone-900 text-white rounded-3xl p-8 sm:p-12 text-center space-y-6 shadow-card">
           <h3 className="font-serif text-display-xs sm:text-display-sm">
             Votre prochain bien est peut-être ici.
           </h3>

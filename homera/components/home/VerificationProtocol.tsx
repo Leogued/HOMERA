@@ -95,7 +95,7 @@ export function VerificationProtocol() {
 
         {/* Clarification Alert Box */}
         <div className="bg-homera-brown/5 dark:bg-homera-brown/20 border border-homera-brown/20 rounded-2xl p-6 flex flex-col sm:flex-row items-start gap-4">
-          <div className="p-3 rounded-xl bg-homera-brown text-homera-terracotta flex-shrink-0">
+          <div className="p-3 rounded-xl bg-homera-brown text-homera-terracotta shrink-0">
             <AlertCircle className="w-6 h-6" />
           </div>
           <div className="space-y-1.5 text-[13px]">

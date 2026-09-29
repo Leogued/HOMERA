@@ -145,14 +145,14 @@ export function FeaturedProperties() {
               {/* Image Container with Badges */}
               <div className="relative h-56 bg-stone-800 overflow-hidden flex items-center justify-center">
                 {/* Fallback gradient placeholder */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent z-10" />
+                <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent z-10" />
                 <div className="text-stone-400 text-xs font-mono uppercase tracking-widest z-0">
                   {property.title}
                 </div>
 
                 {/* Intent Tag (Top Left) */}
                 <div className="absolute top-4 left-4 z-20">
-                  <span className="px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-[0.1em] bg-homera-brown/90 backdrop-blur-md text-white border border-white/20">
+                  <span className="px-3 py-1 rounded-full text-[11px] font-semibold uppercase tracking-widest bg-homera-brown/90 backdrop-blur-md text-white border border-white/20">
                     {property.intent === "louer" && "À Louer"}
                     {property.intent === "acheter" && "À Vendre"}
                     {property.intent === "sejour" && "Séjour"}

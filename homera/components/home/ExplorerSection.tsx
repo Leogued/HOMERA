@@ -22,7 +22,7 @@ export function ExplorerSection() {
         {/* 1. LOUER */}
         <div id="louer" className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center bg-card border border-border p-8 rounded-3xl shadow-card scroll-mt-24">
           <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-homera-brown/10 dark:bg-white/10 text-homera-brown dark:text-foreground text-[11px] font-semibold uppercase tracking-[0.1em]">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-homera-brown/10 dark:bg-white/10 text-homera-brown dark:text-foreground text-[11px] font-semibold uppercase tracking-widest">
               <Key className="w-4 h-4 text-homera-terracotta" />
               Louer • Habitation
             </div>
@@ -34,11 +34,11 @@ export function ExplorerSection() {
             </p>
             <ul className="space-y-3 text-sm font-medium text-foreground">
               <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-5 h-5 text-homera-terracotta flex-shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-homera-terracotta shrink-0" />
                 <span>Visites sur créneau planifié et avis vérifiés</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-5 h-5 text-homera-terracotta flex-shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-homera-terracotta shrink-0" />
                 <span>Parcours de location structuré (Demande → Contrat → Remise des clés)</span>
               </li>
             </ul>
@@ -51,8 +51,8 @@ export function ExplorerSection() {
           </div>
 
           {/* Visual Showcase Block */}
-          <div className="relative h-64 sm:h-80 rounded-2xl bg-gradient-to-tr from-homera-brown via-homera-brown-light to-stone-800 overflow-hidden flex items-center justify-center p-6 text-white text-center shadow-lg">
-            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#c9a227_1px,transparent_1px)] [background-size:16px_16px]" />
+          <div className="relative h-64 sm:h-80 rounded-2xl bg-linear-to-tr from-homera-brown via-homera-brown-light to-stone-800 overflow-hidden flex items-center justify-center p-6 text-white text-center shadow-lg">
+            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#c9a227_1px,transparent_1px)] bg-size-[16px_16px]" />
             <div className="relative z-10 space-y-3">
               <Home className="w-12 h-12 text-homera-terracotta mx-auto" />
               <h4 className="font-sans text-[15px] font-semibold tracking-[0.01em]">Appartements & Villas</h4>
@@ -66,8 +66,8 @@ export function ExplorerSection() {
         {/* 2. ACHETER */}
         <div id="acheter" className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center bg-card border border-border p-8 rounded-3xl shadow-card lg:flex-row-reverse scroll-mt-24">
           {/* Visual Showcase Block */}
-          <div className="relative h-64 sm:h-80 rounded-2xl bg-gradient-to-tr from-stone-900 via-homera-brown to-stone-800 overflow-hidden flex items-center justify-center p-6 text-white text-center shadow-lg lg:order-1">
-            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#c9a227_1px,transparent_1px)] [background-size:16px_16px]" />
+          <div className="relative h-64 sm:h-80 rounded-2xl bg-linear-to-tr from-stone-900 via-homera-brown to-stone-800 overflow-hidden flex items-center justify-center p-6 text-white text-center shadow-lg lg:order-1">
+            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#c9a227_1px,transparent_1px)] bg-size-[16px_16px]" />
             <div className="relative z-10 space-y-3">
               <Key className="w-12 h-12 text-homera-terracotta mx-auto" />
               <h4 className="font-sans text-[15px] font-semibold tracking-[0.01em]">Terrains & Titres vérifiés</h4>
@@ -78,7 +78,7 @@ export function ExplorerSection() {
           </div>
 
           <div className="space-y-6 lg:order-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-homera-terracotta/10 text-homera-terracotta text-[11px] font-semibold uppercase tracking-[0.1em]">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-homera-terracotta/10 text-homera-terracotta text-[11px] font-semibold uppercase tracking-widest">
               <Home className="w-4 h-4 text-homera-terracotta" />
               Acheter • Patrimoine
             </div>
@@ -90,11 +90,11 @@ export function ExplorerSection() {
             </p>
             <ul className="space-y-3 text-sm font-medium text-foreground">
               <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-5 h-5 text-homera-terracotta flex-shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-homera-terracotta shrink-0" />
                 <span>Examen des documents de propriété et autorisations de mandat</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-5 h-5 text-homera-terracotta flex-shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-homera-terracotta shrink-0" />
                 <span>Historique du bien consultable pour une transaction sereine</span>
               </li>
             </ul>
@@ -110,7 +110,7 @@ export function ExplorerSection() {
         {/* 3. SÉJOURNER */}
         <div id="sejour" className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center bg-card border border-border p-8 rounded-3xl shadow-card scroll-mt-24">
           <div className="space-y-6">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-homera-brown/10 dark:bg-white/10 text-homera-brown dark:text-foreground text-[11px] font-semibold uppercase tracking-[0.1em]">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-homera-brown/10 dark:bg-white/10 text-homera-brown dark:text-foreground text-[11px] font-semibold uppercase tracking-widest">
               <Hotel className="w-4 h-4 text-homera-terracotta" />
               Séjour • Court Terme
             </div>
@@ -122,11 +122,11 @@ export function ExplorerSection() {
             </p>
             <ul className="space-y-3 text-sm font-medium text-foreground">
               <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-5 h-5 text-homera-terracotta flex-shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-homera-terracotta shrink-0" />
                 <span>Disponibilités actualisées et gestion d&apos;accueil personnalisée</span>
               </li>
               <li className="flex items-center gap-2.5">
-                <CheckCircle2 className="w-5 h-5 text-homera-terracotta flex-shrink-0" />
+                <CheckCircle2 className="w-5 h-5 text-homera-terracotta shrink-0" />
                 <span>Logements meublés et équipés aux standards vérifiés</span>
               </li>
             </ul>
@@ -139,8 +139,8 @@ export function ExplorerSection() {
           </div>
 
           {/* Visual Showcase Block */}
-          <div className="relative h-64 sm:h-80 rounded-2xl bg-gradient-to-tr from-amber-950 via-homera-brown to-stone-900 overflow-hidden flex items-center justify-center p-6 text-white text-center shadow-lg">
-            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#c9a227_1px,transparent_1px)] [background-size:16px_16px]" />
+          <div className="relative h-64 sm:h-80 rounded-2xl bg-linear-to-tr from-amber-950 via-homera-brown to-stone-900 overflow-hidden flex items-center justify-center p-6 text-white text-center shadow-lg">
+            <div className="absolute inset-0 opacity-20 bg-[radial-gradient(#c9a227_1px,transparent_1px)] bg-size-[16px_16px]" />
             <div className="relative z-10 space-y-3">
               <Hotel className="w-12 h-12 text-homera-terracotta mx-auto" />
               <h4 className="font-sans text-[15px] font-semibold tracking-[0.01em]">Séjours Meublés</h4>
