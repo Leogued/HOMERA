@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "images": "node scripts/build-images.mjs",
+    "test": "node scripts/test-motion.mjs",
+    "audit:home": "node scripts/audit-home.mjs"
   },
   "dependencies": {
     "lucide-react": "^1.47.0",

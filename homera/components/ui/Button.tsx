@@ -1,4 +1,4 @@
-import type { ButtonHTMLAttributes } from "react";
+import type { ButtonHTMLAttributes, Ref } from "react";
 
 type ButtonVariant = "primary" | "accent" | "outline" | "ghost";
 type ButtonSize = "sm" | "md" | "lg";
@@ -6,13 +6,14 @@ type ButtonSize = "sm" | "md" | "lg";
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant;
   size?: ButtonSize;
+  ref?: Ref<HTMLButtonElement>;
 }
 
 const variants: Record<ButtonVariant, string> = {
   primary:
     "bg-homera-brown text-white hover:bg-homera-brown-light dark:bg-homera-brown-light dark:hover:bg-homera-brown",
   accent:
-    "bg-homera-terracotta text-white hover:bg-homera-terracotta-light dark:bg-homera-terracotta dark:hover:bg-homera-terracotta-light",
+    "homera-accent-button text-white",
   outline:
     "border border-border bg-transparent text-foreground hover:border-homera-brown hover:text-homera-brown dark:hover:border-homera-terracotta dark:hover:text-homera-terracotta",
   ghost:
@@ -34,6 +35,7 @@ export function Button({
   return (
     <button
       className={`
+        homera-press
         inline-flex items-center justify-center
         rounded-lg
         font-medium
@@ -42,6 +44,8 @@ export function Button({
         focus-visible:outline-none
         focus-visible:ring-2
         focus-visible:ring-homera-terracotta
+        focus-visible:ring-offset-2
+        focus-visible:ring-offset-background
         disabled:pointer-events-none
         disabled:opacity-50
         ${variants[variant]}

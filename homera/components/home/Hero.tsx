@@ -1,299 +1,124 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { createPortal } from "react-dom";
-import { Check, ChevronDown, Search } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { ArrowDown, Pause, Play } from "lucide-react";
+import { SearchModule } from "@/components/home/SearchModule";
+import { useSearch } from "@/components/providers/SearchProvider";
+import { cssVars, useMotionPreferences, usePointerMotion, useSceneMotion } from "@/lib/motion";
+import { phase } from "@/lib/motion-math";
+import { CHAPTERS } from "@/lib/content";
 
-type DropdownName = "project" | "location" | "propertyType" | "budget";
-type SelectDropdownName = Exclude<DropdownName, "budget">;
-type DropdownOption = { value: string; label: string };
-
-const selectOptions: Record<SelectDropdownName, DropdownOption[]> = {
-  project: [
-    { value: "acheter", label: "Acheter" },
-    { value: "louer", label: "Louer" },
-    { value: "sejour", label: "Séjour" },
-  ],
-  location: [
-    { value: "Cotonou", label: "Cotonou (Fidjrossè, Akpakpa...)" },
-    { value: "Abomey-Calavi", label: "Abomey-Calavi (Tankpè, Akassato...)" },
-    { value: "Fidjrossè", label: "Fidjrossè" },
-    { value: "Akpakpa", label: "Akpakpa" },
-    { value: "Tankpè", label: "Tankpè" },
-    { value: "Akassato", label: "Akassato" },
-    { value: "Porto-Novo", label: "Porto-Novo" },
-    { value: "Ouidah", label: "Ouidah" },
-  ],
-  propertyType: [
-    { value: "appartement", label: "Appartement" },
-    { value: "studio", label: "Studio" },
-    { value: "villa", label: "Villa" },
-    { value: "maison", label: "Maison" },
-    { value: "terrain", label: "Terrain nu" },
-    { value: "parcelle", label: "Parcelle" },
-    { value: "local", label: "Local commercial" },
-  ],
-};
-
-const budgetOptions: DropdownOption[] = [
-  { value: "100 000 FCFA", label: "100 000 FCFA" },
-  { value: "250 000 FCFA", label: "250 000 FCFA" },
-  { value: "500 000 FCFA", label: "500 000 FCFA" },
-  { value: "1 000 000 FCFA", label: "1 000 000 FCFA" },
-  { value: "2 000 000 FCFA", label: "2 000 000 FCFA" },
-];
-
-const dropdownLabels: Record<DropdownName, string> = {
-  project: "Projet",
-  location: "Localisation",
-  propertyType: "Type de bien",
-  budget: "Montant",
-};
-
+/* Cadrage, vidéo, titre et recherche d'origine conservés.
+   Trois couches indépendantes : la vidéo dérive à peine, le titre se
+   retire, la recherche reste présente plus longtemps. Aucun scroll détourné. */
 export function Hero() {
-  const [project, setProject] = useState("");
-  const [location, setLocation] = useState("");
-  const [propertyType, setPropertyType] = useState("");
-  const [budget, setBudget] = useState("");
-  const [activeDropdown, setActiveDropdown] = useState<DropdownName | null>(null);
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; left: number; width: number; maxHeight: number } | null>(null);
-  const searchBarRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const activeTriggerRef = useRef<HTMLElement | null>(null);
+  const [entered, setEntered] = useState(false);
+  const [userPaused, setUserPaused] = useState(false);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const { reduced, compact } = useMotionPreferences();
+  const { isSearching } = useSearch();
 
-  const openDropdown = (name: DropdownName, anchor: HTMLElement) => {
-    const rect = anchor.getBoundingClientRect();
-    const width = Math.min(Math.max(rect.width, 192), window.innerWidth - 24);
-    const left = Math.min(Math.max(rect.left, 12), window.innerWidth - width - 12);
-    const optionCount = name === "budget" ? budgetOptions.length : selectOptions[name].length;
-    const menuHeight = Math.min(256, optionCount * 40 + 12);
-    const opensAbove =
-      rect.bottom + menuHeight + 20 > window.innerHeight &&
-      rect.top > menuHeight + 20;
-    const top = opensAbove ? rect.top - menuHeight - 8 : rect.bottom + 8;
-
-    activeTriggerRef.current = anchor;
-    setDropdownPosition({
-      top,
-      left,
-      width,
-      maxHeight: opensAbove
-        ? Math.min(menuHeight, rect.top - 20)
-        : Math.max(96, Math.min(menuHeight, window.innerHeight - top - 12)),
-    });
-    setActiveDropdown(name);
-    setIsDropdownOpen(true);
-  };
-
-  const toggleDropdown = (name: DropdownName, anchor: HTMLElement) => {
-    if (isDropdownOpen && activeDropdown === name) {
-      setIsDropdownOpen(false);
-      return;
-    }
-    openDropdown(name, anchor);
-  };
+  const update = useCallback((element: HTMLElement, progress: number) => {
+    const exit = phase(progress, 0.06, 0.88);
+    element.style.setProperty("--hero-copy-y", `${(-exit * (compact ? 28 : 64)).toFixed(2)}px`);
+    element.style.setProperty("--hero-copy-opacity", (1 - exit).toFixed(4));
+    element.style.setProperty("--hero-search-y", `${(-progress * (compact ? 8 : 20)).toFixed(2)}px`);
+    element.style.setProperty("--hero-search-opacity", (1 - phase(progress, 0.54, 1)).toFixed(4));
+    element.style.setProperty("--hero-video-scale", (1 + progress * 0.018).toFixed(5));
+    element.style.setProperty("--hero-video-y", `${(progress * Math.min(5, element.offsetHeight * 0.004)).toFixed(2)}px`);
+    element.style.setProperty("--hero-veil", (0.35 + progress * 0.12).toFixed(4));
+  }, [compact]);
+  const sectionRef = useSceneMotion<HTMLElement>(update, { enabled: !reduced, mode: "exit", response: 75 });
+  const pointerRef = usePointerMotion<HTMLDivElement>({ strength: 5, enabled: !reduced, sourceRef: sectionRef });
 
   useEffect(() => {
-    if (!isDropdownOpen) return;
+    const frame = requestAnimationFrame(() => setEntered(true));
+    return () => cancelAnimationFrame(frame);
+  }, []);
 
-    const closeOnOutsideClick = (event: PointerEvent) => {
-      const target = event.target;
-      if (
-        target instanceof Node &&
-        !searchBarRef.current?.contains(target) &&
-        !menuRef.current?.contains(target)
-      ) {
-        setIsDropdownOpen(false);
-      }
+  // Une vidéo hors champ ou un onglet masqué ne doit pas consommer de décodage.
+  useEffect(() => {
+    const video = videoRef.current;
+    const section = sectionRef.current;
+    if (!video || !section) return;
+    let visible = section.getBoundingClientRect().bottom > 0;
+    const sync = () => {
+      if (reduced || userPaused || !visible || document.hidden || section.closest("[inert]")) video.pause();
+      else void video.play().catch(() => {});
     };
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsDropdownOpen(false);
-        activeTriggerRef.current?.focus();
-      }
-    };
-    const closeOnViewportChange = () => setIsDropdownOpen(false);
+    const observer = typeof IntersectionObserver !== "undefined"
+      ? new IntersectionObserver(([entry]) => { visible = entry.isIntersecting; sync(); }) : null;
+    observer?.observe(section);
+    const page = section.closest("main");
+    const overlay = typeof MutationObserver !== "undefined" ? new MutationObserver(sync) : null;
+    if (page) overlay?.observe(page, { attributes: true, attributeFilter: ["inert"] });
+    document.addEventListener("visibilitychange", sync);
+    sync();
+    return () => { observer?.disconnect(); overlay?.disconnect(); document.removeEventListener("visibilitychange", sync); };
+  }, [reduced, userPaused, sectionRef]);
 
-    document.addEventListener("pointerdown", closeOnOutsideClick);
-    document.addEventListener("keydown", closeOnEscape);
-    window.addEventListener("resize", closeOnViewportChange);
-    window.addEventListener("scroll", closeOnViewportChange, true);
-
-    return () => {
-      document.removeEventListener("pointerdown", closeOnOutsideClick);
-      document.removeEventListener("keydown", closeOnEscape);
-      window.removeEventListener("resize", closeOnViewportChange);
-      window.removeEventListener("scroll", closeOnViewportChange, true);
-    };
-  }, [isDropdownOpen]);
-
-  const values: Record<DropdownName, string> = { project, location, propertyType, budget };
-  const options = activeDropdown === "budget"
-    ? budgetOptions
-    : activeDropdown
-      ? selectOptions[activeDropdown]
-      : [];
-  const activeValue = activeDropdown ? values[activeDropdown] : "";
-
-  const renderSelectDropdown = (name: SelectDropdownName) => {
-    const selected = selectOptions[name].find((option) => option.value === values[name]);
-    const isOpen = isDropdownOpen && activeDropdown === name;
-
-    return (
-      <div className="relative flex h-12 min-w-0 flex-1 items-center">
-        <button
-          type="button"
-          role="combobox"
-          aria-label={dropdownLabels[name]}
-          aria-haspopup="listbox"
-          aria-expanded={isOpen}
-          aria-controls="homera-search-dropdown"
-          onClick={(event) => toggleDropdown(name, event.currentTarget)}
-          onKeyDown={(event) => {
-            if (event.key === "ArrowDown") {
-              event.preventDefault();
-              openDropdown(name, event.currentTarget);
-              requestAnimationFrame(() => menuRef.current?.querySelector<HTMLButtonElement>("[role=option]")?.focus());
-            }
-          }}
-          className={`flex h-12 w-full min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-[13px] font-medium outline-none transition-colors hover:bg-stone-100 focus:bg-stone-100 dark:text-stone-100 dark:hover:bg-white/5 dark:focus:bg-white/5 ${selected ? "text-stone-700" : "text-stone-500 dark:text-stone-400"}`}
-        >
-          <span className="truncate">{selected?.label ?? dropdownLabels[name]}</span>
-          <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-stone-400 transition-transform duration-150 ${isOpen ? "rotate-180" : ""}`} aria-hidden="true" />
-        </button>
-      </div>
-    );
-  };
-
-  const chooseOption = (option: DropdownOption) => {
-    switch (activeDropdown) {
-      case "project":
-        setProject(option.value);
-        break;
-      case "location":
-        setLocation(option.value);
-        break;
-      case "propertyType":
-        setPropertyType(option.value);
-        break;
-      case "budget":
-        setBudget(option.value);
-        break;
-    }
-    setIsDropdownOpen(false);
-  };
+  const reveal = (delay: number, blur = 0) =>
+    cssVars({ "--reveal-delay": `${delay}ms`, "--reveal-blur": `${blur}px` });
 
   return (
-    <section className="relative isolate overflow-hidden bg-black text-white pt-34 pb-16 sm:pt-42 sm:pb-24 lg:min-h-svh">
-      <video
-        className="absolute inset-0 h-full w-full object-cover"
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-        aria-hidden="true"
-      >
-        <source src="/video/background_video.mp4" type="video/mp4" />
-      </video>
-      <div className="absolute inset-0 bg-black/35" aria-hidden="true" />
+    <section ref={sectionRef} id="hero"
+      className="homera-scene homera-hero homera-on-dark relative isolate min-h-svh overflow-hidden bg-black pt-34 pb-16 text-white sm:pt-42 sm:pb-24 lg:min-h-svh"
+      aria-label="Accueil HOMERA">
+      <div aria-hidden="true" className="homera-hero-video absolute inset-0">
+        <video ref={videoRef} className="absolute inset-0 h-full w-full object-cover"
+          autoPlay muted loop playsInline preload="auto">
+          <source src="/video/background_video.mp4" type="video/mp4" />
+        </video>
+      </div>
+      <div aria-hidden="true" className="homera-hero-veil absolute inset-0" />
+      <div aria-hidden="true" className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_10%,transparent_35%,rgba(0,0,0,0.55)_100%)]" />
+      <div aria-hidden="true" className="homera-grain-layer absolute inset-0 z-[2]" />
+      <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-36 bg-gradient-to-b from-transparent to-background sm:h-48" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 space-y-8 text-center lg:mt-[max(0px,calc(100svh-29rem))]">
-        {/* Main Title — DM Serif Display, graisse 400 (aucun faux gras) */}
-        <h1 className="font-serif text-display-sm sm:text-display-lg lg:text-display-xl text-white max-w-4xl mx-auto lg:-translate-y-[max(7rem,calc(50svh-12.5rem))]">
-          L&apos;immobilier au Bénin en toute <br />
-          <span className="homera-accent text-[1.06em]">simplicité</span>
-        </h1>
-
-        {/* Subtitle */}
-        <p className="text-stone-300 text-sm sm:text-[0.9375rem] max-w-2xl mx-auto font-sans font-normal leading-relaxed lg:-translate-y-[max(7rem,calc(50svh-12.5rem))]">
-          Immobilier en toute sérénité, sans surprise ni intermédiaire douteux — la plateforme de confiance pour tous vos projets au Bénin.
-        </p>
-
-        <div ref={searchBarRef} className="mt-8 mx-auto flex h-17 w-full max-w-4xl items-center overflow-x-auto rounded-full border border-stone-200/50 bg-card p-2 shadow-2xl scrollbar-none dark:border-white/10 dark:bg-[#2B1A12] [&::-webkit-scrollbar]:hidden">
-          <div className="flex h-12 min-w-140 flex-1 items-center sm:min-w-0">
-            {renderSelectDropdown("project")}
-            <span className="h-7 w-px shrink-0 bg-stone-200 dark:bg-white/10" aria-hidden="true" />
-            {renderSelectDropdown("location")}
-            <span className="h-7 w-px shrink-0 bg-stone-200 dark:bg-white/10" aria-hidden="true" />
-            {renderSelectDropdown("propertyType")}
-            <span className="h-7 w-px shrink-0 bg-stone-200 dark:bg-white/10" aria-hidden="true" />
-            <div className="relative flex h-12 min-w-0 flex-1 items-center">
-              <input
-                type="text"
-                inputMode="decimal"
-                aria-label="Montant"
-                placeholder="Montant"
-                value={budget}
-                onChange={(e) => setBudget(e.target.value)}
-                onFocus={(event) => openDropdown("budget", event.currentTarget)}
-                onKeyDown={(event) => {
-                  if (event.key === "ArrowDown") {
-                    event.preventDefault();
-                    openDropdown("budget", event.currentTarget);
-                    requestAnimationFrame(() => menuRef.current?.querySelector<HTMLButtonElement>("[role=option]")?.focus());
-                  }
-                  if (event.key === "Enter") setIsDropdownOpen(false);
-                }}
-                className="h-12 w-full min-w-0 rounded-full bg-transparent py-3 pl-2 pr-7 text-center text-[13px] font-medium text-stone-700 outline-none placeholder:text-stone-500 transition-colors hover:bg-stone-100 focus:bg-stone-100 dark:text-stone-100 dark:placeholder:text-stone-400 dark:hover:bg-white/5 dark:focus:bg-white/5"
-              />
-              <ChevronDown className={`pointer-events-none absolute right-2 h-3.5 w-3.5 text-stone-400 transition-transform duration-150 ${isDropdownOpen && activeDropdown === "budget" ? "rotate-180" : ""}`} aria-hidden="true" />
+      <div className="relative z-10 mx-auto flex min-h-[inherit] max-w-7xl flex-col px-4 sm:px-6 lg:px-8">
+        <div className="space-y-8 text-center lg:mt-[max(0px,calc(100svh-29rem))]">
+          <p className="homera-reveal flex items-center justify-center gap-3 text-[10.5px] font-medium uppercase tracking-[0.42em] text-white/65"
+            data-revealed={entered} style={reveal(640)}>
+            <span aria-hidden="true" className="h-px w-8 bg-white/30" />
+            {CHAPTERS[0].index} — {CHAPTERS[0].label}
+            <span aria-hidden="true" className="h-px w-8 bg-white/30" />
+          </p>
+          <div ref={pointerRef} className="homera-hero-pointer space-y-8">
+            <div className="homera-hero-copy">
+              <div className="homera-reveal" data-revealed={entered} style={reveal(90)}>
+                <h1 className="font-serif text-display-sm sm:text-display-lg lg:text-display-xl text-white max-w-4xl mx-auto lg:-translate-y-[max(7rem,calc(50svh-12.5rem))]">
+                  L&apos;immobilier au Bénin en toute <br />
+                  <span className="homera-accent text-[1.06em]">simplicité</span>
+                </h1>
+              </div>
             </div>
-            <button
-              type="button"
-              aria-label="Rechercher"
-              title="Rechercher"
-              className="ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#2A170F] text-white transition-colors hover:bg-[#3A2116] focus:outline-none focus:ring-2 focus:ring-homera-terracotta focus:ring-offset-2"
-            >
-              <Search className="h-4 w-4" aria-hidden="true" />
-            </button>
+            <div className="homera-hero-copy">
+              <div className="homera-reveal" data-revealed={entered} style={reveal(240)}>
+                <p className="text-stone-300 text-sm sm:text-[0.9375rem] max-w-2xl mx-auto font-sans font-normal leading-relaxed lg:-translate-y-[max(7rem,calc(50svh-12.5rem))]">
+                  Immobilier en toute sérénité, sans surprise ni intermédiaire douteux — la
+                  plateforme de confiance pour tous vos projets au Bénin.
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="homera-reveal mt-8" data-revealed={entered} style={reveal(400, 2)}>
+            <div className="homera-hero-search"><SearchModule /></div>
           </div>
         </div>
-        {activeDropdown && dropdownPosition && typeof document !== "undefined" && createPortal(
-          <div
-            id="homera-search-dropdown"
-            ref={menuRef}
-            role="listbox"
-            aria-label={dropdownLabels[activeDropdown]}
-            aria-hidden={!isDropdownOpen}
-            inert={!isDropdownOpen}
-            className={`homera-dropdown-menu fixed z-50 overflow-y-auto rounded-xl border border-stone-200 bg-[#fffdf9] p-1.5 text-stone-800 shadow-xl transition-all duration-150 ease-out motion-reduce:transition-none dark:border-white/10 dark:bg-[#2B1A12] dark:text-white ${isDropdownOpen ? "pointer-events-auto translate-y-0 scale-100 opacity-100 homera-dropdown-enter" : "pointer-events-none translate-y-1 scale-[.99] opacity-0"}`}
-            style={{
-              top: dropdownPosition.top,
-              left: dropdownPosition.left,
-              width: dropdownPosition.width,
-              maxHeight: dropdownPosition.maxHeight,
-            }}
-            onKeyDown={(event) => {
-              const menuOptions = [...(menuRef.current?.querySelectorAll<HTMLButtonElement>("[role=option]") ?? [])];
-              const currentIndex = menuOptions.indexOf(event.target as HTMLButtonElement);
-              if (event.key === "ArrowDown") {
-                event.preventDefault();
-                menuOptions[(currentIndex + 1) % menuOptions.length]?.focus();
-              } else if (event.key === "ArrowUp") {
-                event.preventDefault();
-                menuOptions[(currentIndex - 1 + menuOptions.length) % menuOptions.length]?.focus();
-              }
-            }}
-          >
-            {options.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                role="option"
-                aria-selected={activeValue === option.value}
-                onClick={() => chooseOption(option)}
-                className={`flex min-h-10 w-full items-center justify-between gap-4 rounded-lg px-3 py-2 text-left text-[13px] leading-snug transition-colors hover:bg-stone-100 focus:bg-stone-100 focus:outline-none dark:hover:bg-white/10 dark:focus:bg-white/10 ${activeValue === option.value ? "font-semibold text-homera-terracotta" : "font-normal"}`}
-              >
-                <span>{option.label}</span>
-                {activeValue === option.value && <Check className="h-4 w-4 shrink-0" aria-hidden="true" />}
-              </button>
-            ))}
-          </div>,
-          document.body,
-        )}
+        <div data-searching={isSearching} className={`homera-reveal homera-scroll-cue-wrap pointer-events-none absolute inset-x-0 bottom-8 z-20 flex flex-col items-center gap-3 text-white/65 transition-opacity duration-500 sm:bottom-10 ${isSearching ? "opacity-0" : ""}`}
+          data-revealed={entered} style={reveal(920)}>
+          <span className="text-[10px] font-medium uppercase tracking-[0.36em]">Défiler</span>
+          <span className="homera-scroll-cue h-10 w-px text-white/50" aria-hidden="true" />
+          <ArrowDown className="h-3 w-3 -mt-1" aria-hidden="true" />
+        </div>
       </div>
+      <button type="button" onClick={() => setUserPaused((value) => !value)}
+        disabled={reduced} aria-pressed={userPaused || reduced}
+        aria-label={reduced ? "Vidéo arrêtée : mouvement réduit" : userPaused ? "Relancer la vidéo de fond" : "Mettre la vidéo de fond en pause"}
+        className="homera-press absolute bottom-4 left-4 z-20 flex min-h-10 items-center gap-2 rounded-full border border-white/20 bg-black/30 px-3 text-[10px] font-medium text-white/85 backdrop-blur-sm sm:left-6">
+        {userPaused || reduced ? <Play className="h-3 w-3" aria-hidden="true" /> : <Pause className="h-3 w-3" aria-hidden="true" />}
+        {reduced ? "Mouvement réduit" : userPaused ? "Relancer" : "Pause vidéo"}
+      </button>
     </section>
   );
 }
