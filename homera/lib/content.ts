@@ -15,12 +15,13 @@ import { MEDIA, type MediaAsset } from "@/lib/media.generated";
 export const DEMO_DATA = true;
 
 /* ------------------------------------------------------------------
-   VISUELS — replis temporaires
+   VISUELS — filet de sécurité
    ------------------------------------------------------------------
-   Quelques visuels dédiés ne sont pas encore produits. Plutôt que de
-   laisser un vide, chaque clé manquante pointe vers le visuel HOMERA
-   le plus proche ; dès que le fichier dédié arrive (npm run images),
-   il prend automatiquement sa place. Rien d’autre à modifier.
+   Les 16 visuels sont produits (public/images). Ce tableau reste utile
+   pour la suite : si une clé vient à manquer (nouveau sujet éditorial,
+   visuel remplacé), le composant pointe vers le visuel HOMERA le plus
+   proche au lieu d’afficher un vide. Dès que le fichier dédié existe
+   (npm run images), il reprend sa place automatiquement.
    ------------------------------------------------------------------ */
 
 const MEDIA_FALLBACKS: Record<string, string> = {
@@ -677,8 +678,8 @@ export const EDITORIAL = {
       excerpt:
         "Pourquoi les maisons béninoises contemporaines réinventent l’ombre avant de réinventer la forme.",
       readingTime: "6 min",
-      media: "intent-acheter",
-      alt: "Façade contemporaine à claustras de bois et murs clairs sous une lumière chaude",
+      media: "editorial-architecture",
+      alt: "Détail d’architecture : angle de mur crème, claustra de bois sombre et ombre portée franche",
     },
     {
       id: "fidjrosse",
@@ -687,8 +688,8 @@ export const EDITORIAL = {
       excerpt:
         "Un quartier qui respire : rues sableuses, bougainvilliers et maisons basses à quelques minutes de la mer.",
       readingTime: "5 min",
-      media: "prop-appartement",
-      alt: "Immeuble résidentiel clair aux balcons profonds dans un quartier planté",
+      media: "editorial-quartier",
+      alt: "Rue sableuse bordée de maisons basses crème et terre cuite, bougainvillier et cocotiers au coucher du soleil",
     },
     {
       id: "terrasse",
@@ -697,8 +698,8 @@ export const EDITORIAL = {
       excerpt:
         "Rattan, ombre et brise du soir : la pièce que l’on gagne en pensant d’abord l’extérieur.",
       readingTime: "4 min",
-      media: "intent-sejourner",
-      alt: "Cour intérieure avec bassin éclairé et salons en rotin à la tombée du jour",
+      media: "editorial-lifestyle",
+      alt: "Terrasse en toiture au coucher du soleil, assises en rotin, tapis tissés et lumière chaude",
     },
     {
       id: "villa-basse",

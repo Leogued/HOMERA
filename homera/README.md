@@ -85,9 +85,13 @@ npm run images     # sources : $HOMERA_MEDIA_SRC (défaut /tmp/homera-media)
 
 `scripts/build-images.mjs` recadre, redimensionne, compresse (JPEG progressif, mozjpeg) et
 génère un `blurDataURL` par visuel, puis écrit `lib/media.generated.ts`. Les fichiers
-sources ne sont pas versionnés ; seuls les dérivés optimisés le sont. Les visuels non
-encore produits sont redirigés vers le visuel HOMERA le plus proche par `MEDIA_FALLBACKS`
-(dans `lib/content.ts`) : dès que le fichier dédié existe, il prend sa place automatiquement.
+sources ne sont pas versionnés ; seuls les dérivés optimisés le sont (16 visuels,
+≈ 1,8 Mo au total, servis en AVIF/WebP à la volée).
+
+Les sujets couverts : quatre scènes d’intention (acheter, louer, séjourner, investir),
+quatre biens, quatre services, trois couvertures éditoriales et le plan final de nuit.
+En cas de clé manquante, `MEDIA_FALLBACKS` (`lib/content.ts`) renvoie vers le visuel
+HOMERA le plus proche plutôt que d’afficher un vide.
 
 ## Mouvement
 
