@@ -127,6 +127,17 @@ const SECTIONS = [
 
 const SERVICES_EVENT = "homera:focus-service";
 
+/** Identifiant de panneau stable et unique (plusieurs entrées peuvent
+    partager la même section cible : « Acheter », « Louer », « Séjour »). */
+function panelId(item: NavItem) {
+  const key = item.intentId ?? item.title;
+  return `menu-${key
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[^a-z]+/g, "-")
+    .replace(/^-|-$/g, "")}`;
+}
+
 function prefersReducedMotion() {
   return (
     typeof window !== "undefined" &&
@@ -376,7 +387,7 @@ export function Navbar() {
                     type="button"
                     aria-expanded={open}
                     aria-haspopup="true"
-                    aria-controls={`menu-${item.section}`}
+                    aria-controls={panelId(item)}
                     onClick={() => setOpenMenu(open ? null : item.title)}
                     onKeyDown={(event) => {
                       if (event.key === "ArrowDown") {
@@ -426,7 +437,7 @@ export function Navbar() {
                 {/* Panneau déroulant */}
                 {item.submenu && (
                   <div
-                    id={`menu-${item.section}`}
+                    id={panelId(item)}
                     inert={!open}
                     className={`absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3 transition-all duration-[320ms] ease-[cubic-bezier(.22,.61,.28,1)] ${
                       open

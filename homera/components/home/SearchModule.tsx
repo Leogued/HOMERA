@@ -236,7 +236,7 @@ export function SearchModule({ className = "" }: { className?: string }) {
           aria-label={label}
           aria-haspopup="listbox"
           aria-expanded={isOpen}
-          aria-controls="homera-search-panel"
+          aria-controls={isOpen ? "homera-search-panel" : undefined}
           onClick={(event) =>
             isOpen ? closePanel() : openFor(field, event.currentTarget)
           }
@@ -248,7 +248,9 @@ export function SearchModule({ className = "" }: { className?: string }) {
           }}
           className={
             variant === "pill"
-              ? `group/field relative flex h-12 w-full min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-[13px] font-medium outline-none transition-[background-color,color] duration-300 hover:bg-stone-100 focus:bg-stone-100 dark:hover:bg-white/5 dark:focus:bg-white/5 ${
+              ? `group/field relative flex h-12 w-full min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-[13px] font-medium outline-none transition-[background-color,color,box-shadow] duration-300 hover:bg-stone-100 focus:bg-stone-100 dark:hover:bg-white/5 dark:focus:bg-white/5 ${
+                  isOpen ? "bg-stone-100 shadow-[inset_0_0_0_1px_rgba(198,93,59,0.35)] dark:bg-white/5" : ""
+                } ${
                   selected
                     ? "text-stone-800 dark:text-stone-100"
                     : "text-stone-500 dark:text-stone-400"
@@ -282,7 +284,7 @@ export function SearchModule({ className = "" }: { className?: string }) {
         }}
         role="search"
         aria-label="Recherche de biens HOMERA"
-        className="mx-auto hidden h-17 w-full max-w-4xl items-center gap-1 rounded-full border border-white/25 bg-card/97 p-2 shadow-[0_28px_70px_-40px_rgba(0,0,0,0.85)] backdrop-blur-md transition-[box-shadow,transform] duration-500 ease-[cubic-bezier(.22,.61,.28,1)] md:flex dark:border-white/12 dark:bg-[#2B1A12]/97"
+        className="mx-auto hidden h-17 w-full max-w-4xl items-center gap-1 rounded-full border border-white/25 bg-card/97 p-2 shadow-[0_28px_70px_-40px_rgba(0,0,0,0.85)] backdrop-blur-md transition-[box-shadow,transform] duration-500 ease-[cubic-bezier(.22,.61,.28,1)] data-[open=true]:scale-[1.006] data-[open=true]:shadow-[0_36px_90px_-42px_rgba(0,0,0,0.95)] md:flex dark:border-white/12 dark:bg-[#2B1A12]/97"
         data-open={openField ? "true" : undefined}
       >
         <div className="flex h-12 min-w-0 flex-1 items-center">

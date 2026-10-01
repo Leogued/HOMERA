@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCursorCapable, useMediaQuery } from "@/lib/motion";
 
 /* ==================================================================
@@ -124,23 +124,6 @@ export function CustomCursor() {
           </span>
         )}
       </span>
-    </div>
-  );
-}
-
-/** Enveloppe une zone explorable pour que le curseur annonce l’action. */
-export function CursorZone({
-  mode,
-  children,
-  className = "",
-}: {
-  mode: "explore" | "drag" | "action";
-  children: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div data-cursor={mode} className={className}>
-      {children}
     </div>
   );
 }

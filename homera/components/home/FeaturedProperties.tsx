@@ -13,7 +13,7 @@ import {
   RotateCcw,
   ShieldCheck,
 } from "lucide-react";
-import { PROPERTIES, PROPERTY_FILTERS, type Property } from "@/lib/content";
+import { PROPERTY_FILTERS, type Property } from "@/lib/content";
 import { countLabel, formatFCFA, INTENT_LABELS, TYPE_LABELS } from "@/lib/format";
 import { SceneHeader } from "@/components/ui/Scene";
 import { Reveal } from "@/components/ui/Reveal";
@@ -446,6 +446,3 @@ function PropertyCard({ property, index }: { property: Property; index: number }
     </Reveal>
   );
 }
-
-/** Nombre de biens par défaut, exposé pour les tests visuels. */
-export const PROPERTY_COUNT = PROPERTIES.length;
