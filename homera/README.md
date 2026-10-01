@@ -38,6 +38,82 @@ les titres utilisent l'échelle `text-display-*` pour que corps, interlignage, i
 et graisse restent cohérents d'une page à l'autre. Les polices sont auto-hébergées
 (`next/font/local`, sous-ensembles latin) — voir `public/fonts/README.md`.
 
+---
+
+## L’expérience de la page d’accueil
+
+La page est conçue comme un **parcours en neuf scènes**, chacune avec son rythme, son
+mouvement et sa transition vers la suivante :
+
+| # | Scène | Fichier | Ce qui s’y passe |
+| --- | --- | --- | --- |
+| 01 | Immersion | `components/home/Hero.tsx` | Vidéo d’origine conservée, contenu en couches qui se dissipent au défilement, recherche toujours lisible |
+| 02 | Repères | `components/home/StatsSection.tsx` | Compteurs déclenchés à l’entrée en scène (données de démonstration) |
+| 03 | Intentions | `components/home/ExplorerSection.tsx` | Scène épinglée, quatre portes qui défilent horizontalement |
+| 04 | Sélection | `components/home/FeaturedProperties.tsx` | Carrousel tactile / souris / clavier, filtres reliés à la recherche |
+| 05 | Identité | `components/home/PropertyDossier.tsx` | L’identifiant du bien devient le centre d’un système |
+| 06 | Vérification | `components/home/VerificationProtocol.tsx` | Sept mouvements racontés, étape dominante au centre du viewport |
+| 07 | Écosystème | `components/home/ServicesSection.tsx` | Sommaire de services qui pilote une scène visuelle |
+| 08 | Magazine | `components/home/EditorialSection.tsx` | Univers éditorial : rubriques en bandeau, sujets en couverture |
+| 09 | Manifeste | `components/home/TrustVisionSection.tsx` | Convictions, piliers, projection finale en parallax |
+
+Le passage d’une scène à l’autre est continu : fondus de teinte (`scene-bg-*`),
+filets discrets (`scene-edge`), fondu du hero vers la scène suivante, rail de chapitres
+et barre de progression de lecture (desktop).
+
+## Où modifier quoi
+
+| Besoin | Fichier |
+| --- | --- |
+| Textes, chiffres, biens, services, magazine | `lib/content.ts` |
+| Visuels (chemin, dimensions, LQIP) | `lib/media.generated.ts` — **généré**, ne pas éditer |
+| Système de mouvement (reveals, parallax, compteurs, pan) | `lib/motion.ts` |
+| Recherche partagée (hero ↔ sélection) | `components/providers/SearchProvider.tsx` |
+| Mouvement & matières (CSS) | `app/globals.css` (bloc *SYSTÈME DE MOUVEMENT*) |
+
+### Chiffres de démonstration
+
+`lib/content.ts` expose `DEMO_DATA` (actuellement `true`) et le tableau `STATS`. Tant que
+les chiffres réels ne sont pas branchés sur l’API, la section **02 Repères** affiche
+explicitement qu’il s’agit de données de démonstration du système pilote.
+
+## Visuels — pipeline
+
+```bash
+npm run images     # sources : $HOMERA_MEDIA_SRC (défaut /tmp/homera-media)
+```
+
+`scripts/build-images.mjs` recadre, redimensionne, compresse (JPEG progressif, mozjpeg) et
+génère un `blurDataURL` par visuel, puis écrit `lib/media.generated.ts`. Les fichiers
+sources ne sont pas versionnés ; seuls les dérivés optimisés le sont. Les visuels non
+encore produits sont redirigés vers le visuel HOMERA le plus proche par `MEDIA_FALLBACKS`
+(dans `lib/content.ts`) : dès que le fichier dédié existe, il prend sa place automatiquement.
+
+## Mouvement
+
+- **Une seule boucle `requestAnimationFrame`** partagée par toute la page (`lib/motion.ts`).
+- **`prefers-reduced-motion: reduce`** : reveals affichés immédiatement, parallax, marquee,
+  compteurs et curseur désactivés (CSS + hooks) ; la scène épinglée devient une piste
+  défilable, sans mouvement automatique.
+- **Mobile** : amplitudes réduites, effets de souris coupés, scène épinglée remplacée par
+  une pile verticale, menu plein écran opaque.
+- **Aucun overflow horizontal** : chaque effet vit dans un conteneur `overflow-hidden` ou
+  utilise des unités calculées (`vw`, `svh`, `calc`).
+
+## Accessibilité
+
+Focus visible sur les scènes claires (terracotta) et sombres (ambre), navigation clavier
+complète (menus, listes déroulantes, carrousel, sommaire de services), libellés `aria`
+sur les commandes, contrastes texte vérifiés (`--muted` ≈ 6,5:1, `--muted-light` ≈ 4,6:1 sur
+le crème), `inert` sur les panneaux fermés, et respect strict du mouvement réduit.
+
+## Performance
+
+Images servies en AVIF puis WebP aux bonnes largeurs (`sizes` réels), qualités limitées à
+une liste autorisée (`next.config.ts`), `blurDataURL` pour chaque visuel, chargement
+différé natif, animations limitées à `transform`/`opacity`/`filter`, aucune dépendance
+d’animation ajoutée.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

@@ -34,6 +34,7 @@ export function Button({
   return (
     <button
       className={`
+        homera-press
         inline-flex items-center justify-center
         rounded-lg
         font-medium
@@ -42,6 +43,8 @@ export function Button({
         focus-visible:outline-none
         focus-visible:ring-2
         focus-visible:ring-homera-terracotta
+        focus-visible:ring-offset-2
+        focus-visible:ring-offset-background
         disabled:pointer-events-none
         disabled:opacity-50
         ${variants[variant]}

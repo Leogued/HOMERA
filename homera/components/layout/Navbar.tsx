@@ -1,283 +1,705 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { Menu, X, Moon, Sun, ChevronDown, UserRound } from "lucide-react";
+import { ChevronDown, Menu, Moon, Sun, UserRound, X } from "lucide-react";
+import { useActiveSection, useMounted, useMotionPreferences } from "@/lib/motion";
+import { useSearch } from "@/components/providers/SearchProvider";
+import { EMPTY_CRITERIA } from "@/lib/format";
+import { INTENT_ACTIVE_EVENT, INTENT_EVENT } from "@/components/home/ExplorerSection";
 
-interface SubMenuItem {
+/* ==================================================================
+   HOMERA — EN-TÊTE
+   ------------------------------------------------------------------
+   Règles invariantes conservées :
+   • le header reste transparent en toutes circonstances (aucun fond
+     opaque, aucun passage au blanc quand on change de thème) ;
+   • le hero reste l’écran d’accueil, le header y est intégré.
+
+   Ce qui bouge : la lisibilité. Au défilement, un voile de verre très
+   léger apparaît sous le contenu, la hauteur se réduit de quelques
+   pixels, puis tout revient progressivement à l’état initial quand on
+   remonte. Aucun rectangle opaque, aucune transition brutale.
+   ================================================================== */
+
+type SubItem = {
   label: string;
   href: string;
-}
+  /** Filtres appliqués à la sélection de biens quand on suit l’entrée. */
+  criterion?: { project?: string; propertyType?: string };
+  /** Service mis en avant dans l’écosystème (ancre interne). */
+  serviceId?: string;
+};
 
-interface NavItem {
+type NavItem = {
   title: string;
   href: string;
-  submenu?: SubMenuItem[];
-}
+  /** Identifiant de la section suivie pour l’état actif. */
+  section: string;
+  /** Intention pilotée dans la scène « Explorer par intention ». */
+  intentId?: string;
+  submenu?: SubItem[];
+};
 
-const navItems: NavItem[] = [
-  {
-    title: "Explorer",
-    href: "#explorer",
-  },
+const PROPERTY_CRITERION = {
+  maison: { propertyType: "villa" },
+  appartement: { propertyType: "appartement" },
+  studio: { propertyType: "studio" },
+  terrain: { propertyType: "terrain" },
+  local: { propertyType: "local" },
+} as const;
+
+export const NAV_ITEMS: NavItem[] = [
+  { title: "Explorer", href: "#explorer", section: "explorer" },
   {
     title: "Acheter",
-    href: "#acheter",
+    href: "#explorer",
+    section: "explorer",
+    intentId: "acheter",
     submenu: [
-      { label: "Maisons", href: "#acheter-maisons" },
-      { label: "Terrains", href: "#acheter-terrains" },
-      { label: "Appartements", href: "#acheter-appartements" },
-      { label: "Locaux commerciaux", href: "#acheter-locaux" },
+      { label: "Maisons", href: "#biens", criterion: { project: "acheter", ...PROPERTY_CRITERION.maison } },
+      { label: "Appartements", href: "#biens", criterion: { project: "acheter", ...PROPERTY_CRITERION.appartement } },
+      { label: "Terrains", href: "#biens", criterion: { project: "acheter", ...PROPERTY_CRITERION.terrain } },
+      { label: "Locaux commerciaux", href: "#biens", criterion: { project: "acheter", ...PROPERTY_CRITERION.local } },
     ],
   },
   {
     title: "Louer",
-    href: "#louer",
+    href: "#explorer",
+    section: "explorer",
+    intentId: "louer",
     submenu: [
-      { label: "Maisons", href: "#louer-maisons" },
-      { label: "Studios", href: "#louer-studios" },
-      { label: "Appartements", href: "#louer-appartements" },
-      { label: "Locaux commerciaux", href: "#louer-locaux" },
+      { label: "Maisons", href: "#biens", criterion: { project: "louer", ...PROPERTY_CRITERION.maison } },
+      { label: "Appartements", href: "#biens", criterion: { project: "louer", ...PROPERTY_CRITERION.appartement } },
+      { label: "Studios", href: "#biens", criterion: { project: "louer", ...PROPERTY_CRITERION.studio } },
+      { label: "Locaux commerciaux", href: "#biens", criterion: { project: "louer", ...PROPERTY_CRITERION.local } },
     ],
   },
   {
-    title: "Séjourner",
-    href: "#sejour",
+    title: "Séjour",
+    href: "#explorer",
+    section: "explorer",
+    intentId: "sejour",
     submenu: [
-      { label: "À la nuitée", href: "#sejour-nuitee" },
-      { label: "Pour quelques jours", href: "#sejour-quelques-jours" },
-      { label: "Pour une courte période", href: "#sejour-courte-periode" },
+      {
+        label: "À la nuitée",
+        href: "#biens",
+        criterion: { project: "sejour", propertyType: "appartement" },
+      },
+      {
+        label: "Pour quelques jours",
+        href: "#biens",
+        criterion: { project: "sejour", propertyType: "appartement" },
+      },
+      {
+        label: "Pour une courte période",
+        href: "#biens",
+        criterion: { project: "sejour" },
+      },
     ],
   },
   {
     title: "Services",
     href: "#services",
+    section: "services",
     submenu: [
-      { label: "Déménagement", href: "#services-demenagement" },
-      { label: "Gestion immobilière", href: "#services-gestion" },
-      { label: "Travaux & aménagement", href: "#services-travaux" },
-      { label: "Maintenance & réparation", href: "#services-maintenance" },
+      { label: "Gestion immobilière", href: "#services", serviceId: "gestion" },
+      { label: "Maintenance & réparation", href: "#services", serviceId: "maintenance" },
+      { label: "Déménagement", href: "#services", serviceId: "demenagement" },
+      { label: "Travaux & aménagement", href: "#services", serviceId: "travaux" },
     ],
   },
 ];
 
-export function Navbar() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeMobileSubmenu, setActiveMobileSubmenu] = useState<string | null>(null);
-  const { theme, setTheme, resolvedTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+/** Sections suivies par le rail et l’état actif du menu. */
+const SECTIONS = [
+  "hero",
+  "chiffres",
+  "explorer",
+  "biens",
+  "bien-homera",
+  "protocole",
+  "services",
+  "magazine",
+  "manifeste",
+] as const;
+
+const SERVICES_EVENT = "homera:focus-service";
+
+function prefersReducedMotion() {
+  return (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
+/** Voile de verre : présent dès que l’on quitte le hero, retiré en remontant. */
+function useHeaderState() {
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    setMounted(true);
+    let last = false;
+    const measure = () => {
+      const next = window.scrollY > 28;
+      if (next !== last) {
+        last = next;
+        setScrolled(next);
+      }
+    };
+    // `passive` + mesure unique par événement : le header ne coûte rien au scroll.
+    measure();
+    window.addEventListener("scroll", measure, { passive: true });
+    return () => window.removeEventListener("scroll", measure);
   }, []);
 
-  const isDark = resolvedTheme === "dark" || theme === "dark";
+  return scrolled;
+}
 
-  const toggleMobileSubmenu = (title: string) => {
-    setActiveMobileSubmenu(activeMobileSubmenu === title ? null : title);
+export function Navbar() {
+  const scrolled = useHeaderState();
+  const activeSection = useActiveSection(SECTIONS);
+  const { reduced } = useMotionPreferences();
+  const { applySearch } = useSearch();
+
+  const [openMenu, setOpenMenu] = useState<string | null>(null);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileSection, setMobileSection] = useState<string | null>(null);
+  const mounted = useMounted();
+  const [activeService, setActiveService] = useState<string | null>(null);
+  const [activeIntent, setActiveIntent] = useState<string | null>(null);
+  const { setTheme, resolvedTheme } = useTheme();
+
+  const closeTimer = useRef<number | null>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const mobilePanelRef = useRef<HTMLDivElement | null>(null);
+  const triggerRefs = useRef<Record<string, HTMLButtonElement | null>>({});
+
+  const isDark = resolvedTheme === "dark";
+
+  /* --- Thème : l’en-tête reste transparent dans les deux modes --- */
+  const toggleTheme = () => setTheme(isDark ? "light" : "dark");
+
+  /* --- Intention dominante (partagée avec la scène « Explorer ») --- */
+  useEffect(() => {
+    const onIntent = (event: Event) =>
+      setActiveIntent((event as CustomEvent<string | null>).detail);
+    window.addEventListener(INTENT_ACTIVE_EVENT, onIntent);
+    return () => window.removeEventListener(INTENT_ACTIVE_EVENT, onIntent);
+  }, []);
+
+  /* --- Service mis en avant (partagé avec la section Écosystème) --- */
+  useEffect(() => {
+    const read = () => {
+      const match = /^#services-([a-z]+)$/i.exec(window.location.hash);
+      setActiveService(match ? match[1].toLowerCase() : null);
+    };
+    read();
+    window.addEventListener("hashchange", read);
+    window.addEventListener(SERVICES_EVENT, read);
+    return () => {
+      window.removeEventListener("hashchange", read);
+      window.removeEventListener(SERVICES_EVENT, read);
+    };
+  }, []);
+
+  /* --- Ouverture/fermeture avec intention (pas de clignotement) --- */
+  const openWithIntent = (title: string) => {
+    if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    setOpenMenu(title);
   };
 
-  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
-    setMobileMenuOpen(false);
-    setOpenDropdown(null);
+  const closeWithIntent = () => {
+    if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    closeTimer.current = window.setTimeout(() => setOpenMenu(null), 140);
+  };
 
-    if (href.startsWith("#")) {
-      e.preventDefault();
-      // Extract base ID (e.g., #acheter-maisons -> #acheter)
-      const baseId = href.split("-")[0];
-      const element = document.querySelector(baseId) || document.querySelector(href);
-      if (element) {
-        element.scrollIntoView({ behavior: "smooth" });
-        window.history.pushState(null, "", href);
+  useEffect(
+    () => () => {
+      if (closeTimer.current) window.clearTimeout(closeTimer.current);
+    },
+    [],
+  );
+
+  /* --- Échap referme ; clic extérieur referme --- */
+  useEffect(() => {
+    if (!openMenu) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        const title = openMenu;
+        setOpenMenu(null);
+        triggerRefs.current[title]?.focus();
       }
+    };
+    const onPointerDown = (event: PointerEvent) => {
+      const target = event.target as Node;
+      if (panelRef.current?.contains(target)) return;
+      const inTrigger = Object.values(triggerRefs.current).some((node) =>
+        node?.parentElement?.contains(target),
+      );
+      if (!inTrigger) setOpenMenu(null);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    document.addEventListener("pointerdown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("pointerdown", onPointerDown);
+    };
+  }, [openMenu]);
+
+  /* --- Menu mobile : verrou de défilement + focus --- */
+  useEffect(() => {
+    if (!mobileOpen) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    mobilePanelRef.current
+      ?.querySelector<HTMLElement>("[data-mobile-first]")
+      ?.focus({ preventScroll: true });
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMobileOpen(false);
+    };
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previous;
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [mobileOpen]);
+
+  /* --- Navigation : ancrage, filtres, focus de service --- */
+  const scrollTo = (href: string) => {
+    const element = document.querySelector(href);
+    if (!element) return;
+    element.scrollIntoView({
+      behavior: prefersReducedMotion() ? "auto" : "smooth",
+      block: "start",
+    });
+    window.history.pushState(null, "", href);
+  };
+
+  const handleNavigation = (sub: SubItem | null, href: string, intentId?: string) => {
+    setOpenMenu(null);
+    setMobileOpen(false);
+
+    if (intentId) {
+      // La scène épinglée amène elle-même la bonne porte au centre.
+      window.dispatchEvent(new CustomEvent<string>(INTENT_EVENT, { detail: intentId }));
+      window.history.pushState(null, "", href);
+      return;
     }
+
+    if (sub?.criterion) {
+      applySearch({ ...EMPTY_CRITERIA, ...sub.criterion });
+    }
+
+    if (!href.startsWith("#")) return;
+
+    if (sub?.serviceId) {
+      // Le visuel et le contenu du service suivent l’entrée choisie.
+      window.dispatchEvent(
+        new CustomEvent(SERVICES_EVENT, { detail: sub.serviceId }),
+      );
+      window.history.pushState(null, "", `${href}-${sub.serviceId}`);
+    } else {
+      window.history.pushState(null, "", href);
+      window.dispatchEvent(new Event("hashchange"));
+    }
+
+    scrollTo(href);
+  };
+
+  const handleAnchorKeyDown = (event: React.KeyboardEvent<HTMLAnchorElement>) => {
+    if (event.key === "Enter") setOpenMenu(null);
+  };
+
+  const isActive = (item: NavItem) => {
+    // L’intention dominante prime : la scène « Explorer » en pilote quatre.
+    if (item.intentId && activeIntent && item.section === "explorer") {
+      return item.intentId === activeIntent && activeSection === "explorer";
+    }
+    if (item.intentId) return false;
+    return item.section === activeSection;
   };
 
   return (
-    <header className="homera-header absolute top-0 inset-x-0 w-full bg-transparent text-white py-4 px-4 sm:px-8 xl:px-12 2xl:px-16 transition-colors duration-300 z-50 border-0">
-      <div className="homera-header-container mx-auto flex items-center justify-between lg:grid lg:grid-cols-3">
-        {/* Brand Logo — mot-symbole « Homera » en Brush Script MT */}
-        <Link href="/" className="flex items-center group">
-          <span className="homera-brand text-[3.125rem] text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.7)] group-hover:scale-105 transition-transform">
+    <header
+      className="homera-header homera-on-dark fixed inset-x-0 top-0 z-50 w-full border-0 bg-transparent text-white"
+      data-scrolled={scrolled}
+    >
+      {/* Voile de verre — purement décoratif, jamais opaque */}
+      <div
+
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 opacity-0 transition-[opacity,backdrop-filter] duration-[650ms] ease-[cubic-bezier(.22,.61,.28,1)] data-[scrolled=true]:opacity-100 data-[scrolled=true]:backdrop-blur-[14px] data-[scrolled=true]:backdrop-saturate-150"
+        data-scrolled={scrolled}
+      >
+        <div className="absolute inset-0 bg-gradient-to-b from-[rgba(20,12,8,0.62)] via-[rgba(20,12,8,0.28)] to-transparent" />
+        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />
+      </div>
+
+      <div
+        className={`homera-header-container relative mx-auto flex items-center justify-between px-4 transition-[padding] duration-[650ms] ease-[cubic-bezier(.22,.61,.28,1)] sm:px-8 xl:px-12 2xl:px-16 lg:grid lg:grid-cols-3 ${
+          scrolled ? "py-2.5" : "py-4"
+        }`}
+      >
+        {/* Mot-symbole HOMERA — inchangé */}
+        <Link href="/" className="group flex items-center" aria-label="HOMERA, accueil">
+          <span
+            className={`homera-brand text-[3.125rem] text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.65)] transition-transform duration-500 ease-out group-hover:scale-[1.04] ${
+              scrolled ? "lg:text-[2.5rem]" : ""
+            }`}
+            style={{ transition: "transform 500ms var(--homera-ease), font-size 650ms var(--homera-ease)" }}
+          >
             Homera
           </span>
         </Link>
 
-        {/* Center Navigation Pill Capsule (Desktop/Tablet landscape with Dropdowns) */}
-        <nav className="hidden lg:flex lg:justify-self-center items-center bg-white/5 backdrop-blur-sm border border-white/10 px-5 xl:px-6 2xl:px-7 py-2.5 rounded-full shadow-[0_0_0_1px_rgba(255,255,255,0.04)] gap-4 xl:gap-6 2xl:gap-7 text-[12.5px] font-medium text-white relative">
-          {navItems.map((item) => (
-            <div
-              key={item.title}
-              className="relative inline-flex flex-col items-center group py-0.5"
-              onMouseEnter={() => setOpenDropdown(item.title)}
-              onMouseLeave={() => setOpenDropdown(null)}
-            >
-              <Link
-                href={item.href}
-                onClick={(e) => {
-                  if (item.submenu) {
-                    // Touch/click toggle support
-                    setOpenDropdown(openDropdown === item.title ? null : item.title);
-                  }
-                  handleNavClick(e, item.href);
-                }}
-                className="hover:text-white/90 transition-colors inline-flex items-center gap-1 py-1 font-medium"
+        {/* Navigation — capsule centrée, dropdowns sobres */}
+        <nav
+          aria-label="Navigation principale"
+          className="relative hidden items-center gap-4 rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-[12.5px] font-medium text-white shadow-[0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-sm lg:flex lg:justify-self-center xl:gap-6 xl:px-6 2xl:gap-7 2xl:px-7"
+        >
+          {NAV_ITEMS.map((item) => {
+            const open = openMenu === item.title;
+            return (
+              <div
+                key={item.title}
+                className="group relative inline-flex flex-col items-center py-0.5"
+                onMouseEnter={() => openWithIntent(item.title)}
+                onMouseLeave={closeWithIntent}
               >
-                <span>{item.title}</span>
-                {item.submenu && (
-                  <ChevronDown
-                    className={`w-3.5 h-3.5 text-white/60 group-hover:text-white transition-transform duration-200 ${
-                      openDropdown === item.title ? "rotate-180 text-white" : ""
+                {item.submenu ? (
+                  <button
+                    ref={(node) => {
+                      triggerRefs.current[item.title] = node;
+                    }}
+                    type="button"
+                    aria-expanded={open}
+                    aria-haspopup="true"
+                    aria-controls={`menu-${item.section}`}
+                    onClick={() => setOpenMenu(open ? null : item.title)}
+                    onKeyDown={(event) => {
+                      if (event.key === "ArrowDown") {
+                        event.preventDefault();
+                        setOpenMenu(item.title);
+                        requestAnimationFrame(() =>
+                          panelRef.current
+                            ?.querySelector<HTMLElement>("[data-roving-item]")
+                            ?.focus(),
+                        );
+                      }
+                    }}
+                    className={`inline-flex items-center gap-1 py-1 font-medium transition-colors duration-300 ${
+                      isActive(item) ? "text-white" : "text-white/92 hover:text-white"
                     }`}
-                  />
+                  >
+                    <span>{item.title}</span>
+                    <ChevronDown
+                      aria-hidden="true"
+                      className={`h-3.5 w-3.5 text-white/55 transition-transform duration-300 ease-out group-hover:text-white ${
+                        open ? "rotate-180 text-white" : ""
+                      }`}
+                    />
+                  </button>
+                ) : (
+                  <Link
+                    href={item.href}
+                    onClick={(event) => {
+                      event.preventDefault();
+                      handleNavigation(null, item.href, item.intentId);
+                    }}
+                    onKeyDown={handleAnchorKeyDown}
+                    className="inline-flex items-center gap-1 py-1 font-medium text-white/92 transition-colors duration-300 hover:text-white"
+                  >
+                    {item.title}
+                  </Link>
                 )}
-              </Link>
 
-              {/* Submenu Dropdown Panel Centered under parent item */}
-              {item.submenu && (
-                <div
-                  className={`absolute top-full left-1/2 -translate-x-1/2 pt-3 z-50 transition-all duration-200 ${
-                    openDropdown === item.title
-                      ? "opacity-100 visible translate-y-0 pointer-events-auto"
-                      : "opacity-0 invisible -translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:visible group-hover:translate-y-0 group-hover:pointer-events-auto"
+                {/* Indicateur d’onglet actif : souligne sans bruit */}
+                <span
+                  aria-hidden="true"
+                  className={`mt-0.5 h-px w-full origin-center bg-homera-terracotta transition-transform duration-500 ease-[cubic-bezier(.22,.61,.28,1)] ${
+                    isActive(item) ? "scale-x-100" : "scale-x-0"
                   }`}
-                >
-                  <div className="bg-[#2A170F]/90 border border-white/10 ring-1 ring-black/20 backdrop-blur-xl rounded-2xl shadow-[0_18px_40px_-12px_rgba(0,0,0,0.55)] p-2.5 w-max text-white flex flex-col items-center space-y-1">
-                    {item.submenu.map((sub) => (
-                      <Link
-                        key={sub.label}
-                        href={sub.href}
-                        onClick={(e) => handleNavClick(e, sub.href)}
-                        className="w-full text-center px-5 py-2 rounded-xl text-[11.5px] font-medium tracking-[0.01em] text-white/90 hover:bg-white/10 hover:text-white transition-all whitespace-nowrap"
-                      >
-                        {sub.label}
-                      </Link>
-                    ))}
+                />
+
+                {/* Panneau déroulant */}
+                {item.submenu && (
+                  <div
+                    id={`menu-${item.section}`}
+                    inert={!open}
+                    className={`absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3 transition-all duration-[320ms] ease-[cubic-bezier(.22,.61,.28,1)] ${
+                      open
+                        ? "pointer-events-auto visible translate-y-0 opacity-100"
+                        : "pointer-events-none invisible -translate-y-1.5 opacity-0"
+                    }`}
+                    onMouseEnter={() => openWithIntent(item.title)}
+                    onMouseLeave={closeWithIntent}
+                  >
+                    <div
+                      ref={panelRef}
+                      role="menu"
+                      aria-label={item.title}
+                      onKeyDown={(event) => {
+                        const items = Array.from(
+                          panelRef.current?.querySelectorAll<HTMLElement>("[data-roving-item]") ?? [],
+                        );
+                        const index = items.indexOf(event.target as HTMLElement);
+                        if (event.key === "ArrowDown") {
+                          event.preventDefault();
+                          items[(index + 1) % items.length]?.focus();
+                        } else if (event.key === "ArrowUp") {
+                          event.preventDefault();
+                          items[(index - 1 + items.length) % items.length]?.focus();
+                        }
+                      }}
+                      className="homera-noscrollbar flex w-max max-w-[min(22rem,80vw)] flex-col gap-0.5 overflow-y-auto rounded-2xl border border-white/10 bg-[#22140d]/97 p-2 text-white shadow-[0_28px_60px_-24px_rgba(0,0,0,0.75)] backdrop-blur-xl"
+                    >
+                      {item.submenu.map((sub) => {
+                        const selected = Boolean(sub.serviceId) && sub.serviceId === activeService;
+                        return (
+                          <Link
+                            key={sub.label}
+                            href={sub.href}
+                            role="menuitem"
+                            data-roving-item
+                            onClick={(event) => {
+                              event.preventDefault();
+                              handleNavigation(sub, sub.href);
+                            }}
+                            onKeyDown={handleAnchorKeyDown}
+                            className={`homera-underline w-full whitespace-nowrap rounded-xl px-4 py-2 text-left text-[12px] font-medium tracking-[0.01em] transition-colors duration-300 ${
+                              selected
+                                ? "bg-white/10 text-white"
+                                : "text-white/85 hover:bg-white/8 hover:text-white"
+                            }`}
+                          >
+                            {sub.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            );
+          })}
         </nav>
 
-        {/* Right Action Buttons (Desktop) */}
-        <div className="hidden lg:flex lg:justify-self-end items-center space-x-3">
+        {/* Actions — desktop */}
+        <div className="hidden items-center gap-2.5 lg:flex lg:justify-self-end">
           {mounted && (
             <button
-              onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="w-10 h-10 rounded-full bg-white/8 hover:bg-white/12 text-white flex items-center justify-center transition-colors border border-white/10 backdrop-blur-sm"
-              aria-label="Changer le mode d'affichage"
+              type="button"
+              onClick={toggleTheme}
+              className="homera-press flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/8 text-white backdrop-blur-sm transition-colors hover:bg-white/14"
+              aria-label={isDark ? "Passer au mode clair" : "Passer au mode sombre"}
+              title={isDark ? "Mode clair" : "Mode sombre"}
             >
               {isDark ? (
-                <Sun className="w-5 h-5 text-homera-terracotta" />
+                <Sun className="h-[18px] w-[18px] text-homera-terracotta" aria-hidden="true" />
               ) : (
-                <Moon className="w-5 h-5 text-stone-100" />
+                <Moon className="h-[18px] w-[18px] text-stone-100" aria-hidden="true" />
               )}
             </button>
           )}
 
           <Link
             href="#login"
-            onClick={(e) => handleNavClick(e, "#login")}
-            className="w-10 h-10 inline-flex items-center justify-center bg-white/8 hover:bg-white/12 text-white rounded-full border border-white/15 backdrop-blur-sm transition-all shadow-sm"
+            onClick={(event) => {
+              event.preventDefault();
+              handleNavigation(null, "#login");
+            }}
+            className="homera-press inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/8 px-4 text-[12.5px] font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/14"
             aria-label="Se connecter"
-            title="Se connecter"
           >
-            <UserRound className="w-5 h-5" aria-hidden="true" />
+            <UserRound className="h-4 w-4" aria-hidden="true" />
+            <span className="hidden xl:inline">Se connecter</span>
           </Link>
         </div>
 
-        {/* Mobile & Tablet Hamburger Controls */}
-        <div className="flex lg:hidden items-center space-x-3">
+        {/* Commandes mobile */}
+        <div className="flex items-center gap-2 lg:hidden">
           {mounted && (
             <button
-              onClick={() => setTheme(isDark ? "light" : "dark")}
-              className="w-9 h-9 rounded-full bg-[#F1E6D6]/20 text-white flex items-center justify-center"
+              type="button"
+              onClick={toggleTheme}
+              className="homera-press flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/8 text-white"
+              aria-label={isDark ? "Passer au mode clair" : "Passer au mode sombre"}
             >
               {isDark ? (
-                <Sun className="w-4 h-4 text-homera-terracotta" />
+                <Sun className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />
               ) : (
-                <Moon className="w-4 h-4 text-stone-100" />
+                <Moon className="h-4 w-4 text-stone-100" aria-hidden="true" />
               )}
             </button>
           )}
           <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 rounded-lg text-white hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-homera-terracotta/50"
-            aria-label="Menu"
-            aria-expanded={mobileMenuOpen}
+            type="button"
+            onClick={() => setMobileOpen(true)}
+            className="homera-press rounded-xl border border-white/10 bg-white/8 p-2 text-white transition-colors hover:bg-white/14 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
+            aria-label="Ouvrir le menu"
+            aria-expanded={mobileOpen}
+            aria-controls="homera-mobile-menu"
           >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+            <Menu className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
       </div>
 
-      {/* Mobile & Tablet Dropdown Drawer Container */}
-      {mobileMenuOpen && (
-        <div className="lg:hidden homera-header-container mx-auto mt-4 pt-4 border-t border-white/10 space-y-4 max-h-[75vh] overflow-y-auto pr-1">
-          <div className="bg-[#F1E6D6] p-4 rounded-2xl text-stone-800 flex flex-col space-y-2 font-medium text-[13px] tracking-[0.01em] shadow-xl">
-            {navItems.map((item) => (
-              <div key={item.title} className="border-b border-stone-300/40 last:border-0 py-1">
-                {item.submenu ? (
-                  <div>
-                    <button
-                      type="button"
-                      onClick={() => toggleMobileSubmenu(item.title)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 ${
-                        activeMobileSubmenu === item.title
-                          ? "bg-[#C65D3B]/20 text-[#3E2418] font-semibold border-l-4 border-[#C65D3B]"
-                          : "text-stone-800 hover:text-[#3E2418] hover:bg-[#C65D3B]/10 active:bg-[#C65D3B]/15"
-                      }`}
-                    >
-                      <span className="text-[13px]">{item.title}</span>
-                      <ChevronDown
-                        className={`w-4 h-4 transition-transform duration-200 ${
-                          activeMobileSubmenu === item.title ? "rotate-180 text-[#C65D3B]" : "text-stone-500"
-                        }`}
-                      />
-                    </button>
+      {/* ------------------------------------------------------------------
+          MENU MOBILE — plein écran, opaque : aucun texte de la page ne
+          doit apparaître au travers. Structure adaptée au pouce.
+         ------------------------------------------------------------------ */}
+      <div
+        id="homera-mobile-menu"
+        aria-hidden={!mobileOpen}
+        inert={!mobileOpen}
+        className={`fixed inset-0 z-[70] lg:hidden ${
+          mobileOpen ? "visible pointer-events-auto" : "invisible pointer-events-none"
+        }`}
+      >
+        {/* Fond opaque + verre : la page ne transparaît jamais */}
+        <div
+          className={`absolute inset-0 bg-[#1c110b] transition-opacity duration-500 ease-[cubic-bezier(.22,.61,.28,1)] ${
+            mobileOpen ? "opacity-100" : "opacity-0"
+          }`}
+        >
+          <div className="absolute inset-0 opacity-[0.16] [background-image:radial-gradient(circle_at_20%_0%,rgba(198,93,59,0.9),transparent_58%),radial-gradient(circle_at_85%_18%,rgba(224,164,94,0.5),transparent_52%)]" />
+        </div>
 
-                    {activeMobileSubmenu === item.title && (
-                      <div className="pl-3 pr-1 pt-2 pb-2 space-y-1 bg-stone-200/80 rounded-xl mt-1.5 border border-stone-300/60 shadow-inner">
-                        {item.submenu.map((sub) => (
-                          <Link
-                            key={sub.label}
-                            href={sub.href}
-                            onClick={(e) => handleNavClick(e, sub.href)}
-                            className="block py-2 px-3 text-[12.5px] text-stone-700 font-medium hover:text-[#3E2418] hover:bg-[#C65D3B]/20 active:bg-[#C65D3B]/30 rounded-lg text-left transition-all"
-                          >
-                            {sub.label}
-                          </Link>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <Link
-                    href={item.href}
-                    onClick={(e) => handleNavClick(e, item.href)}
-                    className="block px-3 py-2.5 rounded-xl text-stone-800 text-[13px] hover:text-[#3E2418] hover:bg-[#C65D3B]/10 active:bg-[#C65D3B]/15 transition-all"
-                  >
-                    {item.title}
-                  </Link>
-                )}
-              </div>
-            ))}
+        <div
+          ref={mobilePanelRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Menu HOMERA"
+          className={`relative flex h-full flex-col transition-all duration-[520ms] ease-[cubic-bezier(.22,.61,.28,1)] ${
+            mobileOpen ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0"
+          } ${reduced ? "duration-200" : ""}`}
+        >
+          <div className="flex items-center justify-between px-5 pt-5">
+            <span className="homera-brand text-[2.5rem] text-white">Homera</span>
+            <button
+              type="button"
+              data-mobile-first
+              onClick={() => setMobileOpen(false)}
+              className="homera-press rounded-xl border border-white/12 bg-white/8 p-2.5 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
+              aria-label="Fermer le menu"
+            >
+              <X className="h-5 w-5" aria-hidden="true" />
+            </button>
           </div>
 
-          <div className="flex flex-col gap-2 pt-1 pb-2">
+          <nav
+            aria-label="Navigation mobile"
+            className="homera-thinscroll mt-4 flex-1 overflow-y-auto overscroll-contain px-5 pb-6"
+          >
+            <ul className="space-y-1.5">
+              {NAV_ITEMS.map((item, index) => {
+                const open = mobileSection === item.title;
+                return (
+                  <li
+                    key={item.title}
+                    className={`transition-all duration-500 ease-out ${
+                      mobileOpen ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
+                    }`}
+                    style={{
+                      transitionDelay: mobileOpen
+                        ? `${reduced ? 0 : 60 + index * 45}ms`
+                        : "0ms",
+                    }}
+                  >
+                    {item.submenu ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => setMobileSection(open ? null : item.title)}
+                          aria-expanded={open}
+                          className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-left text-[15px] font-medium transition-colors duration-300 ${
+                            open
+                              ? "border-homera-terracotta/40 bg-white/8 text-white"
+                              : "border-white/10 bg-white/[0.04] text-white/90"
+                          }`}
+                        >
+                          <span>{item.title}</span>
+                          <ChevronDown
+                            aria-hidden="true"
+                            className={`h-4 w-4 transition-transform duration-300 ${
+                              open ? "rotate-180 text-homera-amber" : "text-white/50"
+                            }`}
+                          />
+                        </button>
+                        <div
+                          className={`grid overflow-hidden transition-all duration-[420ms] ease-[cubic-bezier(.22,.61,.28,1)] ${
+                            open ? "mt-1.5 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                          }`}
+                        >
+                          <ul className="min-h-0 space-y-1 border-l border-white/10 pl-3">
+                            {item.submenu.map((sub) => (
+                              <li key={sub.label}>
+                                <Link
+                                  href={sub.href}
+                                  onClick={(event) => {
+                                    event.preventDefault();
+                                    handleNavigation(sub, sub.href);
+                                  }}
+                                  className="block rounded-xl px-3 py-2.5 text-[13.5px] text-white/80 transition-colors hover:bg-white/8 hover:text-white"
+                                >
+                                  {sub.label}
+                                </Link>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </>
+                    ) : (
+                      <Link
+                        href={item.href}
+                        onClick={(event) => {
+                          event.preventDefault();
+                          handleNavigation(null, item.href);
+                        }}
+                        className="block rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-[15px] font-medium text-white/90 transition-colors hover:bg-white/8"
+                      >
+                        {item.title}
+                      </Link>
+                    )}
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+
+          <div className="space-y-3 border-t border-white/10 bg-[#170e09] px-5 pb-8 pt-5">
+            <Link
+              href="#biens"
+              onClick={(event) => {
+                event.preventDefault();
+                handleNavigation(null, "#biens");
+              }}
+              className="homera-press homera-sheen flex w-full items-center justify-center rounded-full bg-homera-terracotta py-3.5 text-[14px] font-medium text-white"
+            >
+              Explorer les biens vérifiés
+            </Link>
             <Link
               href="#login"
-              onClick={(e) => handleNavClick(e, "#login")}
-              className="w-full text-center bg-homera-terracotta hover:bg-homera-terracotta-light text-[#2A170F] font-medium text-[13px] tracking-[0.01em] py-3 rounded-full shadow-md"
+              onClick={(event) => {
+                event.preventDefault();
+                handleNavigation(null, "#login");
+              }}
+              className="homera-press flex w-full items-center justify-center gap-2 rounded-full border border-white/15 py-3.5 text-[14px] font-medium text-white"
             >
+              <UserRound className="h-4 w-4" aria-hidden="true" />
               Se connecter
             </Link>
+            <p className="pt-1 text-center text-[11px] text-white/45">
+              Cotonou · Abomey-Calavi · Porto-Novo · Ouidah
+            </p>
           </div>
         </div>
-      )}
+      </div>
     </header>
   );
 }
+
+export { SERVICES_EVENT };

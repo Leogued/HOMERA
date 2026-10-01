@@ -72,8 +72,11 @@
      INTERFACE
      ================================ */
 
-  --muted: #7a6353;
-  --muted-light: #a8927f;
+  /* Contraste vérifié sur le fond crème (#faf6ef) :
+     --muted ≈ 6,5:1 · --muted-light ≈ 4,6:1 — la hiérarchie est
+     conservée, mais jamais au prix de la lisibilité. */
+  --muted: #6b5545;
+  --muted-light: #7f6a58;
 
   --border: #e8dccb;
   --card: #fffdf9;
@@ -115,8 +118,8 @@
   --homera-cream: #f5ede0;
   --homera-cream-dark: #ebdcc6;
 
-  --muted: #b8a391;
-  --muted-light: #d6c5b4;
+  --muted: #c3b09e;
+  --muted-light: #a8927f;
 
   --border: #4a2f22;
   --card: #2b1a12;
@@ -220,17 +223,22 @@ html {
   text-size-adjust: 100%;
 }
 
-html,
-body {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
+/* Mobile / tactile : aucune scrollbar apparente.
+   Sur desktop à pointeur fin, une scrollbar sobre est rétablie plus bas
+   (bloc « SCROLLBAR GÉNÉRALE — jamais dominante »). */
+@media (max-width: 767px), (pointer: coarse) {
+  html,
+  body {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
 
-html::-webkit-scrollbar,
-body::-webkit-scrollbar {
-  display: none;
-  width: 0;
-  height: 0;
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    display: none;
+    width: 0;
+    height: 0;
+  }
 }
 
 /* =================================
@@ -375,4 +383,712 @@ a {
 }
 @media (min-width: 1920px) {
   .homera-header-container { max-width: 92rem; }   /* ~1472px — ultrawide / Full HD+ */
+}
+
+/* ==================================================================
+   HOMERA — SYSTÈME DE MOUVEMENT & DE PROFONDEUR
+   ------------------------------------------------------------------
+   Ajouté à l’identité existante : aucune couleur, police ou structure
+   n’est remplacée. Tout ce bloc ne fait qu’ajouter des matières
+   (profondeur, grain, verre), des rythmes (easing, durées) et des
+   états (reveal, press, focus) réutilisables par chaque scène.
+   ================================================================== */
+
+:root {
+  /* Nuances profondes — utilisées pour les scènes sombres et les
+     transitions entre sections. Dérivées du brun HOMERA existant. */
+  --homera-night: #1c110b;
+  --homera-night-soft: #2a1a12;
+  --homera-amber: #e0a45e;
+  --homera-halo: rgba(198, 93, 59, 0.16);
+
+  /* Courbes de mouvement : une seule famille pour toute la page. */
+  --homera-ease: cubic-bezier(0.22, 0.61, 0.28, 1);
+  --homera-ease-out-soft: cubic-bezier(0.33, 1, 0.68, 1);
+  --homera-ease-in-out: cubic-bezier(0.65, 0.05, 0.36, 1);
+
+  /* Durées de référence (mouvement lent = sensation cinématique). */
+  --homera-duration-fast: 240ms;
+  --homera-duration: 520ms;
+  --homera-duration-slow: 900ms;
+
+  /* Élévations */
+  --homera-shadow-soft: 0 18px 50px -32px rgba(42, 23, 15, 0.55);
+  --homera-shadow-deep: 0 40px 90px -50px rgba(42, 23, 15, 0.75);
+  --homera-shadow-glow: 0 30px 80px -40px var(--homera-halo);
+
+  --homera-grain-opacity: 0.035;
+  --homera-hairline: rgba(62, 36, 24, 0.1);
+}
+
+.dark {
+  --homera-grain-opacity: 0.05;
+  --homera-hairline: rgba(245, 237, 224, 0.1);
+  --homera-shadow-soft: 0 18px 50px -30px rgba(0, 0, 0, 0.7);
+  --homera-shadow-deep: 0 40px 90px -50px rgba(0, 0, 0, 0.85);
+}
+
+/* ------------------------------------------------------------------
+   MATIÈRES — grain, verre, halos
+   ------------------------------------------------------------------ */
+
+.homera-grain {
+  position: relative;
+  isolation: isolate;
+}
+
+.homera-grain::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: var(--homera-grain-opacity);
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23g)'/></svg>");
+  background-size: 160px 160px;
+  mix-blend-mode: multiply;
+}
+
+.dark .homera-grain::after {
+  mix-blend-mode: soft-light;
+}
+
+.homera-glass {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 253, 249, 0.9) 0%,
+    rgba(255, 253, 249, 0.78) 100%
+  );
+  backdrop-filter: blur(18px) saturate(140%);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+}
+
+.dark .homera-glass {
+  background: linear-gradient(180deg, rgba(43, 26, 18, 0.92) 0%, rgba(43, 26, 18, 0.8) 100%);
+}
+
+.homera-glass-dark {
+  background: linear-gradient(180deg, rgba(28, 17, 11, 0.82) 0%, rgba(28, 17, 11, 0.46) 100%);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+}
+
+/* Filet lumineux (séparateur discret entre deux scènes) */
+.homera-hairline {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--homera-hairline) 18%,
+    var(--homera-hairline) 82%,
+    transparent 100%
+  );
+}
+
+/* ------------------------------------------------------------------
+   REVEAL — apparition progressive, un seul système pour toute la page
+   ------------------------------------------------------------------ */
+
+.homera-reveal {
+  opacity: 0;
+  transform: translate3d(var(--reveal-x, 0px), var(--reveal-y, 22px), 0)
+    scale(var(--reveal-scale, 1));
+  filter: blur(var(--reveal-blur, 5px));
+  transition:
+    opacity var(--reveal-duration, 820ms) var(--homera-ease) var(--reveal-delay, 0ms),
+    transform var(--reveal-duration, 820ms) var(--homera-ease) var(--reveal-delay, 0ms),
+    filter var(--reveal-duration, 820ms) var(--homera-ease-out-soft) var(--reveal-delay, 0ms),
+    clip-path var(--reveal-duration, 820ms) var(--homera-ease) var(--reveal-delay, 0ms);
+}
+
+.homera-reveal[data-revealed="true"] {
+  opacity: 1;
+  transform: none;
+  filter: blur(0);
+}
+
+/* Variante rideau : l’image se découvre de bas en haut. */
+.homera-reveal-clip {
+  clip-path: inset(var(--reveal-clip, 12%) 0 0 0 round var(--reveal-clip-radius, 0px));
+}
+
+.homera-reveal-clip[data-revealed="true"] {
+  clip-path: inset(0 0 0 0 round var(--reveal-clip-radius, 0px));
+}
+
+/* Sans JavaScript (ou sans IntersectionObserver) : le contenu reste visible. */
+@media (scripting: none) {
+  .homera-reveal {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    clip-path: none;
+  }
+}
+
+/* ------------------------------------------------------------------
+   MÉDIAS — parallax, zoom lent, lumière
+   ------------------------------------------------------------------ */
+
+.homera-media {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.homera-media img,
+.homera-media video {
+  transform: translate3d(0, var(--media-shift, 0px), 0) scale(var(--media-scale, 1.04));
+  transition: transform 900ms var(--homera-ease), filter 900ms var(--homera-ease);
+  will-change: transform;
+}
+
+.homera-media[data-hoverable="true"]:hover img {
+  transform: translate3d(0, var(--media-shift, 0px), 0) scale(var(--media-scale-hover, 1.09));
+}
+
+/* Voile de lisibilité : garantit le contraste du texte sur photo. */
+.homera-media-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(20, 12, 8, 0.82) 0%,
+    rgba(20, 12, 8, 0.5) 32%,
+    rgba(20, 12, 8, 0.16) 62%,
+    rgba(20, 12, 8, 0.4) 100%
+  );
+}
+
+/* ------------------------------------------------------------------
+   PROFONDEUR — cartes vivantes (parallax de pointeur)
+   ------------------------------------------------------------------ */
+
+.homera-depth {
+  transform: perspective(1200px) rotateX(var(--tilt-x, 0deg)) rotateY(var(--tilt-y, 0deg))
+    translate3d(var(--parallax-x, 0px), var(--parallax-y, 0px), 0);
+  transition: transform 700ms var(--homera-ease), box-shadow 500ms var(--homera-ease);
+}
+
+.homera-lift {
+  transition:
+    transform var(--homera-duration) var(--homera-ease),
+    box-shadow var(--homera-duration) var(--homera-ease),
+    border-color var(--homera-duration) var(--homera-ease),
+    background-color var(--homera-duration) var(--homera-ease);
+}
+
+.homera-lift:hover {
+  transform: translate3d(0, -4px, 0);
+  box-shadow: var(--homera-shadow-soft);
+}
+
+/* ------------------------------------------------------------------
+   BOUTONS & LIENS — réponse physique
+   ------------------------------------------------------------------ */
+
+.homera-press {
+  transition:
+    transform 180ms var(--homera-ease),
+    box-shadow 260ms var(--homera-ease),
+    background-color 260ms var(--homera-ease),
+    color 260ms var(--homera-ease),
+    border-color 260ms var(--homera-ease);
+}
+
+.homera-press:hover {
+  transform: translate3d(0, -2px, 0);
+}
+
+.homera-press:active {
+  transform: translate3d(0, 0, 0) scale(0.985);
+  transition-duration: 90ms;
+}
+
+/* Reflet qui traverse un bouton au survol */
+.homera-sheen {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.homera-sheen::after {
+  content: "";
+  position: absolute;
+  inset: -10%;
+  z-index: 0;
+  pointer-events: none;
+  transform: translate3d(-130%, 0, 0);
+  background: linear-gradient(
+    102deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.3) 50%,
+    transparent 62%
+  );
+  opacity: 0;
+}
+
+.homera-sheen:hover::after,
+.homera-sheen:focus-visible::after {
+  opacity: 1;
+  animation: homera-sheen 880ms var(--homera-ease);
+}
+
+@keyframes homera-sheen {
+  from {
+    transform: translate3d(-130%, 0, 0);
+  }
+  to {
+    transform: translate3d(130%, 0, 0);
+  }
+}
+
+/* Lien souligné qui se dessine */
+.homera-underline {
+  position: relative;
+}
+
+.homera-underline::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -3px;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform 380ms var(--homera-ease);
+}
+
+.homera-underline:hover::after,
+.homera-underline:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* ------------------------------------------------------------------
+   FILET LUMINEUX / RESPIRATION — éléments décoratifs utiles
+   ------------------------------------------------------------------ */
+
+@keyframes homera-halo {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+    opacity: 0.55;
+  }
+  50% {
+    transform: translate3d(0, -14px, 0) scale(1.06);
+    opacity: 0.8;
+  }
+}
+
+.homera-halo {
+  animation: homera-halo 14s var(--homera-ease-in-out) infinite;
+}
+
+@keyframes homera-pulse-ring {
+  0% {
+    transform: scale(0.72);
+    opacity: 0.55;
+  }
+  70% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(1.25);
+    opacity: 0;
+  }
+}
+
+.homera-pulse-ring {
+  animation: homera-pulse-ring 3.6s var(--homera-ease-out-soft) infinite;
+}
+
+@keyframes homera-scroll-cue {
+  0% {
+    transform: scaleY(0);
+    transform-origin: top center;
+  }
+  45% {
+    transform: scaleY(1);
+    transform-origin: top center;
+  }
+  55% {
+    transform: scaleY(1);
+    transform-origin: bottom center;
+  }
+  100% {
+    transform: scaleY(0);
+    transform-origin: bottom center;
+  }
+}
+
+.homera-scroll-cue::after {
+  content: "";
+  display: block;
+  width: 1px;
+  height: 100%;
+  background: currentColor;
+  animation: homera-scroll-cue 2.8s var(--homera-ease-in-out) infinite;
+}
+
+/* Repère de défilement du hero : masqué quand la hauteur ne le permet pas */
+@media (max-height: 820px) {
+  .homera-scroll-cue-wrap {
+    display: none;
+  }
+}
+
+/* Bandeau éditorial défilant */
+@keyframes homera-marquee {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-50%, 0, 0);
+  }
+}
+
+.homera-marquee {
+  display: flex;
+  width: max-content;
+  animation: homera-marquee var(--marquee-duration, 48s) linear infinite;
+}
+
+.homera-marquee-wrap:hover .homera-marquee,
+.homera-marquee-wrap:focus-within .homera-marquee {
+  animation-play-state: paused;
+}
+
+/* Trait de progression (protocole, storytelling) */
+.homera-progress-line {
+  position: relative;
+  overflow: hidden;
+}
+
+.homera-progress-line > span {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform-origin: top center;
+  transform: scaleY(var(--progress, 0));
+  transition: transform 700ms var(--homera-ease);
+  background: linear-gradient(180deg, var(--homera-terracotta), var(--homera-amber));
+}
+
+/* ------------------------------------------------------------------
+   SCÈNES — base commune des sections cinématiques
+   ------------------------------------------------------------------ */
+
+.homera-scene {
+  position: relative;
+  isolation: isolate;
+}
+
+.homera-canvas {
+  background-color: var(--background);
+}
+
+/* ------------------------------------------------------------------
+   LISTES SANS SCROLLBAR VISIBLE (mais réellement défilables)
+   ------------------------------------------------------------------ */
+
+.homera-noscrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.homera-noscrollbar::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
+}
+
+/* Scrollbar sobre pour les panneaux longs (desktop pointeur fin seulement) */
+@media (pointer: fine) {
+  .homera-thinscroll {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--homera-terracotta) 55%, transparent) transparent;
+  }
+
+  .homera-thinscroll::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .homera-thinscroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .homera-thinscroll::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--homera-terracotta) 50%, transparent);
+    border-radius: 999px;
+  }
+}
+
+/* ------------------------------------------------------------------
+   SCROLLBAR GÉNÉRALE — jamais dominante
+   ------------------------------------------------------------------ */
+
+@media (min-width: 768px) and (pointer: fine) {
+  html {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in oklab, var(--homera-brown) 38%, transparent) transparent;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  html::-webkit-scrollbar-track,
+  body::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  html::-webkit-scrollbar-thumb,
+  body::-webkit-scrollbar-thumb {
+    background: color-mix(in oklab, var(--homera-brown) 34%, transparent);
+    border: 3px solid transparent;
+    background-clip: padding-box;
+    border-radius: 999px;
+  }
+
+  html::-webkit-scrollbar-thumb:hover,
+  body::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in oklab, var(--homera-terracotta) 62%, transparent);
+    background-clip: padding-box;
+  }
+}
+
+/* ------------------------------------------------------------------
+   FOCUS VISIBLE — toujours lisible, y compris sur photo
+   ------------------------------------------------------------------ */
+
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--homera-terracotta);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+.homera-on-dark :where(a, button, input, [tabindex]):focus-visible {
+  outline-color: var(--homera-amber);
+}
+
+/* Cible de défilement : compense le header fixe */
+[id] {
+  scroll-margin-top: 6rem;
+}
+
+/* ------------------------------------------------------------------
+   CURSEUR PERSONNALISÉ — desktop à pointeur fin uniquement
+   ------------------------------------------------------------------ */
+
+.homera-cursor-active,
+.homera-cursor-active a,
+.homera-cursor-active button {
+  cursor: none;
+}
+
+.homera-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 90;
+  pointer-events: none;
+  border-radius: 999px;
+  will-change: transform;
+}
+
+/* ------------------------------------------------------------------
+   ACCESSIBILITÉ — mouvement réduit
+   ------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .homera-reveal {
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+    clip-path: none !important;
+    transition: none !important;
+  }
+
+  .homera-depth,
+  .homera-lift:hover,
+  .homera-press:hover,
+  .homera-press:active {
+    transform: none !important;
+  }
+
+  .homera-media img,
+  .homera-media video,
+  .homera-media[data-hoverable="true"]:hover img {
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .homera-halo,
+  .homera-pulse-ring,
+  .homera-marquee,
+  .homera-sheen::after,
+  .homera-scroll-cue::after {
+    animation: none !important;
+  }
+
+  .homera-cursor {
+    display: none !important;
+  }
+}
+
+/* Couche de grain réutilisable (posée par-dessus une vidéo ou une photo) */
+.homera-grain-layer {
+  pointer-events: none;
+  opacity: var(--grain-strength, var(--homera-grain-opacity));
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='160' height='160'><filter id='g'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/></filter><rect width='160' height='160' filter='url(%23g)'/></svg>");
+  background-size: 160px 160px;
+  mix-blend-mode: soft-light;
+}
+
+/* ------------------------------------------------------------------
+   FONDS DE SCÈNE — le voyage tonal de la page
+   ------------------------------------------------------------------
+   Trois états seulement, enchaînés pour éviter la succession de
+   sections « toutes blanches » : clair → crème → clair. Les entrées et
+   sorties de teinte sont progressives, jamais des bandes franches.
+   ------------------------------------------------------------------ */
+
+.scene-bg-plain {
+  background-color: var(--background);
+}
+
+.scene-bg-tint-in {
+  background: linear-gradient(
+    to bottom,
+    var(--background) 0%,
+    color-mix(in oklab, var(--homera-cream-dark) 46%, var(--background)) 100%
+  );
+}
+
+.scene-bg-tint {
+  background-color: color-mix(in oklab, var(--homera-cream-dark) 46%, var(--background));
+}
+
+.scene-bg-tint-out {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--homera-cream-dark) 46%, var(--background)) 0%,
+    var(--background) 100%
+  );
+}
+
+.dark .scene-bg-tint-in {
+  background: linear-gradient(
+    to bottom,
+    var(--background) 0%,
+    color-mix(in oklab, var(--homera-brown) 34%, var(--background)) 100%
+  );
+}
+
+.dark .scene-bg-tint {
+  background-color: color-mix(in oklab, var(--homera-brown) 34%, var(--background));
+}
+
+.dark .scene-bg-tint-out {
+  background: linear-gradient(
+    to bottom,
+    color-mix(in oklab, var(--homera-brown) 34%, var(--background)) 0%,
+    var(--background) 100%
+  );
+}
+
+/* Rail de chapitres : visible uniquement quand la marge latérale
+   existe réellement, pour ne jamais passer sous le texte. */
+.homera-chapter-rail {
+  display: none;
+}
+
+@media (min-width: 1500px) {
+  .homera-chapter-rail {
+    display: block;
+  }
+}
+
+/* Libellés du rail : à partir de la largeur où ils tiennent. */
+.homera-rail-label {
+  display: none;
+}
+
+@media (min-width: 1700px) {
+  .homera-rail-label {
+    display: inline;
+  }
+}
+
+/* Piste de la scène épinglée : marge de centrage exacte de la première
+   porte, y compris quand la scène est plafonnée à 1600px.
+   (Règles écrites dans cet ordre : la dernière applicable gagne.) */
+.homera-stage-pad {
+  padding-left: calc(27vw - 2rem);
+  padding-right: calc(27vw - 2rem);
+}
+
+@media (min-width: 1280px) {
+  .homera-stage-pad {
+    padding-left: calc(27vw - 3rem);
+    padding-right: calc(27vw - 3rem);
+  }
+}
+
+@media (min-width: 1600px) {
+  .homera-stage-pad {
+    padding-left: calc(800px - 23vw - 3rem);
+    padding-right: calc(800px - 23vw - 3rem);
+  }
+}
+
+/* Scène épinglée (Explorer par intention) : hauteurs qui s’adaptent
+   aux écrans courts, pour ne jamais rogner le contenu. */
+.homera-stage-panel {
+  height: 52svh;
+  min-height: 340px;
+}
+
+@media (max-height: 780px) {
+  .homera-stage-panel {
+    height: 46svh;
+    min-height: 280px;
+  }
+
+  .homera-stage-header p:last-of-type {
+    display: none;
+  }
+}
+
+@media (max-height: 640px) {
+  .homera-stage-panel {
+    height: 42svh;
+    min-height: 220px;
+  }
+}
+
+/* Filet de séparation entre deux scènes de même teinte */
+.scene-edge {
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--homera-hairline) 22%,
+    var(--homera-hairline) 78%,
+    transparent 100%
+  );
 }
