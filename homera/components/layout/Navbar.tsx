@@ -703,6 +703,37 @@ export function Navbar() {
               <UserRound className="h-4 w-4" aria-hidden="true" />
               Se connecter
             </Link>
+            {/* Le thème reste accessible même quand la page est couverte */}
+            {mounted && (
+              <button
+                type="button"
+                onClick={toggleTheme}
+                aria-pressed={isDark}
+                className="homera-press flex w-full items-center justify-between rounded-2xl border border-white/12 px-4 py-3 text-[13.5px] font-medium text-white/90"
+              >
+                <span className="inline-flex items-center gap-2.5">
+                  {isDark ? (
+                    <Sun className="h-4 w-4 text-homera-amber" aria-hidden="true" />
+                  ) : (
+                    <Moon className="h-4 w-4 text-stone-200" aria-hidden="true" />
+                  )}
+                  {isDark ? "Passer en mode clair" : "Passer en mode sombre"}
+                </span>
+                <span
+                  aria-hidden="true"
+                  className={`relative h-5 w-9 shrink-0 rounded-full border border-white/20 transition-colors duration-300 ${
+                    isDark ? "bg-homera-terracotta/70" : "bg-white/12"
+                  }`}
+                >
+                  <span
+                    className={`absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-white transition-all duration-300 ease-[cubic-bezier(.22,.61,.28,1)] ${
+                      isDark ? "left-[1.15rem]" : "left-[3px]"
+                    }`}
+                  />
+                </span>
+              </button>
+            )}
+
             <p className="pt-1 text-center text-[11px] text-white/45">
               Cotonou · Abomey-Calavi · Porto-Novo · Ouidah
             </p>
