@@ -76,7 +76,7 @@ export function Hero() {
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-36 bg-gradient-to-b from-transparent to-background sm:h-48" />
 
       <div className="relative z-10 mx-auto flex min-h-[inherit] max-w-7xl flex-col px-4 sm:px-6 lg:px-8">
-        <div className="space-y-8 text-center lg:mt-[max(0px,calc(100svh-29rem))]">
+        <div className="space-y-8 text-center lg:mt-[max(0px,calc(100svh-32rem))]">
           <p className="homera-reveal flex items-center justify-center gap-3 text-[10.5px] font-medium uppercase tracking-[0.42em] text-white/65"
             data-revealed={entered} style={reveal(640)}>
             <span aria-hidden="true" className="h-px w-8 bg-white/30" />
@@ -101,7 +101,7 @@ export function Hero() {
               </div>
             </div>
           </div>
-          <div className="homera-reveal mt-8" data-revealed={entered} style={reveal(400, 2)}>
+          <div className="homera-reveal -mt-1" data-revealed={entered} style={reveal(400, 2)}>
             <div className="homera-hero-search"><SearchModule /></div>
           </div>
         </div>
