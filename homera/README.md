@@ -113,6 +113,53 @@ intentions : « L’immobilier commence par un lieu. La confiance commence par H
 - Aucune dépendance d’animation ajoutée. Comparaison des patterns, amplitudes, raisons
   des mouvements et règles de contribution : **[docs/MOTION-HOMERA.md](docs/MOTION-HOMERA.md)**.
 
+---
+
+## Le site public (phase 2 — consultation sans compte)
+
+Le catalogue est consultable **sans créer de compte**. Toutes les pages ci-dessous
+existent réellement, sont liées depuis la navigation ou le pied de page, et aucune ne
+renvoie vers une ancre morte.
+
+| Adresse | Contenu | Rendu |
+| --- | --- | --- |
+| `/` | Accueil en neuf scènes, en-tête transparent sur la vidéo | statique |
+| `/explorer` | Recherche : filtres, tri, cartes, affichage progressif, adresse partageable | serveur puis client |
+| `/acheter`, `/louer`, `/sejour` | Pages de projet : familles, compteurs, sélection complète | serveur |
+| `/<projet>/<catégorie>` | Maisons, appartements, terrains, locaux, studios, nuitée… | généré au build |
+| `/biens/<identifiant>` | Fiche complète : faits, équipements, contrôle daté, biens proches | 36 pages générées |
+| `/favoris` | Favoris et recherches enregistrées du visiteur | statique, lecture locale |
+| `/services`, `/a-propos`, `/contact` | Écosystème, méthode, prise de contact | statique |
+| `/connexion`, `/legal` | Espace personnel annoncé, mentions et confidentialité | statique |
+| *(toute autre adresse)* | Page introuvable éditoriale, avec sorties réelles | 404 serveur |
+
+**Zones couvertes.** Quatre communes, décision produit validée : **Cotonou** (21 biens),
+**Abomey-Calavi** (7), **Ouidah** (5) et **Porto-Novo** (3). Les filtres de commune, de
+quartier et les bornes de prix dérivent du jeu de données : ajouter une commune se fait
+en ajoutant des biens, pas en modifiant l’interface.
+
+**Sources de vérité.**
+
+- `lib/properties.ts` — moteur unique du catalogue : lecture et écriture d’URL, filtres,
+  facettes comptées, tris, pagination, bornes de prix. Le serveur et le client passent par
+  lui : aucun écart d’affichage entre les deux.
+- `lib/nav.ts` — une seule déclaration pour le menu, les pages de projet et les catégories.
+- `lib/pages.ts` — la copie des pages institutionnelles (services, à propos, contact) ;
+  les pages ne sont que des mises en page.
+- `lib/persistence.ts` — favoris et recherches enregistrées. **Tout reste dans le
+  navigateur** (clé `homera.visiteur.v1`), rien n’est envoyé au serveur ; les données
+  relues sont validées avant usage.
+
+**Contrat de la carte de bien** (`components/catalog/PropertyCard.tsx`) : un seul arrêt
+de tabulation pour consulter le bien, clic sur toute la surface, ouverture sur
+Entrée ou Espace, un unique bouton favori (`aria-pressed`) hors du lien, et le libellé
+« Voir la fiche » toujours lisible. La date de vérification et la référence s’affichent
+sans survol. Aucun badge d’ancienneté.
+
+**Sans JavaScript**, `/explorer` sert déjà un premier écran de résultats et
+`?page=2` en affiche deux : la recherche reste utilisable, seule la mise à jour
+progressive de l’adresse et les filtres instantanés nécessitent le client.
+
 ## Vérification
 
 ```bash
@@ -120,7 +167,8 @@ npm test                  # ordonnanceur, inertie, géométrie, filtres, médias
 npx tsc --noEmit
 npm run lint
 npm run build
-npm run audit:home         # app déjà démarrée, URL optionnelle en argument
+npm run audit:home         # app déjà démarrée : explore le site et vérifie
+                           # liens internes, ancres inter-pages, aria, h1, images
 # HTML de production, sans serveur supplémentaire :
 node scripts/audit-home.mjs --file .next/server/app/index.html
 ```
@@ -133,8 +181,15 @@ avec la checklist **[docs/QA-MOTION.md](docs/QA-MOTION.md)**.
 
 Focus visible sur les scènes claires (terracotta) et sombres (ambre), navigation clavier
 complète (menus, listes déroulantes, carrousel, sommaire de services), libellés `aria`
-sur les commandes, aperçus en `<dialog>` natif avec retour du focus, contrastes texte vérifiés (`--muted` ≈ 6,5:1, `--muted-light` ≈ 4,6:1 sur
-le crème), `inert` sur les panneaux fermés, et respect strict du mouvement réduit.
+sur les commandes, aperçus en `<dialog>` natif avec retour du focus, `inert` sur les
+panneaux fermés, et respect strict du mouvement réduit.
+
+Contrastes : **tous les couples texte/fond sont assertés AA (≥ 4,5:1) par les tests**, dans
+les deux thèmes — encre et texte secondaire sur le fond comme sur une carte, terracotta et
+accent, états sémantiques, texte clair des scènes nocturnes, et les deux couples de bouton
+plein (`--action-bg` sur une page, `--action-night` sur une surface toujours sombre).
+Le terracotta clair a été assombri (`#c65d3b` → `#b3502c`) pour tenir ce seuil : il reste
+la teinte des aplats, tandis que `--homera-terracotta-dark` porte les petits textes.
 
 ## Performance
 

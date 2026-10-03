@@ -3,9 +3,6 @@
 export const clamp = (value: number, min = 0, max = 1) =>
   Math.min(max, Math.max(min, Number.isFinite(value) ? value : min));
 
-export const lerp = (from: number, to: number, progress: number) =>
-  from + (to - from) * clamp(progress);
-
 /** Accélération puis décélération, sans rebond ni dépassement. */
 export function smoothstep(progress: number) {
   const p = clamp(progress);

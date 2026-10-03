@@ -215,70 +215,6 @@ export function scrollToStory(element: HTMLElement | null, progress: number, red
   });
 }
 
-/** Progression de l’élément dans le viewport : 0 en entrant par le bas, 1 en sortant par le haut. */
-export function useScrollProgress<T extends HTMLElement>(enabled = true) {
-  const ref = useRef<T | null>(null);
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    const element = ref.current;
-    if (!element || !enabled) return;
-
-    let lastTime = 0;
-    const measure = () => {
-      const rect = element.getBoundingClientRect();
-      const travel = rect.height + window.innerHeight;
-      if (travel <= 0) return;
-      const value = (window.innerHeight - rect.top) / travel;
-      setProgress(Math.min(1, Math.max(0, value)));
-    };
-
-    const stop = onScrollFrame((time) => {
-      if (time === lastTime) return;
-      lastTime = time;
-      measure();
-    });
-
-    return stop;
-  }, [enabled]);
-
-  return { ref, progress } as const;
-}
-
-/* ------------------------------------------------------------------
-   Scène épinglée : progression exacte de la phase de fixation
-   ------------------------------------------------------------------ */
-
-export function usePanProgress<T extends HTMLElement, S extends HTMLElement>(enabled = true) {
-  const sectionRef = useRef<T | null>(null);
-  const stickyRef = useRef<S | null>(null);
-  const [pan, setPan] = useState(0);
-
-  useEffect(() => {
-    const section = sectionRef.current;
-    if (!section || !enabled) return;
-
-    let last = 0;
-    const measure = () => {
-      const rect = section.getBoundingClientRect();
-      const sticky = stickyRef.current?.offsetHeight ?? window.innerHeight;
-      const travel = section.offsetHeight - sticky;
-      const value = travel > 0 ? Math.min(1, Math.max(0, -rect.top / travel)) : 0;
-      setPan(value);
-    };
-
-    const stop = onScrollFrame((time) => {
-      if (time === last) return;
-      last = time;
-      measure();
-    });
-
-    return stop;
-  }, [enabled]);
-
-  return { sectionRef, stickyRef, pan } as const;
-}
-
 /* ------------------------------------------------------------------
    Parallax de pointeur — profondeur maîtrisée, desktop uniquement
    ------------------------------------------------------------------ */
@@ -326,9 +262,9 @@ export function usePointerMotion<T extends HTMLElement>({
     const enter = () => { bounds = source.getBoundingClientRect(); };
     const move = (event: PointerEvent) => {
       if (event.pointerType === "touch") return;
-      bounds ??= source.getBoundingClientRect();
-      target.x = clamp((event.clientX - bounds.left) / Math.max(1, bounds.width) * 2 - 1, -1, 1);
-      target.y = clamp((event.clientY - bounds.top) / Math.max(1, bounds.height) * 2 - 1, -1, 1);
+      const rect = (bounds ??= source.getBoundingClientRect());
+      target.x = clamp(((event.clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1, -1, 1);
+      target.y = clamp(((event.clientY - rect.top) / Math.max(1, rect.height)) * 2 - 1, -1, 1);
       wake();
     };
     const leave = () => { target.x = 0; target.y = 0; bounds = null; wake(); };

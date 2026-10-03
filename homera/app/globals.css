@@ -61,7 +61,7 @@
   --homera-brown-light: #5a3726;
   --homera-brown-dark: #2a170f;
 
-  --homera-terracotta: #c65d3b;   /* terracotta */
+  --homera-terracotta: #b3502c;   /* terracotta — assombri pour tenir 4,75:1 sur le crème */
   --homera-terracotta-light: #e07a55;
   --homera-terracotta-dark: #a4482a;
 
@@ -97,7 +97,7 @@
      Contrastes vérifiés sur le fond crème (scripts/test-motion.mjs) :
      --info ≈ 5,9:1 · --success/--warning/--error ≥ 4,5:1. */
   --success: #4d7c3a;
-  --warning: #b7791f;
+  --warning: #96621a;
   --error: #b3261e;
   --info: #3c6478;              /* bleu ardoise — information neutre */
 
@@ -107,6 +107,15 @@
      ================================ */
 
   --ring: #c65d3b;              /* focus / sélection = terracotta */
+
+  /* Boutons pleins : le fond et l’encre forment un couple vérifié.
+     Sur une surface de page, le couple suit le thème ; sur une surface
+     toujours sombre (menus mobiles, scène finale), il est fixe. */
+  --action-bg: #3e2418;         /* blanc sur brun = 14,3:1 */
+  --action-bg-hover: #5a3726;   /* blanc sur brun clair = 10,5:1 */
+  --action-ink: #ffffff;
+  --action-night: #b85a37;      /* blanc sur terracotta profond = 4,6:1 */
+  --action-night-hover: #a04d2e;/* blanc = 5,8:1 */
   --surface-hover: #f2e9dc;     /* crème légèrement foncée */
   --overlay: rgba(28, 17, 11, 0.74);
 
@@ -182,6 +191,8 @@
   --info: #86b6cd;
 
   --ring: #d9734e;
+  --action-bg: #b85a37;
+  --action-bg-hover: #a04d2e;
   --surface-hover: rgba(245, 237, 224, 0.08);
   --overlay: rgba(12, 7, 4, 0.8);
 }
@@ -1592,6 +1603,10 @@ a {
    principale reste sur les grandes surfaces et les grands accents. */
 .homera-accent-ink { color: var(--homera-terracotta-dark); }
 .dark .homera-accent-ink { color: var(--homera-terracotta); }
+.homera-cta { background-color: var(--action-bg); color: var(--action-ink); }
+.homera-cta:hover { background-color: var(--action-bg-hover); }
+.homera-cta-night { background-color: var(--action-night); color: var(--action-ink); }
+.homera-cta-night:hover { background-color: var(--action-night-hover); }
 .homera-accent-button { background-color: var(--homera-terracotta-dark); color: #fff; }
 .homera-accent-button:hover { background-color: color-mix(in srgb, var(--homera-terracotta-dark) 92%, var(--homera-brown)); }
 .dark .homera-property-filter[aria-pressed="true"] { background-color: var(--homera-terracotta-dark); }
@@ -1599,3 +1614,80 @@ a {
 .homera-nav-entry { opacity: 0; transform: translateY(4px); transition: opacity 180ms var(--homera-ease), transform 240ms var(--homera-ease); }
 .homera-nav-panel[data-open="true"] .homera-nav-entry { opacity: 1; transform: none; transition-delay: var(--nav-stagger, 0ms); }
 @media (prefers-reduced-motion: reduce) { .homera-nav-entry { transform: none !important; } }
+
+/* =================================
+   PAGES PUBLIQUES — L’EN-TÊTE PARTAGÉ
+   L’accueil garde son en-tête transparent posé sur la vidéo. Toutes les
+   autres pages ont besoin d’un en-tête OPAQUE et lisible : le mot-symbole,
+   la navigation et les panneaux restent les mêmes, seul le fond change.
+   ================================= */
+
+.homera-public-header {
+  background-color: var(--background);
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--duration-base) var(--homera-ease),
+    background-color var(--duration-base) var(--homera-ease);
+}
+
+/* Fin de page atteinte : la limite devient franche, sans ombre lourde. */
+.homera-public-header[data-scrolled="true"] {
+  border-bottom-color: var(--border);
+}
+
+.homera-public-header .homera-brand {
+  color: var(--foreground);
+}
+
+/* Les entrées prennent l’encre de la page : plus de blanc sur blanc. */
+.homera-public-header nav a,
+.homera-public-header nav button {
+  color: var(--foreground);
+}
+
+/* =================================
+   TIROIR DE FILTRES (MOBILE)
+   Dialogue natif : plein écran sur téléphone, panneau latéral ensuite.
+   ================================= */
+
+.homera-filter-dialog {
+  border: 0;
+  max-height: none;
+  max-width: none;
+  inset: 0;
+}
+
+.homera-filter-dialog[open] {
+  display: block;
+  animation: homera-dialog-in var(--duration-base) var(--homera-ease);
+}
+
+@keyframes homera-dialog-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .homera-filter-dialog[open] { animation: none; }
+}
+
+/* =================================
+   VISUELS DES PAGES DE CATALOGUE
+   Toutes les photos de bien ou de page suivent le même mouvement
+   lent : l’image ne saute pas, elle respire à l’intérieur de son cadre.
+   ================================= */
+
+.homera-page-hero-image,
+.homera-property-image {
+  transition: transform 1200ms var(--homera-ease), filter 700ms var(--homera-ease);
+  will-change: transform;
+}
+
+.homera-media:hover .homera-page-hero-image,
+.homera-media:hover .homera-property-image {
+  transform: scale(1.02);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .homera-page-hero-image,
+  .homera-property-image { transition: none; transform: none !important; }
+}
