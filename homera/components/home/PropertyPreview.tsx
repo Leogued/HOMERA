@@ -1,8 +1,9 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { Bath, Bed, CalendarCheck, MapPin, Maximize, ShieldCheck, X } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, Bath, Bed, CalendarCheck, MapPin, Maximize, ShieldCheck, X } from "lucide-react";
 import { DEMO_DATA, type Property } from "@/lib/content";
-import { formatFCFA, INTENT_LABELS, TYPE_LABELS } from "@/lib/format";
+import { INTENT_LABELS, TYPE_LABELS, formatPropertyPrice, formatSurface } from "@/lib/format";
 import { Visual } from "@/components/ui/Visual";
 import { CopyReference } from "@/components/ui/CopyReference"; /** Aperçu natif : top layer, Échap, focus piégé et rendu à la demande. */
 export function PropertyPreview({ property, onClose }: { property: Property; onClose: () => void }) {
@@ -64,11 +65,7 @@ export function PropertyPreview({ property, onClose }: { property: Property; onC
             {" "}
             <MapPin className="h-4 w-4" aria-hidden="true" /> {property.district}, {property.city}{" "}
           </p>{" "}
-          <p className="homera-num mt-5 text-xl font-semibold text-foreground">
-            {" "}
-            {formatFCFA(property.price)}{" "}
-            <span className="text-body-sm font-normal text-muted">{property.pricePeriod}</span>{" "}
-          </p>{" "}
+          <p className="homera-num mt-5 text-xl font-semibold text-foreground">{formatPropertyPrice(property)}</p>{" "}
           <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-3 border-y border-border py-4 text-body-sm text-muted">
             {" "}
             {property.bedrooms > 0 && (
@@ -85,7 +82,7 @@ export function PropertyPreview({ property, onClose }: { property: Property; onC
             )}{" "}
             <li className="inline-flex items-center gap-2">
               <Maximize className="h-4 w-4" aria-hidden="true" />
-              {property.surface} m²
+              {formatSurface(property.surface)}
             </li>{" "}
           </ul>{" "}
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
@@ -106,6 +103,21 @@ export function PropertyPreview({ property, onClose }: { property: Property; onC
               Vérification : {property.verifiedOn}
             </p>{" "}
           </div>{" "}
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <Link
+              href={`/biens/${property.id}`}
+              className="homera-press inline-flex min-h-12 items-center gap-2 rounded-btn homera-cta px-5 text-body-sm font-medium text-white transition-colors"
+            >
+              Voir la fiche complète
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+            <Link
+              href={`/contact?bien=${property.homeraId}`}
+              className="homera-press inline-flex min-h-12 items-center gap-2 rounded-btn border border-border px-5 text-body-sm font-medium text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
+            >
+              Demander une visite
+            </Link>
+          </div>
           {DEMO_DATA && (
             <p className="mt-5 text-caption leading-relaxed text-muted">
               Fiche de démonstration et visuel illustratif. Ce bien n’est pas une offre commerciale réelle. Le statut

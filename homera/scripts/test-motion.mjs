@@ -184,16 +184,37 @@ const ratio = (a, b) => { const [min, max] = [luminance(a), luminance(b)].sort((
 await test('HOMERA : petits textes, CTA et données secondaires au contraste AA', () => {
   for (const theme of [light, dark]) {
     const bg = channels(theme['--background']);
+    const card = channels(theme['--card']);
     const accent = channels(theme === light ? theme['--homera-terracotta-dark'] : theme['--homera-terracotta']);
     assert.ok(ratio(accent, bg) >= 4.5);
+    assert.ok(ratio(accent, card) >= 4.5, `accent illisible sur une carte (${theme['--homera-terracotta-dark']})`);
     assert.ok(ratio(channels('#ffffff'), channels(theme['--homera-terracotta-dark'])) >= 4.5);
     assert.ok(ratio(channels(theme['--muted']), bg) >= 4.5);
+    assert.ok(ratio(channels(theme['--muted']), card) >= 4.5, '--muted illisible sur une carte');
+    assert.ok(ratio(channels(theme['--muted-light']), bg) >= 4.5, '--muted-light sous le seuil AA');
     assert.ok(ratio(channels(theme['--info']), bg) >= 4.5, `--info illisible (${theme['--info']})`);
+    assert.ok(ratio(channels(theme['--warning']), bg) >= 4.5, `--warning illisible (${theme['--warning']})`);
+    assert.ok(ratio(channels(theme['--success']), bg) >= 4.5, `--success illisible (${theme['--success']})`);
+    assert.ok(ratio(channels(theme['--error']), bg) >= 4.5, `--error illisible (${theme['--error']})`);
     assert.ok(ratio(channels(theme['--ring']), bg) >= 3, '--ring insuffisant pour un anneau de focus');
     const secondary = channels(theme['--foreground']).map((channel, index) => channel * .78 + bg[index] * .22);
     assert.ok(ratio(secondary, bg) >= 4.5);
   }
-  assert.ok(ratio(channels('#e0a45e'), channels('#3e2418')) >= 4.5);
+  // Les deux couples d’action : sur surface de page, et sur surface toujours sombre.
+  for (const theme of [light, dark]) {
+    assert.ok(ratio(channels(theme['--action-ink']), channels(theme['--action-bg'])) >= 4.5,
+      `bouton plein illisible (${theme['--action-bg']})`);
+    assert.ok(ratio(channels(theme['--action-ink']), channels(theme['--action-bg-hover'])) >= 4.5,
+      `survol de bouton sous le seuil AA (${theme['--action-bg-hover']})`);
+    assert.ok(ratio(channels(theme['--action-ink']), channels(theme['--action-night'])) >= 4.5,
+      `bouton sur surface sombre illisible (${theme['--action-night']})`);
+  }
+  // Le texte clair posé sur les scènes nocturnes, quel que soit le thème.
+  for (const ink of ['--homera-cream', '--homera-cream-dark', '--homera-amber']) {
+    assert.ok(ratio(channels(light[ink]), channels(light['--homera-brown'])) >= 4.5, `${ink} illisible sur brun`);
+    assert.ok(ratio(channels(light[ink]), channels(light['--homera-night'])) >= 4.5, `${ink} illisible sur nuit`);
+  }
+  assert.ok(ratio(channels(light['--homera-paper-muted']), channels(light['--homera-paper'])) >= 4.5);
 });
 await test('HOMERA : prix immobiles, police d’interface et absence de souris cachée', () => {
   assert.match(css, /\.homera-property-gallery\[data-gallery-ready="true"\] \.homera-property-photo\s*\{[^}]*transform:/);

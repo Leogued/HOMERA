@@ -147,3 +147,116 @@ export const CONTACT_PAGE = {
   honesty:
     "Les coordonnées affichées appartiennent au système pilote : le numéro de téléphone est un exemple et les demandes ne sont pas encore enregistrées dans une base.",
 } as const;
+
+/* ------------------------------------------------------------------
+   /connexion — ce qui existe déjà, et ce que le compte ajoutera
+   ------------------------------------------------------------------ */
+
+export const SESSION_PAGE = {
+  breadcrumb: "Se connecter",
+  hero: {
+    eyebrow: "Espace personnel",
+    title: "Votre espace HOMERA arrive",
+    intro:
+      "La création de compte n’est pas encore ouverte : nous préférons livrer un espace utile plutôt qu’un formulaire vide. En attendant, l’intégralité du catalogue, des fiches, des favoris et des recherches enregistrées se consulte librement, sans inscription.",
+    primaryAction: "Explorer les biens vérifiés",
+    secondaryAction: "Être prévenu de l’ouverture",
+  },
+  availableTitle: "Déjà disponible, sans compte",
+  /** `icon` reste une clé : les pictogrammes appartiennent aux pages. */
+  available: [
+    {
+      id: "favoris",
+      icon: "heart",
+      title: "Vos favoris",
+      detail: "Le cœur sur une carte suffit : votre sélection reste dans ce navigateur, accessible dès maintenant.",
+      href: "/favoris",
+      action: "Voir mes favoris",
+    },
+    {
+      id: "recherches",
+      icon: "search",
+      title: "Recherches enregistrées",
+      detail: "Une recherche filtrée s’enregistre telle quelle, avec son adresse partageable et son nombre de biens.",
+      href: "/favoris",
+      action: "Voir mes recherches",
+    },
+  ],
+  featuresTitle: "Ce que le compte apportera en plus",
+  features: [
+    {
+      id: "alertes",
+      icon: "bell",
+      title: "Synchronisation et alertes",
+      detail: "Retrouver favoris et recherches sur tous vos appareils, et être prévenu des nouveautés.",
+    },
+    {
+      id: "visites",
+      icon: "calendar",
+      title: "Visites et demandes",
+      detail: "Suivre vos demandes de visite et vos dossiers en cours.",
+    },
+    {
+      id: "proprietaire",
+      icon: "key",
+      title: "Espace propriétaire",
+      detail: "Déposer un bien, suivre sa vérification et sa publication.",
+    },
+  ],
+  notice:
+    "Vous cherchez un bien maintenant ? Tout est déjà accessible : filtrez par commune, budget et surface, puis contactez-nous avec la référence du bien.",
+  noticeAction: "Continuer sans compte",
+} as const;
+
+/* ------------------------------------------------------------------
+   /legal — trois textes courts, honnêtes sur leur statut
+   ------------------------------------------------------------------ */
+
+export const LEGAL_PAGE = {
+  breadcrumb: "Informations légales",
+  hero: {
+    eyebrow: "Informations légales",
+    title: "Mentions, confidentialité et conditions",
+    intro:
+      "Ces textes décrivent le fonctionnement du système pilote HOMERA. Ils seront complétés par les mentions de la société d’exploitation avant l’ouverture commerciale et l’ouverture des comptes.",
+  },
+  jumpNavLabel: "Sommaire légal",
+  sections: [
+    {
+      id: "mentions",
+      label: "Mentions légales",
+      title: "Mentions légales",
+      paragraphs: [
+        "HOMERA est un projet de plateforme immobilière destiné au marché béninois. À ce stade, le site constitue un système pilote : les biens, chiffres et coordonnées présentés sont des données de démonstration et ne constituent pas des offres commerciales.",
+        "Les informations d’identification de la société d’exploitation (dénomination, immatriculation RCCM, adresse du siège, contact du responsable de publication, hébergeur) seront publiées ici avant l’ouverture commerciale.",
+        "Les visuels du catalogue sont des illustrations générées pour le système pilote ; ils ne représentent pas des biens réels.",
+      ],
+    },
+    {
+      id: "confidentialite",
+      label: "Confidentialité",
+      title: "Politique de confidentialité",
+      paragraphs: [
+        "Navigation publique : aucune donnée personnelle n’est collectée, aucun cookie de mesure d’audience ni traceur publicitaire n’est déposé, et aucune requête n’est faite vers un serveur d’analyse.",
+        "Stockage local : trois choses seulement sont conservées dans votre navigateur, jamais transmises à HOMERA — votre préférence de thème (clair ou sombre), les biens que vous mettez en favori et les recherches que vous enregistrez depuis l’explorateur. Effacer les données du site dans les réglages de votre navigateur les supprime définitivement.",
+        "Recherche : les critères que vous saisissez restent dans l’adresse de la page (paramètres d’URL) afin que vous puissiez la partager ou revenir en arrière. Ils ne sont envoyés à aucun serveur d’analyse.",
+        "Prise de contact : le formulaire de la page Contact ne transmet rien automatiquement — il prépare un e-mail dans votre logiciel de messagerie. Les informations que vous choisissez d’envoyer sont alors traitées par échange de courrier.",
+        "Lorsque l’espace personnel ouvrira, une politique complète (données traitées, finalités, durées de conservation, droits d’accès et de suppression) sera publiée et devra être acceptée avant toute création de compte.",
+      ],
+    },
+    {
+      id: "cgu",
+      label: "Conditions générales",
+      title: "Conditions générales d’utilisation",
+      paragraphs: [
+        "Le statut « Vérifié HOMERA » atteste d’un contrôle documentaire réalisé à la date indiquée sur la fiche : il ne constitue ni un titre de propriété, ni une garantie juridique, ni un conseil. Toute transaction relève du notaire et des autorités compétentes.",
+        "Les informations publiées proviennent des propriétaires et de leurs mandataires autorisés ; elles sont confrontées aux pièces fournies et peuvent évoluer. Un bien peut être retiré de la publication à tout moment.",
+        "L’utilisation du site implique le respect de ces règles, l’interdiction d’extraire massivement les contenus et l’usage loyal des outils de recherche et de prise de contact.",
+      ],
+    },
+  ],
+  /** La clé de stockage local citée dans la politique de confidentialité. */
+  storageKey: "homera.visiteur.v1",
+  closing: "Une question sur ces documents ?",
+  closingAction: "Écrivez-nous",
+} as const;

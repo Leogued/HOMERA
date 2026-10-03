@@ -43,6 +43,18 @@ Deux défauts cachés trouvés au passage, invisibles à l'œil mais réels :
 | `--surface-hover` | `#f2e9dc` / `rgba(245,237,224,.08)` | survol de surface, remplace `stone-100` |
 | `--overlay` | `rgba(28,17,11,.74)` / `rgba(12,7,4,.8)` | voile de modale |
 | `--homera-paper`, `--homera-paper-muted` | `#faf6ef`, `#6b5545` | pigments des surfaces toujours claires (dossier du protocole, étiquette du curseur) — non redéfinis par `.dark` |
+| `--action-bg`, `--action-bg-hover` | `#3e2418`/`#5a3726` (clair) · `#b85a37`/`#a04d2e` (sombre) | couple fond/encre des boutons pleins : blanc dessus = 14,3:1 · 10,5:1 (clair), 4,6:1 · 5,8:1 (sombre) |
+| `--action-night`, `--action-night-hover` | `#b85a37` / `#a04d2e` | bouton plein posé sur une surface TOUJOURS sombre (menus mobiles, scène finale) : blanc dessus = 4,6:1 · 5,8:1, identique dans les deux thèmes |
+
+**Phase 2 — contraste.** Le terracotta clair passe de `#c65d3b` à **`#b3502c`** : la teinte
+d'origine ne tenait que 3,9:1 sur le crème et 4,2:1 sur une carte, donc sous le seuil AA dès
+qu'elle servait d'encre. La teinte de marque reste `--homera-terracotta-dark` pour les petits
+textes et `--homera-terracotta` pour les aplats décoratifs (filets, halos, pastilles).
+`--warning` passe de `#b7791f` à `#96621a` (3,4:1 → 4,8:1).
+
+Les boutons pleins n'écrivent plus leur couleur en classes : ils consomment `.homera-cta`
+(surface de page, suit le thème) ou `.homera-cta-night` (surface toujours sombre, fixe).
+Une seule décision à changer, à un seul endroit, au lieu de 19 listes de classes.
 
 Les pigments nocturnes (`--homera-night`, `--homera-night-soft`, `--homera-amber`,
 `--homera-halo`) ont été remontés dans le bloc palette : un seul endroit où lire les
@@ -58,9 +70,10 @@ couleurs. Tous sont désormais exposés à Tailwind.
   restants — fond du manifeste, ses deux dégradés de fondu, le filet du manifeste —
   pointent vers `var(--homera-brown)` / `var(--homera-amber)`).
 
-Reste vrai : `--success`, `--warning`, `--error`, `--info` sont désormais complets et
-exposés, mais **aucune interface ne les consomme encore** — il n'y a ni formulaire ni
-toast dans la page actuelle.
+Toujours vrai : `--success`, `--warning`, `--error`, `--info` sont complets et exposés, mais
+**aucune interface ne les consomme encore**. Depuis la phase 2, leurs quatre valeurs sont
+cependant assertées AA (≥ 4,5:1 sur le fond) : le jour où un formulaire ou un message d’état
+les utilisera, la lisibilité sera déjà prouvée par les tests.
 
 ### 2.2 Typographie
 
@@ -170,16 +183,20 @@ Les deux gardes ont été falsifiées pour vérifier qu'elles échouent vraiment
 ## 3. Vérifications exécutées
 
 ```
-npm test                     → 23 tests / 23 pass, 0 fail   (20 avant, 3 ajoutés)
+npm test                     → 36 tests / 36 pass, 0 fail   (23 avant la phase 2, 13 ajoutés)
 npx tsc --noEmit             → 0 erreur
 npm run lint                 → 0 erreur
-npm run build                → ✓ Compiled successfully ; routes / et /_not-found
-node scripts/audit-home.mjs  → 63 identifiants uniques, 39 références aria résolues,
-                               9 chapitres, CSS compilé, image AVIF 50 814 octets
+npm run build                → ✓ 61 pages ; accueil, pages institutionnelles, projets,
+                               catégories et 36 fiches de biens générées
+npm run audit:home           → 90 pages publiques explorées, 1 547 identifiants uniques,
+                               aucun lien interne cassé, ancres inter-pages résolues,
+                               un seul h1 par page, cartes à un seul lien,
+                               CSS compilé, image AVIF 50 814 octets
 CSS compilé                  → .text-homera-amber, .bg-surface-hover, .text-label,
                                .text-note, .text-micro, .text-figure-fluid, .rounded-card,
                                .rounded-menu, .rounded-modal, .rounded-input, .rounded-btn,
-                               .ease-standard, .homera-skeleton : toutes générées
+                               .ease-standard, .homera-skeleton, .homera-cta,
+                               .homera-public-header, .homera-filter-dialog : toutes générées
 HTML servi (curl /)          → stone- : 0 · text-homera-amber : 41 · ease-standard : 93
 ```
 

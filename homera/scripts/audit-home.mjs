@@ -193,12 +193,19 @@ const catalogue = [...pages.keys()].filter((path) => /^\/(acheter|louer|sejour)(
 assert.ok(catalogue.length >= 12, `Trop peu de pages de catalogue explorées : ${catalogue.length}`);
 const propertyPages = [...pages.keys()].filter((path) => path.startsWith('/biens/'));
 assert.ok(propertyPages.length >= 30, `Biens atteignables depuis les liens : ${propertyPages.length}`);
+// Le serveur rend le premier écran : utile sans JavaScript, et paginable par l’adresse.
+const countCards = (html) => new Set([...render(html).matchAll(/href="\/biens\/([^"]+)"/g)].map((match) => match[1])).size;
+
 for (const path of [...catalogue, ...propertyPages]) {
   const page = pages.get(path);
   assert.ok((page.html.match(/data-cursor="property"/g) ?? []).length >= (path.startsWith('/biens/') ? 0 : 1), `${path} : aucune carte de bien`);
+  if (path.startsWith('/biens/')) continue;
+  // Contrat de carte : un seul lien vers la fiche par bien affiché — le clavier
+  // s’arrête une fois par carte, pas trois.
+  const cards = (page.html.match(/data-card/g) ?? []).length;
+  const links = countCards(page.html);
+  assert.equal(links, cards, `${path} : ${links} liens pour ${cards} cartes (un seul lien attendu par carte)`);
 }
-// Le serveur rend le premier écran : utile sans JavaScript, et paginable par l’adresse.
-const countCards = (html) => new Set([...render(html).matchAll(/href="\/biens\/([^"]+)"/g)].map((match) => match[1])).size;
 const unfiltered = await (await fetchOk('/explorer')).text();
 const firstPage = countCards(unfiltered);
 const secondPage = countCards(await (await fetchOk('/explorer?page=2')).text());

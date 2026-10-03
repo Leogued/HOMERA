@@ -15,6 +15,32 @@
 - Contrastes calculés des pigments de texte sur les fonds connus (clair / sombre).
 - HTML rendu : unicité des identifiants, résolution des `aria-controls`,
   `aria-labelledby`, `aria-describedby`, ancres et absence d’interactifs imbriqués.
+- **Site public entier** (`npm run audit:home`) : exploration des 90 pages atteignables
+  depuis l’accueil, aucun lien interne cassé, ancres inter-pages résolues
+  (`/services#gestion`, `/a-propos#protocole`…), un seul `h1` par page, images décrites,
+  aucun `href="#"`, langue du document, titres et descriptions présents.
+- **Contrat de carte** : le nombre de liens vers une fiche égale le nombre de cartes
+  affichées — un seul arrêt de tabulation par carte, trois auparavant.
+- Catalogue : filtres par projet et par type réellement restrictifs, `?page=2` servant
+  deux écrans sans JavaScript, état vide explicite, page hors bornes servie.
+- 404 : statut HTTP réel, contenu éditorial, sorties de secours présentes.
+
+### Phase 2 — à contrôler à la main
+
+- [ ] **Carte de bien** : un seul arrêt `Tab` par carte, focus visible sur toute la
+  surface, `Entrée` **et** `Espace` ouvrent la fiche, retour arrière au même endroit.
+- [ ] **Favori** : `aria-pressed` bascule, retour visuel immédiat, annonce unique au
+  lecteur d’écran, survit au rechargement, disparaît après effacement des données du site.
+- [ ] **Explorateur** : filtres, tri et suppression de puce mettent l’adresse à jour sans
+  rechargement ; le retour arrière du navigateur restaure l’état attendu.
+- [ ] **Tiroir de filtres (mobile)** : plein écran, `Échap` ferme, le focus revient au
+  bouton d’ouverture, le défilement de la page reste verrouillé.
+- [ ] **/favoris** : sélection et recherches se réaffichent après un aller-retour sur le
+  catalogue ; deux onglets ouverts restent cohérents.
+- [ ] **Contrastes en situation** : petit texte sur carte et sur fond crème, boutons
+  pleins dans les deux thèmes, texte clair sur les scènes nocturnes.
+- [ ] **En-tête** : `PublicHeader` lisible sur toutes les pages intérieures ; l’accueil
+  garde son en-tête transparent sur la vidéo.
 - Présence des chapitres, quatre intentions, six données du dossier, sept étapes,
   quatre services, vidéo d’origine et CTA.
 - CSS des scènes réellement compilé ; endpoint `next/image` avec une qualité autorisée.
@@ -69,8 +95,13 @@ ne sont **pas** marquées comme validées par compilation ou par calcul.
 
 ## Périmètre métier
 
-Les biens, statistiques et dossier sont une démonstration explicitement signalée.
-L’aperçu n’est pas une offre de vente réelle. `#login` reste une ancre préexistante sans
-page d’authentification. Les demandes de services ouvrent le client mail, sans envoi
-automatique. L’espace éditorial présente des couvertures / extraits ; les articles
-complets et le backend immobilier ne font pas partie de ce travail de motion design.
+Les biens, statistiques et dossier sont une démonstration explicitement signalée :
+chaque page de catalogue rappelle que les biens et visuels du pilote ne sont pas
+commercialisés. Les fiches ne constituent pas des offres de vente réelles.
+
+Depuis la phase 2, il n’existe plus d’ancre sans destination : `/connexion` remplace
+l’ancienne ancre `#login` et annonce honnêtement ce que le compte apportera en plus.
+Favoris et recherches enregistrées fonctionnent **sans compte**, dans le navigateur
+uniquement (`homera.visiteur.v1`). Les demandes de services et de visite ouvrent le
+client de messagerie, sans envoi automatique. La vue carte de l’explorateur et
+l’espace éditorial complet (articles) restent hors périmètre.
