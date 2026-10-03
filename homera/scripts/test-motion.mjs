@@ -709,6 +709,16 @@ await test('HOMERA : l’inscription refuse, accepte, puis compte les rôles', (
   assert.ok(!auth.validateSignUp('client', fill('client', { telephone: '01 97 00 00 00' })).fields.telephone);
   assert.ok(!auth.validateSignUp('client', fill('client', { telephone: '+229 01 97 00 00 00' })).fields.telephone);
 
+  // Mise en forme des numéros : paires, indicatif conservé.
+  assert.equal(auth.formatPhone(''), '');
+  assert.equal(auth.formatPhone('97000000'), '97 00 00 00');
+  assert.equal(auth.formatPhone('0197000000'), '01 97 00 00 00');
+  assert.equal(auth.formatPhone('+2290197000000'), '+229 01 97 00 00 00');
+  assert.equal(auth.formatPhone('2290197000000'), '+229 01 97 00 00 00');
+  // Un indicatif inconnu n’est pas reformaté d’office.
+  assert.equal(auth.formatPhone(' +33 6 12 34 56 78 '), '+33 6 12 34 56 78');
+  assert.equal(auth.formatPhone('+229'), '+229');
+
   // Mots de passe : faible, non confirmé, identitaire.
   assert.ok(auth.validateSignUp('client', fill('client', { motDePasse: 'azerty', confirmation: 'azerty' })).fields.motDePasse);
   assert.ok(auth.validateSignUp('client', fill('client', { confirmation: 'Autre-Chose-2026' })).fields.confirmation);

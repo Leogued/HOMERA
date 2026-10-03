@@ -554,14 +554,32 @@ export function isPhone(value: string): boolean {
   return true;
 }
 
-/** Mise en forme lisible d’un numéro saisi : +229 01 97 00 00 00. */
+/** Les numéros se lisent par paires de chiffres, jamais par triades. */
+function groupPairs(digits: string): string {
+  return digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
+}
+
+/**
+ * Mise en forme lisible d’un numéro saisi :
+ * « +2290197000000 » et « 0197000000 » deviennent « +229 01 97 00 00 00 »
+ * et « 01 97 00 00 00 » — un numéro béninois se lit par paires.
+ * Un indicatif qu’on ne connaît pas n’est jamais reformaté d’office : le
+ * numéro est rendu tel qu’il a été saisi, jamais réécrit de travers.
+ */
 export function formatPhone(value: string): string {
   const trimmed = value.trim();
   if (trimmed === "") return "";
-  const international = trimmed.startsWith("+");
   const digits = phoneDigits(trimmed);
-  const grouped = digits.replace(/(\d{2})(?=\d)/g, "$1 ").trim();
-  return international ? `+${grouped}` : grouped;
+  if (digits.length === 0) return trimmed;
+
+  // Le seul indicatif que HOMERA connaît : celui du Bénin.
+  const benin = digits.startsWith("229") && digits.length > 10;
+  if (trimmed.startsWith("+") && !benin) return trimmed;
+  if (benin) {
+    const rest = digits.slice(3);
+    return rest === "" ? "+229" : `+229 ${groupPairs(rest)}`;
+  }
+  return groupPairs(digits);
 }
 
 /** L’IFU béninois compte 13 chiffres ; on ne l’impose que s’il est renseigné. */
