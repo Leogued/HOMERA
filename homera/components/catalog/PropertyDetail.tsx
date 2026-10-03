@@ -16,6 +16,7 @@ import {
   Users,
 } from "lucide-react";
 import { DEMO_DATA, FEATURE_LABELS, type Property } from "@/lib/content";
+import { DEMO_AGENT_AUTHORIZATIONS } from "@/lib/portal-data";
 import {
   INTENT_LABELS,
   LAND_TITLE_LABELS,
@@ -61,6 +62,7 @@ export function PropertyDetail({ property }: { property: Property }) {
         ]
       : []),
     { label: "Ville", value: property.city, icon: MapPin },
+    ...(property.availabilityStatus === "indisponible" ? [{ label: "Disponibilité", value: "Indisponible", icon: CalendarCheck }] : []),
   ];
   const similar = searchCatalog({ ...EMPTY_QUERY, intent: property.intent, types: [property.type] })
     .filter((entry) => entry.id !== property.id)
@@ -104,6 +106,7 @@ export function PropertyDetail({ property }: { property: Property }) {
                 {" "}
                 <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" /> Vérifié HOMERA{" "}
               </span>{" "}
+              {property.availabilityStatus === "indisponible" && <span className="rounded-full border border-error/25 bg-error/[0.08] px-3 py-1.5 text-error">Indisponible</span>}{" "}
               {fresh <= 7 && (
                 <span className="rounded-full bg-homera-amber px-3 py-1.5 text-homera-night">Nouveau</span>
               )}{" "}
@@ -121,13 +124,18 @@ export function PropertyDetail({ property }: { property: Property }) {
             </div>{" "}
             <div className="mt-7 flex flex-wrap items-center gap-3">
               {" "}
-              <Link
-                href={`/contact?bien=${property.homeraId}`}
-                className="homera-press inline-flex min-h-12 items-center gap-2 rounded-btn homera-cta px-5 text-body-sm font-medium text-white transition-colors "
-              >
-                {" "}
-                Demander une visite <ArrowRight className="h-4 w-4" aria-hidden="true" />{" "}
-              </Link>{" "}
+              {property.availabilityStatus === "indisponible" ? (
+                <button type="button" disabled className="inline-flex min-h-12 cursor-not-allowed items-center gap-2 rounded-btn bg-surface-hover px-5 text-body-sm font-semibold text-muted opacity-80" aria-label="Bien indisponible, demande de visite désactivée">
+                  Bien indisponible
+                </button>
+              ) : (
+                <Link
+                  href={`/client/visites/nouvelle?bien=${property.id}`}
+                  className="homera-press inline-flex min-h-12 items-center gap-2 rounded-btn homera-cta px-5 text-body-sm font-medium text-white transition-colors "
+                >
+                  Demander une visite <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              )}{" "}
               <Link
                 href="/contact"
                 className="homera-press inline-flex min-h-12 items-center gap-2 rounded-btn border border-border px-5 text-body-sm font-medium text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
@@ -272,6 +280,16 @@ export function PropertyDetail({ property }: { property: Property }) {
                 un titre de propriété, ni une garantie juridique : la vérification finale relève du notaire et des
                 autorités compétentes.{" "}
               </p>{" "}
+              <div className="mt-5 flex flex-wrap gap-3 border-t border-border pt-4">
+                <Link href={`/historique/${property.homeraId}`} className="homera-underline inline-flex min-h-9 items-center gap-1.5 text-caption font-semibold homera-accent-ink">
+                  Consulter l’historique du bien <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+                {DEMO_AGENT_AUTHORIZATIONS.filter((authorization) => authorization.propertyId === property.id && authorization.status === "active").map((authorization) => (
+                  <Link key={authorization.agentId} href={`/verification-agent?agent=${authorization.agentId}&bien=${authorization.propertyRef}`} className="homera-underline inline-flex min-h-9 items-center gap-1.5 text-caption font-semibold homera-accent-ink">
+                    Vérifier l’agent autorisé <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                  </Link>
+                ))}
+              </div>
             </section>{" "}
           </div>{" "}
           {/* ---------------- Colonne latérale ---------------- */}{" "}
@@ -314,7 +332,7 @@ export function PropertyDetail({ property }: { property: Property }) {
                 Indiquez vos créneaux : un mandataire identifié vous répond et vous confirme l’accès au bien.{" "}
               </p>{" "}
               <Link
-                href={`/contact?bien=${property.homeraId}`}
+                href={`/client/visites/nouvelle?bien=${property.id}`}
                 className="homera-press mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-btn homera-cta text-note font-medium text-white "
               >
                 {" "}

@@ -20,9 +20,9 @@ export function ServicesSection() {
     setActiveId(id);
     setVisited((previous) => (previous.has(id) ? previous : new Set([...previous, id])));
   }, []);
-  const requestService = (title?: string) => {
-    const subject = title ? `HOMERA — ${title}` : "HOMERA — Service sur-mesure";
-    window.location.assign(`mailto:contact@homera.bj?subject=${encodeURIComponent(subject)}`);
+  const requestService = (serviceId?: string) => {
+    const slug = serviceId === "gestion" ? "gestion-immobiliere" : serviceId;
+    window.location.assign(slug ? `/services/${slug}` : "/services");
   };
   const active = SERVICES.find((service) => service.id === activeId) ?? SERVICES[0];
   const ActiveIcon = ICONS[active.icon];
@@ -119,7 +119,7 @@ export function ServicesSection() {
                     key={service.id}
                     service={service}
                     active={service.id === active.id}
-                    onRequest={() => requestService(service.title)}
+                    onRequest={() => requestService(service.id)}
                   />
                 ))}{" "}
               </div>{" "}

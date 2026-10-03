@@ -40,7 +40,7 @@ import {
 
 export const SIGNUP_FORM_ID = "inscription";
 
-export function SignUpForm({ initialRole }: { initialRole: AccountRole }) {
+export function SignUpForm({ initialRole, redirectTo }: { initialRole: AccountRole; redirectTo?: string | null }) {
   const { account, signUp } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
@@ -95,9 +95,10 @@ export function SignUpForm({ initialRole }: { initialRole: AccountRole }) {
       setValues(kept);
       setErrors({});
       setStatus(null);
-      router.replace(`${pathname}?role=${next}`, { scroll: false });
+      const nextParam = redirectTo ? `&next=${encodeURIComponent(redirectTo)}` : "";
+      router.replace(`${pathname}?role=${next}${nextParam}`, { scroll: false });
     },
-    [pathname, role, router, values],
+    [pathname, redirectTo, role, router, values],
   );
 
   const focusFirstError = (fields: Record<string, string>) => {
@@ -134,7 +135,7 @@ export function SignUpForm({ initialRole }: { initialRole: AccountRole }) {
       return;
     }
 
-    router.push("/verification-email");
+    router.push(redirectTo ? `/verification-email?next=${encodeURIComponent(redirectTo)}` : "/verification-email");
   };
 
   const renderField = (field: FieldSpec) => {

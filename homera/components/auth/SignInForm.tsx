@@ -10,6 +10,7 @@ import { PasswordField } from "@/components/auth/PasswordField";
 import { StatusNote, type StatusTone } from "@/components/auth/StatusNote";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { DEMO_LOGIN_CREDENTIALS, demoEmailForUsername } from "@/lib/demo-accounts";
 import { validateSignIn } from "@/lib/auth";
 
 /* ==================================================================
@@ -25,7 +26,7 @@ export const SIGNIN_FORM_ID = "connexion";
 
 export type AuthNotice = { tone: StatusTone; title: string; body: string };
 
-export function SignInForm({ notice }: { notice?: AuthNotice | null }) {
+export function SignInForm({ notice, redirectTo }: { notice?: AuthNotice | null; redirectTo?: string | null }) {
   const { signIn } = useAuth();
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -39,7 +40,8 @@ export function SignInForm({ notice }: { notice?: AuthNotice | null }) {
     event.preventDefault();
     setStatus(null);
 
-    const validation = validateSignIn({ email, motDePasse: password });
+    const signInEmail = demoEmailForUsername(email) ?? email;
+    const validation = validateSignIn({ email: signInEmail, motDePasse: password });
     if (!validation.ok) {
       setErrors(validation.fields);
       setStatus({
@@ -53,7 +55,7 @@ export function SignInForm({ notice }: { notice?: AuthNotice | null }) {
     }
 
     setPending(true);
-    const outcome = await signIn({ email, password, remember });
+    const outcome = await signIn({ email: signInEmail, password, remember });
     setPending(false);
 
     if (!outcome.ok) {
@@ -70,8 +72,12 @@ export function SignInForm({ notice }: { notice?: AuthNotice | null }) {
 
     setErrors({});
     // Adresse non confirmée : la confirmation passe avant tout le reste.
-    if (outcome.data.needsVerification) router.push("/verification-email");
-    // Sinon, le contexte prévient l’écran : le panneau « connecté » prend la suite.
+    if (outcome.data.needsVerification) {
+      router.push(redirectTo ? `/verification-email?next=${encodeURIComponent(redirectTo)}` : "/verification-email");
+      return;
+    }
+    if (redirectTo) router.replace(redirectTo);
+    // Sans destination, le contexte prévient l’écran : le panneau « connecté » prend la suite.
   };
 
   return (
@@ -80,7 +86,7 @@ export function SignInForm({ notice }: { notice?: AuthNotice | null }) {
       intro="Votre espace reprend vos favoris, vos recherches enregistrées et vos dossiers en cours."
       footer={
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-          <AuthLink href="/inscription">Créer un compte</AuthLink>
+          <AuthLink href={redirectTo ? `/inscription?next=${encodeURIComponent(redirectTo)}` : "/inscription"}>Créer un compte</AuthLink>
           <AuthLink href="/mot-de-passe-oublie">Mot de passe oublié</AuthLink>
         </div>
       }
@@ -92,12 +98,26 @@ export function SignInForm({ notice }: { notice?: AuthNotice | null }) {
           </StatusNote>
         )}
 
-        <Field id={`${SIGNIN_FORM_ID}-email`} label="Adresse e-mail" error={errors.email} required>
+        <section aria-labelledby="demo-accounts-title" className="rounded-card border border-border bg-card/60 p-4">
+          <h2 id="demo-accounts-title" className="text-note font-semibold">Accès de démonstration</h2>
+          <p className="mt-1 text-caption leading-relaxed text-muted">Choisissez un profil pour remplir les identifiants de test.</p>
+          <ul className="mt-3 grid grid-cols-2 gap-2">
+            {DEMO_LOGIN_CREDENTIALS.map((credential) => <li key={credential.username}>
+              <button type="button" onClick={() => { setEmail(credential.username); setPassword(credential.password); setErrors({}); setStatus(null); }} aria-label={`Utiliser le profil ${credential.label}, identifiant ${credential.username}, mot de passe ${credential.password}`} className="flex min-h-14 w-full flex-col items-start justify-center rounded-xl border border-border bg-background px-3 py-2 text-left transition-colors hover:border-homera-terracotta/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-terracotta">
+                <span className="text-caption font-semibold">{credential.label}</span>
+                <span className="mt-0.5 font-mono text-[0.68rem] text-muted">{credential.username} / {credential.password}</span>
+              </button>
+            </li>)}
+          </ul>
+          <p className="mt-3 text-[0.68rem] leading-relaxed text-muted">Ces comptes et mots de passe sont publics et réservés à la démonstration locale, jamais à la production.</p>
+        </section>
+
+        <Field id={`${SIGNIN_FORM_ID}-email`} label="Adresse e-mail ou identifiant démo" error={errors.email} required hint="Identifiants disponibles : admin, user, agent ou prop.">
           {(describedBy) => (
             <input
               id={`${SIGNIN_FORM_ID}-email`}
               name="email"
-              type="email"
+              type="text"
               value={email}
               onChange={(event) => {
                 setEmail(event.target.value);
@@ -108,8 +128,8 @@ export function SignInForm({ notice }: { notice?: AuthNotice | null }) {
                   return next;
                 });
               }}
-              autoComplete="email"
-              placeholder="vous@exemple.com"
+              autoComplete="username"
+              placeholder="vous@exemple.com ou admin"
               aria-invalid={errors.email ? true : undefined}
               aria-describedby={describedBy}
               className={`w-full rounded-input border bg-background px-4 text-body-sm text-foreground outline-none transition-colors placeholder:text-muted-light ${

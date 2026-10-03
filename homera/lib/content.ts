@@ -250,6 +250,8 @@ export const INTENTS: Intent[] = [
 
 export type PropertyType = "villa" | "appartement" | "studio" | "terrain" | "local";
 export type PropertyIntent = "acheter" | "louer" | "sejour";
+export type PropertyAvailability = "disponible" | "indisponible";
+export type PropertyVerificationStatus = "verifie" | "en-verification";
 
 /** Nature du document foncier présenté dans le dossier du bien. */
 export const LAND_TITLE_LABELS = {
@@ -308,6 +310,10 @@ export type Property = {
   intent: PropertyIntent;
   /** Montant en FCFA : prix de vente, loyer mensuel ou prix par nuitée selon l’intention. */
   price: number;
+  /** État déclaré de disponibilité : absent = disponible dans le catalogue pilote. */
+  availabilityStatus?: PropertyAvailability;
+  /** État documentaire : seuls les biens contrôlés apparaissent dans le catalogue public. */
+  verificationStatus?: PropertyVerificationStatus;
   /** « / mois », « / nuitée »… absent pour une vente. */
   pricePeriod?: string;
   city: string;
@@ -431,6 +437,7 @@ export const PROPERTIES: Property[] = [
     type: "studio",
     intent: "louer",
     price: 95_000,
+    availabilityStatus: "indisponible",
     pricePeriod: "/ mois",
     city: "Cotonou",
     district: "Cadjèhoun",

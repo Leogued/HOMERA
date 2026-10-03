@@ -255,6 +255,8 @@ export function CatalogExplorer({
                   onRemove={() => removeChip({ landTitles: query.landTitles.filter((entry) => entry !== title) })}
                 />
               ))}{" "}
+              {query.availableOnly && <Chip label="disponible maintenant" onRemove={() => removeChip({ availableOnly: false })} />}{" "}
+              {query.verifiedOnly && <Chip label="vérifié HOMERA" onRemove={() => removeChip({ verifiedOnly: false })} />}{" "}
               {query.bedroomsMin !== null && (
                 <Chip
                   label={`${query.bedroomsMin} chambres et plus`}

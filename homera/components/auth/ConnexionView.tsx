@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -46,7 +47,7 @@ const COMING_UP = [
   { icon: KeyRound, title: "Dépôt de bien", detail: "Propriétaires et agents déposeront un dossier complet." },
 ] as const;
 
-export function ConnexionView({ notice }: { notice?: AuthNotice | null }) {
+export function ConnexionView({ notice, redirectTo }: { notice?: AuthNotice | null; redirectTo?: string | null }) {
   const { ready, account } = useAuth();
 
   if (!ready) {
@@ -62,18 +63,27 @@ export function ConnexionView({ notice }: { notice?: AuthNotice | null }) {
     );
   }
 
-  if (!account) return <SignInForm notice={notice} />;
-  return <SignedInPanel notice={notice} />;
+  if (!account) return <SignInForm notice={notice} redirectTo={redirectTo} />;
+  return <SignedInPanel notice={notice} redirectTo={redirectTo} />;
 }
 
-export function SignedInPanel({ notice }: { notice?: AuthNotice | null }) {
+export function SignedInPanel({ notice, redirectTo }: { notice?: AuthNotice | null; redirectTo?: string | null }) {
   const { account, signOut, accountsCount } = useAuth();
   const router = useRouter();
+  useEffect(() => {
+    if (!redirectTo || !account) return;
+    const destination = account.emailVerified
+      ? redirectTo
+      : `/verification-email?next=${encodeURIComponent(redirectTo)}`;
+    router.replace(destination);
+  }, [account, redirectTo, router]);
   if (!account) return null;
 
   const profile = describeProfile(account.roles, account.profile);
   const groups = capabilitiesByRole(account.roles);
   const missing = missingRoles(account.roles);
+  const homeHref = account.profile.demoRole === "admin" ? "/admin" : CLIENT_HREF;
+  const homeLabel = account.profile.demoRole === "admin" ? "Ouvrir l’administration" : "Ouvrir mon espace client";
   const memberSince = new Date(account.createdAt).toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "long",
@@ -92,10 +102,10 @@ export function SignedInPanel({ notice }: { notice?: AuthNotice | null }) {
         footer={
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link
-              href={CLIENT_HREF}
+              href={homeHref}
               className="homera-press inline-flex min-h-10 items-center gap-1.5 rounded-btn homera-cta px-4 text-note font-semibold text-white"
             >
-              Ouvrir mon espace client
+              {homeLabel}
               <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
             </Link>
             <Link

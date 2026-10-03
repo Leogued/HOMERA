@@ -33,6 +33,7 @@ import {
   type PendingCode,
   type PublicAccount,
 } from "@/lib/accounts";
+import { ensureDemoAccounts } from "@/lib/demo-accounts";
 import {
   codeState,
   textValue,
@@ -106,6 +107,12 @@ export type AuthContextValue = {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+function withDemoAccounts(stored: AccountRecord[]): AccountRecord[] {
+  const accountsWithDemos = ensureDemoAccounts(stored);
+  if (accountsWithDemos !== stored) writeAccounts(accountsWithDemos);
+  return accountsWithDemos;
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [accounts, setAccounts] = useState<AccountRecord[]>([]);
   const [account, setAccount] = useState<PublicAccount | null>(null);
@@ -115,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   /* --- Lecture initiale, puis synchronisation entre onglets --- */
   useEffect(() => {
     const sync = () => {
-      const stored = readAccounts();
+      const stored = withDemoAccounts(readAccounts());
       setAccounts(stored);
       const session = readSession();
       const current = session ? findAccountById(stored, session.accountId) : undefined;
@@ -130,9 +137,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const onAccounts = (event: Event) => {
       const detail = (event as CustomEvent<AccountRecord[]>).detail;
       if (Array.isArray(detail)) {
-        setAccounts(detail);
+        const stored = withDemoAccounts(detail);
+        setAccounts(stored);
         const session = readSession();
-        const current = session ? findAccountById(detail, session.accountId) : undefined;
+        const current = session ? findAccountById(stored, session.accountId) : undefined;
         setAccount(current ? publicAccount(current) : null);
         return;
       }
@@ -140,7 +148,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
     const onSession = () => {
       const session = readSession();
-      const current = session ? findAccountById(readAccounts(), session.accountId) : undefined;
+      const stored = withDemoAccounts(readAccounts());
+      const current = session ? findAccountById(stored, session.accountId) : undefined;
       setAccount(current ? publicAccount(current) : null);
     };
     const onStorage = (event: StorageEvent) => {
@@ -162,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   /** Relit le stockage et met l’état de l’interface en accord avec lui. */
   const reconcile = useCallback(() => {
-    const stored = readAccounts();
+    const stored = withDemoAccounts(readAccounts());
     setAccounts(stored);
     const session = readSession();
     const current = session ? findAccountById(stored, session.accountId) : undefined;
@@ -173,7 +182,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     (): AccountRecord | null => {
       const session = readSession();
       if (!session) return null;
-      return findAccountById(readAccounts(), session.accountId) ?? null;
+      return findAccountById(withDemoAccounts(readAccounts()), session.accountId) ?? null;
     },
     [],
   );
@@ -200,7 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         };
       }
 
-      const stored = readAccounts();
+      const stored = withDemoAccounts(readAccounts());
       const email = textValue(values, "email");
       if (findAccountByEmail(stored, email)) {
         return {
@@ -303,7 +312,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { ok: false, message: validation.form ?? "Vérifiez les informations saisies.", fields: validation.fields };
     }
 
-    const stored = readAccounts();
+    const stored = withDemoAccounts(readAccounts());
     const record = findAccountByEmail(stored, email);
     if (!record) {
       return {

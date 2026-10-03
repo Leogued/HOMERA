@@ -100,10 +100,10 @@ if (fromFile) {
    MODE HTTP — exploration réelle du site public
    ------------------------------------------------------------------ */
 const START = '/';
-// Le site compte désormais plus de cent adresses distinctes : les fiches de bien,
-// les pages de catégorie, et un lien de contact par bien. La borne sert
-// uniquement à empêcher une exploration sans fin — pas à échantillonner.
-const MAX_PAGES = 140;
+// Le site compte désormais plus de deux cents adresses distinctes : fiches,
+// catégories, espaces et documents légaux. La borne sert uniquement à empêcher
+// une exploration sans fin — pas à échantillonner les parcours déclarés.
+const MAX_PAGES = 240;
 const pages = new Map();
 const queue = [START];
 const failures = [];

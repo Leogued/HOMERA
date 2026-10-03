@@ -3,9 +3,11 @@ import {
   PROPERTIES,
   type LandTitle,
   type Property,
+  type PropertyAvailability,
   type PropertyFeature,
   type PropertyIntent,
   type PropertyType,
+  type PropertyVerificationStatus,
 } from "@/lib/content";
 import {
   FEATURE_LABELS,
@@ -74,6 +76,10 @@ export type CatalogQuery = {
   stayNights: number | null;
   /** Uniquement les biens publiés dans les trente derniers jours du catalogue. */
   recentOnly: boolean;
+  /** Disponibilité à la date de recherche (un statut manquant vaut disponible). */
+  availableOnly: boolean;
+  /** Masque les dossiers qui ne sont pas vérifiés HOMERA. */
+  verifiedOnly: boolean;
   sort: SortId;
   page: number;
 };
@@ -94,6 +100,8 @@ export const EMPTY_QUERY: CatalogQuery = {
   surfaceMax: null,
   stayNights: null,
   recentOnly: false,
+  availableOnly: false,
+  verifiedOnly: false,
   sort: "pertinence",
   page: 1,
 };
@@ -146,6 +154,8 @@ export function parseCatalogQuery(input: URLSearchParams | string): CatalogQuery
     surfaceMax: integer(params, "surface-max"),
     stayNights: integer(params, "nuits"),
     recentOnly: params.get("nouveautes") === "1",
+    availableOnly: params.get("disponible") === "1",
+    verifiedOnly: params.get("verifie") === "1",
     sort: sort || "pertinence",
     page: page ?? 1,
   };
@@ -168,6 +178,8 @@ export function buildCatalogParams(query: CatalogQuery): URLSearchParams {
   if (query.surfaceMax !== null) params.set("surface-max", String(query.surfaceMax));
   if (query.stayNights !== null) params.set("nuits", String(query.stayNights));
   if (query.recentOnly) params.set("nouveautes", "1");
+  if (query.availableOnly) params.set("disponible", "1");
+  if (query.verifiedOnly) params.set("verifie", "1");
   if (query.sort !== "pertinence") params.set("tri", query.sort);
   if (query.page > 1) params.set("page", String(query.page));
   return params;
@@ -196,7 +208,9 @@ export function isPristine(query: CatalogQuery): boolean {
     query.surfaceMin === null &&
     query.surfaceMax === null &&
     query.stayNights === null &&
-    !query.recentOnly
+    !query.recentOnly &&
+    !query.availableOnly &&
+    !query.verifiedOnly
   );
 }
 
@@ -217,7 +231,9 @@ export function activeFilterCount(query: CatalogQuery): number {
     (query.surfaceMin !== null ? 1 : 0) +
     (query.surfaceMax !== null ? 1 : 0) +
     (query.stayNights !== null ? 1 : 0) +
-    (query.recentOnly ? 1 : 0)
+    (query.recentOnly ? 1 : 0) +
+    (query.availableOnly ? 1 : 0) +
+    (query.verifiedOnly ? 1 : 0)
   );
 }
 
@@ -283,6 +299,14 @@ function daysBefore(iso: string, days: number): string {
 
 const RECENT_FROM = daysBefore(LATEST_PUBLISHED_AT, RECENT_DAYS);
 
+function availabilityStatus(property: Property): PropertyAvailability {
+  return property.availabilityStatus ?? "disponible";
+}
+
+function verificationStatus(property: Property): PropertyVerificationStatus {
+  return property.verificationStatus ?? "verifie";
+}
+
 export function matchesQuery(property: Property, query: CatalogQuery): boolean {
   if (query.intent && property.intent !== query.intent) return false;
   if (query.types.length && !query.types.includes(property.type)) return false;
@@ -310,6 +334,8 @@ export function matchesQuery(property: Property, query: CatalogQuery): boolean {
   }
 
   if (query.recentOnly && property.publishedAt < RECENT_FROM) return false;
+  if (query.availableOnly && availabilityStatus(property) !== "disponible") return false;
+  if (query.verifiedOnly && verificationStatus(property) !== "verifie") return false;
 
   if (query.q) {
     const haystack = normalize(
@@ -422,6 +448,8 @@ export type CatalogFacets = {
   total: number;
   /** Nombre de biens visibles une fois le projet ignoré. */
   allIntents: number;
+  available: number;
+  verified: number;
 };
 
 export function facets(source: Property[], query: CatalogQuery): CatalogFacets {
@@ -429,6 +457,8 @@ export function facets(source: Property[], query: CatalogQuery): CatalogFacets {
   const withoutType = searchCatalog({ ...query, types: [] }, source);
   const withoutPlace = searchCatalog({ ...query, cities: [], districts: [] }, source);
   const withoutFeature = searchCatalog({ ...query, features: [] }, source);
+  const withoutAvailability = searchCatalog({ ...query, availableOnly: false }, source);
+  const withoutVerification = searchCatalog({ ...query, verifiedOnly: false }, source);
   const intentAndType = searchCatalog({ ...query, intent: "", types: [], features: [] }, source);
 
   const typeValues = query.intent ? TYPES_BY_INTENT[query.intent] : (Object.keys(TYPE_LABELS) as PropertyType[]);
@@ -451,6 +481,8 @@ export function facets(source: Property[], query: CatalogQuery): CatalogFacets {
     features: countValues(withoutFeature, FEATURE_ORDER.filter((feature) => presentFeatures.has(feature)), (entry) => entry.features ?? []),
     total: searchCatalog(query, source).length,
     allIntents: withoutIntent.length,
+    available: withoutAvailability.filter((entry) => availabilityStatus(entry) === "disponible").length,
+    verified: withoutVerification.filter((entry) => verificationStatus(entry) === "verifie").length,
   };
 }
 
@@ -489,6 +521,8 @@ export function summaryLabel(query: CatalogQuery): string {
   if (query.surfaceMax !== null) parts.push(`jusqu’à ${query.surfaceMax} m²`);
   if (query.stayNights !== null) parts.push(`séjour de ${query.stayNights} nuit${plural(query.stayNights)}`);
   if (query.recentOnly) parts.push("nouveautés");
+  if (query.availableOnly) parts.push("disponible maintenant");
+  if (query.verifiedOnly) parts.push("vérifié HOMERA");
   if (query.q) parts.push(`« ${query.q} »`);
   return parts.join(" · ");
 }

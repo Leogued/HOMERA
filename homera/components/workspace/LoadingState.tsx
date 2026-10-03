@@ -1,0 +1,3 @@
+export function WorkspaceLoadingState() {
+  return <main className="min-h-svh bg-background p-5 text-foreground sm:p-10"><div className="mx-auto max-w-6xl" aria-busy="true" aria-label="Chargement de l’espace HOMERA"><div className="homera-skeleton h-12 w-48" /><div className="mt-10 homera-skeleton h-12 w-2/3" /><div className="mt-4 homera-skeleton h-6 w-1/2" /><div className="mt-10 grid gap-4 sm:grid-cols-3"><div className="homera-skeleton h-32" /><div className="homera-skeleton h-32" /><div className="homera-skeleton h-32" /></div><p className="mt-5 text-caption text-muted">Chargement de votre espace…</p></div></main>;
+}

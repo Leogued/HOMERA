@@ -4,6 +4,7 @@ import { SignUpAside, SignUpForm } from "@/components/auth/SignUpForm";
 import { PilotNote } from "@/components/auth/StatusNote";
 import { roleFromParam, type AccountRole } from "@/lib/auth";
 import { AUTH_PAGE } from "@/lib/pages";
+import { safeReturnTo } from "@/lib/nav";
 
 /* ==================================================================
    /inscription — OUVRIR UN COMPTE
@@ -34,6 +35,7 @@ export default async function InscriptionPage({
   const params = await searchParams;
   const requested = Array.isArray(params.role) ? params.role[0] : params.role;
   const initialRole: AccountRole = roleFromParam(requested) ?? "client";
+  const redirectTo = safeReturnTo(params.next);
 
   return (
     <AuthShell
@@ -59,7 +61,7 @@ export default async function InscriptionPage({
         </div>
       }
     >
-      <SignUpForm initialRole={initialRole} />
+      <SignUpForm initialRole={initialRole} redirectTo={redirectTo} />
     </AuthShell>
   );
 }

@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { BadgeCheck, MailPlus, RefreshCw } from "lucide-react";
 import { AuthLink, AuthPanel } from "@/components/auth/AuthPanel";
 import { CodeField } from "@/components/auth/CodeField";
@@ -21,8 +22,9 @@ import { VERIFICATION_TTL_MINUTES, maskEmail, rolesLabel } from "@/lib/auth";
    encadré disparaît ; la vérification, elle, ne bouge pas.
    ================================================================== */
 
-export function VerifyEmailForm() {
+export function VerifyEmailForm({ redirectTo }: { redirectTo?: string | null }) {
   const { ready, account, pendingCode, verifyEmail, resendVerification, changeEmail } = useAuth();
+  const router = useRouter();
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | undefined>();
   const [status, setStatus] = useState<{ tone: "error" | "success" | "warning"; title: string; body: string } | null>(
@@ -33,6 +35,10 @@ export function VerifyEmailForm() {
   const [changing, setChanging] = useState(false);
   const [newEmail, setNewEmail] = useState("");
   const [emailError, setEmailError] = useState<string | undefined>();
+
+  useEffect(() => {
+    if (ready && redirectTo && (account?.emailVerified || verified)) router.replace(redirectTo);
+  }, [account?.emailVerified, ready, redirectTo, router, verified]);
 
   if (!ready) {
     return (
@@ -58,7 +64,7 @@ export function VerifyEmailForm() {
             encore.
           </StatusNote>
           <div className="flex flex-wrap gap-x-6 gap-y-2">
-            <AuthLink href="/connexion">Se connecter</AuthLink>
+            <AuthLink href={redirectTo ? `/connexion?next=${encodeURIComponent(redirectTo)}` : "/connexion"}>Se connecter</AuthLink>
             <AuthLink href="/inscription">Créer un compte</AuthLink>
           </div>
         </div>
@@ -78,7 +84,7 @@ export function VerifyEmailForm() {
             <strong className="font-semibold">{rolesLabel(account.roles)}</strong>.
           </StatusNote>
           <div className="flex flex-wrap gap-x-6 gap-y-2">
-            <AuthLink href="/connexion?etat=verifie">Voir mon espace</AuthLink>
+            <AuthLink href={redirectTo ?? "/connexion?etat=verifie"}>Voir mon espace</AuthLink>
             <AuthLink href="/explorer">Explorer les biens</AuthLink>
           </div>
           <PilotNote />
@@ -102,7 +108,8 @@ export function VerifyEmailForm() {
       document.getElementById("verification-code")?.focus();
       return;
     }
-    setVerified(true);
+    if (redirectTo) router.replace(redirectTo);
+    else setVerified(true);
   };
 
   const resend = async () => {
@@ -147,7 +154,7 @@ export function VerifyEmailForm() {
       intro={`Un code à six chiffres protège l’adresse ${maskEmail(account.email)}. Saisissez-le pour terminer l’ouverture du compte.`}
       footer={
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
-          <AuthLink href="/connexion">Aller à mon espace</AuthLink>
+          <AuthLink href={redirectTo ?? "/connexion"}>Aller à mon espace</AuthLink>
           <AuthLink href="/explorer">Explorer sans attendre</AuthLink>
         </div>
       }

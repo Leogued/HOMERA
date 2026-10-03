@@ -47,9 +47,12 @@ export function PropertyCard(props: {
   const features = (property.features ?? []).slice(0, 3);
 
   const badges = (
-    <div className="pointer-events-none absolute inset-x-4 top-4 z-[2] flex flex-wrap items-center justify-between gap-2 text-micro text-white sm:inset-x-5 sm:top-5">
-      <span className="rounded-full border border-white/30 bg-homera-brown/70 px-3 py-1.5 font-semibold uppercase tracking-[.12em]">
-        {INTENT_LABELS[property.intent]} · {TYPE_LABELS[property.type]}
+    <div className="pointer-events-none absolute inset-x-4 top-4 z-[2] flex flex-wrap items-start justify-between gap-2 text-micro text-white sm:inset-x-5 sm:top-5">
+      <span className="flex flex-wrap gap-2">
+        <span className="rounded-full border border-white/30 bg-homera-brown/70 px-3 py-1.5 font-semibold uppercase tracking-[.12em]">
+          {INTENT_LABELS[property.intent]} · {TYPE_LABELS[property.type]}
+        </span>
+        {property.availabilityStatus === "indisponible" && <span className="rounded-full border border-white/35 bg-error/85 px-3 py-1.5 font-semibold">Indisponible</span>}
       </span>
       <span className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-homera-brown/70 px-3 py-1.5">
         <ShieldCheck className="h-3.5 w-3.5 text-homera-amber" aria-hidden="true" />

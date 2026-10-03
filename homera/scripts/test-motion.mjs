@@ -16,6 +16,13 @@ const media = await import(mediaUrl);
 // L’ordre compte : chaque module est transpiré vers l’URL de ses dépendances.
 const contentUrl = await moduleUrl('lib/content.ts', { '@/lib/media.generated': mediaUrl });
 const data = await import(contentUrl);
+const workflowUrl = await moduleUrl('lib/workflow.ts', { '@/lib/content': contentUrl });
+const workflow = await import(workflowUrl);
+const portalDataUrl = await moduleUrl('lib/portal-data.ts', {
+  '@/lib/content': contentUrl,
+  '@/lib/workflow': workflowUrl,
+});
+const portalData = await import(portalDataUrl);
 const formatUrl = await moduleUrl('lib/format.ts', { '@/lib/content': contentUrl });
 const format = await import(formatUrl);
 const catalogUrl = await moduleUrl('lib/properties.ts', {
@@ -495,6 +502,16 @@ await test('HOMERA : la recherche de l’accueil ouvre la même recherche dans l
   assert.ok(isPristine(criteriaToCatalogQuery({ project: '', location: '', propertyType: '', budget: '' })));
 });
 
+await test('HOMERA : retour après connexion limité aux routes internes et conserve leurs paramètres', () => {
+  assert.equal(nav.safeReturnTo('/client/visites/nouvelle?bien=villa-fidjrosse'), '/client/visites/nouvelle?bien=villa-fidjrosse');
+  assert.equal(nav.safeReturnTo(['/client?tab=favoris', '/admin']), '/client?tab=favoris');
+  assert.equal(nav.safeReturnTo('//example.com/redirect'), null);
+  assert.equal(nav.safeReturnTo('https://example.com/redirect'), null);
+  assert.equal(nav.safeReturnTo('/\\\\example.com'), null);
+  assert.equal(nav.safeReturnTo('/connexion?next=/admin'), null);
+  assert.equal(nav.safeReturnTo('/verification-email'), null);
+});
+
 await test('HOMERA : chaque page publique du menu mène à des biens réels', () => {
   for (const project of nav.PROJECT_PAGES) {
     const query = nav.projectQuery(project.slug);
@@ -611,6 +628,7 @@ const authUrl = await moduleUrl('lib/auth.ts');
 const auth = await import(authUrl);
 const accountsUrl = await moduleUrl('lib/accounts.ts', { '@/lib/auth': authUrl });
 const accounts = await import(accountsUrl);
+const demoAccounts = await import(await moduleUrl('lib/demo-accounts.ts'));
 
 await test('HOMERA : trois rôles, trois jeux de champs réellement différents', () => {
   assert.deepEqual([...auth.ROLE_ORDER], ['client', 'proprietaire', 'agent']);
@@ -825,6 +843,28 @@ await test('HOMERA : codes, jetons et échéances', () => {
   assert.equal(auth.durationLabel(1_000), '1 seconde');
 });
 
+await test('HOMERA : identifiants de démonstration seedés et utilisables par compte', async () => {
+  const seeded = demoAccounts.ensureDemoAccounts([]);
+  assert.equal(seeded.length, 4);
+  assert.strictEqual(demoAccounts.ensureDemoAccounts(seeded), seeded, 'un seed déjà présent ne se duplique pas');
+  assert.deepEqual(demoAccounts.DEMO_LOGIN_CREDENTIALS.map(({ username, password }) => [username, password]), [
+    ['admin', 'admin'], ['user', 'user'], ['agent', 'agent'], ['prop', 'prop'],
+  ]);
+  assert.equal(demoAccounts.demoEmailForUsername(' ADMIN '), 'admin@homera.demo');
+  assert.equal(demoAccounts.demoEmailForUsername('unknown'), null);
+  for (const credential of demoAccounts.DEMO_LOGIN_CREDENTIALS) {
+    const record = seeded.find((entry) => entry.email === credential.email);
+    assert.ok(record, `compte manquant : ${credential.username}`);
+    assert.equal(record.emailVerified, true, `${credential.username} prêt à l’emploi sans code de vérification`);
+    assert.equal(await accounts.verifyPassword(record.password, credential.password), true, `${credential.username} / ${credential.password}`);
+  }
+  const admin = seeded.find((entry) => entry.email === 'admin@homera.demo');
+  const agent = seeded.find((entry) => entry.email === 'agent@homera.demo');
+  assert.equal(admin?.profile.demoRole, 'admin');
+  assert.equal(portalData.authorizationsForAgent(agent, new Date('2026-10-03T12:00:00.000Z')).length, 3);
+  assert.equal(demoAccounts.ensureDemoAccounts([seeded[0]]).length, 4, 'un compte demo existant n’est pas dupliqué');
+});
+
 await test('HOMERA : le stockage des comptes ne fait confiance à rien', () => {
   assert.deepEqual(accounts.parseAccounts(null), []);
   assert.deepEqual(accounts.parseAccounts('nawak'), []);
@@ -889,7 +929,8 @@ await test('HOMERA : mot de passe haché, vérifié, jamais conservé en clair',
   assert.equal(await accounts.verifyPassword(record, password), true);
   assert.equal(await accounts.verifyPassword(record, `${password} `), false);
   assert.equal(await accounts.verifyPassword(record, 'autre-mot-de-passe'), false);
-  assert.equal(await accounts.verifyPassword({ ...record, hash: record.hash.replace(/.$/, '0') }, password), false);
+  const alteredHash = record.hash.slice(0, -1) + (record.hash.endsWith('0') ? '1' : '0');
+  assert.equal(await accounts.verifyPassword({ ...record, hash: alteredHash }, password), false);
 
   // Comparaison à temps constant : longueur différente, contenu différent.
   assert.equal(accounts.safeEqual('abcdef', 'abcdef'), true);
@@ -1051,7 +1092,11 @@ await test('HOMERA : le socle client appartient à tous les rôles', () => {
     for (const id of socle) {
       assert.ok(capabilities.some((entry) => entry.id === id), `${role} sans la capacité ${id}`);
     }
+    assert.equal(auth.hasWorkspaceRole([role], 'client'), true, `${role} ne peut pas accéder au socle client`);
   }
+  assert.equal(auth.hasWorkspaceRole(['client'], 'proprietaire'), false, 'le client ne doit pas ouvrir l’espace propriétaire');
+  assert.equal(auth.hasWorkspaceRole(['agent'], 'proprietaire'), false, 'l’espace agent ne donne pas le rôle propriétaire');
+  assert.equal(auth.hasWorkspaceRole(['proprietaire'], 'agent'), false, 'l’espace propriétaire ne donne pas le rôle agent');
 
   // Les rôles métier ne se mélangent pas : le dépôt n’appartient pas au client.
   const client = auth.roleCapabilities('client').map((entry) => entry.id);
@@ -1186,4 +1231,147 @@ await test('HOMERA : ajouter un rôle ne redemande ni identité ni mot de passe'
 
   // La vue publique n’oublie aucun rôle.
   assert.deepEqual(accounts.publicAccount(asAgent).roles, ['client', 'proprietaire', 'agent']);
+});
+
+await test('HOMERA : disponibilité & vérification survivent aux filtres et à l’URL', () => {
+  const unavailable = data.PROPERTIES.find((property) => property.availabilityStatus === 'indisponible');
+  assert.ok(unavailable, 'un état indisponible de démonstration est présent');
+  const query = catalog.parseCatalogQuery('intention=louer&disponible=1&verifie=1');
+  assert.equal(query.availableOnly, true);
+  assert.equal(query.verifiedOnly, true);
+  assert.ok(!catalog.searchCatalog({ ...catalog.EMPTY_QUERY, availableOnly: true }).some((property) => property.id === unavailable.id));
+  assert.ok(catalog.activeFilterCount(query) >= 2);
+  const serialized = catalog.buildCatalogParams(query).toString();
+  assert.match(serialized, /disponible=1/);
+  assert.match(serialized, /verifie=1/);
+  assert.equal(catalog.parseCatalogQuery(serialized).verifiedOnly, true);
+});
+
+await test('HOMERA : le parcours local conserve les états métier et rejette le stockage invalide', () => {
+  assert.equal(workflow.workflowStorageKey('compte-17'), 'homera.workflow.v1.compte-17');
+  const parsed = workflow.parseWorkspace({
+    visits: [{ id: 'v-1', propertyId: 'villa-fidjrosse', propertyRef: 'HOM-CTN-000421' }, { id: 7 }],
+    applications: [{ id: 'd-1', propertyId: 'villa-fidjrosse' }, null],
+    contracts: [{ id: 'c-1', propertyId: 'villa-fidjrosse' }],
+    listings: [{ id: 'l-1', reference: 'HOM-CTN-000424', status: 'bad-status', price: 'NaN', photoNames: 'not-an-array', draftSnapshot: { step: 99, title: 'Reprise', photoNames: null, verifiedOwner: 'yes' } }, { id: 'l-2' }],
+    listingStatusOverrides: { 'owner-421': 'indisponible', 'owner-422': 'not-a-status' },
+    verificationDecisions: { 'case-1': 'valide', 'case-2': 'not-a-decision' },
+    verificationHistory: {
+      'case-1': [{ id: 'history-1', createdAt: '2026-10-01T10:00:00.000Z', decision: 'valide', title: 'Bien validé', detail: 'Contrôle local.' }, { id: 'bad' }],
+      'case-2': 'not-a-list',
+    },
+    notifications: [{ id: 'n-1', title: 'Demande enregistrée' }, { id: 'n-2' }],
+    messages: [{ id: 'm-1', messages: [] }, { id: 'm-2' }],
+    draftProperty: { step: 3, title: 'Villa pilote' },
+    preferences: { marketingNotifications: true, language: 'en' },
+  });
+  assert.equal(parsed.visits.length, 1);
+  assert.equal(parsed.applications.length, 1);
+  assert.equal(parsed.contracts.length, 1);
+  assert.equal(parsed.listings.length, 1);
+  assert.equal(parsed.listings[0].status, 'brouillon');
+  assert.equal(parsed.listings[0].price, 0);
+  assert.deepEqual(parsed.listings[0].photoNames, []);
+  assert.equal(parsed.listings[0].draftSnapshot.step, 10);
+  assert.deepEqual(parsed.listings[0].draftSnapshot.photoNames, []);
+  assert.equal(parsed.listings[0].draftSnapshot.verifiedOwner, false);
+  assert.deepEqual(parsed.listingStatusOverrides, { 'owner-421': 'indisponible' });
+  assert.deepEqual(parsed.verificationDecisions, { 'case-1': 'valide' });
+  assert.deepEqual(parsed.verificationHistory, {
+    'case-1': [{ id: 'history-1', createdAt: '2026-10-01T10:00:00.000Z', decision: 'valide', title: 'Bien validé', detail: 'Contrôle local.' }],
+  });
+  assert.equal(parsed.notifications.length, 1);
+  assert.equal(parsed.messages.length, 1);
+  assert.equal(parsed.draftProperty.step, 3);
+  assert.equal(parsed.preferences.marketingNotifications, true);
+  assert.equal(parsed.preferences.language, 'en');
+  assert.equal(workflow.parseWorkspace(null).visits.length, 0);
+  assert.match(workflow.createLocalId('visite'), /^visite-[a-z0-9-]+$/);
+  const notification = workflow.makeNotification('visite', 'Demande reçue', 'HOM-CTN-000421', '/client/visites');
+  assert.equal(notification.read, false);
+  assert.equal(notification.href, '/client/visites');
+});
+
+await test('HOMERA : candidature liée à une visite terminée, au bon bien, une seule fois', () => {
+  const visit = {
+    id: 'visite-1',
+    propertyId: 'villa-fidjrosse',
+    propertyRef: 'HOM-CTN-000421',
+    propertyTitle: 'Villa pilote',
+    clientName: 'Awa Dossou',
+    date: '2026-10-20',
+    slot: '09:00 – 11:00',
+    status: 'terminee',
+    createdAt: '2026-10-01T09:00:00.000Z',
+  };
+  const empty = { visits: [visit], applications: [] };
+  assert.deepEqual(workflow.validateRentalRequest(empty, visit.id, visit.propertyId, 'louer'), { ok: true, visit });
+  assert.deepEqual(workflow.eligibleRentalVisits(empty), [visit]);
+  assert.equal(workflow.validateRentalRequest(empty, visit.id, 'autre-bien', 'louer').reason, 'bien-incoherent');
+  assert.equal(workflow.validateRentalRequest(empty, visit.id, undefined, undefined).reason, 'bien-introuvable');
+  assert.equal(workflow.validateRentalRequest(empty, visit.id, visit.propertyId, 'acheter').reason, 'bien-non-louable');
+  assert.equal(workflow.validateRentalRequest(empty, 'visite-absente', visit.propertyId, 'louer').reason, 'visite-introuvable');
+
+  const inProgress = { ...visit, status: 'confirmee' };
+  assert.equal(workflow.validateRentalRequest({ visits: [inProgress], applications: [] }, visit.id, visit.propertyId, 'louer').reason, 'visite-non-terminee');
+  assert.deepEqual(workflow.eligibleRentalVisits({ visits: [inProgress], applications: [] }), []);
+
+  const application = { id: 'demande-1', visitId: visit.id, propertyId: visit.propertyId };
+  const alreadyApplied = { visits: [visit], applications: [application] };
+  assert.equal(workflow.validateRentalRequest(alreadyApplied, visit.id, visit.propertyId, 'louer').reason, 'demande-existante');
+  assert.deepEqual(workflow.eligibleRentalVisits(alreadyApplied), []);
+});
+
+await test('HOMERA : le propriétaire ne peut ni valider ni publier avant le contrôle', () => {
+  assert.equal(workflow.nextOwnerListingStatus('brouillon'), 'en-verification');
+  assert.equal(workflow.nextOwnerListingStatus('en-verification'), null, 'un propriétaire ne peut pas auto-valider son dossier');
+  assert.equal(workflow.nextOwnerListingStatus('verifie'), 'publie', 'seul un dossier vérifié peut être publié');
+  assert.equal(workflow.nextOwnerListingStatus('publie'), 'indisponible');
+  assert.equal(workflow.nextOwnerListingStatus('indisponible'), 'publie');
+  assert.equal(workflow.nextOwnerListingStatus('suspendu'), null);
+  assert.equal(workflow.nextOwnerListingStatus('loue'), null);
+});
+
+await test('HOMERA : la décision admin met à jour le bien et conserve chaque événement', () => {
+  const listing = { id: 'bien-local-1', reference: 'HOM-CTN-000424', status: 'en-verification' };
+  const initial = { ...workflow.EMPTY_WORKSPACE, listings: [listing] };
+  const changesRequested = workflow.recordVerificationDecision(initial, listing.id, 'modification-demandee', 'Modifications demandées');
+  assert.equal(changesRequested.listingStatusOverrides[listing.id], 'modification-demandee');
+  assert.equal(changesRequested.verificationDecisions[listing.id], 'modification-demandee');
+  assert.equal(changesRequested.verificationHistory[listing.id].length, 1);
+  assert.equal(changesRequested.notifications[0].href, '/proprietaire/biens');
+
+  const approved = workflow.recordVerificationDecision(changesRequested, listing.id, 'valide', 'Dossier validé');
+  assert.equal(approved.listingStatusOverrides[listing.id], 'verifie');
+  assert.equal(approved.verificationHistory[listing.id].length, 2);
+  assert.equal(approved.verificationHistory[listing.id][0].decision, 'valide', 'événement le plus récent en tête');
+  assert.equal(workflow.nextOwnerListingStatus(approved.listingStatusOverrides[listing.id]), 'publie');
+});
+
+await test('HOMERA : accès agent limité à son identité, au mandat exact et à sa période de validité', () => {
+  const demoIdentity = {
+    roles: ['agent'], prenom: 'Koffi', nom: 'Ahouansou',
+    profile: { structure: 'Cabinet Ahouansou Immobilier', identification: 'RB/COT/24 B 1234' },
+  };
+  const authorized = portalData.authorizationsForAgent(demoIdentity, new Date('2026-10-03T12:00:00.000Z'));
+  assert.equal(authorized.length, 3);
+  assert.equal(portalData.authorizationsForAgent(null).length, 0);
+  assert.equal(portalData.authorizationsForAgent({ ...demoIdentity, prenom: 'Autre' }).length, 0);
+  assert.equal(portalData.authorizationsForAgent({ ...demoIdentity, roles: ['client'] }).length, 0);
+  assert.equal(portalData.authorizationsForAgent(demoIdentity, new Date('2028-01-01T00:00:00.000Z')).length, 0);
+  const firstMandate = portalData.DEMO_AGENT_AUTHORIZATIONS[0];
+  assert.equal(portalData.isAgentAuthorizationCurrent(firstMandate, new Date(`${firstMandate.authorizedAt}T12:00:00.000Z`)), true);
+  assert.equal(portalData.isAgentAuthorizationCurrent(firstMandate, new Date('2027-02-19T00:00:00.000Z')), false);
+
+  const active = authorized;
+  assert.ok(active.length > 0);
+  const authorizedIds = new Set(active.map((entry) => entry.propertyId));
+  for (const authorization of active) {
+    const property = data.PROPERTIES.find((entry) => entry.id === authorization.propertyId);
+    assert.ok(property, `bien autorisé présent : ${authorization.propertyId}`);
+    assert.equal(property.homeraId, authorization.propertyRef, 'mandat lié à la bonne référence du bien');
+    assert.equal(authorization.agentId, portalData.DEMO_AGENT_ID);
+  }
+  assert.ok(authorizedIds.size < data.PROPERTIES.length, 'l’agent ne voit pas l’ensemble du catalogue');
+  assert.equal(new Set(active.map((entry) => `${entry.agentId}:${entry.propertyRef}`)).size, active.length);
 });

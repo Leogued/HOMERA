@@ -155,12 +155,14 @@ export function AccountControl({ tone = "light" }: { tone?: Tone }) {
               Mon espace client
             </Link>
             <Link
-              href="/favoris"
+              href="/client/favoris"
               className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"
             >
               <Heart className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />
               Favoris et recherches
             </Link>
+            {account.roles.includes("proprietaire") && <Link href="/proprietaire" className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"><UserRound className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />Espace propriétaire</Link>}
+            {account.roles.includes("agent") && <Link href="/agent" className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"><UserRound className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />Espace agent</Link>}
             <Link
               href="/explorer"
               className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"
@@ -258,7 +260,9 @@ export function AccountMobileLinks({
       <ul className="mt-3 space-y-1">
         {[
           { href: CLIENT_HREF, label: "Mon espace client" },
-          { href: "/favoris", label: "Favoris et recherches" },
+          { href: "/client/favoris", label: "Favoris et recherches" },
+          ...(account.roles.includes("proprietaire") ? [{ href: "/proprietaire", label: "Espace propriétaire" }] : []),
+          ...(account.roles.includes("agent") ? [{ href: "/agent", label: "Espace agent" }] : []),
           ...(account.emailVerified ? [] : [{ href: VERIFY_HREF, label: "Confirmer mon adresse" }]),
         ].map((entry) => (
           <li key={entry.href}>

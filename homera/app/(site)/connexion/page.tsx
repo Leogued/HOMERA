@@ -4,7 +4,7 @@ import { AuthAsideTitle, AuthBenefits, AuthShell, AuthLink } from "@/components/
 import { ConnexionView } from "@/components/auth/ConnexionView";
 import { PilotNote, type StatusTone } from "@/components/auth/StatusNote";
 import { AUTH_PAGE } from "@/lib/pages";
-import { FORGOT_HREF, SIGNUP_HREF } from "@/lib/nav";
+import { FORGOT_HREF, safeReturnTo, SIGNUP_HREF } from "@/lib/nav";
 
 /* ==================================================================
    /connexion — SE CONNECTER
@@ -60,6 +60,7 @@ export default async function ConnexionPage({
   const raw = params.etat;
   const key = Array.isArray(raw) ? raw[0] : raw;
   const notice = key && NOTICES[key] ? NOTICES[key] : null;
+  const redirectTo = safeReturnTo(params.next);
 
   return (
     <AuthShell
@@ -90,7 +91,7 @@ export default async function ConnexionPage({
         </div>
       }
     >
-      <ConnexionView notice={notice} />
+      <ConnexionView notice={notice} redirectTo={redirectTo} />
     </AuthShell>
   );
 }

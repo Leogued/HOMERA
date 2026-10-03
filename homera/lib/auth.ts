@@ -253,6 +253,11 @@ export function hasRole(roles: readonly AccountRole[], role: AccountRole): boole
   return roles.includes(role);
 }
 
+/** Le socle client est inclus dans chaque rôle métier; les espaces métier restent séparés. */
+export function hasWorkspaceRole(roles: readonly AccountRole[], role: AccountRole): boolean {
+  return role === "client" ? roles.length > 0 : roles.includes(role);
+}
+
 /**
  * Rôles qu’un compte peut encore ajouter : tout sauf ceux déjà détenus,
  * et sauf le client — que tous les rôles incluent par construction.

@@ -3,6 +3,7 @@ import { AuthAsideTitle, AuthBenefits, AuthShell } from "@/components/auth/AuthP
 import { VerifyEmailForm } from "@/components/auth/VerifyEmailForm";
 import { PilotNote } from "@/components/auth/StatusNote";
 import { AUTH_PAGE } from "@/lib/pages";
+import { safeReturnTo } from "@/lib/nav";
 
 /* ==================================================================
    /verification-email — CONFIRMER L’ADRESSE DU COMPTE
@@ -22,7 +23,11 @@ export const metadata: Metadata = {
 
 const COPY = AUTH_PAGE.verification;
 
-export default function VerificationEmailPage() {
+export default async function VerificationEmailPage({ searchParams }: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const redirectTo = safeReturnTo(params.next);
   return (
     <AuthShell
       crumb={COPY.breadcrumb}
@@ -46,7 +51,7 @@ export default function VerificationEmailPage() {
         </div>
       }
     >
-      <VerifyEmailForm />
+      <VerifyEmailForm redirectTo={redirectTo} />
     </AuthShell>
   );
 }

@@ -17,10 +17,10 @@ import { Reveal } from "@/components/ui/Reveal";
       title: "Écosystème",
       links: [
         { label: "Protocole de vérification", href: "/a-propos#protocole" },
-        { label: "Gestion immobilière", href: "/services#gestion" },
-        { label: "Maintenance & réparation", href: "/services#maintenance" },
-        { label: "Déménagement accompagné", href: "/services#demenagement" },
-        { label: "Travaux & aménagement", href: "/services#travaux" },
+        { label: "Gestion immobilière", href: "/services/gestion-immobiliere" },
+        { label: "Maintenance & réparation", href: "/services/maintenance" },
+        { label: "Déménagement accompagné", href: "/services/demenagement" },
+        { label: "Travaux & aménagement", href: "/services/travaux" },
       ],
     },
     {
@@ -30,6 +30,8 @@ import { Reveal } from "@/components/ui/Reveal";
         { label: "Acheter au Bénin", href: "/acheter" },
         { label: "Louer au Bénin", href: "/louer" },
         { label: "Nous contacter", href: "/contact" },
+        { label: "Espace propriétaire", href: "/proprietaire" },
+        { label: "Espace agent", href: "/agent" },
         { label: "Créer un compte", href: "/inscription" },
         { label: "Espace personnel", href: "/connexion" },
       ],
@@ -130,9 +132,13 @@ export function Footer() {
           <ul className="flex flex-wrap items-center gap-6">
             {" "}
             {[
-              { label: "Mentions légales", href: "/legal#mentions" },
-              { label: "Politique de confidentialité", href: "/legal#confidentialite" },
-              { label: "Conditions générales (CGU)", href: "/legal#cgu" },
+              { label: "Mentions légales", href: "/mentions-legales" },
+              { label: "Politique de confidentialité", href: "/legal/confidentialite" },
+              { label: "Conditions générales (CGU)", href: "/legal/conditions-generales" },
+              { label: "Cookies", href: "/cookies" },
+              { label: "Règles de visite", href: "/regles-visite" },
+              { label: "Règles de location", href: "/regles-location" },
+              { label: "Vérification HOMERA", href: "/politique-verification" },
             ].map((item) => (
               <li key={item.href}>
                 {" "}

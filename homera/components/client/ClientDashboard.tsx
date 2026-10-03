@@ -33,15 +33,16 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useVisitor } from "@/components/providers/VisitorProvider";
+import { useWorkflow } from "@/components/providers/WorkflowProvider";
 import { PropertyCard } from "@/components/catalog/PropertyCard";
 import { PROPERTIES, type Property, type PropertyIntent, type PropertyType } from "@/lib/content";
 import { CAPABILITIES, describeProfile, initials, maskPhone, roleDefinition, rolesLabel } from "@/lib/auth";
 import type { PublicAccount } from "@/lib/accounts";
 import { countLabel } from "@/lib/format";
 import { parseCatalogQuery } from "@/lib/properties";
+import { StatusBadge } from "@/components/workspace/Primitives";
 import type { SavedSearch } from "@/lib/persistence";
 
-const VISITS_CAPABILITY = CAPABILITIES.find((entry) => entry.id === "visites");
 const AUTOMATIC_ALERTS_CAPABILITY = CAPABILITIES.find((entry) => entry.id === "alertes");
 const PROPERTY_TYPES: readonly PropertyType[] = ["villa", "appartement", "studio", "terrain", "local"];
 const PROPERTY_INTENTS: readonly PropertyIntent[] = ["acheter", "louer", "sejour"];
@@ -97,6 +98,7 @@ const CLIENT_NAV: ClientNavGroup[] = [
 export function ClientDashboard() {
   const { ready, account, signOut } = useAuth();
   const visitor = useVisitor();
+  const workflow = useWorkflow();
   const { resolvedTheme, setTheme } = useTheme();
   const [activeSection, setActiveSection] = useState("accueil");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -117,6 +119,10 @@ export function ClientDashboard() {
     () => (account ? describeProfile(account.roles, account.profile) : []),
     [account],
   );
+  const recentVisits = useMemo(() => [...workflow.data.visits].sort((a, b) => `${a.date} ${a.slot}`.localeCompare(`${b.date} ${b.slot}`)).slice(0, 3), [workflow.data.visits]);
+  const recentApplications = useMemo(() => [...workflow.data.applications].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)).slice(0, 3), [workflow.data.applications]);
+  const activeRentals = workflow.data.applications.filter((application) => application.stage === "active");
+  const recentMessages = useMemo(() => [...workflow.data.messages].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 3), [workflow.data.messages]);
   const pendingActions = account && !account.emailVerified ? 1 : 0;
   const currentThemeIsDark = resolvedTheme === "dark";
 
@@ -154,13 +160,6 @@ export function ClientDashboard() {
 
   return (
     <div className="min-h-svh bg-background text-foreground">
-      <a
-        href="#contenu-client"
-        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-btn focus:bg-homera-brown focus:px-4 focus:py-2 focus:text-note focus:text-white"
-      >
-        Aller au contenu du tableau de bord
-      </a>
-
       <aside
         aria-label="Navigation de l’espace client"
         className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col bg-homera-night text-homera-paper lg:flex"
@@ -537,7 +536,7 @@ export function ClientDashboard() {
               eyebrow="Votre sélection"
               title="Biens favoris"
               description="Les biens mis de côté pendant votre exploration."
-              action={{ href: "/favoris", label: "Tout voir", external: true }}
+              action={{ href: "/client/favoris", label: "Tout voir", external: true }}
               className="xl:col-span-7"
             >
               {!visitor.ready ? (
@@ -564,15 +563,17 @@ export function ClientDashboard() {
               eyebrow="Votre agenda"
               title="Prochaines visites"
               description="Les rendez-vous liés à votre projet immobilier."
-              badge={<AvailabilityBadge>{VISITS_CAPABILITY?.available ? "Ouvert" : "Avec l’API"}</AvailabilityBadge>}
+              badge={<AvailabilityBadge>Prototype local</AvailabilityBadge>}
               className="xl:col-span-5"
             >
-              <EmptyState
-                icon={CalendarDays}
-                title="Aucune visite programmée"
-                description="La prise de rendez-vous et le suivi des créneaux apparaîtront ici après connexion du service de visites."
-                action={{ href: "/explorer", label: "Trouver un bien à visiter" }}
-              />
+              {!workflow.ready ? <PanelLoading label="Lecture de votre agenda…" /> : recentVisits.length === 0 ? (
+                <EmptyState
+                  icon={CalendarDays}
+                  title="Aucune visite programmée"
+                  description="Demandez une date et un créneau, puis suivez la réponse de l’agent dans votre agenda local."
+                  action={{ href: "/client/visites/nouvelle", label: "Demander une visite" }}
+                />
+              ) : <div className="space-y-3">{recentVisits.map((visit) => <Link key={visit.id} href="/client/visites" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/35"><span className="min-w-0"><span className="block truncate text-note font-semibold text-foreground">{visit.propertyTitle}</span><span className="mt-1 block text-caption text-muted">{formatDay(visit.date)} · {visit.slot} · {visit.propertyRef}</span></span><StatusBadge status={visit.status} /></Link>)}<Link href="/client/visites" className="inline-flex min-h-9 items-center text-caption font-semibold text-homera-terracotta hover:underline">Toutes mes visites <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" /></Link></div>}
             </DashboardPanel>
 
             <DashboardPanel
@@ -581,15 +582,17 @@ export function ClientDashboard() {
               eyebrow="En cours de traitement"
               title="Mes demandes"
               description="Demandes d’information et dossiers rattachés à votre compte."
-              badge={<AvailabilityBadge>Avec l’API</AvailabilityBadge>}
+              badge={<AvailabilityBadge>Prototype local</AvailabilityBadge>}
               className="xl:col-span-6"
             >
-              <EmptyState
-                icon={ClipboardList}
-                title="Aucune demande en cours"
-                description="Les formulaires de contact ouvrent votre messagerie et ne créent pas encore de dossier dans cet espace."
-                action={{ href: "/contact", label: "Contacter HOMERA" }}
-              />
+              {!workflow.ready ? <PanelLoading label="Lecture de vos demandes…" /> : recentApplications.length === 0 ? (
+                <EmptyState
+                  icon={ClipboardList}
+                  title="Aucune demande en cours"
+                  description="Après une visite terminée, déposez une candidature et suivez l’étude du dossier jusqu’à la remise des clés."
+                  action={{ href: "/client/demandes", label: "Mes demandes" }}
+                />
+              ) : <div className="space-y-3">{recentApplications.map((application) => <Link key={application.id} href="/client/demandes" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/35"><span className="min-w-0"><span className="block truncate text-note font-semibold text-foreground">{application.propertyTitle}</span><span className="mt-1 block text-caption text-muted">Dossier {application.id} · {formatDay(application.submittedAt)}</span></span><StatusBadge status={application.stage} /></Link>)}<Link href="/client/demandes" className="inline-flex min-h-9 items-center text-caption font-semibold text-homera-terracotta hover:underline">Toutes mes demandes <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" /></Link></div>}
             </DashboardPanel>
 
             <DashboardPanel
@@ -598,15 +601,17 @@ export function ClientDashboard() {
               eyebrow="Mon logement"
               title="Location active"
               description="Contrat, échéances et informations de votre logement."
-              badge={<AvailabilityBadge>Avec l’API</AvailabilityBadge>}
+              badge={<AvailabilityBadge>Prototype local</AvailabilityBadge>}
               className="xl:col-span-6"
             >
-              <EmptyState
-                icon={Building2}
-                title="Aucune location rattachée à ce compte"
-                description="Le suivi du bail, des échéances et des échanges avec le propriétaire sera disponible lorsque l’espace locataire sera connecté."
-                action={{ href: "/louer", label: "Voir les biens à louer" }}
-              />
+              {!workflow.ready ? <PanelLoading label="Lecture de vos contrats…" /> : activeRentals.length === 0 ? (
+                <EmptyState
+                  icon={Building2}
+                  title="Aucune location active"
+                  description="Après acceptation et signature, les informations de votre logement apparaîtront ici."
+                  action={{ href: "/client/contrats", label: "Mes contrats" }}
+                />
+              ) : <div className="space-y-3">{activeRentals.map((application) => <Link key={application.id} href="/client/contrats" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/60 p-4 transition-colors hover:border-homera-terracotta/35"><span className="min-w-0"><span className="block truncate text-note font-semibold text-foreground">{application.propertyTitle}</span><span className="mt-1 block text-caption text-muted">{application.propertyRef} · depuis {formatDay(application.submittedAt)}</span></span><StatusBadge status={application.stage} /></Link>)}</div>}
             </DashboardPanel>
 
             <DashboardPanel
@@ -644,15 +649,17 @@ export function ClientDashboard() {
               eyebrow="Échanges"
               title="Messages"
               description="Retrouvez ici les échanges liés à vos biens et à vos demandes."
-              badge={<AvailabilityBadge>À venir</AvailabilityBadge>}
+              badge={<AvailabilityBadge>Prototype local</AvailabilityBadge>}
               className="xl:col-span-5"
             >
-              <EmptyState
-                icon={MessageCircle}
-                title="Aucun échange dans cet espace"
-                description="Dans le pilote, les échanges se poursuivent directement par téléphone ou par e-mail, sans boîte de réception intégrée."
-                action={{ href: "/contact", label: "Nous contacter" }}
-              />
+              {!workflow.ready ? <PanelLoading label="Lecture de vos échanges…" /> : recentMessages.length === 0 ? (
+                <EmptyState
+                  icon={MessageCircle}
+                  title="Aucun échange dans cet espace"
+                  description="Créez une conversation rattachée à un bien et à sa référence HOMERA. Les messages de démonstration restent locaux."
+                  action={{ href: "/messages", label: "Ouvrir la messagerie" }}
+                />
+              ) : <div className="space-y-2">{recentMessages.map((thread) => { const lastMessage = thread.messages[thread.messages.length - 1]; return <Link key={thread.id} href="/messages" className="block rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/35"><span className="flex items-center justify-between gap-3"><span className="truncate text-note font-semibold text-foreground">{thread.propertyTitle}</span><span className="shrink-0 text-[0.65rem] text-muted">{formatDay(thread.updatedAt)}</span></span><span className="mt-1 block truncate text-caption text-muted">{lastMessage?.body ?? "Conversation créée"}</span></Link>; })}<Link href="/messages" className="inline-flex min-h-9 items-center text-caption font-semibold text-homera-terracotta hover:underline">Ouvrir la messagerie <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" /></Link></div>}
             </DashboardPanel>
 
             <DashboardPanel
@@ -661,7 +668,7 @@ export function ClientDashboard() {
               eyebrow="Identité et projet"
               title="Mon profil"
               description="Les informations enregistrées pour ce compte dans ce navigateur."
-              action={{ href: "/connexion", label: "Fiche du compte", external: true }}
+              action={{ href: "/client/profil", label: "Modifier mon profil", external: true }}
               className="xl:col-span-7"
             >
               <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-background/60 p-4">
@@ -752,14 +759,6 @@ export function ClientDashboard() {
             </DashboardPanel>
           </div>
 
-          <footer className="mt-8 flex flex-col gap-3 border-t border-border pt-5 text-caption text-muted sm:flex-row sm:items-center sm:justify-between">
-            <p>HOMERA · Espace client · Version pilote</p>
-            <div className="flex flex-wrap gap-x-5 gap-y-2">
-              <Link href="/contact" className="homera-underline hover:text-homera-terracotta">Aide et contact</Link>
-              <Link href="/legal" className="homera-underline hover:text-homera-terracotta">Confidentialité</Link>
-              <Link href="/" className="homera-underline hover:text-homera-terracotta">Site public</Link>
-            </div>
-          </footer>
         </main>
       </div>
     </div>

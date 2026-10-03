@@ -12,6 +12,20 @@ import { EMPTY_QUERY, type CatalogQuery } from "@/lib/properties";
    séparé du menu public et s’ouvre depuis la commande du compte.
    ================================================================== */
 
+/** Accepte uniquement une adresse interne pour éviter les redirections externes après connexion. */
+export function safeReturnTo(value: unknown): string | null {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  if (typeof candidate !== "string" || !candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\\") || /[\u0000-\u001f]/.test(candidate)) return null;
+  try {
+    const destination = new URL(candidate, "https://homera.invalid");
+    if (destination.origin !== "https://homera.invalid") return null;
+    if (destination.pathname === "/connexion" || destination.pathname === "/verification-email") return null;
+    return `${destination.pathname}${destination.search}${destination.hash}`;
+  } catch {
+    return null;
+  }
+}
+
 export type PublicProject = "acheter" | "louer" | "sejour";
 
 export type PublicCategory = {
@@ -237,7 +251,7 @@ export const PUBLIC_NAV: NavEntry[] = [
     href: "/services",
     children: SERVICES.map((service) => ({
       label: service.title,
-      href: `/services#${service.id}`,
+      href: `/services/${service.id === "gestion" ? "gestion-immobiliere" : service.id}`,
       hint: service.short,
     })),
   },

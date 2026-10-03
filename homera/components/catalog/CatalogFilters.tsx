@@ -120,6 +120,27 @@ export function CatalogFilters({
           </ul>{" "}
         </fieldset>
       )}{" "}
+      {/* ---------------- Disponibilité & vérification ---------------- */}{" "}
+      <fieldset>
+        <legend className="mb-3 text-note font-semibold text-foreground">Disponibilité</legend>{" "}
+        <CheckLine
+          checked={query.availableOnly}
+          onChange={() => onChange({ availableOnly: !query.availableOnly })}
+          label="Disponibles uniquement"
+          count={facets.available}
+        />
+        <p className="ml-8 mt-1 text-caption leading-relaxed text-muted">Un bien déclaré indisponible reste visible, avec son statut clairement indiqué.</p>
+      </fieldset>
+      <fieldset>
+        <legend className="mb-3 text-note font-semibold text-foreground">Statut de vérification</legend>{" "}
+        <CheckLine
+          checked={query.verifiedOnly}
+          onChange={() => onChange({ verifiedOnly: !query.verifiedOnly })}
+          label="Vérifié HOMERA uniquement"
+          count={facets.verified}
+        />
+        <p className="ml-8 mt-1 text-caption leading-relaxed text-muted">Le catalogue public ne présente que des biens publiés; le statut est daté sur chaque fiche.</p>
+      </fieldset>
       {/* ---------------- Localisation ---------------- */}{" "}
       <fieldset>
         {" "}
