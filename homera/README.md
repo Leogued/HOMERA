@@ -132,6 +132,7 @@ renvoie vers une ancre morte.
 | `/<projet>/<catégorie>` | Maisons, appartements, terrains, locaux, studios, nuitée… | généré au build |
 | `/biens/<identifiant>` | Fiche complète : faits, équipements, contrôle daté, biens proches | 36 pages générées |
 | `/favoris` | Favoris et recherches enregistrées du visiteur | statique, lecture locale |
+| `/client` | Espace client : recherches récentes, favoris, recommandations, notifications, visites, demandes, locations, messages, profil et paramètres | session locale ; fonctions sans API annoncées comme à venir |
 | `/services`, `/a-propos`, `/contact` | Écosystème, méthode, prise de contact | statique |
 | `/connexion`, `/inscription`, `/mot-de-passe-oublie`, `/reinitialisation`, `/verification-email` | Comptes : connexion, rôles, mot de passe, confirmation d’adresse | statique + paramètres d’URL |
 | `/legal` | Mentions, confidentialité et conditions | statique |
@@ -207,6 +208,20 @@ codes, messages, commande de compte de l’en-tête).
 
 Détail complet, matrice des champs, limites et point de couture pour l’API :
 **[docs/AUTH-HOMERA.md](docs/AUTH-HOMERA.md)**.
+
+## Espace client (phase 5)
+
+`/client` est le tableau de bord du compte connecté : navigation dédiée, recherches récemment
+sauvegardées, favoris, recommandations tirées du profil et du catalogue, état du compte,
+notifications, visites, demandes, location active, messages, profil et préférences. Les
+favoris et recherches relisent la même mémoire navigateur que `/favoris` ; les blocs de
+visites, dossiers, baux, messages et alertes affichent un état vide explicite tant que l’API
+n’existe pas. La confirmation d’adresse reste, elle, une action réelle avec un renvoi vers
+`/verification-email`. Depuis l’en-tête public, « Mon espace client » ouvre `/client`.
+
+**Fichiers** : `components/client/ClientDashboard.tsx` (navigation, sections, recommandations
+et états honnêtes du pilote), `app/(client)/client/page.tsx` (métadonnées privées et route),
+`lib/nav.ts` (adresse client partagée avec le menu de compte).
 
 ## Vérification
 

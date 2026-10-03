@@ -1012,6 +1012,28 @@ await test('HOMERA : les cinq écrans de compte existent, sont liés et non inde
   assert.equal(new Set(nav.ACCOUNT_LINKS.map((entry) => entry.href)).size, nav.ACCOUNT_LINKS.length);
 });
 
+await test('HOMERA : le tableau de bord client expose chaque espace et les notifications', async () => {
+  const page = await readFile(new URL('../app/(client)/client/page.tsx', import.meta.url), 'utf8');
+  const dashboard = await readFile(new URL('../components/client/ClientDashboard.tsx', import.meta.url), 'utf8');
+  assert.equal(nav.CLIENT_HREF, '/client');
+  assert.ok(page.includes('robots: { index: false'), 'espace personnel non indexable');
+
+  for (const label of [
+    'Accueil', 'Explorer', 'Favoris', 'Mes visites', 'Mes demandes', 'Mes locations',
+    'Notifications', 'Messages', 'Profil', 'Paramètres',
+  ]) {
+    assert.ok(dashboard.includes(`label: "${label}"`), `entrée de navigation absente : ${label}`);
+  }
+  for (const section of ['accueil', 'favoris', 'visites', 'demandes', 'locations', 'notifications', 'messages', 'profil', 'parametres']) {
+    assert.ok(dashboard.includes(`id="${section}"`), `section du tableau de bord absente : ${section}`);
+  }
+  for (const heading of ['Recherches récentes', 'Biens favoris', 'Prochaines visites', 'Location active', 'Recommandations pour vous']) {
+    assert.ok(dashboard.includes(heading), `bloc du tableau de bord absent : ${heading}`);
+  }
+  assert.ok(dashboard.includes('Alertes automatiques à venir'), 'centre de notifications explicite');
+  assert.ok(dashboard.includes('verification-email'), 'action de confirmation d’adresse accessible');
+});
+
 /* ==================================================================
    PHASE 4 (suite) — LES RÔLES SONT CUMULATIFS
    ------------------------------------------------------------------

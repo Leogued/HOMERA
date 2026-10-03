@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { ChevronDown, Heart, LogOut, MailCheck, Search, UserRound, UserRoundPlus } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { initials, roleDefinition, rolesLabel } from "@/lib/auth";
-import { AUTH_HREF, SIGNUP_HREF, VERIFY_HREF } from "@/lib/nav";
+import { AUTH_HREF, CLIENT_HREF, SIGNUP_HREF, VERIFY_HREF } from "@/lib/nav";
 
 /* ==================================================================
    HOMERA — COMMANDE DE COMPTE DANS L’EN-TÊTE
@@ -148,11 +148,11 @@ export function AccountControl({ tone = "light" }: { tone?: Tone }) {
 
           <nav aria-label="Compte" className="py-1.5">
             <Link
-              href={AUTH_HREF}
+              href={CLIENT_HREF}
               className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"
             >
               <UserRound className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />
-              Mon espace
+              Mon espace client
             </Link>
             <Link
               href="/favoris"
@@ -257,7 +257,7 @@ export function AccountMobileLinks({
       </p>
       <ul className="mt-3 space-y-1">
         {[
-          { href: AUTH_HREF, label: "Mon espace" },
+          { href: CLIENT_HREF, label: "Mon espace client" },
           { href: "/favoris", label: "Favoris et recherches" },
           ...(account.emailVerified ? [] : [{ href: VERIFY_HREF, label: "Confirmer mon adresse" }]),
         ].map((entry) => (

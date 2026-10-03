@@ -8,8 +8,8 @@ import { EMPTY_QUERY, type CatalogQuery } from "@/lib/properties";
    de projet (Acheter, Louer, Séjour) et leurs catégories.
 
    Toute la partie publique est ici — un visiteur sans compte peut
-   parcourir l’ensemble de ces adresses. L’espace connecté viendra
-   plus tard ; en attendant, « Se connecter » mène à /connexion.
+   parcourir l’ensemble de ces adresses. L’espace client (/client) est
+   séparé du menu public et s’ouvre depuis la commande du compte.
    ================================================================== */
 
 export type PublicProject = "acheter" | "louer" | "sejour";
@@ -256,13 +256,15 @@ export function navPanelId(title: string): string {
 }
 
 /* ------------------------------------------------------------------
-   LES CINQ ADRESSES DU COMPTE (phase 4)
+   ADRESSES DU COMPTE & ESPACE CLIENT
    ------------------------------------------------------------------
-   Une seule source pour les en-têtes, les pieds de page et les renvois
-   entre écrans : aucune adresse n’est écrite deux fois.
+   Une seule source pour le menu de compte, les cinq écrans
+   d’authentification et l’entrée dans le tableau de bord : aucune
+   adresse partagée n’est écrite deux fois.
    ------------------------------------------------------------------ */
 
 export const AUTH_HREF = "/connexion";
+export const CLIENT_HREF = "/client";
 export const SIGNUP_HREF = "/inscription";
 export const FORGOT_HREF = "/mot-de-passe-oublie";
 export const RESET_HREF = "/reinitialisation";

@@ -20,6 +20,7 @@ import { RoleUpgrade } from "@/components/auth/RoleUpgrade";
 import { SignInForm, type AuthNotice } from "@/components/auth/SignInForm";
 import { PilotNote, StatusNote } from "@/components/auth/StatusNote";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { CLIENT_HREF } from "@/lib/nav";
 import {
   capabilitiesByRole,
   describeProfile,
@@ -90,6 +91,13 @@ export function SignedInPanel({ notice }: { notice?: AuthNotice | null }) {
         }
         footer={
           <div className="flex flex-wrap items-center justify-between gap-3">
+            <Link
+              href={CLIENT_HREF}
+              className="homera-press inline-flex min-h-10 items-center gap-1.5 rounded-btn homera-cta px-4 text-note font-semibold text-white"
+            >
+              Ouvrir mon espace client
+              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+            </Link>
             <Link
               href="/favoris"
               className="homera-underline inline-flex min-h-10 items-center gap-1.5 text-note font-medium homera-accent-ink"
