@@ -133,6 +133,11 @@ renvoie vers une ancre morte.
 | `/connexion`, `/legal` | Espace personnel annoncé, mentions et confidentialité | statique |
 | *(toute autre adresse)* | Page introuvable éditoriale, avec sorties réelles | 404 serveur |
 
+**Zones couvertes.** Quatre communes, décision produit validée : **Cotonou** (21 biens),
+**Abomey-Calavi** (7), **Ouidah** (5) et **Porto-Novo** (3). Les filtres de commune, de
+quartier et les bornes de prix dérivent du jeu de données : ajouter une commune se fait
+en ajoutant des biens, pas en modifiant l’interface.
+
 **Sources de vérité.**
 
 - `lib/properties.ts` — moteur unique du catalogue : lecture et écriture d’URL, filtres,
