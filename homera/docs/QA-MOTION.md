@@ -24,7 +24,9 @@
 - Catalogue : filtres par projet et par type réellement restrictifs, `?page=2` servant
   deux écrans sans JavaScript, état vide explicite, page hors bornes servie.
 - 404 : statut HTTP réel, contenu éditorial, sorties de secours présentes.
-- **Comptes (phase 4)** : les trois rôles et leurs champs réellement distincts, la politique
+- **Comptes (phase 4)** : le socle client présent dans les trois rôles, le cumul des rôles sur
+  un même compte (ajout sans identité ni mot de passe, fusion du profil, relecture tolérante de
+  `roles`), les trois rôles et leurs champs réellement distincts, la politique
   de mot de passe (longueur, casse, chiffre, refus d’un mot de passe identitaire), les
   validations d’inscription des trois rôles, les codes (génération, expiration, cinq essais),
   la relecture tolérante du stockage, le hachage PBKDF2 (verrouillé, jamais en clair) et le
@@ -119,6 +121,12 @@ Ce que l’automatisation ne couvre pas (elle teste les règles, pas le rendu) :
 - [ ] **En-tête** : la commande de compte remplace « Se connecter » après connexion, le
   panneau s’ouvre au clavier (Entrée, Échap, Tab), le badge d’adresse à confirmer est visible
   dans les deux thèmes, et la déconnexion referme le panneau.
+- [ ] **Cumul des rôles** : un compte client affiche « Ajouter un autre rôle », l’ajout de
+  « Propriétaire » ne redemande ni identité ni mot de passe ; le panneau montre ensuite les
+  deux rôles, et le socle client reste intact (favoris, recherches enregistrées) ; après le
+  troisième rôle, le message « tous les rôles sont déjà rattachés » remplace le formulaire.
+- [ ] **Étiquettes de capacité** : « Ouvert » et « Avec l’API » lisibles dans les deux thèmes,
+  sur téléphone, sans que la liste écrase la fiche du compte.
 - [ ] **Stockage refusé** : en navigation privée stricte, l’inscription échoue avec un message
   explicite plutôt qu’un faux succès.
 - [ ] **Lecteur d’écran** : les trois rôles s’annoncent comme un groupe de boutons radio, le

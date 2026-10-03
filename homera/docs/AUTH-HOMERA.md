@@ -58,6 +58,8 @@ Le rôle se choisit **avant** la saisie, et il change réellement les champs dem
 informations d’identité déjà remplies sont conservées, les champs propres au rôle précédent
 sont écartés (pas de mélange silencieux).
 
+Le choix porte sur le **premier** rôle, pas sur un profil exclusif : voir la section 3 bis.
+
 | Bloc | Client | Propriétaire | Agent |
 | --- | --- | --- | --- |
 | Identité et contact (commun) | Prénom · Nom · E-mail · Téléphone · Zone | idem | idem |
@@ -68,6 +70,58 @@ sont écartés (pas de mélange silencieux).
 Chaque ligne du tableau est une donnée, pas du JSX : `lib/auth.ts` décrit les champs
 (`roleFields(role)`), et le formulaire, la validation et la fiche du compte lisent la même
 description. Ajouter un champ ne demande donc pas de toucher trois fichiers.
+
+---
+
+## 3 bis. Les rôles sont cumulatifs
+
+Un propriétaire cherche aussi un logement. Un agent achète aussi, parfois pour lui-même. Un
+client qui hérite d’un bien devient propriétaire sans renoncer à ses recherches. Le modèle ne
+traite donc **pas** les rôles comme des profils exclusifs :
+
+> **Le socle client appartient à tous les rôles.** Propriétaire et agent l’incluent
+> entièrement, et un compte peut détenir les trois.
+
+### Ce que chaque rôle contient
+
+| Capacité | Client | Propriétaire | Agent | État |
+| --- | --- | --- | --- | --- |
+| Chercher, filtrer, comparer | ● | ● | ● | **ouvert** (catalogue) |
+| Favoris et recherches enregistrées | ● | ● | ● | **ouvert** (navigateur) |
+| Demandes de visite | ● | ● | ● | avec l’API |
+| Alertes sur critères | ● | ● | ● | avec l’API |
+| Dépôt d’un bien | — | ● | ● | avec l’API |
+| Suivi de la vérification | — | ● | ● | avec l’API |
+| Candidatures et visites reçues | — | ● | — | avec l’API |
+| Gestion locative | — | ● | — | avec l’API |
+| Biens mandatés | — | — | ● | avec l’API |
+| Fiche structure et file de vérification | — | — | ● | avec l’API |
+
+Deux niveaux, jamais confondus : `available: true` (la fonction existe déjà sans serveur) et
+`available: false` (elle demande l’API). L’écran du compte affiche les deux, avec l’étiquette
+« Ouvert » ou « Avec l’API » — aucune fonction à venir n’est présentée comme ouverte.
+
+Tout cela est une donnée : `CAPABILITIES`, `roleCapabilities()`, `capabilitiesByRole()` dans
+`lib/auth.ts`. Les écrans lisent ces groupes, ils ne composent pas leurs propres listes.
+
+### Ajouter un rôle à son compte
+
+Depuis `/connexion`, un compte connecté voit les rôles qu’il ne détient pas encore et peut les
+ajouter un par un — **sans reperdre** :
+
+- son identité et ses coordonnées (déjà connues) ;
+- son mot de passe (jamais redemandé, l’empreinte ne bouge pas) ;
+- son profil précédent (les champs du nouveau rôle sont **fusionnés**, jamais écrasés) ;
+- son rôle principal, qui reste celui de l’inscription — l’historique du compte reste lisible.
+
+Seuls sont demandés le profil du nouveau rôle et son consentement propre (certification de
+propriété ou de mandat écrit). Les conditions générales, acceptées à l’ouverture du compte,
+ne sont pas redemandées ; la date du dernier consentement est en revanche mise à jour.
+
+Dans le stockage, `roles: AccountRole[]` porte la liste détenue, et `role` reste le rôle
+principal. La relecture écarte les valeurs invalides, dédoublonne, et garantit que le rôle
+principal est toujours présent — même si le champ `roles` manque (compte créé avant cette
+version : il retombe sur son rôle d’inscription, sans rien perdre).
 
 ---
 
@@ -154,7 +208,7 @@ Le point de couture est volontairement étroit — une seule couche parle au sto
 | --- | --- | --- |
 | `lib/auth.ts` | Règles pures : rôles, champs, validations, politique de mot de passe, codes | Rien. Les règles restent côté client pour le confort, et seront rejouées côté serveur. |
 | `lib/accounts.ts` | Stockage local, hachage, lecture tolérante, session | Remplacer les fonctions d’écriture/lecture par des appels réseau ; `parseAccounts()` reste utile pour la relecture d’un cache. |
-| `components/providers/AuthProvider.tsx` | Les 8 actions (`signUp`, `signIn`, `signOut`, `verifyEmail`, `resendVerification`, `changeEmail`, `requestPasswordReset`, `resetPassword`) | Le corps des actions devient un `fetch` ; la signature et les issues (`ok`, `message`, `fields`) ne bougent pas — les écrans n’ont pas à changer. |
+| `components/providers/AuthProvider.tsx` | Les 9 actions (`signUp`, `addRole`, `signIn`, `signOut`, `verifyEmail`, `resendVerification`, `changeEmail`, `requestPasswordReset`, `resetPassword`) | Le corps des actions devient un `fetch` ; la signature et les issues (`ok`, `message`, `fields`) ne bougent pas — les écrans n’ont pas à changer. |
 | `components/auth/*` | Présentation, champs, messages | Rien, sauf retirer `PilotCode` et le texte d’affichage du code. |
 
 Le jour où un serveur existe, les trois seules phrases à retirer sont celles du pilote — et
@@ -186,7 +240,7 @@ Le jour où un serveur existe, les trois seules phrases à retirer sont celles d
 
 ## 8. Ce qui est testé
 
-`npm test` (45 tests, dont 9 pour la phase 4) couvre, sans navigateur :
+`npm test` (48 tests, dont 12 pour la phase 4) couvre, sans navigateur :
 
 - les trois rôles et leurs jeux de champs réellement distincts, libellés et options compris ;
 - la politique de mot de passe : longueur, casse, chiffre, symbole, et le refus d’un mot de
@@ -199,7 +253,11 @@ Le jour où un serveur existe, les trois seules phrases à retirer sont celles d
 - le hachage : empreinte différente par sel, vérification correcte/incorrecte, comparaison à
   longueur constante ;
 - le parcours de bout en bout : inscription → code → vérification → mot de passe changé →
-  ancien mot de passe refusé.
+  ancien mot de passe refusé ;
+- **le cumul des rôles** : le socle client présent dans les trois rôles, les capacités métier
+  qui ne se mélangent pas, l’ajout d’un rôle qui ne redemande ni identité ni mot de passe (et
+  laisse l’empreinte intacte), la fusion du profil, la relecture de `roles` avec valeurs
+  invalides ou manquantes.
 
 Ce qui reste à vérifier dans un vrai navigateur (voir `docs/QA-MOTION.md`) : le rendu des
 cinq écrans, le geste tactile sur le sélecteur de rôle, l’hydratation sans accroc, et le

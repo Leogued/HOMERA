@@ -26,6 +26,7 @@ import {
   replaceAccount,
   storageWritable,
   verifyPassword,
+  withAddedRole,
   writeAccounts,
   writeSession,
   type AccountRecord,
@@ -37,6 +38,7 @@ import {
   textValue,
   validateEmailOnly,
   validateNewPassword,
+  validateRoleUpgrade,
   validateSignIn,
   validateSignUp,
   validateCode,
@@ -68,11 +70,18 @@ export type AuthContextValue = {
   /** Le stockage a été lu : l’état affiché est réel. */
   ready: boolean;
   account: PublicAccount | null;
+  /** Tous les rôles détenus — le socle client est inclus par construction. */
+  roles: AccountRole[];
   /** Nombre de comptes conservés dans ce navigateur (annoncé dans les écrans du pilote). */
   accountsCount: number;
   /** Dernier code émis — affiché par les écrans du pilote, aucun e-mail n’étant envoyé. */
   pendingCode: PendingCode | null;
   signUp: (input: {
+    role: AccountRole;
+    values: FormValues;
+  }) => Promise<AuthOutcome<{ account: PublicAccount }>>;
+  /** Ajouter un rôle à un compte connecté, sans reperdre identité ni mot de passe. */
+  addRole: (input: {
     role: AccountRole;
     values: FormValues;
   }) => Promise<AuthOutcome<{ account: PublicAccount }>>;
@@ -236,6 +245,52 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return { ok: true, data: { account: publicAccount(record) } };
     },
     [],
+  );
+
+  /* ------------------------------------------------------------------
+     AJOUT D’UN RÔLE
+     ------------------------------------------------------------------
+     Un compte ne se limite pas à son rôle d’inscription : un client qui
+     possède un bien devient propriétaire, un agent cherche aussi parfois
+     pour lui-même. L’ajout ne redemande ni identité, ni mot de passe —
+     seulement ce que le nouveau rôle exige (et ses consentements).
+     ------------------------------------------------------------------ */
+
+  const addRole = useCallback<AuthContextValue["addRole"]>(
+    async ({ role, values }) => {
+      const record = currentRecord();
+      if (!record) {
+        return {
+          ok: false,
+          message: "Aucun compte n’est connecté : reconnectez-vous pour ajouter ce rôle.",
+        };
+      }
+      if (record.roles.includes(role)) {
+        return { ok: false, message: `Ce compte détient déjà le rôle « ${role} ».` };
+      }
+
+      const validation = validateRoleUpgrade(role, values);
+      if (!validation.ok) {
+        return {
+          ok: false,
+          message: validation.form ?? "Quelques informations restent à compléter.",
+          fields: validation.fields,
+        };
+      }
+
+      const next = withAddedRole(record, role, values);
+      writeAccounts(replaceAccount(readAccounts(), next));
+      if (!findAccountById(readAccounts(), record.id)?.roles.includes(role)) {
+        return {
+          ok: false,
+          message:
+            "Ce navigateur n’a pas conservé l’ajout : le stockage local est plein ou bloqué. Rien n’a été modifié.",
+        };
+      }
+      reconcile();
+      return { ok: true, data: { account: publicAccount(next) } };
+    },
+    [currentRecord, reconcile],
   );
 
   /* ------------------------------------------------------------------
@@ -512,9 +567,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () => ({
       ready,
       account,
+      roles: account?.roles ?? [],
       accountsCount: accounts.length,
       pendingCode,
       signUp,
+      addRole,
       signIn,
       signOut,
       verifyEmail,
@@ -530,6 +587,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       accounts.length,
       pendingCode,
       signUp,
+      addRole,
       signIn,
       signOut,
       verifyEmail,
@@ -551,9 +609,11 @@ export function useAuth(): AuthContextValue {
   return {
     ready: false,
     account: null,
+    roles: [],
     accountsCount: 0,
     pendingCode: null,
     signUp: async () => ({ ok: false, message: "Le contexte de compte n’est pas disponible sur cette page." }),
+    addRole: async () => ({ ok: false, message: "Le contexte de compte n’est pas disponible sur cette page." }),
     signIn: async () => ({ ok: false, message: "Le contexte de compte n’est pas disponible sur cette page." }),
     signOut: () => {},
     verifyEmail: async () => ({ ok: false, message: "Le contexte de compte n’est pas disponible sur cette page." }),

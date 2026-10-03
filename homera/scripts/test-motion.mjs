@@ -1011,3 +1011,157 @@ await test('HOMERA : les cinq écrans de compte existent, sont liés et non inde
   }
   assert.equal(new Set(nav.ACCOUNT_LINKS.map((entry) => entry.href)).size, nav.ACCOUNT_LINKS.length);
 });
+
+/* ==================================================================
+   PHASE 4 (suite) — LES RÔLES SONT CUMULATIFS
+   ------------------------------------------------------------------
+   Un propriétaire cherche aussi un logement, un agent achète aussi
+   pour lui-même : le socle client appartient à tous, et un compte peut
+   détenir plusieurs rôles sans reperdre son historique.
+   ================================================================== */
+
+await test('HOMERA : le socle client appartient à tous les rôles', () => {
+  const socle = auth.CAPABILITIES.filter((entry) => entry.scope === 'socle').map((entry) => entry.id);
+  assert.ok(socle.length >= 4, 'socle trop maigre');
+
+  for (const role of auth.ROLE_ORDER) {
+    const capabilities = auth.roleCapabilities(role);
+    for (const id of socle) {
+      assert.ok(capabilities.some((entry) => entry.id === id), `${role} sans la capacité ${id}`);
+    }
+  }
+
+  // Les rôles métier ne se mélangent pas : le dépôt n’appartient pas au client.
+  const client = auth.roleCapabilities('client').map((entry) => entry.id);
+  assert.ok(!client.includes('depot') && !client.includes('mandats'));
+  assert.ok(auth.roleCapabilities('proprietaire').some((entry) => entry.id === 'depot'));
+  assert.ok(auth.roleCapabilities('agent').some((entry) => entry.id === 'mandats'));
+  assert.ok(!auth.roleCapabilities('proprietaire').some((entry) => entry.id === 'mandats'));
+
+  // Chaque rôle dit ce qu’il reprend du socle, et ce qui reste à vérifier.
+  for (const role of auth.ROLES) {
+    assert.ok(role.includes.length > 20, `cumul non dit : ${role.id}`);
+    assert.ok(role.verification.length > 20, `vérification non dite : ${role.id}`);
+    if (role.id !== 'client') assert.ok(/client/i.test(role.includes), `socle non nommé : ${role.id}`);
+  }
+
+  // La disponibilité est explicite : rien d’annoncé comme ouvert ne dépend d’un serveur.
+  const ouvertes = auth.CAPABILITIES.filter((entry) => entry.available).map((entry) => entry.id);
+  assert.deepEqual(ouvertes.sort(), ['favoris', 'recherche']);
+});
+
+await test('HOMERA : plusieurs rôles sur un même compte, sans doublon', () => {
+  assert.deepEqual(auth.missingRoles(['proprietaire']), ['agent']);
+  assert.deepEqual(auth.missingRoles(['client']), ['proprietaire', 'agent']);
+  assert.deepEqual(auth.missingRoles(['client', 'proprietaire', 'agent']), []);
+  assert.equal(auth.rolesLabel(['client', 'proprietaire']), 'Client · Propriétaire');
+  assert.equal(auth.rolesLabel([]), 'Compte');
+  assert.equal(auth.hasRole(['client', 'agent'], 'agent'), true);
+  assert.equal(auth.hasRole(['client'], 'agent'), false);
+
+  // Les groupes d’affichage suivent les rôles détenus, socle en tête.
+  const groups = auth.capabilitiesByRole(['client', 'agent']);
+  assert.equal(groups[0].scope, 'socle');
+  assert.deepEqual(groups.map((group) => group.scope), ['socle', 'agent']);
+  assert.equal(auth.capabilitiesByRole(['client']).length, 1, 'un client pur n’a que le socle');
+  assert.equal(auth.rolesCapabilities(['client']).length, groups[0].capabilities.length);
+});
+
+await test('HOMERA : ajouter un rôle ne redemande ni identité ni mot de passe', async () => {
+  const values = {
+    ...auth.emptyValues('client'),
+    prenom: 'Awa',
+    nom: 'Dossou',
+    email: 'awa.dossou@exemple.com',
+    telephone: '+229 01 97 00 00 00',
+    zone: 'Cotonou',
+    projet: 'acheter',
+    bienRecherche: 'appartement',
+    budget: 'achat-25',
+    motDePasse: 'Fidjrosse-2026',
+    confirmation: 'Fidjrosse-2026',
+    conditions: true,
+    alertes: true,
+  };
+  const account = await accounts.createAccountRecord({ role: 'client', values, random: () => 0.31 });
+  assert.deepEqual(account.roles, ['client'], 'un compte neuf n’a que son rôle d’inscription');
+
+  // La fiche d’ajout ne demande que le profil du rôle et ses consentements.
+  const upgrade = auth.emptyProfileValues('proprietaire');
+  assert.deepEqual(
+    Object.keys(upgrade).sort(),
+    auth.profileFields('proprietaire')
+      .map((field) => field.name)
+      .concat('mandat')
+      .sort(),
+  );
+  assert.equal(upgrade.motDePasse, undefined, 'le mot de passe n’est pas redemandé');
+  assert.equal(upgrade.prenom, undefined, 'l’identité n’est pas redemandée');
+
+  // Refus tant que le profil et le consentement obligatoire manquent.
+  assert.equal(auth.validateRoleUpgrade('proprietaire', upgrade).ok, false);
+  assert.ok(auth.validateRoleUpgrade('proprietaire', upgrade).fields.mandat);
+
+  const filled = {
+    ...upgrade,
+    portefeuille: '2-5',
+    natureBiens: 'villa',
+    zoneBiens: 'Cotonou',
+    usage: 'location',
+    situation: 'diaspora',
+    mandat: true,
+  };
+  assert.equal(auth.validateRoleUpgrade('proprietaire', filled).ok, true);
+  assert.deepEqual(auth.profileSnapshot('proprietaire', filled), {
+    portefeuille: '2-5',
+    natureBiens: 'villa',
+    zoneBiens: 'Cotonou',
+    usage: 'location',
+    situation: 'diaspora',
+  });
+
+  // Le rôle s’ajoute, le profil fusionne, l’identité et le mot de passe ne bougent pas.
+  const upgraded = accounts.withAddedRole(account, 'proprietaire', filled, 1_700_000_000_000);
+  assert.deepEqual(upgraded.roles, ['client', 'proprietaire']);
+  assert.equal(upgraded.role, 'client', 'le rôle principal reste celui de l’inscription');
+  assert.equal(upgraded.email, account.email);
+  assert.equal(upgraded.password, account.password, 'l’empreinte du mot de passe est inchangée');
+  assert.deepEqual(upgraded.profile, { ...account.profile, ...auth.profileSnapshot('proprietaire', filled) });
+  assert.equal(await accounts.verifyPassword(upgraded.password, 'Fidjrosse-2026'), true);
+
+  // Puis l’agent : trois rôles, un seul compte, aucune capacité perdue.
+  const asAgent = accounts.withAddedRole(
+    upgraded,
+    'agent',
+    {
+      ...auth.emptyProfileValues('agent'),
+      structure: 'Agence Fidjrossè',
+      identification: 'RB/COT/24 B 1234',
+      zoneExercice: 'Cotonou',
+      experience: '3-10',
+      mandat: true,
+    },
+  );
+  assert.deepEqual(asAgent.roles, ['client', 'proprietaire', 'agent']);
+  assert.deepEqual(auth.missingRoles(asAgent.roles), []);
+  assert.equal(auth.capabilitiesByRole(asAgent.roles).length, 3);
+
+  // Le profil décrit tous les rôles détenus, sans doublon ni perte.
+  const lines = auth.describeProfile(asAgent.roles, asAgent.profile);
+  const labels = lines.map((line) => line.label);
+  assert.ok(labels.includes('Votre projet'), 'profil client conservé');
+  assert.ok(labels.includes('Portefeuille') || labels.includes('Biens à confier'), 'profil propriétaire conservé');
+  assert.ok(labels.includes('Structure ou agence'), 'profil agent conservé');
+  assert.equal(new Set(lines.map((line) => line.name)).size, lines.length, 'aucun doublon');
+
+  // La relecture du stockage reconstruit les mêmes rôles, sans doublon.
+  const [reloaded] = accounts.parseAccounts([asAgent]);
+  assert.deepEqual(reloaded.roles, ['client', 'proprietaire', 'agent']);
+  const [broken] = accounts.parseAccounts([{ ...asAgent, roles: ['agent', 'agent', 'nawak'] }]);
+  assert.deepEqual(broken.roles, ['client', 'agent'], 'les rôles invalides sont écartés, le principal est conservé');
+  const [withoutRoles] = accounts.parseAccounts([{ ...asAgent, roles: undefined }]);
+  assert.deepEqual(withoutRoles.roles, ['client'], 'un compte sans liste retombe sur son rôle principal');
+
+  // La vue publique n’oublie aucun rôle.
+  assert.deepEqual(accounts.publicAccount(asAgent).roles, ['client', 'proprietaire', 'agent']);
+});

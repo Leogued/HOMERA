@@ -169,33 +169,33 @@ export const AUTH_PAGE = {
     facts: [
       { label: "Compte requis", value: "Aucun" },
       { label: "Stockage", value: "Navigateur" },
-      { label: "Rôles", value: "3" },
+      { label: "Rôles cumulables", value: "3" },
     ],
     asideTitle: "Ce qu’ouvre un compte",
     asidePoints: [
-      "Favoris et recherches enregistrées, réunis sous un même compte",
-      "Rôle déclaré (client, propriétaire, agent) et informations associées",
+      "Le socle client : recherche, favoris, recherches enregistrées et alertes",
+      "Vos rôles — client, propriétaire, agent — cumulables sur un même compte",
       "Confirmation d’adresse et code de secours pour le mot de passe",
     ],
     asideNote:
-      "Vous n’avez pas encore de compte ? L’inscription prend une minute et demande des informations différentes selon votre rôle.",
+      "Un propriétaire cherche aussi un logement, un agent achète aussi pour lui-même : les rôles s’ajoutent au compte, ils ne le remplacent pas.",
   },
   inscription: {
     breadcrumb: "Créer un compte",
     eyebrow: "Ouvrir un compte",
     title: "Créer un compte HOMERA",
     intro:
-      "Trois rôles, trois dossiers : client, propriétaire ou agent. Choisissez le vôtre — les informations demandées s’adaptent à ce que vous venez faire ici, et rien de superflu ne vous sera demandé.",
+      "Trois rôles, trois dossiers : client, propriétaire ou agent. Choisissez celui qui correspond à ce que vous venez faire — les informations demandées s’adaptent, et rien de superflu ne vous sera demandé. Les autres rôles s’ajouteront ensuite au même compte, sans reperdre ni votre identité ni votre mot de passe.",
     facts: [
-      { label: "Rôles", value: "3" },
+      { label: "Rôles cumulables", value: "3" },
       { label: "Champs", value: "Adaptés" },
       { label: "Confirmation", value: "Par code" },
     ],
     asideTitle: "Ce qu’ouvre un compte",
     asidePoints: [
-      "Favoris et recherches enregistrées, retrouvés à chaque visite",
+      "Le socle client : recherche, favoris, recherches enregistrées et alertes",
+      "Votre rôle, puis les autres quand vous le souhaitez — un compte, plusieurs rôles",
       "Suivi des demandes de visite et des dossiers, référence du bien à l’appui",
-      "Alertes sur vos critères, dès qu’un bien vérifié correspond",
     ],
     asideNote:
       "Un compte n’est jamais nécessaire pour consulter le catalogue : les fiches, les filtres et le contact restent ouverts à tous.",

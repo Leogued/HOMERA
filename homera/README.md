@@ -70,7 +70,7 @@ et barre de progression de lecture (desktop).
 | Moteur, timeline et préférences | `lib/motion.ts` + `lib/motion-frame.ts` |
 | Courbes / géométrie et tests | `lib/motion-math.ts` + `scripts/test-motion.mjs` |
 | Recherche partagée (hero ↔ sélection) | `components/providers/SearchProvider.tsx` |
-| Règles de compte et champs par rôle (phase 4) | `lib/auth.ts` |
+| Règles de compte, rôles cumulables et capacités (phase 4) | `lib/auth.ts` |
 | Comptes, hachage du mot de passe, session | `lib/accounts.ts` |
 | Copy des cinq écrans de compte | `lib/pages.ts` → `AUTH_PAGE` |
 | Mouvement & matières (CSS) | `app/globals.css` (bloc *SYSTÈME DE MOUVEMENT*) |
@@ -188,6 +188,14 @@ ou diaspora) et certifie être propriétaire ou mandataire ; un agent déclare s
 RCCM ou IFU, sa zone d’exercice et certifie détenir un mandat écrit par bien. Les champs
 communs (identité, contact, mot de passe, conditions) restent identiques pour tous.
 
+**Les rôles sont cumulatifs.** Un propriétaire cherche aussi un logement, un agent achète
+aussi pour lui-même : **le socle client appartient à tous les rôles**, et un compte peut
+détenir les trois. Depuis `/connexion`, un compte connecté ajoute un rôle sans reperdre son
+identité, son mot de passe ni son profil — seuls le profil du nouveau rôle et son
+consentement propre sont demandés (`RoleUpgrade`, `addRole`, `roles: AccountRole[]`). Chaque
+capacité est étiquetée « Ouvert » (elle fonctionne déjà sans serveur) ou « Avec l’API » —
+voir `CAPABILITIES` dans `lib/auth.ts`.
+
 **Deux limites assumées, écrites sur les écrans :** aucun e-mail n’est envoyé — le code
 s’affiche donc à l’écran (`PilotCode`) ; aucun serveur ne reçoit les comptes — ils ne sont
 donc pas partagés entre appareils, et vider le navigateur les efface.
@@ -203,8 +211,8 @@ Détail complet, matrice des champs, limites et point de couture pour l’API :
 ## Vérification
 
 ```bash
-npm test                  # 45 tests : ordonnanceur, inertie, géométrie, filtres, médias,
-                          # contrastes, comptes (rôles, mot de passe, codes, stockage)
+npm test                  # 48 tests : ordonnanceur, inertie, géométrie, filtres, médias,
+                          # contrastes, comptes (rôles cumulables, mot de passe, codes, stockage)
 npx tsc --noEmit
 npm run lint
 npm run build

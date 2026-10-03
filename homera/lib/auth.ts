@@ -34,6 +34,8 @@ export type RoleDefinition = {
   benefits: string[];
   /** Ce que HOMERA demandera plus tard pour vérifier ce rôle. */
   verification: string;
+  /** Ce que le rôle reprend du socle client — dit sans le laisser deviner. */
+  includes: string;
   /** Clé de pictogramme — les composants possèdent l’icône réelle. */
   icon: RoleIconKey;
 };
@@ -42,9 +44,10 @@ export const ROLES: readonly RoleDefinition[] = [
   {
     id: "client",
     label: "Client",
-    oneLine: "Je cherche un bien à acheter, à louer ou à louer pour un séjour.",
+    oneLine: "Je cherche un bien à acheter, à louer ou pour un séjour.",
     promise:
       "Rechercher, comparer et suivre vos biens : favoris synchronisés, alertes sur vos critères, demandes de visite au même endroit.",
+    includes: "C’est le socle : tout compte HOMERA l’a, quel que soit le rôle choisi.",
     benefits: [
       "Favoris et recherches enregistrées, retrouvés sur tous vos appareils",
       "Alerte dès qu’un bien vérifié correspond à vos critères",
@@ -56,9 +59,11 @@ export const ROLES: readonly RoleDefinition[] = [
   {
     id: "proprietaire",
     label: "Propriétaire",
-    oneLine: "Je confie un ou plusieurs biens à HOMERA, pour les louer ou les vendre.",
+    oneLine: "Je confie un ou plusieurs biens à HOMERA — et je garde tout le compte client.",
     promise:
       "Déposer un bien, suivre sa vérification et sa publication : vous savez à tout moment où en est le dossier et ce qui a été contrôlé.",
+    includes:
+      "Inclut le compte client, entièrement : recherche, favoris, recherches enregistrées, alertes et demandes de visite.",
     benefits: [
       "Dépôt d’un bien en ligne, pièces et mandat joints au dossier",
       "Suivi de la vérification, étape par étape, jusqu’à la publication",
@@ -71,9 +76,11 @@ export const ROLES: readonly RoleDefinition[] = [
   {
     id: "agent",
     label: "Agent",
-    oneLine: "Je présente des biens pour le compte de propriétaires, avec un mandat.",
+    oneLine: "Je présente des biens pour des propriétaires, avec un mandat — et je garde tout le compte client.",
     promise:
       "Un espace de dépôt pour vos mandats, un suivi de publication par bien et une fiche agent lisible par les clients.",
+    includes:
+      "Inclut le compte client, entièrement : recherche, favoris, recherches enregistrées, alertes et demandes de visite.",
     benefits: [
       "Dépôt de biens mandatés, rattachés à votre structure",
       "Fiche agent : zone d’exercice, mandats suivis, biens publiés",
@@ -98,6 +105,167 @@ export function isAccountRole(value: unknown): value is AccountRole {
 
 export function roleFromParam(value: unknown): AccountRole | null {
   return isAccountRole(value) ? value : null;
+}
+
+/* ------------------------------------------------------------------
+   CAPACITÉS — LES RÔLES SONT CUMULATIFS
+   ------------------------------------------------------------------
+   Un propriétaire cherche aussi un logement ; un agent achète aussi
+   pour lui-même. Les rôles ne sont donc pas des profils exclusifs :
+   chaque rôle **contient** le socle client, et y ajoute son métier.
+
+   Deux niveaux sont distingués, parce que c’est la vérité du pilote :
+
+   • `available: true` — la fonction existe déjà, sans serveur (la
+     recherche et les favoris du catalogue) ;
+   • `available: false` — la fonction demande l’API ; elle est annoncée
+     comme à venir, jamais présentée comme ouverte.
+
+   Une seule source pour l’interface : les écrans ne composent pas leurs
+   propres listes, ils lisent ces groupes.
+   ------------------------------------------------------------------ */
+
+export type CapabilityScope = "socle" | "proprietaire" | "agent";
+
+export type Capability = {
+  id: string;
+  label: string;
+  detail: string;
+  /** « socle » : le client, donc tout le monde. Sinon le rôle qui l’ajoute. */
+  scope: CapabilityScope;
+  /** true : la fonction fonctionne déjà dans le pilote, sans serveur. */
+  available: boolean;
+};
+
+export const CAPABILITIES: readonly Capability[] = [
+  {
+    id: "recherche",
+    scope: "socle",
+    available: true,
+    label: "Chercher, filtrer, comparer",
+    detail: "Tout le catalogue et chaque fiche, avec des adresses partageables.",
+  },
+  {
+    id: "favoris",
+    scope: "socle",
+    available: true,
+    label: "Favoris et recherches enregistrées",
+    detail: "Rattachés au compte au lieu de rester anonymes dans le navigateur.",
+  },
+  {
+    id: "visites",
+    scope: "socle",
+    available: false,
+    label: "Demandes de visite",
+    detail: "Envoyer une demande sur un bien et suivre son état, référence à l’appui.",
+  },
+  {
+    id: "alertes",
+    scope: "socle",
+    available: false,
+    label: "Alertes sur critères",
+    detail: "Être prévenu dès qu’un bien vérifié correspond à la recherche enregistrée.",
+  },
+  {
+    id: "depot",
+    scope: "proprietaire",
+    available: false,
+    label: "Dépôt d’un bien",
+    detail: "Constituer le dossier : pièces, mandat, photos, prix, disponibilité.",
+  },
+  {
+    id: "suivi",
+    scope: "proprietaire",
+    available: false,
+    label: "Suivi de la vérification",
+    detail: "Savoir où en est le dossier, étape par étape, jusqu’à la publication.",
+  },
+  {
+    id: "candidatures",
+    scope: "proprietaire",
+    available: false,
+    label: "Candidatures et visites reçues",
+    detail: "Examiner les demandes reçues sur vos biens, sans échange dispersé.",
+  },
+  {
+    id: "gestion",
+    scope: "proprietaire",
+    available: false,
+    label: "Gestion locative",
+    detail: "Loyers, quittances, maintenance : le dossier reste au même endroit.",
+  },
+  {
+    id: "mandats",
+    scope: "agent",
+    available: false,
+    label: "Biens mandatés",
+    detail: "Déposer les biens pour lesquels un mandat écrit est détenu.",
+  },
+  {
+    id: "structure",
+    scope: "agent",
+    available: false,
+    label: "Fiche structure et file de vérification",
+    detail: "Rattacher les dossiers à votre agence et suivre leur contrôle.",
+  },
+] as const;
+
+/** Capacités apportées par un rôle, socle client compris. */
+export function roleCapabilities(role: AccountRole): Capability[] {
+  return CAPABILITIES.filter((entry) => entry.scope === "socle" || entry.scope === role);
+}
+
+/** Union des capacités de plusieurs rôles, sans doublon et dans l’ordre du catalogue. */
+export function rolesCapabilities(roles: readonly AccountRole[]): Capability[] {
+  return CAPABILITIES.filter(
+    (entry) => entry.scope === "socle" || roles.includes(entry.scope as AccountRole),
+  );
+}
+
+export type CapabilityGroup = {
+  scope: CapabilityScope;
+  title: string;
+  capabilities: Capability[];
+};
+
+/** Groupes prêts à afficher : le socle d’abord, puis chaque rôle détenu. */
+export function capabilitiesByRole(roles: readonly AccountRole[]): CapabilityGroup[] {
+  const groups: CapabilityGroup[] = [
+    {
+      scope: "socle",
+      title: "Avec tout compte HOMERA",
+      capabilities: CAPABILITIES.filter((entry) => entry.scope === "socle"),
+    },
+  ];
+  for (const role of ROLE_ORDER) {
+    if (role === "client" || !roles.includes(role)) continue;
+    groups.push({
+      scope: role,
+      title: `En tant que ${roleDefinition(role).label.toLowerCase()}`,
+      capabilities: CAPABILITIES.filter((entry) => entry.scope === role),
+    });
+  }
+  return groups;
+}
+
+/** Un compte ne détient jamais deux fois le même rôle. */
+export function hasRole(roles: readonly AccountRole[], role: AccountRole): boolean {
+  return roles.includes(role);
+}
+
+/**
+ * Rôles qu’un compte peut encore ajouter : tout sauf ceux déjà détenus,
+ * et sauf le client — que tous les rôles incluent par construction.
+ */
+export function missingRoles(roles: readonly AccountRole[]): AccountRole[] {
+  return ROLE_ORDER.filter((role) => role !== "client" && !roles.includes(role));
+}
+
+/** « Propriétaire », « Client · Propriétaire » — libellé court des rôles détenus. */
+export function rolesLabel(roles: readonly AccountRole[]): string {
+  const held = ROLE_ORDER.filter((role) => roles.includes(role));
+  if (held.length === 0) return "Compte";
+  return held.map((role) => roleDefinition(role).label).join(" · ");
 }
 
 /* ------------------------------------------------------------------
@@ -705,16 +873,14 @@ export function passwordProblems(password: string, context: PasswordContext = {}
    VALIDATION DE L’INSCRIPTION
    ------------------------------------------------------------------ */
 
-export function validateSignUp(role: AccountRole, values: FormValues): ValidationResult {
+/**
+ * Contrôles communs à tout jeu de champs : présence des champs obligatoires,
+ * formats (e-mail, téléphone, IFU, RCCM) et longueurs. L’inscription et
+ * l’ajout d’un rôle passent par ici : une règle ne se corrige qu’une fois.
+ */
+function validateFieldList(specs: readonly FieldSpec[], values: FormValues): Record<string, string> {
   const fields: Record<string, string> = {};
-  const password = textValue(values, "motDePasse");
-  const context: PasswordContext = {
-    prenom: textValue(values, "prenom"),
-    nom: textValue(values, "nom"),
-    email: textValue(values, "email"),
-  };
-
-  for (const field of roleFields(role)) {
+  for (const field of specs) {
     if (field.kind === "password" || field.kind === "checkbox") continue;
     const value = textValue(values, field.name);
 
@@ -741,6 +907,17 @@ export function validateSignUp(role: AccountRole, values: FormValues): Validatio
       fields[field.name] = `${field.maxLength} caractères maximum.`;
     }
   }
+  return fields;
+}
+
+export function validateSignUp(role: AccountRole, values: FormValues): ValidationResult {
+  const fields = validateFieldList(roleFields(role), values);
+  const password = textValue(values, "motDePasse");
+  const context: PasswordContext = {
+    prenom: textValue(values, "prenom"),
+    nom: textValue(values, "nom"),
+    email: textValue(values, "email"),
+  };
 
   if (password === "") {
     fields.motDePasse = "Choisissez un mot de passe : il protège l’accès à votre espace.";
@@ -769,6 +946,61 @@ export function validateSignUp(role: AccountRole, values: FormValues): Validatio
       : undefined;
 
   return { ok: Object.keys(fields).length === 0, fields, form };
+}
+
+/**
+ * Champs demandés pour ajouter un rôle à un compte existant : le profil du
+ * rôle, et son consentement propre (mandat, certification de propriété).
+ * Ni l’identité, ni le mot de passe, ni les conditions générales — déjà
+ * acceptées à l’ouverture du compte — ne sont redemandés.
+ */
+export function upgradeFields(role: AccountRole): readonly FieldSpec[] {
+  return [
+    ...profileFields(role),
+    ...roleFields(role).filter(
+      (field) => field.kind === "checkbox" && field.required && field.name !== "conditions",
+    ),
+  ];
+}
+
+/** Ajouter un rôle à un compte existant : seuls les champs du rôle ajouté sont demandés. */
+export function validateRoleUpgrade(role: AccountRole, values: FormValues): ValidationResult {
+  const fields = validateFieldList(upgradeFields(role), values);
+
+  for (const field of upgradeFields(role)) {
+    if (field.kind !== "checkbox" || !field.required) continue;
+    if (!boolValue(values, field.name)) {
+      fields[field.name] = "Cette case doit être cochée pour ajouter ce rôle.";
+    }
+  }
+
+  return {
+    ok: Object.keys(fields).length === 0,
+    fields,
+    form:
+      Object.keys(fields).length > 0
+        ? "Quelques informations restent à compléter pour ajouter ce rôle."
+        : undefined,
+  };
+}
+
+/** Instantané du profil d’un rôle : seuls les champs renseignés sont conservés. */
+export function profileSnapshot(role: AccountRole, values: FormValues): Record<string, string> {
+  const snapshot: Record<string, string> = {};
+  for (const field of profileFields(role)) {
+    const value = textValue(values, field.name);
+    if (value !== "") snapshot[field.name] = value;
+  }
+  return snapshot;
+}
+
+/** Valeurs vides du formulaire d’ajout d’un rôle. */
+export function emptyProfileValues(role: AccountRole): FormValues {
+  const values: FormValues = {};
+  for (const field of upgradeFields(role)) {
+    values[field.name] = field.kind === "checkbox" ? false : "";
+  }
+  return values;
 }
 
 /* ------------------------------------------------------------------
@@ -909,14 +1141,33 @@ export function initials(prenom: string, nom: string): string {
 
 export type ProfileLine = { name: string; label: string; value: string };
 
-export function describeProfile(role: AccountRole, profile: Record<string, string>): ProfileLine[] {
+/**
+ * Fiche du compte : les champs de **tous** les rôles détenus, dans l’ordre
+ * du catalogue, sans doublon. Un client devenu propriétaire garde donc
+ * visibles ses informations de recherche comme celles de ses biens.
+ */
+export function describeProfile(
+  roleOrRoles: AccountRole | readonly AccountRole[],
+  profile: Record<string, string>,
+): ProfileLine[] {
+  const roles = typeof roleOrRoles === "string" ? [roleOrRoles] : [...roleOrRoles];
   const lines: ProfileLine[] = [];
-  for (const field of profileFields(role)) {
-    if (field.kind === "password" || field.kind === "checkbox") continue;
-    const raw = profile[field.name] ?? "";
-    if (raw === "") continue;
-    const option = field.options?.find((entry) => entry.value === raw);
-    lines.push({ name: field.name, label: field.label.replace(/\s*\(facultatif\)$/i, ""), value: option?.label ?? raw });
+  const seen = new Set<string>();
+  for (const role of ROLE_ORDER) {
+    if (!roles.includes(role)) continue;
+    for (const field of profileFields(role)) {
+      if (field.kind === "password" || field.kind === "checkbox") continue;
+      if (seen.has(field.name)) continue;
+      const raw = profile[field.name] ?? "";
+      if (raw === "") continue;
+      seen.add(field.name);
+      const option = field.options?.find((entry) => entry.value === raw);
+      lines.push({
+        name: field.name,
+        label: field.label.replace(/\s*\(facultatif\)$/i, ""),
+        value: option?.label ?? raw,
+      });
+    }
   }
   return lines;
 }

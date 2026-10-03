@@ -1,10 +1,11 @@
 import {
   VERIFICATION_TTL_MS,
   RESET_TTL_MS,
+  ROLE_ORDER,
   generateCode,
   generateToken,
   isAccountRole,
-  roleFields,
+  profileSnapshot,
   textValue,
   type AccountRole,
   type FormValues,
@@ -77,7 +78,14 @@ export type ResetRecord = {
 
 export type AccountRecord = {
   id: string;
+  /** Rôle principal — celui de l’inscription. Toujours présent dans `roles`. */
   role: AccountRole;
+  /**
+   * Tous les rôles détenus, dans l’ordre du catalogue. Un compte
+   * propriétaire ou agent inclut le compte client (voir lib/auth.ts) :
+   * ajouter un rôle ne retire jamais les capacités des précédents.
+   */
+  roles: AccountRole[];
   prenom: string;
   nom: string;
   email: string;
@@ -101,6 +109,7 @@ export type AccountRecord = {
 export type PublicAccount = {
   id: string;
   role: AccountRole;
+  roles: AccountRole[];
   prenom: string;
   nom: string;
   email: string;
@@ -168,6 +177,13 @@ function parseReset(raw: unknown): ResetRecord | null {
   };
 }
 
+/** Rôles relus du stockage : valides, uniques, et incluant toujours le rôle principal. */
+function parseRoles(raw: unknown, primary: AccountRole): AccountRole[] {
+  const list = Array.isArray(raw) ? raw.filter((entry): entry is AccountRole => isAccountRole(entry)) : [];
+  const roles = ROLE_ORDER.filter((role) => role === primary || list.includes(role));
+  return roles.length > 0 ? roles : [primary];
+}
+
 function parsePassword(raw: unknown): PasswordRecord | null {
   if (typeof raw !== "object" || raw === null) return null;
   const candidate = raw as Record<string, unknown>;
@@ -200,6 +216,7 @@ export function parseAccounts(raw: unknown): AccountRecord[] {
     accounts.push({
       id,
       role: candidate.role,
+      roles: parseRoles(candidate.roles, candidate.role),
       prenom: asString(candidate.prenom),
       nom: asString(candidate.nom),
       email,
@@ -251,6 +268,7 @@ export function publicAccount(record: AccountRecord): PublicAccount {
   return {
     id: record.id,
     role: record.role,
+    roles: record.roles,
     prenom: record.prenom,
     nom: record.nom,
     email: record.email,
@@ -528,12 +546,6 @@ export async function createAccountRecord(input: NewAccountInput): Promise<Accou
   const now = input.now ?? Date.now();
   const iso = new Date(now).toISOString();
   const email = textValue(values, "email");
-  const profile: Record<string, string> = {};
-  for (const field of roleFields(role)) {
-    if (field.group !== "profil") continue;
-    const value = textValue(values, field.name);
-    if (value !== "") profile[field.name] = value;
-  }
   const verification: VerificationRecord = {
     code: generateCode(input.random),
     expiresAt: now + VERIFICATION_TTL_MS,
@@ -543,12 +555,13 @@ export async function createAccountRecord(input: NewAccountInput): Promise<Accou
   return {
     id: accountId(role, input.random, input.takenIds ?? []),
     role,
+    roles: [role],
     prenom: textValue(values, "prenom"),
     nom: textValue(values, "nom"),
     email,
     emailKey: normalizeEmail(email),
     telephone: textValue(values, "telephone"),
-    profile,
+    profile: profileSnapshot(role, values),
     password: await hashPassword(textValue(values, "motDePasse")),
     emailVerified: false,
     verification,
@@ -556,6 +569,31 @@ export async function createAccountRecord(input: NewAccountInput): Promise<Accou
     notify: values.alertes === true,
     consentAt: iso,
     createdAt: iso,
+    updatedAt: iso,
+  };
+}
+
+/**
+ * Ajoute un rôle à un compte existant : le profil du nouveau rôle est
+ * fusionné à l’ancien (aucun champ écrasé), et le rôle rejoint la liste
+ * des rôles détenus. Le rôle principal ne change pas — l’historique du
+ * compte reste lisible.
+ */
+export function withAddedRole(
+  record: AccountRecord,
+  role: AccountRole,
+  values: FormValues,
+  now = Date.now(),
+): AccountRecord {
+  const roles = ROLE_ORDER.filter(
+    (entry) => entry === record.role || record.roles.includes(entry) || entry === role,
+  );
+  const iso = new Date(now).toISOString();
+  return {
+    ...record,
+    roles,
+    profile: { ...record.profile, ...profileSnapshot(role, values) },
+    consentAt: iso,
     updatedAt: iso,
   };
 }

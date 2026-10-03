@@ -2,12 +2,33 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Bell, CalendarCheck, Heart, KeyRound, LogOut, MailCheck, Search, ShieldAlert } from "lucide-react";
+import {
+  ArrowRight,
+  Bell,
+  CalendarCheck,
+  Check,
+  Clock,
+  Heart,
+  KeyRound,
+  LogOut,
+  MailCheck,
+  Search,
+  ShieldAlert,
+} from "lucide-react";
 import { AuthAsideTitle, AuthBenefits, AuthPanel } from "@/components/auth/AuthPanel";
+import { RoleUpgrade } from "@/components/auth/RoleUpgrade";
 import { SignInForm, type AuthNotice } from "@/components/auth/SignInForm";
 import { PilotNote, StatusNote } from "@/components/auth/StatusNote";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { describeProfile, initials, maskPhone, roleDefinition } from "@/lib/auth";
+import {
+  capabilitiesByRole,
+  describeProfile,
+  initials,
+  maskPhone,
+  missingRoles,
+  roleDefinition,
+  rolesLabel,
+} from "@/lib/auth";
 
 /* ==================================================================
    HOMERA — /connexion : DEUX ÉTATS, AUCUN MENSONGE
@@ -49,8 +70,9 @@ export function SignedInPanel({ notice }: { notice?: AuthNotice | null }) {
   const router = useRouter();
   if (!account) return null;
 
-  const definition = roleDefinition(account.role);
-  const profile = describeProfile(account.role, account.profile);
+  const profile = describeProfile(account.roles, account.profile);
+  const groups = capabilitiesByRole(account.roles);
+  const missing = missingRoles(account.roles);
   const memberSince = new Date(account.createdAt).toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "long",
@@ -61,7 +83,11 @@ export function SignedInPanel({ notice }: { notice?: AuthNotice | null }) {
     <div className="space-y-6">
       <AuthPanel
         title={`Bonjour ${account.prenom}`.trim()}
-        intro={`Vous êtes connecté avec l’adresse ${account.email}.`}
+        intro={
+          account.roles.length > 1
+            ? `Vous êtes connecté avec l’adresse ${account.email}, et votre compte cumule ${rolesLabel(account.roles)}.`
+            : `Vous êtes connecté avec l’adresse ${account.email}.`
+        }
         footer={
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link
@@ -127,9 +153,19 @@ export function SignedInPanel({ notice }: { notice?: AuthNotice | null }) {
                 {account.prenom} {account.nom}
               </p>
               <p className="mt-0.5 flex flex-wrap items-center gap-2 text-caption text-muted">
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-homera-terracotta/40 px-2.5 py-0.5 font-semibold uppercase tracking-[0.12em] homera-accent-ink">
-                  {definition.label}
-                </span>
+                {account.roles.map((entry) => (
+                  <span
+                    key={entry}
+                    className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 font-semibold uppercase tracking-[0.12em] ${
+                      entry === account.role
+                        ? "border-homera-terracotta/40 homera-accent-ink"
+                        : "border-border text-muted"
+                    }`}
+                  >
+                    {roleDefinition(entry).label}
+                    {entry === account.role ? <span className="sr-only"> (rôle principal)</span> : null}
+                  </span>
+                ))}
                 <span className="homera-num">{account.id}</span>
               </p>
             </div>
@@ -162,10 +198,45 @@ export function SignedInPanel({ notice }: { notice?: AuthNotice | null }) {
             ))}
           </dl>
 
-          {account.role === "agent" && (
-            <StatusNote tone="info" title="Compte agent — vérification de structure">
-              Votre espace de dépôt s’ouvrira après vérification de la structure auprès de l’équipe HOMERA
-              (RCCM ou IFU, carte professionnelle, mandats). Le compte, lui, est déjà utilisable.
+          {/* --- Ce que ce compte ouvre, rôle par rôle --- */}
+          <div className="space-y-5">
+            {groups.map((group) => (
+              <div key={group.scope}>
+                <h3 className="text-label uppercase text-muted">{group.title}</h3>
+                <ul className="mt-3 space-y-2.5">
+                  {group.capabilities.map((capability) => (
+                    <li key={capability.id} className="flex items-start gap-2.5">
+                      {capability.available ? (
+                        <Check className="mt-[0.2rem] h-3.5 w-3.5 shrink-0 text-success" aria-hidden="true" />
+                      ) : (
+                        <Clock className="mt-[0.2rem] h-3.5 w-3.5 shrink-0 text-warning" aria-hidden="true" />
+                      )}
+                      <span className="min-w-0 text-note leading-relaxed text-foreground">
+                        {capability.label}
+                        <span className="ml-2 inline-flex rounded-full border border-border px-2 py-0.5 align-middle text-micro font-semibold uppercase tracking-[0.1em] text-muted">
+                          {capability.available ? "Ouvert" : "Avec l’API"}
+                        </span>
+                        <span className="mt-0.5 block text-caption text-muted">{capability.detail}</span>
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            <p className="text-caption leading-relaxed text-muted">
+              Le socle client est inclus dans tous les rôles : un propriétaire cherche aussi, un agent achète
+              aussi. Les fonctions marquées « avec l’API » demandent un serveur : elles sont annoncées, jamais
+              présentées comme ouvertes.
+            </p>
+          </div>
+
+          {(account.roles.includes("proprietaire") || account.roles.includes("agent")) && (
+            <StatusNote
+              tone="info"
+              title={account.roles.includes("agent") ? "Dépôt de biens et vérification" : "Dossier propriétaire"}
+            >
+              Le dépôt commencera par la vérification {account.roles.includes("agent") ? "de votre structure (RCCM ou IFU, carte professionnelle)" : "de vos pièces de propriété ou de votre mandat"}, puis
+              de chaque bien. Ces fonctions s’ouvriront avec le serveur ; le compte, lui, est déjà utilisable.
             </StatusNote>
           )}
         </div>
@@ -175,8 +246,8 @@ export function SignedInPanel({ notice }: { notice?: AuthNotice | null }) {
         <AuthAsideTitle>Déjà disponible</AuthAsideTitle>
         <AuthBenefits
           items={[
+            `Vos rôles : ${rolesLabel(account.roles)} — et tout ce que le socle client apporte`,
             "Vos favoris et vos recherches enregistrées, conservés dans ce navigateur",
-            "Votre rôle (client, propriétaire, agent) et les informations qui en dépendent",
             "La confirmation de votre adresse, avec un code qui expire réellement",
           ]}
         />
@@ -197,6 +268,20 @@ export function SignedInPanel({ notice }: { notice?: AuthNotice | null }) {
           </Link>
         </div>
       </div>
+
+      {missing.length > 0 && (
+        <div className="rounded-card border border-border bg-card/60 p-5">
+          <AuthAsideTitle>
+            {missing.length === 2 ? "Ajouter un autre rôle" : "Ajouter le rôle restant"}
+          </AuthAsideTitle>
+          <p className="mt-3 text-note leading-relaxed text-muted">
+            {`Ce compte détient ${rolesLabel(account.roles)}. Un propriétaire cherche aussi un logement, un agent achète aussi parfois pour lui-même : l’ajout se fait avec les mêmes identifiants, sans reperdre l’identité ni le mot de passe.`}
+          </p>
+          <div className="mt-5">
+            <RoleUpgrade />
+          </div>
+        </div>
+      )}
 
       <div className="rounded-card border border-border bg-card/60 p-5">
         <AuthAsideTitle>En préparation</AuthAsideTitle>

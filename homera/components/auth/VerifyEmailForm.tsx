@@ -9,7 +9,7 @@ import { Field } from "@/components/auth/Field";
 import { PilotCode, PilotNote, StatusNote } from "@/components/auth/StatusNote";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { VERIFICATION_TTL_MINUTES, maskEmail } from "@/lib/auth";
+import { VERIFICATION_TTL_MINUTES, maskEmail, rolesLabel } from "@/lib/auth";
 
 /* ==================================================================
    HOMERA — VÉRIFICATION DE L’ADRESSE E-MAIL
@@ -74,9 +74,8 @@ export function VerifyEmailForm() {
       >
         <div className="space-y-6">
           <StatusNote tone="success" title="Vérification terminée">
-            Votre espace reprend désormais tout : favoris, recherches enregistrées et rôle
-            {" "}
-            <strong className="font-semibold">{account.role === "client" ? "client" : account.role === "proprietaire" ? "propriétaire" : "agent"}</strong>.
+            Votre espace reprend désormais tout : favoris, recherches enregistrées et vos rôles —{" "}
+            <strong className="font-semibold">{rolesLabel(account.roles)}</strong>.
           </StatusNote>
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             <AuthLink href="/connexion?etat=verifie">Voir mon espace</AuthLink>

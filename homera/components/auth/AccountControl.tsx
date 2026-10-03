@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Heart, LogOut, MailCheck, Search, UserRound, UserRoundPlus } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { initials, roleDefinition } from "@/lib/auth";
+import { initials, roleDefinition, rolesLabel } from "@/lib/auth";
 import { AUTH_HREF, SIGNUP_HREF, VERIFY_HREF } from "@/lib/nav";
 
 /* ==================================================================
@@ -71,8 +71,6 @@ export function AccountControl({ tone = "light" }: { tone?: Tone }) {
     );
   }
 
-  const definition = roleDefinition(account.role);
-
   return (
     <div ref={wrapperRef} className="relative">
       <button
@@ -82,6 +80,7 @@ export function AccountControl({ tone = "light" }: { tone?: Tone }) {
         aria-expanded={open}
         aria-haspopup="true"
         aria-controls="homera-account-menu"
+        aria-label={`Mon compte — ${rolesLabel(account.roles)}`}
         className={`homera-press inline-flex h-10 items-center gap-2 rounded-full pl-1.5 pr-3 text-note font-medium transition-colors ${PILL[tone]}`}
       >
         <span
@@ -121,8 +120,19 @@ export function AccountControl({ tone = "light" }: { tone?: Tone }) {
               {account.prenom} {account.nom}
             </p>
             <p className="mt-0.5 truncate text-caption text-muted">{account.email}</p>
-            <p className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-homera-terracotta/40 px-2.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-[0.12em] homera-accent-ink">
-              {definition.label}
+            <p className="mt-2 flex flex-wrap items-center gap-1.5">
+              {account.roles.map((entry) => (
+                <span
+                  key={entry}
+                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-[0.12em] ${
+                    entry === account.role
+                      ? "border-homera-terracotta/40 homera-accent-ink"
+                      : "border-border text-muted"
+                  }`}
+                >
+                  {roleDefinition(entry).label}
+                </span>
+              ))}
             </p>
           </div>
 
@@ -227,12 +237,23 @@ export function AccountMobileLinks({
         {account.prenom} {account.nom}
       </p>
       <p className={`mt-0.5 truncate text-caption ${dark ? "text-white/60" : "text-muted"}`}>{account.email}</p>
-      <p
-        className={`mt-2 inline-flex rounded-full border px-2.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-[0.12em] ${
-          dark ? "border-homera-amber/50 text-homera-amber" : "border-homera-terracotta/40 homera-accent-ink"
-        }`}
-      >
-        {roleDefinition(account.role).label}
+      <p className="mt-2 flex flex-wrap gap-1.5">
+        {account.roles.map((entry) => (
+          <span
+            key={entry}
+            className={`inline-flex rounded-full border px-2.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-[0.12em] ${
+              entry === account.role
+                ? dark
+                  ? "border-homera-amber/50 text-homera-amber"
+                  : "border-homera-terracotta/40 homera-accent-ink"
+                : dark
+                  ? "border-white/20 text-white/70"
+                  : "border-border text-muted"
+            }`}
+          >
+            {roleDefinition(entry).label}
+          </span>
+        ))}
       </p>
       <ul className="mt-3 space-y-1">
         {[
