@@ -31,7 +31,7 @@ export function SceneHeader({
   actions?: ReactNode;
 }) {
   const isCenter = align === "center";
-  const muted = tone === "dark" ? "text-stone-300/80" : "text-muted";
+  const muted = tone === "dark" ? "text-homera-cream-dark/80" : "text-muted";
   const accent = tone === "dark" ? "text-homera-amber" : "homera-accent-ink";
 
   return (
@@ -41,11 +41,11 @@ export function SceneHeader({
       <Reveal y={14} blur={3} duration={640} className="flex items-center gap-3"
         style={{ justifyContent: isCenter ? "center" : "flex-start" }}
       >
-        <span className={`homera-num text-[11px] font-semibold tracking-[0.3em] ${accent}`}>
+        <span className={`homera-num text-caption font-semibold tracking-[0.3em] ${accent}`}>
           {index}
         </span>
         <span aria-hidden="true" className={`h-px w-10 ${tone === "dark" ? "bg-white/25" : "bg-homera-terracotta/40"}`} />
-        <span className={`text-[10.5px] font-semibold uppercase tracking-[0.24em] ${muted}`}>
+        <span className={`text-micro font-semibold uppercase tracking-[0.24em] ${muted}`}>
           {eyebrow}
         </span>
       </Reveal>
@@ -55,7 +55,7 @@ export function SceneHeader({
       </Reveal>
 
       {intro && (
-        <Reveal delay={170} y={20} as="p" className={`mt-4 max-w-2xl text-[13.5px] leading-relaxed sm:text-[0.9375rem] ${muted} ${isCenter ? "mx-auto" : ""}`}>
+        <Reveal delay={170} y={20} as="p" className={`mt-4 max-w-2xl text-body-sm leading-relaxed sm:text-body ${muted} ${isCenter ? "mx-auto" : ""}`}>
           {intro}
         </Reveal>
       )}

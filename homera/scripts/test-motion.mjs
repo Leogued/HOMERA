@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFile, stat } from 'node:fs/promises';
+import { readdir, readFile, stat } from 'node:fs/promises';
 import { test } from 'node:test';
 import ts from 'typescript';
 
@@ -168,6 +168,8 @@ await test('HOMERA : petits textes, CTA et données secondaires au contraste AA'
     assert.ok(ratio(accent, bg) >= 4.5);
     assert.ok(ratio(channels('#ffffff'), channels(theme['--homera-terracotta-dark'])) >= 4.5);
     assert.ok(ratio(channels(theme['--muted']), bg) >= 4.5);
+    assert.ok(ratio(channels(theme['--info']), bg) >= 4.5, `--info illisible (${theme['--info']})`);
+    assert.ok(ratio(channels(theme['--ring']), bg) >= 3, '--ring insuffisant pour un anneau de focus');
     const secondary = channels(theme['--foreground']).map((channel, index) => channel * .78 + bg[index] * .22);
     assert.ok(ratio(secondary, bg) >= 4.5);
   }
@@ -215,4 +217,75 @@ await test('HOMERA : clavier des listes et scrollbar interne non réintroduite',
   assert.ok(source.includes('panelRef.current?.contains(event.target)'));
   assert.ok(source.includes('onFocus={() => setActiveIndex(index)}'));
   assert.ok(source.includes('restoreFieldFocus(anchorRef.current, restoringFocus)'));
+});
+
+/* ------------------------------------------------------------------
+   DESIGN SYSTEM — les cinq familles de tokens
+   ------------------------------------------------------------------ */
+await test('HOMERA : couleurs, typo, espacements, rayons et mouvement sont tokenisés', () => {
+  const families = {
+    'couleur': ['--background', '--card', '--foreground', '--muted', '--muted-light', '--border',
+                '--success', '--warning', '--error', '--info', '--ring', '--surface-hover', '--overlay'],
+    'typographie': ['--text-display-xs', '--text-display-xl', '--text-display-2xl', '--text-display-fluid',
+                    '--text-body', '--text-body-sm', '--text-note', '--text-caption', '--text-micro',
+                    '--text-label', '--text-figure', '--text-brand'],
+    'espacement': ['--space-block', '--space-section', '--space-section-lg', '--space-section-scene',
+                   '--space-inline', '--container-max', '--container-wide', '--container-ultra'],
+    'rayon': ['--radius-btn', '--radius-input', '--radius-card', '--radius-menu', '--radius-media', '--radius-modal'],
+    'mouvement': ['--duration-instant', '--duration-quick', '--duration-base', '--duration-slow',
+                  '--duration-scene', '--ease-standard', '--ease-soft', '--ease-in-out'],
+  };
+  for (const [family, tokens] of Object.entries(families)) {
+    for (const token of tokens) assert.ok(css.includes(`${token}:`), `${family} : ${token} absent`);
+  }
+  assert.ok(css.includes('.homera-skeleton'), 'état de chargement absent');
+  // Chaque rôle de rayon pointe vers l'échelle, jamais vers une valeur isolée.
+  for (const role of ['btn', 'input', 'card', 'menu', 'media', 'modal']) {
+    assert.match(css, new RegExp(`--radius-${role}: var\\(--radius-(?:sm|md|lg|xl|2xl|3xl|4xl)\\)`),
+      `--radius-${role} ne suit pas l'échelle`);
+  }
+});
+
+await test('HOMERA : chaque token de design porte une valeur concrète', () => {
+  // Piège réel déjà rencontré : `--duration-slow: var(--duration-slow)` se
+  // compile en déclaration circulaire, donc en valeur invalide. Dans le bloc
+  // @theme inline l'auto-référence est normale (elle est masquée par le :root
+  // non calqué) ; hors @theme, chaque token doit avoir une valeur réelle.
+  const concrete = (token) => {
+    const values = [...css.matchAll(new RegExp(`${token}:\\s*([^;}]+)`, 'g'))].map((m) => m[1].trim());
+    return values.some((value) => value && !value.includes(token));
+  };
+  for (const token of ['--duration-instant', '--duration-quick', '--duration-base', '--duration-slow',
+                       '--duration-scene', '--space-block', '--space-section', '--space-section-lg',
+                       '--space-section-scene', '--container-max', '--radius-3xl', '--radius-4xl',
+                       '--info', '--ring', '--surface-hover', '--overlay', '--homera-paper',
+                       '--homera-paper-muted', '--homera-amber', '--homera-night']) {
+    assert.ok(css.includes(`${token}:`), `${token} absent`);
+    assert.ok(concrete(token), `${token} n'a aucune valeur concrète (déclaration circulaire)`);
+  }
+  // Les rôles de rayon suivent l'échelle, jamais une valeur isolée.
+  for (const role of ['btn', 'input', 'card', 'menu', 'media', 'modal']) {
+    assert.match(css, new RegExp(`--radius-${role}: var\\(--radius-(?:sm|md|lg|xl|2xl|3xl|4xl)\\)`),
+      `--radius-${role} ne suit pas l'échelle`);
+  }
+});
+
+await test('HOMERA : aucune teinte hors palette ni courbe recopiée dans les composants', async () => {
+  const sources = [];
+  const walk = async (dir) => {
+    for (const entry of await readdir(new URL(dir, import.meta.url), { withFileTypes: true })) {
+      if (entry.isDirectory()) await walk(`${dir}${entry.name}/`);
+      else if (entry.name.endsWith('.tsx')) sources.push(new URL(`${dir}${entry.name}`, import.meta.url));
+    }
+  };
+  await walk('../components/');
+  await walk('../app/');
+  assert.ok(sources.length >= 20, 'assez de composants parcourus');
+  for (const url of sources) {
+    const source = await readFile(url, 'utf8');
+    assert.doesNotMatch(source, /-stone-\d/, `${url.pathname} : palette Tailwind par défaut`);
+    assert.doesNotMatch(source, /#[0-9a-fA-F]{3,8}\b/, `${url.pathname} : couleur codée en dur`);
+    assert.doesNotMatch(source, /ease-\[/, `${url.pathname} : courbe recopiée à la main`);
+    assert.doesNotMatch(source, /rounded-\[\d/, `${url.pathname} : rayon hors échelle`);
+  }
 });

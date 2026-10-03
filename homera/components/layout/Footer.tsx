@@ -25,22 +25,22 @@ export function Footer() {
           {/* Colonne de marque */}
           <Reveal y={20} className="space-y-4 lg:col-span-2">
             <Link href="/" className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-card font-serif text-[1.25rem] leading-none text-homera-brown">
+              <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-card font-serif text-display-xs leading-none text-homera-brown">
                 H
               </span>
               <span className="flex flex-col">
-                <span className="homera-brand text-[1.3125rem] text-white">Homera</span>
-                <span className="-mt-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-homera-terracotta">
+                <span className="homera-brand text-brand-sm text-white">Homera</span>
+                <span className="-mt-1 text-micro font-semibold uppercase tracking-[0.18em] text-homera-terracotta">
                   Bénin • Confiance
                 </span>
               </span>
             </Link>
-            <p className="max-w-sm text-[12.5px] leading-relaxed text-stone-300">
+            <p className="max-w-sm text-note leading-relaxed text-homera-cream-dark">
               HOMERA est la plateforme immobilière béninoise qui structure tout le parcours
               autour du bien — de sa recherche et sa vérification jusqu’à la visite, la
               location, l’achat et sa gestion.
             </p>
-            <p className="flex items-center gap-2 text-[12.5px] font-medium text-homera-terracotta">
+            <p className="flex items-center gap-2 text-note font-medium text-homera-terracotta">
               <ShieldCheck className="h-4 w-4" aria-hidden="true" />
               Infrastructure & identifiants numériques uniques
             </p>
@@ -48,10 +48,10 @@ export function Footer() {
 
           {/* Explorer */}
           <Reveal delay={80} y={20} className="space-y-3">
-            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-homera-terracotta">
+            <h2 className="text-label uppercase text-homera-terracotta">
               Explorer
             </h2>
-            <ul className="space-y-2 text-[12.5px] text-stone-300">
+            <ul className="space-y-2 text-note text-homera-cream-dark">
               {[
                 { label: "Maisons & villas", href: "#biens" },
                 { label: "Appartements de standing", href: "#biens" },
@@ -72,10 +72,10 @@ export function Footer() {
 
           {/* Écosystème */}
           <Reveal delay={160} y={20} className="space-y-3">
-            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-homera-terracotta">
+            <h2 className="text-label uppercase text-homera-terracotta">
               Écosystème
             </h2>
-            <ul className="space-y-2 text-[12.5px] text-stone-300">
+            <ul className="space-y-2 text-note text-homera-cream-dark">
               {[
                 { label: "Protocole de vérification", href: "#protocole" },
                 { label: "Gestion immobilière", href: "#services-gestion" },
@@ -96,10 +96,10 @@ export function Footer() {
 
           {/* Contact */}
           <Reveal delay={240} y={20} className="space-y-3">
-            <h2 className="text-[11px] font-semibold uppercase tracking-[0.14em] text-homera-terracotta">
+            <h2 className="text-label uppercase text-homera-terracotta">
               Bénin & contact
             </h2>
-            <ul className="space-y-2 text-[12.5px] text-stone-300">
+            <ul className="space-y-2 text-note text-homera-cream-dark">
               <li className="flex items-center gap-2">
                 <MapPin className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />
                 <span>Cotonou & Abomey-Calavi</span>
@@ -117,7 +117,7 @@ export function Footer() {
         </div>
 
         {/* Barre inférieure */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-[12px] text-stone-400 sm:flex-row">
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-note text-muted-light sm:flex-row">
           <p>
             © {new Date().getFullYear()} HOMERA. Tous droits réservés. République du Bénin.
           </p>

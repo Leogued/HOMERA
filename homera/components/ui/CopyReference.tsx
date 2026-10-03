@@ -33,7 +33,7 @@ export function CopyReference({ value, targetId }: { value: string; targetId: st
     <>
       <button type="button" onClick={copy}
         aria-label={copied ? `Copié — recopier la référence ${value}` : `Copier la référence ${value}`}
-        className="homera-accent-ink homera-press inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-current/25 px-3 text-[11px] font-medium"
+        className="homera-accent-ink homera-press inline-flex min-h-10 items-center justify-center gap-2 rounded-full border border-current/25 px-3 text-caption font-medium"
         title="Copier la référence du bien">
         {copied ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : <Copy className="h-3.5 w-3.5" aria-hidden="true" />}
         <span className="inline-block w-11 text-left">{copied ? "Copié" : "Copier"}</span>

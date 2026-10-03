@@ -77,7 +77,7 @@ export function Hero() {
 
       <div className="relative z-10 mx-auto flex min-h-[inherit] max-w-7xl flex-col px-4 sm:px-6 lg:px-8">
         <div className="space-y-8 text-center lg:mt-[max(0px,calc(100svh-32rem))]">
-          <p className="homera-reveal flex items-center justify-center gap-3 text-[10.5px] font-medium uppercase tracking-[0.42em] text-white/65"
+          <p className="homera-reveal flex items-center justify-center gap-3 text-micro font-medium uppercase tracking-[0.42em] text-white/65"
             data-revealed={entered} style={reveal(640)}>
             <span aria-hidden="true" className="h-px w-8 bg-white/30" />
             {CHAPTERS[0].index} — {CHAPTERS[0].label}
@@ -94,7 +94,7 @@ export function Hero() {
             </div>
             <div className="homera-hero-copy">
               <div className="homera-reveal" data-revealed={entered} style={reveal(240)}>
-                <p className="text-stone-300 text-sm sm:text-[0.9375rem] max-w-2xl mx-auto font-sans font-normal leading-relaxed lg:-translate-y-[max(7rem,calc(50svh-12.5rem))]">
+                <p className="text-homera-cream-dark text-sm sm:text-body max-w-2xl mx-auto font-sans font-normal leading-relaxed lg:-translate-y-[max(7rem,calc(50svh-12.5rem))]">
                   Immobilier en toute sérénité, sans surprise ni intermédiaire douteux — la
                   plateforme de confiance pour tous vos projets au Bénin.
                 </p>
@@ -107,7 +107,7 @@ export function Hero() {
         </div>
         <div data-searching={isSearching} className={`homera-reveal homera-scroll-cue-wrap pointer-events-none absolute inset-x-0 bottom-8 z-20 flex flex-col items-center gap-3 text-white/65 transition-opacity duration-500 sm:bottom-10 ${isSearching ? "opacity-0" : ""}`}
           data-revealed={entered} style={reveal(920)}>
-          <span className="text-[10px] font-medium uppercase tracking-[0.36em]">Défiler</span>
+          <span className="text-micro font-medium uppercase tracking-[0.36em]">Défiler</span>
           <span className="homera-scroll-cue h-10 w-px text-white/50" aria-hidden="true" />
           <ArrowDown className="h-3 w-3 -mt-1" aria-hidden="true" />
         </div>
@@ -115,7 +115,7 @@ export function Hero() {
       <button type="button" onClick={() => setUserPaused((value) => !value)}
         disabled={reduced} aria-pressed={userPaused || reduced}
         aria-label={reduced ? "Vidéo arrêtée : mouvement réduit" : userPaused ? "Relancer la vidéo de fond" : "Mettre la vidéo de fond en pause"}
-        className="homera-press absolute bottom-4 left-4 z-20 flex min-h-10 items-center gap-2 rounded-full border border-white/20 bg-black/30 px-3 text-[10px] font-medium text-white/85 backdrop-blur-sm sm:left-6">
+        className="homera-press absolute bottom-4 left-4 z-20 flex min-h-10 items-center gap-2 rounded-full border border-white/20 bg-black/30 px-3 text-micro font-medium text-white/85 backdrop-blur-sm sm:left-6">
         {userPaused || reduced ? <Play className="h-3 w-3" aria-hidden="true" /> : <Pause className="h-3 w-3" aria-hidden="true" />}
         {reduced ? "Mouvement réduit" : userPaused ? "Relancer" : "Pause vidéo"}
       </button>

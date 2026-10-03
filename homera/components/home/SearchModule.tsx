@@ -219,15 +219,15 @@ export function SearchModule({ className = "" }: { className?: string }) {
             }}
             className={
               variant === "pill"
-                ? "h-12 w-full min-w-0 rounded-full bg-transparent py-3 pl-3 pr-8 text-center text-[13px] font-medium text-stone-700 outline-none transition-[background-color,color] duration-300 placeholder:text-stone-500 hover:bg-stone-100 focus:bg-stone-100 dark:text-stone-100 dark:placeholder:text-stone-400 dark:hover:bg-white/5 dark:focus:bg-white/5"
-                : "h-12 w-full rounded-2xl border border-border bg-background/70 px-4 pr-10 text-left text-[13.5px] font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-homera-terracotta/50"
+                ? "h-12 w-full min-w-0 rounded-full bg-transparent py-3 pl-3 pr-8 text-center text-body-sm font-medium text-foreground outline-none transition-[background-color,color] duration-300 placeholder:text-muted hover:bg-surface-hover focus:bg-surface-hover dark:text-homera-cream dark:placeholder:text-muted-light dark:hover:bg-white/5 dark:focus:bg-white/5"
+                : "h-12 w-full rounded-input border border-border bg-background/70 px-4 pr-10 text-left text-body-sm font-medium text-foreground outline-none transition-colors placeholder:text-muted focus:border-homera-terracotta/50"
             }
           />
           <ChevronDown
             aria-hidden="true"
             className={`pointer-events-none absolute ${
               variant === "pill" ? "right-2.5" : "right-3.5"
-            } h-3.5 w-3.5 text-stone-400 transition-transform duration-300 ${
+            } h-3.5 w-3.5 text-muted-light transition-transform duration-300 ${
               isOpen ? "rotate-180" : ""
             }`}
           />
@@ -258,14 +258,14 @@ export function SearchModule({ className = "" }: { className?: string }) {
           }}
           className={
             variant === "pill"
-              ? `group/field relative flex h-12 w-full min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-[13px] font-medium outline-none transition-[background-color,color,box-shadow] duration-300 hover:bg-stone-100 focus:bg-stone-100 dark:hover:bg-white/5 dark:focus:bg-white/5 ${
-                  isOpen ? "bg-stone-100 shadow-[inset_0_0_0_1px_rgba(198,93,59,0.35)] dark:bg-white/5" : ""
+              ? `group/field relative flex h-12 w-full min-w-0 items-center justify-center gap-2 rounded-full px-3 text-center text-body-sm font-medium outline-none transition-[background-color,color,box-shadow] duration-300 hover:bg-surface-hover focus:bg-surface-hover dark:hover:bg-white/5 dark:focus:bg-white/5 ${
+                  isOpen ? "bg-surface-hover shadow-[inset_0_0_0_1px_rgba(198,93,59,0.35)] dark:bg-white/5" : ""
                 } ${
                   selected
-                    ? "text-stone-800 dark:text-stone-100"
-                    : "text-stone-500 dark:text-stone-400"
+                    ? "text-foreground dark:text-homera-cream"
+                    : "text-muted dark:text-muted-light"
                 }`
-              : `flex h-12 w-full items-center justify-between gap-3 rounded-2xl border px-4 text-left text-[13.5px] font-medium outline-none transition-colors ${
+              : `flex h-12 w-full items-center justify-between gap-3 rounded-input border px-4 text-left text-body-sm font-medium outline-none transition-colors ${
                   selected
                     ? "border-border bg-background/70 text-foreground"
                     : "border-border bg-background/70 text-muted"
@@ -275,7 +275,7 @@ export function SearchModule({ className = "" }: { className?: string }) {
           <span className="truncate">{selected?.label ?? label}</span>
           <ChevronDown
             aria-hidden="true"
-            className={`h-3.5 w-3.5 shrink-0 text-stone-400 transition-transform duration-300 ${
+            className={`h-3.5 w-3.5 shrink-0 text-muted-light transition-transform duration-300 ${
               isOpen ? "rotate-180" : ""
             }`}
           />
@@ -294,7 +294,7 @@ export function SearchModule({ className = "" }: { className?: string }) {
         }}
         role="search"
         aria-label="Recherche de biens HOMERA"
-        className="mx-auto hidden h-17 w-full max-w-4xl items-center gap-1 rounded-full border border-white/25 bg-card/97 p-2 shadow-[0_28px_70px_-40px_rgba(0,0,0,0.85)] backdrop-blur-md transition-[box-shadow,transform] duration-500 ease-[cubic-bezier(.22,.61,.28,1)] data-[open=true]:scale-[1.006] data-[open=true]:shadow-[0_36px_90px_-42px_rgba(0,0,0,0.95)] md:flex dark:border-white/12 dark:bg-[#2B1A12]/97"
+        className="mx-auto hidden h-17 w-full max-w-4xl items-center gap-1 rounded-full border border-white/25 bg-card/97 p-2 shadow-[0_28px_70px_-40px_rgba(0,0,0,0.85)] backdrop-blur-md transition-[box-shadow,transform] duration-500 ease-standard data-[open=true]:scale-[1.006] data-[open=true]:shadow-[0_36px_90px_-42px_rgba(0,0,0,0.95)] md:flex dark:border-white/12 dark:bg-card/97"
         data-open={openField ? "true" : undefined}
       >
         <div className="flex h-12 min-w-0 flex-1 items-center">
@@ -314,7 +314,7 @@ export function SearchModule({ className = "" }: { className?: string }) {
               aria-label="Effacer la recherche"
               title="Effacer"
               tabIndex={anyValue ? 0 : -1}
-              className={`flex h-8 w-8 items-center justify-center rounded-full text-stone-500 transition-[opacity,transform] duration-300 hover:bg-stone-100 hover:text-homera-terracotta dark:hover:bg-white/10 ${
+              className={`flex h-8 w-8 items-center justify-center rounded-full text-muted transition-[opacity,transform] duration-300 hover:bg-surface-hover hover:text-homera-terracotta dark:hover:bg-white/10 ${
                 anyValue
                   ? "scale-100 opacity-100"
                   : "pointer-events-none scale-90 opacity-0"
@@ -328,7 +328,7 @@ export function SearchModule({ className = "" }: { className?: string }) {
             type="submit"
             aria-label="Rechercher"
             title="Rechercher"
-            className={`homera-press homera-sheen relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#2A170F] text-white transition-colors duration-300 hover:bg-[#3A2116] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-terracotta focus-visible:ring-offset-2 dark:bg-homera-terracotta dark:hover:bg-homera-terracotta-light ${
+            className={`homera-press homera-sheen relative flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-homera-brown-dark text-white transition-colors duration-300 hover:bg-homera-brown focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-terracotta focus-visible:ring-offset-2 dark:bg-homera-terracotta dark:hover:bg-homera-terracotta-light ${
               pulse ? "scale-[0.96]" : "scale-100"
             }`}
           >
@@ -345,7 +345,7 @@ export function SearchModule({ className = "" }: { className?: string }) {
         }}
         role="search"
         aria-label="Recherche de biens HOMERA"
-        className="mx-auto w-full max-w-md space-y-2.5 rounded-3xl border border-white/20 bg-card/97 p-3.5 shadow-[0_28px_70px_-40px_rgba(0,0,0,0.85)] backdrop-blur-md md:hidden dark:border-white/12 dark:bg-[#2B1A12]/97"
+        className="mx-auto w-full max-w-md space-y-2.5 rounded-2xl border border-white/20 bg-card/97 p-3.5 shadow-[0_28px_70px_-40px_rgba(0,0,0,0.85)] backdrop-blur-md md:hidden dark:border-white/12 dark:bg-card/97"
       >
         <div className="grid grid-cols-1 gap-2.5">
           {renderField("project", { variant: "stack" })}
@@ -356,7 +356,7 @@ export function SearchModule({ className = "" }: { className?: string }) {
         <div className="flex items-center gap-2 pt-0.5">
           <button
             type="submit"
-            className="homera-press homera-sheen flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-[#2A170F] text-[13.5px] font-medium text-white transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-terracotta focus-visible:ring-offset-2 dark:bg-homera-terracotta"
+            className="homera-press homera-sheen flex h-12 flex-1 items-center justify-center gap-2 rounded-2xl bg-homera-brown-dark text-body-sm font-medium text-white transition-colors duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-terracotta focus-visible:ring-offset-2 dark:bg-homera-terracotta"
           >
             <Search className="h-4 w-4" aria-hidden="true" />
             Rechercher
@@ -382,7 +382,7 @@ export function SearchModule({ className = "" }: { className?: string }) {
               <span className="homera-pulse-ring absolute inset-0 rounded-full bg-homera-amber/70" />
               <span className="relative h-2.5 w-2.5 rounded-full bg-homera-amber" />
             </span>
-            <p className="text-[12.5px] text-stone-200">
+            <p className="text-note text-homera-cream">
               {results.length === 0 ? (
                 <>
                   Aucun bien ne correspond encore à votre recherche — élargissez les critères.
@@ -402,7 +402,7 @@ export function SearchModule({ className = "" }: { className?: string }) {
             <button
               type="button"
               onClick={() => document.getElementById("biens")?.scrollIntoView({ behavior: "smooth" })}
-              className="homera-press inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-[12px] font-medium text-white transition-colors hover:bg-white/16"
+              className="homera-press inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-note font-medium text-white transition-colors hover:bg-white/16"
             >
               Voir la sélection
               <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
@@ -410,7 +410,7 @@ export function SearchModule({ className = "" }: { className?: string }) {
             <button
               type="button"
               onClick={resetCriteria}
-              className="homera-underline text-[12px] text-stone-300 transition-colors hover:text-white"
+              className="homera-underline text-note text-homera-cream-dark transition-colors hover:text-white"
             >
               Effacer
             </button>
@@ -428,7 +428,7 @@ export function SearchModule({ className = "" }: { className?: string }) {
             ref={panelRef}
             role="listbox"
             aria-label={SEARCH_FIELD_LABELS[openField]}
-            className="homera-dropdown-menu homera-dropdown-enter homera-noscrollbar fixed z-[80] flex flex-col overflow-y-auto overscroll-contain rounded-2xl border border-stone-200/80 bg-[#fffdf9] p-1.5 text-stone-800 shadow-[0_30px_70px_-30px_rgba(28,17,11,0.6)] dark:border-white/10 dark:bg-[#2B1A12] dark:text-white"
+            className="homera-dropdown-menu homera-dropdown-enter homera-noscrollbar fixed z-[80] flex flex-col overflow-y-auto overscroll-contain rounded-menu border border-border bg-card p-1.5 text-foreground shadow-[0_30px_70px_-30px_rgba(28,17,11,0.6)] dark:border-white/10 dark:text-white"
             style={{
               top: position.top,
               left: position.left,
@@ -467,16 +467,16 @@ export function SearchModule({ className = "" }: { className?: string }) {
                   aria-selected={selected}
                   tabIndex={index === activeIndex ? 0 : -1}
                   onClick={() => choose(openField, option)}
-                  className={`flex w-full items-center justify-between gap-4 rounded-xl px-3 py-2.5 text-left text-[13px] leading-snug transition-colors duration-200 focus:outline-none ${
+                  className={`flex w-full items-center justify-between gap-4 rounded-xl px-3 py-2.5 text-left text-body-sm leading-snug transition-colors duration-200 focus:outline-none ${
                     selected
                       ? "homera-accent-ink bg-homera-terracotta/12 font-semibold"
-                      : "hover:bg-stone-100 focus:bg-stone-100 dark:hover:bg-white/8 dark:focus:bg-white/8"
+                      : "hover:bg-surface-hover focus:bg-surface-hover dark:hover:bg-white/8 dark:focus:bg-white/8"
                   }`}
                 >
                   <span className="flex min-w-0 flex-col">
                     <span className="truncate">{option.label}</span>
                     {option.hint && (
-                      <span className="truncate text-[11px] font-normal text-stone-500 dark:text-stone-400">
+                      <span className="truncate text-caption font-normal text-muted dark:text-muted-light">
                         {option.hint}
                       </span>
                     )}
@@ -487,7 +487,7 @@ export function SearchModule({ className = "" }: { className?: string }) {
             })}
 
             {/* Pied de panneau : le nombre de résultats, avant même de valider */}
-            <div className="mt-1 flex items-center justify-between gap-2 border-t border-stone-200/70 px-3 pt-2 pb-1 text-[11px] text-stone-500 dark:border-white/10 dark:text-stone-400">
+            <div className="mt-1 flex items-center justify-between gap-2 border-t border-border px-3 pt-2 pb-1 text-caption text-muted dark:border-white/10 dark:text-muted-light">
               <span>{countLabel(results.length)} correspondant aux critères</span>
               <button
                 type="button"
@@ -508,7 +508,7 @@ function Separator() {
   return (
     <span
       aria-hidden="true"
-      className="h-7 w-px shrink-0 bg-stone-200 dark:bg-white/10"
+      className="h-7 w-px shrink-0 bg-homera-cream-dark dark:bg-white/10"
     />
   );
 }

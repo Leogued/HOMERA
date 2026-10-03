@@ -70,14 +70,14 @@ export function ChapterRail() {
               >
                 <span
                   aria-hidden="true"
-                  className={`block rounded-full transition-all duration-500 ease-[cubic-bezier(.22,.61,.28,1)] ${
+                  className={`block rounded-full transition-all duration-500 ease-standard ${
                     isActive
                       ? "h-2 w-2 bg-homera-terracotta"
                       : "h-1.5 w-1.5 bg-foreground/25 group-hover:bg-foreground/50"
                   }`}
                 />
                 <span
-                  className={`homera-num text-[10px] font-semibold tracking-[0.18em] transition-colors duration-300 ${
+                  className={`homera-num text-micro font-semibold tracking-[0.18em] transition-colors duration-300 ${
                     isActive ? "homera-accent-ink" : "text-muted group-hover:text-foreground"
                   }`}
                 >
@@ -85,7 +85,7 @@ export function ChapterRail() {
                 </span>
                 <span
                   aria-hidden="true"
-                  className={`homera-rail-label whitespace-nowrap text-[10.5px] font-medium uppercase tracking-[0.16em] transition-all duration-500 ease-[cubic-bezier(.22,.61,.28,1)] ${
+                  className={`homera-rail-label whitespace-nowrap text-micro font-medium uppercase tracking-[0.16em] transition-all duration-500 ease-standard ${
                     isActive
                       ? "max-w-[12rem] text-foreground/70 opacity-100"
                       : "max-w-0 overflow-hidden text-foreground/50 opacity-0 group-hover:max-w-[12rem] group-hover:opacity-100"
@@ -136,7 +136,7 @@ export function BackToTop() {
       aria-hidden={!visible}
       aria-label="Revenir en haut de la page"
       title="Haut de page"
-      className={`homera-press fixed bottom-6 right-5 z-[65] flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card/95 text-foreground shadow-[0_20px_45px_-30px_rgba(28,17,11,0.9)] backdrop-blur-md transition-all duration-500 ease-[cubic-bezier(.22,.61,.28,1)] hover:border-homera-terracotta hover:text-homera-terracotta ${
+      className={`homera-press fixed bottom-6 right-5 z-[65] flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card/95 text-foreground shadow-[0_20px_45px_-30px_rgba(28,17,11,0.9)] backdrop-blur-md transition-all duration-500 ease-standard hover:border-homera-terracotta hover:text-homera-terracotta ${
         visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
       }`}
     >

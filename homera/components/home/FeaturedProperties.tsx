@@ -148,7 +148,7 @@ export function FeaturedProperties() {
   return (
     <section
       id="biens"
-      className="homera-scene scene-bg-tint relative py-20 sm:py-24"
+      className="homera-scene scene-bg-tint relative py-[var(--space-section)] sm:py-[var(--space-section-lg)]"
       aria-labelledby="biens-titre"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -180,7 +180,7 @@ export function FeaturedProperties() {
                       setActiveFilter(filter.id);
                     }}
                     aria-pressed={active}
-                    className={`homera-press whitespace-nowrap rounded-full px-4 py-2 text-[12.5px] font-medium homera-property-filter tracking-[0.01em] transition-colors duration-300 ${
+                    className={`homera-press whitespace-nowrap rounded-full px-4 py-2 text-note font-medium homera-property-filter tracking-[0.01em] transition-colors duration-300 ${
                       active
                         ? "bg-homera-brown text-white shadow-sm dark:bg-homera-terracotta"
                         : "border border-border bg-card text-muted hover:text-foreground"
@@ -198,7 +198,7 @@ export function FeaturedProperties() {
         {isSearching && (
           <Reveal y={12} duration={520} className="mt-8">
             <div className="flex flex-col gap-3 rounded-2xl border border-homera-terracotta/25 bg-homera-terracotta/[0.06] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-[12.5px] text-foreground">
+              <p className="text-note text-foreground">
                 <span className="font-semibold">
                   {countLabel(results.length)}
                 </span>{" "}
@@ -217,7 +217,7 @@ export function FeaturedProperties() {
               <button
                 type="button"
                 onClick={resetCriteria}
-                className="homera-underline inline-flex items-center gap-1.5 homera-accent-ink text-[12px] font-medium"
+                className="homera-underline inline-flex items-center gap-1.5 homera-accent-ink text-note font-medium"
               >
                 <RotateCcw className="h-3.5 w-3.5" aria-hidden="true" />
                 Élargir la recherche
@@ -228,14 +228,14 @@ export function FeaturedProperties() {
 
         {results.length === 0 ? (
           <Reveal y={18} className="mt-12">
-            <div className="flex flex-col items-center gap-4 rounded-3xl border border-dashed border-border bg-card/60 px-6 py-14 text-center">
+            <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-border bg-card/60 px-6 py-14 text-center">
               <span className="flex h-12 w-12 items-center justify-center rounded-full bg-homera-terracotta/10 text-homera-terracotta">
                 <Eye className="h-5 w-5" aria-hidden="true" />
               </span>
               <h3 className="font-serif text-display-xs text-foreground">
                 Aucun bien ne correspond encore à ces critères
               </h3>
-              <p className="max-w-md text-[13px] leading-relaxed text-muted">
+              <p className="max-w-md text-body-sm leading-relaxed text-muted">
                 La sélection s’enrichit chaque semaine. Élargissez la recherche ou parcourez
                 l’ensemble des biens vérifiés.
               </p>
@@ -253,6 +253,7 @@ export function FeaturedProperties() {
                 ref={trackRef}
                 role="region"
                 aria-label="Sélection de biens vérifiés"
+                aria-busy={isSearching || undefined}
                 tabIndex={0}
                 data-cursor={results.length > 1 ? "drag" : undefined}
                 onKeyDown={(event) => {
@@ -307,11 +308,11 @@ export function FeaturedProperties() {
                 </div>
 
                 <div className="flex min-w-0 flex-1 items-center justify-end gap-3 sm:gap-4">
-                  <span className="hidden text-[11px] text-muted sm:inline">Glisser pour découvrir</span>
+                  <span className="hidden text-caption text-muted sm:inline">Glisser pour découvrir</span>
                   <div role="group" aria-label="Choisir un bien" className="homera-noscrollbar flex max-w-[45vw] gap-1 overflow-x-auto">
                     {results.map((property, index) => <button key={property.id} type="button" onClick={() => goTo(index)} aria-label={`Afficher ${property.title}`} aria-pressed={index === activeIndex} className="homera-gallery-marker flex h-10 w-7 shrink-0 items-center justify-center"><span aria-hidden="true" /></button>)}
                   </div>
-                  <span className="homera-num shrink-0 text-[11px] tracking-[.16em] text-muted">{String(activeIndex + 1).padStart(2, "0")} / {String(results.length).padStart(2, "0")}</span>
+                  <span className="homera-num shrink-0 text-caption tracking-[.16em] text-muted">{String(activeIndex + 1).padStart(2, "0")} / {String(results.length).padStart(2, "0")}</span>
                 </div>
               </div>
             </div>
@@ -325,7 +326,7 @@ export function FeaturedProperties() {
             </Reveal>
           </>
         )}
-        {DEMO_DATA && <p className="mt-6 text-center text-[10.5px] leading-relaxed text-muted">Sélection de démonstration · biens et visuels illustratifs, non commercialisés.</p>}
+        {DEMO_DATA && <p className="mt-6 text-center text-micro leading-relaxed text-muted">Sélection de démonstration · biens et visuels illustratifs, non commercialisés.</p>}
         <span role="status" className="sr-only">{countLabel(results.length)} dans la sélection.</span>
       </div>
       {preview && <PropertyPreview property={preview} onClose={closePreview} />}
@@ -341,43 +342,43 @@ function PropertyCard({ property, active, onOpen, onFocus }: { property: Propert
   return (
     <article data-gallery-item data-card data-active={active} onFocusCapture={(event) => { if (event.target instanceof HTMLElement && event.target.matches(":focus-visible")) onFocus(); }}
       className="homera-property-object group/card relative shrink-0 snap-center">
-      <div className="homera-property-photo relative overflow-hidden rounded-[1.5rem] bg-[#3e2418] shadow-[0_35px_75px_-45px_rgba(62,36,24,.55)]">
+      <div className="homera-property-photo relative overflow-hidden rounded-media bg-homera-brown shadow-[0_35px_75px_-45px_rgba(62,36,24,.55)]">
         <Reveal y={0} blur={0} clip clipRadius={24} duration={1050}>
           <Visual mediaKey={property.media} alt={property.alt}
             sizes="(min-width: 1280px) 52rem, (min-width: 1024px) 70vw, 85vw" veil="none" quality={72}
             className="aspect-[16/10] w-full" imageClassName="homera-property-image" />
         </Reveal>
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(to_top,rgba(28,17,11,.80),transparent_48%,rgba(28,17,11,.2))]" />
-        <div className="pointer-events-none absolute inset-x-4 top-4 z-[2] flex flex-wrap items-center justify-between gap-2 text-[10px] text-white sm:inset-x-6 sm:top-6">
-          <span className="rounded-full border border-white/30 bg-[#3e2418]/70 px-3 py-1.5 font-semibold uppercase tracking-[.12em]">{INTENT_LABELS[property.intent]} · {TYPE_LABELS[property.type]}</span>
-          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-[#3e2418]/70 px-3 py-1.5"><ShieldCheck className="h-3.5 w-3.5 text-[#e0a45e]" aria-hidden="true" />Vérifié HOMERA</span>
+        <div className="pointer-events-none absolute inset-x-4 top-4 z-[2] flex flex-wrap items-center justify-between gap-2 text-micro text-white sm:inset-x-6 sm:top-6">
+          <span className="rounded-full border border-white/30 bg-homera-brown/70 px-3 py-1.5 font-semibold uppercase tracking-[.12em]">{INTENT_LABELS[property.intent]} · {TYPE_LABELS[property.type]}</span>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-homera-brown/70 px-3 py-1.5"><ShieldCheck className="h-3.5 w-3.5 text-homera-amber" aria-hidden="true" />Vérifié HOMERA</span>
         </div>
         <button type="button" onClick={onOpen} data-cursor="property" aria-label={`Voir le bien : ${property.title}`}
-          className="absolute inset-0 z-[3] rounded-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e0a45e]">
+          className="absolute inset-0 z-[3] rounded-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-homera-amber">
           <span className="sr-only">Voir le bien</span>
         </button>
         <div className="pointer-events-none absolute inset-x-5 bottom-5 z-[4] flex items-center justify-between gap-3 sm:inset-x-7 sm:bottom-7">
-          <span className="homera-num font-mono text-[11px] tracking-[.06em] text-[#e0a45e]">{property.homeraId}</span>
-          <span className="homera-property-explore inline-flex items-center gap-2 rounded-full border border-white/35 bg-[#faf6ef]/95 px-4 py-2 text-[11px] font-semibold text-[#3e2418]"><Eye className="h-3.5 w-3.5" aria-hidden="true" />Voir le bien</span>
+          <span className="homera-num font-mono text-caption tracking-[.06em] text-homera-amber">{property.homeraId}</span>
+          <span className="homera-property-explore inline-flex items-center gap-2 rounded-full border border-white/35 bg-homera-paper/95 px-4 py-2 text-caption font-semibold text-homera-brown"><Eye className="h-3.5 w-3.5" aria-hidden="true" />Voir le bien</span>
         </div>
       </div>
       <div className="homera-property-caption mt-5 px-1 sm:px-2">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
           <div className="min-w-0">
-            <p className="mb-2 flex items-center gap-1.5 text-[11.5px] text-muted"><MapPin className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />{property.district}, {property.city}</p>
-            <h3 className="homera-property-title max-w-lg font-serif text-[1.35rem] leading-snug text-foreground sm:text-[1.6rem]">{property.title}</h3>
+            <p className="mb-2 flex items-center gap-1.5 text-caption text-muted"><MapPin className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />{property.district}, {property.city}</p>
+            <h3 className="homera-property-title max-w-lg font-serif text-display-xs leading-snug text-foreground sm:text-display-sm">{property.title}</h3>
           </div>
-          <p className="homera-num shrink-0 text-[16px] font-semibold text-foreground sm:pt-1">{formatFCFA(property.price)}<span className="ml-1 text-[11px] font-normal text-muted">{property.pricePeriod}</span></p>
+          <p className="homera-num shrink-0 text-base font-semibold text-foreground sm:pt-1">{formatFCFA(property.price)}<span className="ml-1 text-caption font-normal text-muted">{property.pricePeriod}</span></p>
         </div>
         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-          <ul className="flex flex-wrap gap-x-5 gap-y-2 text-[12px] text-muted">
+          <ul className="flex flex-wrap gap-x-5 gap-y-2 text-note text-muted">
             {property.bedrooms > 0 && <li className="homera-num inline-flex items-center gap-2"><Bed className="h-4 w-4" aria-hidden="true" />{property.bedrooms} ch.</li>}
             {property.bathrooms > 0 && <li className="homera-num inline-flex items-center gap-2"><Bath className="h-4 w-4" aria-hidden="true" />{property.bathrooms} sdb.</li>}
             <li className="homera-num inline-flex items-center gap-2"><Maximize className="h-4 w-4" aria-hidden="true" />{property.surface} m²</li>
           </ul>
-          <button type="button" onClick={onOpen} data-cursor="property" aria-label={`Voir le bien : ${property.title}`} className="homera-underline inline-flex min-h-10 items-center gap-2 homera-accent-ink text-[12px] font-medium"><TextRoll>Voir le bien</TextRoll><ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></button>
+          <button type="button" onClick={onOpen} data-cursor="property" aria-label={`Voir le bien : ${property.title}`} className="homera-underline inline-flex min-h-10 items-center gap-2 homera-accent-ink text-note font-medium"><TextRoll>Voir le bien</TextRoll><ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></button>
         </div>
-        <p className="homera-property-secondary mt-2 flex min-h-5 items-center gap-2 text-[11px] text-muted"><CalendarCheck className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />Vérifié le {property.verifiedOn} · Mandat valide</p>
+        <p className="homera-property-secondary mt-2 flex min-h-5 items-center gap-2 text-caption text-muted"><CalendarCheck className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />Vérifié le {property.verifiedOn} · Mandat valide</p>
       </div>
     </article>
   );

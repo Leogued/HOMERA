@@ -22,20 +22,20 @@ export function IdentityStatement() {
     <section ref={ref} className="homera-statement homera-on-dark relative px-4 text-center sm:px-6" aria-labelledby="homera-statement-title">
       <div className="relative z-[1] mx-auto max-w-5xl">
         <span aria-hidden="true" className="homera-statement-thread mx-auto mb-10 block h-20 w-px bg-white/15"><span /></span>
-        <p className="mb-6 text-[10px] font-semibold uppercase tracking-[.3em] text-[#e0a45e]">Un lieu. Une identité. Une confiance.</p>
-        <h2 id="homera-statement-title" className="font-serif text-[clamp(2rem,4.5vw,4.2rem)] leading-[1.16] tracking-[-.015em]">
+        <p className="mb-6 text-micro font-semibold uppercase tracking-[.3em] text-homera-amber">Un lieu. Une identité. Une confiance.</p>
+        <h2 id="homera-statement-title" className="font-serif text-display-2xl">
           <span className="sr-only">{LINES.join(" ")}</span>
           <span aria-hidden="true">
             {LINES.map((line, lineIndex) => (
               <span key={line} className="block">
                 {line.split(" ").map((word, index) => (
-                  <span key={`${lineIndex}-${index}`} data-word className={`homera-scroll-word inline-block ${word === "HOMERA." ? "text-[#e0a45e]" : "text-[#faf6ef]"}`}>{word}{"\u00a0"}</span>
+                  <span key={`${lineIndex}-${index}`} data-word className={`homera-scroll-word inline-block ${word === "HOMERA." ? "text-homera-amber" : "text-homera-paper"}`}>{word}{"\u00a0"}</span>
                 ))}
               </span>
             ))}
           </span>
         </h2>
-        <p className="mx-auto mt-8 max-w-md text-[13px] leading-relaxed text-[#ebdcc6]">Avant une annonce, il y a un lieu à découvrir et un dossier à comprendre.</p>
+        <p className="mx-auto mt-8 max-w-md text-body-sm leading-relaxed text-homera-cream-dark">Avant une annonce, il y a un lieu à découvrir et un dossier à comprendre.</p>
       </div>
     </section>
   );

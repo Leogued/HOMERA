@@ -21,8 +21,8 @@ const variants: Record<ButtonVariant, string> = {
 };
 
 const sizes: Record<ButtonSize, string> = {
-  sm: "px-3 py-2 text-[12.5px]",
-  md: "px-5 py-2.5 text-[13px]",
+  sm: "px-3 py-2 text-note",
+  md: "px-5 py-2.5 text-body-sm",
   lg: "px-6 py-3 text-sm",
 };
 
@@ -37,7 +37,7 @@ export function Button({
       className={`
         homera-press
         inline-flex items-center justify-center
-        rounded-lg
+        rounded-btn
         font-medium
         tracking-[0.01em]
         transition-all duration-200

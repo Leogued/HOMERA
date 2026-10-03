@@ -78,7 +78,7 @@ export function ServicesSection() {
   return (
     <section
       id="services"
-      className="homera-scene scene-bg-tint-in relative py-20 sm:py-24"
+      className="homera-scene scene-bg-tint-in relative py-[var(--space-section)] sm:py-[var(--space-section-lg)]"
       aria-labelledby="services-titre"
     >
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -97,14 +97,14 @@ export function ServicesSection() {
             aria-labelledby={`services-${active.id}`}
             className="relative order-2 lg:order-1"
           >
-            <div className="relative overflow-hidden rounded-[1.75rem] border border-border bg-card shadow-[0_40px_100px_-70px_rgba(28,17,11,0.9)]">
+            <div className="relative overflow-hidden rounded-3xl border border-border bg-card shadow-[0_40px_100px_-70px_rgba(28,17,11,0.9)]">
               {/* Visuels à la demande, puis conservés pour les prochains passages. */}
               <div className="relative h-[16rem] w-full sm:h-[19rem]">
                 {SERVICES.map((service) => (
                   <div
                     key={service.id}
                     aria-hidden={service.id !== active.id}
-                    className="absolute inset-0 transition-[opacity,transform] duration-[900ms] ease-[cubic-bezier(.22,.61,.28,1)]"
+                    className="absolute inset-0 transition-[opacity,transform] duration-[900ms] ease-standard"
                     style={{
                       opacity: service.id === active.id ? 1 : 0,
                       transform: service.id === active.id ? "scale(1)" : "scale(1.04)",
@@ -122,7 +122,7 @@ export function ServicesSection() {
                 ))}
 
                 <div className="pointer-events-none absolute inset-x-0 top-0 z-[2] flex items-start justify-between p-5">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-3 py-1.5 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-md">
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-3 py-1.5 text-micro font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-md">
                     <ActiveIcon className="h-3.5 w-3.5 text-homera-amber" aria-hidden="true" />
                     {active.index} — Écosystème HOMERA
                   </span>
@@ -167,7 +167,7 @@ export function ServicesSection() {
                       selectService(service.id);
                       window.history.replaceState(null, "", `#services-${service.id}`);
                     }}
-                    className={`homera-service-tab group/tab relative flex w-full scroll-mt-32 items-center gap-4 overflow-hidden rounded-2xl border p-4 text-left transition-[border-color,background-color,transform] duration-500 ease-[cubic-bezier(.22,.61,.28,1)] sm:p-5 ${
+                    className={`homera-service-tab group/tab relative flex w-full scroll-mt-32 items-center gap-4 overflow-hidden rounded-2xl border p-4 text-left transition-[border-color,background-color,transform] duration-500 ease-standard sm:p-5 ${
                       isActive
                         ? "border-homera-terracotta/45 bg-card shadow-[0_30px_70px_-60px_rgba(28,17,11,0.9)]"
                         : "border-transparent bg-transparent hover:border-border hover:bg-card/60"
@@ -175,12 +175,12 @@ export function ServicesSection() {
                   >
                     <span
                       aria-hidden="true"
-                      className="absolute inset-y-0 left-0 w-[3px] origin-top bg-gradient-to-b from-homera-terracotta to-homera-amber transition-transform duration-700 ease-[cubic-bezier(.22,.61,.28,1)]"
+                      className="absolute inset-y-0 left-0 w-[3px] origin-top bg-gradient-to-b from-homera-terracotta to-homera-amber transition-transform duration-700 ease-standard"
                       style={{ transform: `scaleY(${isActive ? 1 : 0})` }}
                     />
 
                     <span
-                      className={`homera-num text-[11px] font-semibold tracking-[0.2em] transition-colors duration-300 ${
+                      className={`homera-num text-caption font-semibold tracking-[0.2em] transition-colors duration-300 ${
                         isActive ? "text-homera-terracotta" : "text-muted-light"
                       }`}
                     >
@@ -198,18 +198,18 @@ export function ServicesSection() {
                     </span>
 
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[14.5px] font-semibold text-foreground">
+                      <span className="block text-body-sm font-semibold text-foreground">
                         {service.title}
                       </span>
-                      <span className="mt-0.5 block text-[12px] leading-relaxed text-muted">{service.short}</span>
+                      <span className="mt-0.5 block text-note leading-relaxed text-muted">{service.short}</span>
                       <span className="homera-service-tab-detail" aria-hidden={!isActive}>
-                        <span className="min-h-0 overflow-hidden"><span className="mt-4 block text-[11.5px] leading-relaxed text-muted">{service.description}</span><span className="mt-3 block homera-accent-ink text-[11px] font-medium">Découvrir ce service →</span></span>
+                        <span className="min-h-0 overflow-hidden"><span className="mt-4 block text-caption leading-relaxed text-muted">{service.description}</span><span className="mt-3 block homera-accent-ink text-caption font-medium">Découvrir ce service →</span></span>
                       </span>
                     </span>
 
                     <ArrowRight
                       aria-hidden="true"
-                      className={`h-4 w-4 shrink-0 transition-all duration-500 ease-out ${
+                      className={`h-4 w-4 shrink-0 transition-all duration-500 ease-standard ${
                         isActive
                           ? "translate-x-0 text-homera-terracotta opacity-100"
                           : "-translate-x-1 text-muted opacity-0 group-hover/tab:translate-x-0 group-hover/tab:opacity-70"
@@ -243,13 +243,13 @@ function ServiceCopy({ service, active, onRequest }: { service: Service; active:
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="font-serif text-display-xs text-foreground">{service.title}</h3>
-          <p className="homera-accent-ink mt-1 text-[11.5px] uppercase tracking-[.16em]">{service.short}</p>
+          <p className="homera-accent-ink mt-1 text-caption uppercase tracking-[.16em]">{service.short}</p>
         </div>
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-homera-terracotta/10 text-homera-terracotta"><Icon className="h-5 w-5" aria-hidden="true" /></span>
       </div>
-      <p className="text-[13px] leading-relaxed text-muted">{service.description}</p>
+      <p className="text-body-sm leading-relaxed text-muted">{service.description}</p>
       <ul className="space-y-2">
-        {service.bullets.map((bullet, index) => <li key={bullet} className="homera-service-bullet flex items-start gap-2.5 text-[12.5px] text-foreground" style={{ animationDelay: `${index * 65}ms` }}><Check className="mt-[3px] h-3.5 w-3.5 shrink-0 text-homera-terracotta" aria-hidden="true" /><span>{bullet}</span></li>)}
+        {service.bullets.map((bullet, index) => <li key={bullet} className="homera-service-bullet flex items-start gap-2.5 text-note text-foreground" style={{ animationDelay: `${index * 65}ms` }}><Check className="mt-[3px] h-3.5 w-3.5 shrink-0 text-homera-terracotta" aria-hidden="true" /><span>{bullet}</span></li>)}
       </ul>
       <div className="pt-1"><Button variant="outline" onClick={onRequest} className="homera-press gap-2"><TextRoll>Demander ce service</TextRoll><ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Button></div>
     </div>

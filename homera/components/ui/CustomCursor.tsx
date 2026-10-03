@@ -74,7 +74,7 @@ export function CustomCursor() {
   return (
     <div ref={ref} aria-hidden="true" className="homera-cursor fixed left-0 top-0 z-[90]"
       style={{ opacity: label ? 1 : 0, transition: "opacity 160ms var(--homera-ease)" }}>
-      <span className={`inline-flex items-center justify-center whitespace-nowrap rounded-full border border-[#c65d3b]/40 bg-[#faf6ef]/95 px-3 py-2 text-[9px] font-semibold uppercase tracking-[.16em] text-[#3e2418] shadow-sm transition-transform duration-150 ${pressed ? "scale-95" : "scale-100"}`}>{label}</span>
+      <span className={`inline-flex items-center justify-center whitespace-nowrap rounded-full border border-homera-terracotta/40 bg-homera-paper/95 px-3 py-2 text-micro font-semibold uppercase tracking-[.16em] text-homera-brown shadow-sm transition-transform duration-150 ${pressed ? "scale-95" : "scale-100"}`}>{label}</span>
     </div>
   );
 }

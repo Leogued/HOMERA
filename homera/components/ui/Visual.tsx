@@ -71,7 +71,7 @@ export function Visual({
         /* Repli typographique HOMERA tant que le visuel n’est pas fourni */
         <div
           aria-hidden="true"
-          className="absolute inset-0 bg-[linear-gradient(145deg,#3e2418_0%,#2a170f_55%,#c65d3b_140%)]"
+          className="absolute inset-0 bg-[linear-gradient(145deg,var(--homera-brown)_0%,var(--homera-brown-dark)_55%,var(--homera-terracotta)_140%)]"
         />
       )}
 

@@ -54,6 +54,18 @@ if (!fromFile) {
   for (const path of cssPaths) css += await (await fetchOk(path)).text();
   for (const selector of ['homera-hero-video', 'homera-intent-doors', 'homera-property-gallery', 'homera-story-sticky', 'homera-dossier-field', 'homera-protocol-copy', 'homera-final-action']) assert.ok(css.includes(selector), `CSS non compilé : ${selector}`);
   assert.ok(css.includes('prefers-reduced-motion'), 'CSS pour le mouvement réduit');
+  // Les tokens de design doivent survivre au build avec une valeur réelle :
+  // une déclaration circulaire (--x: var(--x)) compile en valeur invalide.
+  for (const token of ['--duration-instant', '--duration-base', '--duration-scene',
+                       '--space-section', '--space-section-scene', '--radius-modal',
+                       '--radius-card', '--info', '--ring', '--surface-hover']) {
+    const values = [...css.matchAll(new RegExp(`${token}:\\s*([^;}]+)`, 'g'))].map((match) => match[1].trim());
+    assert.ok(values.length, `${token} absent du CSS compilé`);
+    assert.ok(values.some((value) => !value.includes(token)),
+      `${token} n'a que des déclarations circulaires dans le CSS compilé`);
+  }
+  assert.match(css, /\.homera-dropdown-enter\{animation:[^}]*var\(--duration-instant\)/,
+    'le dropdown n\'utilise pas le token de durée');
   assert.ok(css.includes('min-height: 700px') || css.includes('min-height:700px'), 'Garde de hauteur pour les sticky');
   const image = await fetchOk('/_next/image?url=%2Fimages%2Fprop-villa.jpg&w=1080&q=72', { headers: { Accept: 'image/avif' } });
   assert.ok(image.headers.get('content-type')?.startsWith('image/'), 'Image optimisée servie');

@@ -20,11 +20,11 @@
 }
 
 .homera-dropdown-enter {
-  animation: homera-dropdown-enter 140ms ease-out;
+  animation: homera-dropdown-enter var(--duration-instant) var(--homera-ease);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .homera-dropdown-menu {
+  .homera-dropdown-enter {
     animation: none;
   }
 }
@@ -68,6 +68,18 @@
   --homera-cream: #f5ede0;        /* crème */
   --homera-cream-dark: #ebdcc6;
 
+  /* Scènes nocturnes et accents lumineux. Jamais redéfinis par .dark :
+     ces pigments appartiennent à des surfaces toujours sombres. */
+  --homera-night: #1c110b;
+  --homera-night-soft: #2a1a12;
+  --homera-amber: #e0a45e;
+  --homera-halo: rgba(198, 93, 59, 0.16);
+
+  /* Surfaces toujours claires (dossier du protocole, étiquette du
+     curseur) : indépendantes du thème, comme le papier d'un dossier. */
+  --homera-paper: #faf6ef;
+  --homera-paper-muted: #6b5545;
+
   /* ================================
      INTERFACE
      ================================ */
@@ -81,9 +93,38 @@
   --border: #e8dccb;
   --card: #fffdf9;
 
+  /* Sémantique : quatre états, jamais d'autre teinte d'accent.
+     Contrastes vérifiés sur le fond crème (scripts/test-motion.mjs) :
+     --info ≈ 5,9:1 · --success/--warning/--error ≥ 4,5:1. */
   --success: #4d7c3a;
   --warning: #b7791f;
   --error: #b3261e;
+  --info: #3c6478;              /* bleu ardoise — information neutre */
+
+  /* ================================
+     ÉTATS D'INTERFACE
+     Un seul anneau, un seul survol de surface, un seul voile.
+     ================================ */
+
+  --ring: #c65d3b;              /* focus / sélection = terracotta */
+  --surface-hover: #f2e9dc;     /* crème légèrement foncée */
+  --overlay: rgba(28, 17, 11, 0.74);
+
+  /* ================================
+     ESPACEMENTS — échelle de produit
+     0,25rem reste la maille de base (Tailwind) ; ces variables
+     fixent le rythme des scènes et la largeur du contenu.
+     ================================ */
+
+  --space-block: 2rem;                     /* 32px — entre deux blocs */
+  --space-section: 5rem;                   /* 80px — scène standard (mobile) */
+  --space-section-lg: 6rem;                /* 96px — scène standard (desktop) */
+  --space-section-scene: 10rem;            /* 160px — scène cinématique */
+  --space-inline: clamp(1rem, 4vw, 3rem);  /* gouttière latérale */
+
+  --container-max: 80rem;                  /* 1280px — desktop standard */
+  --container-wide: 86rem;                 /* ~1376px — grands écrans */
+  --container-ultra: 92rem;                /* ~1472px — ultrawide */
 
   /* ================================
      DESIGN
@@ -94,6 +135,17 @@
   --radius-lg: 0.75rem;
   --radius-xl: 1rem;
   --radius-2xl: 1.5rem;
+  --radius-3xl: 1.75rem;
+  --radius-4xl: 2rem;
+
+  /* Rayons par rôle : une page neuve n'a plus à choisir.
+     Les pills (boutons arrondis, pastilles) restent à 999px. */
+  --radius-btn: var(--radius-lg);
+  --radius-input: var(--radius-2xl);
+  --radius-card: var(--radius-2xl);
+  --radius-menu: var(--radius-2xl);
+  --radius-media: var(--radius-2xl);
+  --radius-modal: var(--radius-3xl);
 
   --shadow-card: 0 4px 20px rgba(62, 36, 24, 0.08);
   --shadow-card-hover: 0 12px 35px rgba(62, 36, 24, 0.16);
@@ -127,6 +179,11 @@
   --success: #8fbf6f;
   --warning: #e0b050;
   --error: #ef7a6e;
+  --info: #86b6cd;
+
+  --ring: #d9734e;
+  --surface-hover: rgba(245, 237, 224, 0.08);
+  --overlay: rgba(12, 7, 4, 0.8);
 }
 
 /* =================================
@@ -148,6 +205,12 @@
   --color-homera-cream: var(--homera-cream);
   --color-homera-cream-dark: var(--homera-cream-dark);
 
+  --color-homera-night: var(--homera-night);
+  --color-homera-night-soft: var(--homera-night-soft);
+  --color-homera-amber: var(--homera-amber);
+  --color-homera-paper: var(--homera-paper);
+  --color-homera-paper-muted: var(--homera-paper-muted);
+
   --color-muted: var(--muted);
   --color-muted-light: var(--muted-light);
 
@@ -157,6 +220,16 @@
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-error: var(--error);
+  --color-info: var(--info);
+
+  --color-ring: var(--ring);
+  --color-surface-hover: var(--surface-hover);
+  --color-overlay: var(--overlay);
+
+  /* Trois courbes, pas une de plus. */
+  --ease-standard: var(--homera-ease);
+  --ease-soft: var(--homera-ease-out-soft);
+  --ease-in-out: var(--homera-ease-in-out);
 
   --font-sans: var(--font-manrope);
   --font-serif: var(--font-dm-serif);
@@ -199,11 +272,93 @@
   --text-display-xl--letter-spacing: 0.01em;
   --text-display-xl--font-weight: 400;
 
+  /* Deux titres fluides : ils occupent la largeur disponible entre
+     deux paliers fixes, sans clamp() écrit à la main dans un composant. */
+  --text-display-2xl: clamp(2rem, 4.5vw, 4.2rem); /* manifeste */
+  --text-display-2xl--line-height: 1.16;
+  --text-display-2xl--letter-spacing: -0.015em;
+  --text-display-2xl--font-weight: 400;
+
+  --text-display-fluid: clamp(1.5rem, 2.6vw, 2.6rem); /* titres de récit */
+  --text-display-fluid--line-height: 1.15;
+  --text-display-fluid--letter-spacing: 0.006em;
+  --text-display-fluid--font-weight: 400;
+
+  /* ================================
+     CORPS, LÉGENDES, ÉTIQUETTES
+     Cinq crans sous le body de 15px, et rien en dessous de 10px :
+       micro 10 · caption 11 · note 12,5 · body-sm 13,5 · body 15
+     `text-label` embarque graisse et interlettrage : une étiquette
+     HOMERA ne se recompose plus à la main.
+     ================================ */
+  --text-micro: 0.625rem; /* 10px — badges, mentions minimales */
+  --text-micro--line-height: 1.5;
+  --text-micro--letter-spacing: 0.02em;
+
+  --text-caption: 0.6875rem; /* 11px — légendes, mentions */
+  --text-caption--line-height: 1.6;
+  --text-caption--letter-spacing: 0.01em;
+
+  --text-note: 0.78125rem; /* 12,5px — textes secondaires longs */
+  --text-note--line-height: 1.7;
+
+  --text-body-sm: 0.84375rem; /* 13,5px — textes denses, menus */
+  --text-body-sm--line-height: 1.7;
+
+  --text-label: 0.6875rem; /* 11px / 600 / .16em — étiquettes, surtitres */
+  --text-label--line-height: 1.4;
+  --text-label--letter-spacing: 0.16em;
+  --text-label--font-weight: 600;
+
+  --text-body: 0.9375rem; /* 15px — corps courant (la base du site) */
+
+  /* ================================
+     CHIFFRES — compteurs et référence du dossier
+     Toujours avec .homera-num (chiffres tabulaires).
+     ================================ */
+  --text-figure: 3rem; /* 48px — chiffres clés (mobile) */
+  --text-figure--line-height: 0.95;
+
+  --text-figure-lg: 3.5rem; /* 56px — chiffres clés (desktop) */
+  --text-figure-lg--line-height: 0.95;
+
+  --text-figure-fluid: clamp(1.1rem, 2.35vw, 2.1rem); /* référence HOM-A-… */
+
+  /* ================================
+     ACCENTS — Cormorant Garamond Italic
+     Le script italique paraît plus petit à corps égal : il a ses
+     deux corps, et rien d'autre.
+     ================================ */
+  --text-accent: 1.25rem;
+  --text-accent--line-height: 1.5;
+
+  --text-accent-lg: 1.5rem;
+
+  /* ================================
+     MOT-SYMBOLE — tailles du logo « HOMERA »
+     Taille seule : la graisse et la famille viennent de .homera-brand.
+     ================================ */
+  --text-brand: 3.125rem;
+  --text-brand-compact: 2.5rem;
+  --text-brand-sm: 1.3125rem;
+
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
   --radius-2xl: var(--radius-2xl);
+  --radius-3xl: var(--radius-3xl);
+  --radius-4xl: var(--radius-4xl);
+
+  /* Rôles : rounded-btn / -input / -card / -menu / -media / -modal.
+     Ils pointent vers l'échelle (jamais vers eux-mêmes) : la déclaration
+     reste résolvable quel que soit l'ordre des calques. */
+  --radius-btn: var(--radius-lg);
+  --radius-input: var(--radius-2xl);
+  --radius-card: var(--radius-2xl);
+  --radius-menu: var(--radius-2xl);
+  --radius-media: var(--radius-2xl);
+  --radius-modal: var(--radius-3xl);
 
   --shadow-card: var(--shadow-card);
   --shadow-card-hover: var(--shadow-card-hover);
@@ -375,13 +530,13 @@ a {
 /* Largeur maîtrisée du contenu du header (grands / très grands écrans) */
 .homera-header-container {
   width: 100%;
-  max-width: 80rem;            /* 1280px — desktop standard */
+  max-width: var(--container-max);
 }
 @media (min-width: 1536px) {
-  .homera-header-container { max-width: 86rem; }   /* ~1376px — grands écrans */
+  .homera-header-container { max-width: var(--container-wide); }
 }
 @media (min-width: 1920px) {
-  .homera-header-container { max-width: 92rem; }   /* ~1472px — ultrawide / Full HD+ */
+  .homera-header-container { max-width: var(--container-ultra); }
 }
 
 /* ==================================================================
@@ -394,21 +549,28 @@ a {
    ================================================================== */
 
 :root {
-  /* Nuances profondes — utilisées pour les scènes sombres et les
-     transitions entre sections. Dérivées du brun HOMERA existant. */
-  --homera-night: #1c110b;
-  --homera-night-soft: #2a1a12;
-  --homera-amber: #e0a45e;
-  --homera-halo: rgba(198, 93, 59, 0.16);
+  /* Les pigments nocturnes (--homera-night, --homera-amber, --homera-halo)
+     sont déclarés plus haut, avec le reste de la palette : un seul endroit
+     où lire les couleurs. */
 
-  /* Courbes de mouvement : une seule famille pour toute la page. */
+  /* Courbes de mouvement : une seule famille pour toute la page.
+     Exposées à Tailwind (--ease-standard / --ease-soft / --ease-in-out) :
+     plus aucune courbe recopiée à la main dans les composants. */
   --homera-ease: cubic-bezier(0.22, 0.61, 0.28, 1);
   --homera-ease-out-soft: cubic-bezier(0.33, 1, 0.68, 1);
   --homera-ease-in-out: cubic-bezier(0.65, 0.05, 0.36, 1);
 
+  /* Échelle de durées — six crans, du retour de commande au rideau.
+     Les zooms photographiques (900–1 100 ms) restent des exceptions
+     assumées, documentées dans MOTION-HOMERA. */
+  --duration-instant: 140ms;   /* dropdown, bascule d'état */
+  --duration-quick: 200ms;     /* micro-réponse, hover */
+  --duration-base: 380ms;      /* modale, panneau */
+  --duration-slow: 520ms;      /* composition, expansion */
+  --duration-scene: 820ms;     /* reveal de scène */
+
   /* Durées de référence (mouvement lent = sensation cinématique). */
-  --homera-duration-fast: 180ms;
-  --homera-duration: 520ms;
+  --homera-duration: var(--duration-slow);
   --homera-duration-slow: 1050ms;
   --homera-story-top: 6rem;
 
@@ -495,10 +657,10 @@ a {
     scale(var(--reveal-scale, 1));
   filter: blur(var(--reveal-blur, 0px));
   transition:
-    opacity var(--reveal-duration, 820ms) var(--homera-ease) var(--reveal-delay, 0ms),
-    transform var(--reveal-duration, 820ms) var(--homera-ease) var(--reveal-delay, 0ms),
-    filter var(--reveal-duration, 820ms) var(--homera-ease-out-soft) var(--reveal-delay, 0ms),
-    clip-path var(--reveal-duration, 820ms) var(--homera-ease) var(--reveal-delay, 0ms);
+    opacity var(--reveal-duration, var(--duration-scene)) var(--homera-ease) var(--reveal-delay, 0ms),
+    transform var(--reveal-duration, var(--duration-scene)) var(--homera-ease) var(--reveal-delay, 0ms),
+    filter var(--reveal-duration, var(--duration-scene)) var(--homera-ease-out-soft) var(--reveal-delay, 0ms),
+    clip-path var(--reveal-duration, var(--duration-scene)) var(--homera-ease) var(--reveal-delay, 0ms);
 }
 
 .homera-reveal[data-revealed="true"] {
@@ -659,7 +821,7 @@ a {
   background: currentColor;
   transform: scaleX(0);
   transform-origin: left center;
-  transition: transform 380ms var(--homera-ease);
+  transition: transform var(--duration-base) var(--homera-ease);
 }
 
 .homera-underline:hover::after,
@@ -868,7 +1030,7 @@ a {
    ------------------------------------------------------------------ */
 
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {
-  outline: 2px solid var(--homera-terracotta);
+  outline: 2px solid var(--ring);
   outline-offset: 3px;
   border-radius: var(--radius-sm);
 }
@@ -1088,8 +1250,8 @@ a {
 
 /* GRAND MESSAGE : une traversée tonale, un seul texte par mots au scroll. */
 .homera-statement {
-  padding-block: 11rem 12rem;
-  background: #3e2418;
+  padding-block: calc(var(--space-section-scene) + 1rem) calc(var(--space-section-scene) + 2rem);
+  background: var(--homera-brown);
   overflow: clip;
 }
 .homera-statement::before, .homera-statement::after,
@@ -1102,11 +1264,11 @@ a {
 }
 .homera-statement::before, .homera-protocol::before {
   top: 0;
-  background: linear-gradient(to bottom, var(--background), #3e2418);
+  background: linear-gradient(to bottom, var(--background), var(--homera-brown));
 }
 .homera-statement::after, .homera-protocol::after {
   bottom: 0;
-  background: linear-gradient(to bottom, #3e2418, var(--background));
+  background: linear-gradient(to bottom, var(--homera-brown), var(--background));
 }
 .homera-scroll-word { opacity: 1; }
 .homera-statement[data-motion-ready="true"] .homera-scroll-word {
@@ -1117,7 +1279,7 @@ a {
 .homera-statement-thread > span {
   position: absolute;
   inset: 0;
-  background: #e0a45e;
+  background: var(--homera-amber);
   transform: scaleY(var(--statement-line, 1));
   transform-origin: top;
 }
@@ -1133,7 +1295,7 @@ a {
 .homera-intent-title {
   font-size: clamp(1.6rem, 2.2vw, 2rem);
   line-height: 1.15;
-  transition: transform 520ms var(--homera-ease), font-size 520ms var(--homera-ease);
+  transition: transform var(--duration-slow) var(--homera-ease), font-size var(--duration-slow) var(--homera-ease);
 }
 .homera-intent-door[data-active="true"] .homera-intent-title { transform: translateY(-2px); }
 .homera-intent-details {
@@ -1141,7 +1303,7 @@ a {
   grid-template-rows: 0fr;
   opacity: 0;
   transform: translateY(8px);
-  transition: grid-template-rows 560ms var(--homera-ease), opacity 340ms var(--homera-ease), transform 520ms var(--homera-ease);
+  transition: grid-template-rows 560ms var(--homera-ease), opacity 340ms var(--homera-ease), transform var(--duration-slow) var(--homera-ease);
 }
 .homera-intent-door[data-active="true"] .homera-intent-details {
   grid-template-rows: 1fr;
@@ -1150,7 +1312,7 @@ a {
 }
 .homera-intent-door .homera-intent-image { transform: scale(1.012); transition: transform 1100ms var(--homera-ease); }
 .homera-intent-door[data-active="true"] .homera-intent-image { transform: scale(1.045); }
-.homera-intent-arrow { opacity: .5; transform: rotate(-8deg); transition: opacity 300ms, transform 520ms var(--homera-ease); }
+.homera-intent-arrow { opacity: .5; transform: rotate(-8deg); transition: opacity 300ms, transform var(--duration-slow) var(--homera-ease); }
 .homera-intent-door[data-active="true"] .homera-intent-arrow { opacity: 1; transform: none; }
 
 @media (min-width: 1024px) {
@@ -1184,7 +1346,7 @@ a {
 .homera-property-title { transition: transform 350ms var(--homera-ease); }
 .homera-property-object:is(:hover, :focus-within) .homera-property-title { transform: translateY(-2px); }
 .homera-property-secondary { opacity: 1; }
-.homera-property-explore { transition: opacity 280ms, transform 380ms var(--homera-ease); }
+.homera-property-explore { transition: opacity 280ms, transform var(--duration-base) var(--homera-ease); }
 .homera-gallery-marker span { width: 5px; height: 5px; border-radius: 100%; background: var(--muted); transition: width 280ms var(--homera-ease), background-color 280ms; }
 .homera-gallery-marker[aria-pressed="true"] span { width: 20px; border-radius: 3px; background: var(--homera-terracotta); }
 @media (min-width: 640px) {
@@ -1208,15 +1370,15 @@ a {
   margin: auto;
   padding: 0;
   border: 1px solid var(--border);
-  border-radius: 1.75rem;
+  border-radius: var(--radius-modal);
   background: var(--card);
   color: var(--foreground);
   overflow-y: auto;
   overscroll-behavior: contain;
   box-shadow: 0 40px 120px rgba(28, 17, 11, .35);
 }
-.homera-property-dialog::backdrop { background: rgba(28, 17, 11, .74); }
-.homera-property-dialog[open] { animation: homera-dialog-enter 380ms var(--homera-ease); }
+.homera-property-dialog::backdrop { background: var(--overlay); }
+.homera-property-dialog[open] { animation: homera-dialog-enter var(--duration-base) var(--homera-ease); }
 @keyframes homera-dialog-enter { from { opacity: 0; transform: translateY(12px) scale(.987); } to { opacity: 1; transform: none; } }
 
 /* RÉCITS : fixés seulement si largeur ET hauteur permettent la lecture.
@@ -1227,21 +1389,21 @@ a {
 .homera-dossier-photo { opacity: 1; }
 .homera-dossier-connector { display: none; }
 .homera-dossier-field { transition: border-color 250ms, background-color 250ms; }
-.homera-protocol { padding-block: 10rem 11rem; background: #3e2418; }
+.homera-protocol { padding-block: var(--space-section-scene) calc(var(--space-section-scene) + 1rem); background: var(--homera-brown); }
 .homera-protocol-copy-list { display: grid; gap: 2rem; }
 .homera-protocol-copy { border-bottom: 1px solid rgba(250,246,239,.15); padding-bottom: 2rem; }
-.homera-protocol-number { border-color: rgba(250,246,239,.3); color: #ebdcc6; background: transparent; }
-.homera-protocol-number[data-current="true"] { border-color: #e0a45e; background: rgba(224,164,94,.13); color: #faf6ef; }
-.homera-protocol-number[data-past="true"] { border-color: rgba(224,164,94,.5); color: #e0a45e; }
+.homera-protocol-number { border-color: rgba(250,246,239,.3); color: var(--homera-cream-dark); background: transparent; }
+.homera-protocol-number[data-current="true"] { border-color: var(--homera-amber); background: color-mix(in oklab, var(--homera-amber) 13%, transparent); color: var(--homera-paper); }
+.homera-protocol-number[data-past="true"] { border-color: color-mix(in oklab, var(--homera-amber) 50%, transparent); color: var(--homera-amber); }
 .homera-protocol-line { display: none; }
 .homera-protocol-paper { transform: translate(6px, 6px) rotate(1.4deg); transition: transform 700ms var(--homera-ease); }
 .homera-protocol-record { box-shadow: 0 40px 75px -45px rgba(20,12,8,.8); }
 .homera-protocol-record img { transform: scale(1.01); }
 .homera-protocol-scan { position: absolute; inset: 0; pointer-events: none; border: 1px solid rgba(224,164,94,.7); transform: scale(.93); opacity: 0; transition: opacity 450ms, transform 700ms var(--homera-ease); }
 .homera-protocol-scan[data-show="true"] { opacity: 1; transform: scale(.97); }
-.homera-protocol-check { transition: background-color 380ms, border-color 380ms; }
+.homera-protocol-check { transition: background-color var(--duration-base), border-color var(--duration-base); }
 .homera-protocol-check svg { transform: scale(.75); opacity: 0; transition: transform 400ms var(--homera-ease), opacity 250ms; }
-.homera-protocol-check[data-checked="true"] { background: #3e2418; border-color: #3e2418; color: #faf6ef; }
+.homera-protocol-check[data-checked="true"] { background: var(--homera-brown); border-color: var(--homera-brown); color: var(--homera-paper); }
 .homera-protocol-check[data-checked="true"] svg { opacity: 1; transform: none; }
 .homera-protocol-agent { opacity: .35; transform: translateY(4px); transition: opacity 450ms, transform 550ms var(--homera-ease); }
 .homera-protocol-agent[data-show="true"] { opacity: 1; transform: none; }
@@ -1297,13 +1459,13 @@ a {
     transition: opacity 420ms var(--homera-ease) 70ms, transform 550ms var(--homera-ease), filter 420ms, visibility 0s;
   }
   .homera-protocol-line { display: block; position: absolute; left: 21px; top: 1.375rem; bottom: 1.375rem; width: 1px; background: rgba(250,246,239,.2); }
-  .homera-protocol-line > span { display: block; width: 100%; height: 100%; transform: scaleY(var(--protocol-progress, 0)); transform-origin: top; background: #e0a45e; }
-  .homera-protocol-number { background: #3e2418; }
+  .homera-protocol-line > span { display: block; width: 100%; height: 100%; transform: scaleY(var(--protocol-progress, 0)); transform-origin: top; background: var(--homera-amber); }
+  .homera-protocol-number { background: var(--homera-brown); }
 }
 
 /* SERVICES : la catégorie prend du volume, la scène conserve sa hauteur. */
 .homera-service-tab { min-height: 5.5rem; }
-.homera-service-tab-detail { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 520ms var(--homera-ease), opacity 320ms; }
+.homera-service-tab-detail { display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows var(--duration-slow) var(--homera-ease), opacity 320ms; }
 .homera-service-tab[data-active="true"] .homera-service-tab-detail { grid-template-rows: 1fr; opacity: 1; }
 .homera-service-copy { grid-area: 1 / 1; opacity: 0; visibility: hidden; pointer-events: none; transition: opacity 180ms, visibility 0s 220ms; }
 .homera-service-copy[data-active="true"] { opacity: 1; visibility: visible; pointer-events: auto; transition-delay: 0s; animation: homera-service-enter 420ms var(--homera-ease); }
@@ -1322,11 +1484,56 @@ a {
 
 /* Mobiles, paysage et zoom : aucune scène ne retient le scroll. */
 @media (max-width: 767px) {
-  .homera-statement { padding-block: 8rem 9rem; }
+  .homera-statement { padding-block: calc(var(--space-section-scene) - 2rem) calc(var(--space-section-scene) - 1rem); }
   .homera-statement::before, .homera-statement::after { height: 6rem; }
   .homera-statement-thread { height: 3rem; margin-bottom: 1.5rem; }
   .homera-protocol { padding-block: 9rem; }
   .homera-story-tools { flex-direction: column; align-items: center; text-align: center; }
+}
+
+/* ------------------------------------------------------------------
+   CHARGEMENT — un seul indicateur pour tout le produit
+   Un squelette, jamais de spinner qui tourne sans rien dire. Il garde
+   la place et le rayon du contenu qu'il remplace, et balaye au rythme
+   des scènes. Une région en attente porte `aria-busy="true"`.
+   ------------------------------------------------------------------ */
+
+.homera-skeleton {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius-media);
+  background: color-mix(in oklab, var(--muted) 14%, transparent);
+  color: transparent;
+  pointer-events: none;
+  user-select: none;
+}
+
+.homera-skeleton::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklab, var(--foreground) 8%, transparent),
+    transparent
+  );
+  animation: homera-skeleton-sweep 1.4s var(--homera-ease-in-out) infinite;
+}
+
+@keyframes homera-skeleton-sweep {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .homera-skeleton::after {
+    animation: none;
+    transform: none;
+    opacity: 0.5;
+  }
 }
 
 /* Un choix de confort prime sur TOUS les effets, y compris les nouveaux. */

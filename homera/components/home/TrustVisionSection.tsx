@@ -71,7 +71,7 @@ export function TrustVisionSection() {
 
         {/* Citation fondatrice */}
         <Reveal delay={120} y={26} className="mt-12">
-          <figure className="relative overflow-hidden rounded-[2rem] bg-homera-brown px-6 py-12 text-center text-white sm:px-14 sm:py-16">
+          <figure className="relative overflow-hidden rounded-4xl bg-homera-brown px-6 py-12 text-center text-white sm:px-14 sm:py-16">
             <span
               aria-hidden="true"
               className="pointer-events-none absolute -right-24 -top-24 h-80 w-80 rounded-full bg-homera-terracotta/20 blur-3xl"
@@ -81,11 +81,11 @@ export function TrustVisionSection() {
               className="pointer-events-none absolute -bottom-32 -left-20 h-72 w-72 rounded-full bg-homera-amber/10 blur-3xl"
             />
             <blockquote className="relative">
-              <p className="homera-accent mx-auto max-w-2xl text-[1.25rem] leading-[1.5] text-stone-200 sm:text-[1.5rem]">
+              <p className="homera-accent mx-auto max-w-2xl text-accent text-homera-cream sm:text-accent-lg">
                 « Un bien ne devrait jamais être une promesse floue. Chaque dossier que nous
                 publions doit pouvoir être relu, compris et assumé. »
               </p>
-              <figcaption className="mt-6 text-[11px] font-semibold uppercase tracking-[0.28em] text-homera-amber">
+              <figcaption className="mt-6 text-caption font-semibold uppercase tracking-[0.28em] text-homera-amber">
                 Notre déclaration
               </figcaption>
             </blockquote>
@@ -103,13 +103,13 @@ export function TrustVisionSection() {
                 y={26}
                 className="group border-t border-border pt-7"
               >
-                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-homera-terracotta/10 text-homera-terracotta transition-transform duration-500 ease-out group-hover:-translate-y-1">
+                <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-homera-terracotta/10 text-homera-terracotta transition-transform duration-500 ease-standard group-hover:-translate-y-1">
                   <Icon className="h-5 w-5" aria-hidden="true" />
                 </span>
-                <h3 className="mt-5 text-[14.5px] font-semibold leading-snug text-foreground">
+                <h3 className="mt-5 text-body-sm font-semibold leading-snug text-foreground">
                   {pillar.title}
                 </h3>
-                <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
+                <p className="mt-2 text-note leading-relaxed text-muted">
                   {pillar.description}
                 </p>
               </Reveal>
@@ -120,7 +120,7 @@ export function TrustVisionSection() {
         {/* ---------------- Projection finale ---------------- */}
         <div ref={ref} className="homera-final-scene mt-16">
           <Reveal y={0} blur={0} clip clipRadius={32} duration={1200}>
-            <div className="homera-on-dark relative overflow-hidden rounded-[2rem] border border-border">
+            <div className="homera-on-dark relative overflow-hidden rounded-4xl border border-border">
               <div className="homera-final-image">
                 <div
                   className="homera-media relative h-[30rem] w-full sm:h-[34rem] lg:h-[36rem]"
@@ -145,10 +145,10 @@ export function TrustVisionSection() {
 
               <div className="homera-final-content absolute inset-0 flex flex-col justify-end p-7 text-white sm:p-12">
                 <Reveal delay={140} y={24} className="max-w-2xl">
-                  <h3 className="font-serif text-display-sm leading-tight sm:text-[2.4rem]">
+                  <h3 className="font-serif text-display-sm leading-tight sm:text-display-lg">
                     {FINAL_CTA.title}
                   </h3>
-                  <p className="mt-4 max-w-xl text-[13px] leading-relaxed text-stone-200/90">
+                  <p className="mt-4 max-w-xl text-body-sm leading-relaxed text-homera-cream/90">
                     {FINAL_CTA.description}
                   </p>
 
@@ -185,7 +185,7 @@ export function TrustVisionSection() {
                     </Button>
                   </div>
 
-                  <p className="mt-6 text-[11px] uppercase tracking-[0.22em] text-stone-300/70">
+                  <p className="mt-6 text-caption uppercase tracking-[0.22em] text-homera-cream-dark/70">
                     Cotonou · Abomey-Calavi · Porto-Novo · Ouidah
                   </p>
                 </Reveal>

@@ -28,38 +28,38 @@ export function PropertyPreview({ property, onClose }: { property: Property; onC
     <dialog ref={ref} aria-labelledby="property-preview-title" onClose={onClose}
       onClick={(event) => { if (event.target === event.currentTarget) onClose(); }}
       className="homera-property-dialog homera-noscrollbar">
-      <div className="relative overflow-hidden rounded-[1.75rem] bg-card text-foreground">
+      <div className="relative overflow-hidden rounded-modal bg-card text-foreground">
         <button type="button" autoFocus onClick={onClose} aria-label="Fermer l’aperçu du bien"
-          className="homera-press absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-[#3e2418]/85 text-white">
+          className="homera-press absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-homera-brown/85 text-white">
           <X className="h-5 w-5" aria-hidden="true" />
         </button>
         <Visual mediaKey={property.media} alt={property.alt} sizes="(min-width: 900px) 54rem, 94vw"
           veil="none" quality={74} className="aspect-[16/9] w-full" />
         <div className="p-5 sm:p-8">
-          <p className="homera-accent-ink text-[11px] font-semibold uppercase tracking-[.2em]">
+          <p className="homera-accent-ink text-caption font-semibold uppercase tracking-[.2em]">
             {INTENT_LABELS[property.intent]} · {TYPE_LABELS[property.type]}
           </p>
           <h2 id="property-preview-title" className="mt-3 font-serif text-display-xs sm:text-display-sm">{property.title}</h2>
-          <p className="mt-3 flex items-center gap-2 text-[13px] text-muted">
+          <p className="mt-3 flex items-center gap-2 text-body-sm text-muted">
             <MapPin className="h-4 w-4" aria-hidden="true" /> {property.district}, {property.city}
           </p>
           <p className="homera-num mt-5 text-xl font-semibold text-foreground">
-            {formatFCFA(property.price)} <span className="text-[13px] font-normal text-muted">{property.pricePeriod}</span>
+            {formatFCFA(property.price)} <span className="text-body-sm font-normal text-muted">{property.pricePeriod}</span>
           </p>
-          <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-3 border-y border-border py-4 text-[13px] text-muted">
+          <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-3 border-y border-border py-4 text-body-sm text-muted">
             {property.bedrooms > 0 && <li className="inline-flex items-center gap-2"><Bed className="h-4 w-4" aria-hidden="true" />{property.bedrooms} chambres</li>}
             {property.bathrooms > 0 && <li className="inline-flex items-center gap-2"><Bath className="h-4 w-4" aria-hidden="true" />{property.bathrooms} salles de bain</li>}
             <li className="inline-flex items-center gap-2"><Maximize className="h-4 w-4" aria-hidden="true" />{property.surface} m²</li>
           </ul>
           <div className="mt-5 flex flex-wrap items-center justify-between gap-3">
-            <p id="property-preview-reference" className="homera-num font-mono text-[14px] font-medium">{property.homeraId}</p>
+            <p id="property-preview-reference" className="homera-num font-mono text-body-sm font-medium">{property.homeraId}</p>
             <CopyReference value={property.homeraId} targetId="property-preview-reference" />
           </div>
-          <div className="mt-5 flex flex-wrap gap-4 text-[12px] text-muted">
+          <div className="mt-5 flex flex-wrap gap-4 text-note text-muted">
             <p className="inline-flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />Éléments de la fiche contrôlés</p>
             <p className="inline-flex items-center gap-2"><CalendarCheck className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />Vérification : {property.verifiedOn}</p>
           </div>
-          {DEMO_DATA && <p className="mt-5 text-[11px] leading-relaxed text-muted">Fiche de démonstration et visuel illustratif. Ce bien n’est pas une offre commerciale réelle. Le statut ne constitue pas une garantie juridique.</p>}
+          {DEMO_DATA && <p className="mt-5 text-caption leading-relaxed text-muted">Fiche de démonstration et visuel illustratif. Ce bien n’est pas une offre commerciale réelle. Le statut ne constitue pas une garantie juridique.</p>}
         </div>
       </div>
     </dialog>

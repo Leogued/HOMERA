@@ -46,7 +46,7 @@ export function StatsSection() {
 
             {DEMO_DATA && (
               <Reveal delay={260} y={14} className="mt-8">
-                <p className="flex items-start gap-2 text-[11px] leading-relaxed text-muted-light">
+                <p className="flex items-start gap-2 text-caption leading-relaxed text-muted-light">
                   <span aria-hidden="true" className="mt-[6px] h-1 w-6 shrink-0 bg-homera-terracotta/40" />
                   Données de démonstration du système pilote HOMERA — remplacées par les
                   chiffres réels de la plateforme à la mise en production.
@@ -98,7 +98,7 @@ function StatCell({ stat, index }: { stat: Stat; index: number }) {
         />
 
         <div className="flex items-start justify-between gap-4">
-          <p className="homera-num font-serif text-[3rem] leading-[0.95] text-homera-brown transition-colors duration-500 group-hover:text-homera-terracotta sm:text-[3.5rem] dark:text-homera-terracotta">
+          <p className="homera-num font-serif text-figure text-homera-brown transition-colors duration-500 group-hover:text-homera-terracotta sm:text-figure-lg dark:text-homera-terracotta">
             <span className="sr-only">{stat.prefix ?? ""}{formatNumber(stat.value)}{stat.suffix ?? ""}</span>
             <span aria-hidden="true" className="homera-stat-value">
               <span className="homera-stat-reserve">{stat.prefix ?? ""}{formatNumber(stat.value)}{stat.suffix ?? ""}</span>
@@ -107,14 +107,14 @@ function StatCell({ stat, index }: { stat: Stat; index: number }) {
           </p>
           <Icon
             aria-hidden="true"
-            className="mt-2 h-4 w-4 shrink-0 text-homera-terracotta/70 transition-transform duration-500 ease-out group-hover:-translate-y-0.5 group-hover:scale-110"
+            className="mt-2 h-4 w-4 shrink-0 text-homera-terracotta/70 transition-transform duration-500 ease-standard group-hover:-translate-y-0.5 group-hover:scale-110"
           />
         </div>
 
-        <h3 className="mt-4 text-[13.5px] font-semibold leading-snug text-foreground">
+        <h3 className="mt-4 text-body-sm font-semibold leading-snug text-foreground">
           {stat.label}
         </h3>
-        <p className="mt-2 max-w-[22rem] text-[12.5px] leading-relaxed text-muted">
+        <p className="mt-2 max-w-[22rem] text-note leading-relaxed text-muted">
           {stat.description}
         </p>
       </div>

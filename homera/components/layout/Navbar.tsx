@@ -358,7 +358,7 @@ export function Navbar() {
       <div
 
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-0 transition-[opacity,backdrop-filter] duration-[650ms] ease-[cubic-bezier(.22,.61,.28,1)] data-[scrolled=true]:opacity-100 data-[scrolled=true]:backdrop-blur-[14px] data-[scrolled=true]:backdrop-saturate-150"
+        className="pointer-events-none absolute inset-0 opacity-0 transition-[opacity,backdrop-filter] duration-[650ms] ease-standard data-[scrolled=true]:opacity-100 data-[scrolled=true]:backdrop-blur-[14px] data-[scrolled=true]:backdrop-saturate-150"
         data-scrolled={scrolled}
       >
         <div className="absolute inset-0 bg-gradient-to-b from-[rgba(20,12,8,0.62)] via-[rgba(20,12,8,0.28)] to-transparent" />
@@ -366,15 +366,15 @@ export function Navbar() {
       </div>
 
       <div
-        className={`homera-header-container relative mx-auto flex items-center justify-between px-4 transition-[padding] duration-[650ms] ease-[cubic-bezier(.22,.61,.28,1)] sm:px-8 xl:px-12 2xl:px-16 lg:grid lg:grid-cols-3 ${
+        className={`homera-header-container relative mx-auto flex items-center justify-between px-4 transition-[padding] duration-[650ms] ease-standard sm:px-8 xl:px-12 2xl:px-16 lg:grid lg:grid-cols-3 ${
           compactHeader ? "py-2.5" : "py-4"
         }`}
       >
         {/* Mot-symbole HOMERA — inchangé */}
         <Link href="/" className="group flex items-center" aria-label="HOMERA, accueil">
           <span
-            className={`homera-brand text-[3.125rem] text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.65)] transition-transform duration-500 ease-out group-hover:scale-[1.04] ${
-              compactHeader ? "lg:text-[2.5rem]" : ""
+            className={`homera-brand text-brand text-white drop-shadow-[0_0_12px_rgba(255,255,255,0.65)] transition-transform duration-500 ease-standard group-hover:scale-[1.04] ${
+              compactHeader ? "lg:text-brand-compact" : ""
             }`}
             style={{ transition: "transform 500ms var(--homera-ease), font-size 650ms var(--homera-ease)" }}
           >
@@ -385,7 +385,7 @@ export function Navbar() {
         {/* Navigation — capsule centrée, dropdowns sobres */}
         <nav
           aria-label="Navigation principale"
-          className="relative hidden items-center gap-4 rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-[12.5px] font-medium text-white shadow-[0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-sm lg:flex lg:justify-self-center xl:gap-6 xl:px-6 2xl:gap-7 2xl:px-7"
+          className="relative hidden items-center gap-4 rounded-full border border-white/10 bg-white/5 px-5 py-2.5 text-note font-medium text-white shadow-[0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-sm lg:flex lg:justify-self-center xl:gap-6 xl:px-6 2xl:gap-7 2xl:px-7"
         >
           {NAV_ITEMS.map((item) => {
             const open = openMenu === item.title;
@@ -424,7 +424,7 @@ export function Navbar() {
                     <TextRoll>{item.title}</TextRoll>
                     <ChevronDown
                       aria-hidden="true"
-                      className={`h-3.5 w-3.5 text-white/55 transition-transform duration-300 ease-out group-hover:text-white ${
+                      className={`h-3.5 w-3.5 text-white/55 transition-transform duration-300 ease-standard group-hover:text-white ${
                         open ? "rotate-180 text-white" : ""
                       }`}
                     />
@@ -446,7 +446,7 @@ export function Navbar() {
                 {/* Indicateur d’onglet actif : souligne sans bruit */}
                 <span
                   aria-hidden="true"
-                  className={`mt-0.5 h-px w-full origin-center bg-homera-terracotta transition-transform duration-500 ease-[cubic-bezier(.22,.61,.28,1)] ${
+                  className={`mt-0.5 h-px w-full origin-center bg-homera-terracotta transition-transform duration-500 ease-standard ${
                     isActive(item) ? "scale-x-100" : "scale-x-0"
                   }`}
                 />
@@ -456,7 +456,7 @@ export function Navbar() {
                   <div
                     id={panelId(item)}
                     inert={!open}
-                    className={`absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3 transition-all duration-[320ms] ease-[cubic-bezier(.22,.61,.28,1)] ${
+                    className={`absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3 transition-all duration-[320ms] ease-standard ${
                       open
                         ? "pointer-events-auto visible translate-y-0 opacity-100"
                         : "pointer-events-none invisible -translate-y-1.5 opacity-0"
@@ -485,7 +485,7 @@ export function Navbar() {
                           items[event.key === "Home" ? 0 : items.length - 1]?.focus();
                         }
                       }}
-                      className="homera-nav-panel homera-noscrollbar flex h-[11rem] w-[19rem] max-w-[min(22rem,80vw)] flex-col justify-center gap-0.5 overflow-y-auto rounded-2xl border border-white/10 bg-[#22140d] p-2 text-white shadow-[0_28px_60px_-24px_rgba(0,0,0,0.75)] backdrop-blur-xl"
+                      className="homera-nav-panel homera-noscrollbar flex h-[11rem] w-[19rem] max-w-[min(22rem,80vw)] flex-col justify-center gap-0.5 overflow-y-auto rounded-menu border border-white/10 bg-homera-night-soft p-2 text-white shadow-[0_28px_60px_-24px_rgba(0,0,0,0.75)] backdrop-blur-xl"
                     >
                       {item.submenu.map((sub, index) => {
                         const selected = Boolean(sub.serviceId) && sub.serviceId === activeService;
@@ -501,7 +501,7 @@ export function Navbar() {
                             }}
                             onKeyDown={handleAnchorKeyDown}
                             style={{ "--nav-stagger": `${index * 35}ms` } as React.CSSProperties}
-                            className={`homera-nav-entry homera-underline w-full whitespace-nowrap rounded-xl px-4 py-2 text-left text-[12px] font-medium tracking-[0.01em] transition-colors duration-300 ${
+                            className={`homera-nav-entry homera-underline w-full whitespace-nowrap rounded-xl px-4 py-2 text-left text-note font-medium tracking-[0.01em] transition-colors duration-300 ${
                               selected
                                 ? "bg-white/10 text-white"
                                 : "text-white/85 hover:bg-white/8 hover:text-white"
@@ -532,7 +532,7 @@ export function Navbar() {
               {isDark ? (
                 <Sun className="h-[18px] w-[18px] text-homera-terracotta" aria-hidden="true" />
               ) : (
-                <Moon className="h-[18px] w-[18px] text-stone-100" aria-hidden="true" />
+                <Moon className="h-[18px] w-[18px] text-homera-paper" aria-hidden="true" />
               )}
             </button>
           )}
@@ -543,7 +543,7 @@ export function Navbar() {
               event.preventDefault();
               handleNavigation(null, "#login");
             }}
-            className="homera-press inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/8 px-4 text-[12.5px] font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/14"
+            className="homera-press inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/8 px-4 text-note font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/14"
             aria-label="Se connecter"
           >
             <UserRound className="h-4 w-4" aria-hidden="true" />
@@ -563,7 +563,7 @@ export function Navbar() {
               {isDark ? (
                 <Sun className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />
               ) : (
-                <Moon className="h-4 w-4 text-stone-100" aria-hidden="true" />
+                <Moon className="h-4 w-4 text-homera-paper" aria-hidden="true" />
               )}
             </button>
           )}
@@ -593,7 +593,7 @@ export function Navbar() {
         }`}
       >
         {/* Fond opaque + verre : la page ne transparaît jamais */}
-        <div className="absolute inset-0 bg-[#1c110b]">
+        <div className="absolute inset-0 bg-homera-night">
           <div className="absolute inset-0 opacity-[0.16] [background-image:radial-gradient(circle_at_20%_0%,rgba(198,93,59,0.9),transparent_58%),radial-gradient(circle_at_85%_18%,rgba(224,164,94,0.5),transparent_52%)]" />
         </div>
 
@@ -602,12 +602,12 @@ export function Navbar() {
           role="dialog"
           aria-modal="true"
           aria-label="Menu HOMERA"
-          className={`relative flex h-full flex-col transition-all duration-[280ms] ease-[cubic-bezier(.22,.61,.28,1)] ${
+          className={`relative flex h-full flex-col transition-all duration-[280ms] ease-standard ${
             mobileOpen ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0"
           } ${reduced ? "duration-200" : ""}`}
         >
           <div className="flex items-center justify-between px-5 pt-5">
-            <span className="homera-brand text-[2.5rem] text-white">Homera</span>
+            <span className="homera-brand text-brand-compact text-white">Homera</span>
             <button
               type="button"
               data-mobile-first
@@ -629,7 +629,7 @@ export function Navbar() {
                 return (
                   <li
                     key={item.title}
-                    className={`transition-all duration-280 ease-out ${
+                    className={`transition-all duration-280 ease-standard ${
                       mobileOpen ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"
                     }`}
                     style={{
@@ -645,7 +645,7 @@ export function Navbar() {
                           onClick={() => setMobileSection(open ? null : item.title)}
                           aria-expanded={open}
                           aria-controls={`mobile-${panelId(item)}`}
-                          className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-left text-[15px] font-medium transition-colors duration-300 ${
+                          className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-left text-body font-medium transition-colors duration-300 ${
                             open
                               ? "border-homera-terracotta/40 bg-white/8 text-white"
                               : "border-white/10 bg-white/[0.04] text-white/90"
@@ -660,7 +660,7 @@ export function Navbar() {
                           />
                         </button>
                         <div id={`mobile-${panelId(item)}`} inert={!open}
-                          className={`grid overflow-hidden transition-all duration-[420ms] ease-[cubic-bezier(.22,.61,.28,1)] ${
+                          className={`grid overflow-hidden transition-all duration-[420ms] ease-standard ${
                             open ? "mt-1.5 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
                           }`}
                         >
@@ -673,7 +673,7 @@ export function Navbar() {
                                     event.preventDefault();
                                     handleNavigation(sub, sub.href);
                                   }}
-                                  className="block rounded-xl px-3 py-2.5 text-[13.5px] text-white/80 transition-colors hover:bg-white/8 hover:text-white"
+                                  className="block rounded-xl px-3 py-2.5 text-body-sm text-white/80 transition-colors hover:bg-white/8 hover:text-white"
                                 >
                                   {sub.label}
                                 </Link>
@@ -689,7 +689,7 @@ export function Navbar() {
                           event.preventDefault();
                           handleNavigation(null, item.href);
                         }}
-                        className="block rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-[15px] font-medium text-white/90 transition-colors hover:bg-white/8"
+                        className="block rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-body font-medium text-white/90 transition-colors hover:bg-white/8"
                       >
                         {item.title}
                       </Link>
@@ -700,14 +700,14 @@ export function Navbar() {
             </ul>
           </nav>
 
-          <div className="space-y-3 border-t border-white/10 bg-[#170e09] px-5 pb-8 pt-5">
+          <div className="space-y-3 border-t border-white/10 bg-homera-night px-5 pb-8 pt-5">
             <Link
               href="#biens"
               onClick={(event) => {
                 event.preventDefault();
                 handleNavigation(null, "#biens");
               }}
-              className="homera-press homera-sheen flex w-full items-center justify-center rounded-full bg-homera-terracotta py-3.5 text-[14px] font-medium text-white"
+              className="homera-press homera-sheen flex w-full items-center justify-center rounded-full bg-homera-terracotta py-3.5 text-body-sm font-medium text-white"
             >
               Explorer les biens vérifiés
             </Link>
@@ -717,7 +717,7 @@ export function Navbar() {
                 event.preventDefault();
                 handleNavigation(null, "#login");
               }}
-              className="homera-press flex w-full items-center justify-center gap-2 rounded-full border border-white/15 py-3.5 text-[14px] font-medium text-white"
+              className="homera-press flex w-full items-center justify-center gap-2 rounded-full border border-white/15 py-3.5 text-body-sm font-medium text-white"
             >
               <UserRound className="h-4 w-4" aria-hidden="true" />
               Se connecter
@@ -728,13 +728,13 @@ export function Navbar() {
                 type="button"
                 onClick={toggleTheme}
                 aria-pressed={isDark}
-                className="homera-press flex w-full items-center justify-between rounded-2xl border border-white/12 px-4 py-3 text-[13.5px] font-medium text-white/90"
+                className="homera-press flex w-full items-center justify-between rounded-2xl border border-white/12 px-4 py-3 text-body-sm font-medium text-white/90"
               >
                 <span className="inline-flex items-center gap-2.5">
                   {isDark ? (
                     <Sun className="h-4 w-4 text-homera-amber" aria-hidden="true" />
                   ) : (
-                    <Moon className="h-4 w-4 text-stone-200" aria-hidden="true" />
+                    <Moon className="h-4 w-4 text-homera-cream" aria-hidden="true" />
                   )}
                   {isDark ? "Passer en mode clair" : "Passer en mode sombre"}
                 </span>
@@ -745,7 +745,7 @@ export function Navbar() {
                   }`}
                 >
                   <span
-                    className={`absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-white transition-all duration-300 ease-[cubic-bezier(.22,.61,.28,1)] ${
+                    className={`absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-white transition-all duration-300 ease-standard ${
                       isDark ? "left-[1.15rem]" : "left-[3px]"
                     }`}
                   />
@@ -753,7 +753,7 @@ export function Navbar() {
               </button>
             )}
 
-            <p className="pt-1 text-center text-[11px] text-white/45">
+            <p className="pt-1 text-center text-caption text-white/45">
               Cotonou · Abomey-Calavi · Porto-Novo · Ouidah
             </p>
           </div>
