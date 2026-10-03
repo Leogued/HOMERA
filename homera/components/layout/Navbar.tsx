@@ -3,9 +3,10 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { ChevronDown, Menu, Moon, Sun, UserRound, X } from "lucide-react";
+import { ChevronDown, Menu, Moon, Sun, X } from "lucide-react";
 import { onScrollFrame, useMotionPreferences, useMounted } from "@/lib/motion";
-import { AUTH_HREF, navPanelId, PUBLIC_NAV, type NavEntry } from "@/lib/nav";
+import { navPanelId, PUBLIC_NAV, type NavEntry } from "@/lib/nav";
+import { AccountControl, AccountMobileLinks } from "@/components/auth/AccountControl";
 import { TextRoll } from "@/components/ui/TextRoll"; /* ================================================================== HOMERA — EN-TÊTE DE L’ACCUEIL ------------------------------------------------------------------ Règles invariantes conservées : • le header reste transparent en toutes circonstances (aucun fond opaque, aucun passage au blanc quand on change de thème) ; • le hero reste l’écran d’accueil, le header y est intégré. Ce qui a changé avec les pages publiques : les entrées du menu sont de vraies adresses (Explorer, Acheter, Louer, Séjour, Services, À propos, Contact) au lieu d’ancres internes. Les dropdowns mènent aux pages de catégories — tout est consultable sans compte. ================================================================== */ /** Identifiant de panneau stable (l’accueil conserve menu-acheter, etc.). */
 function panelId(title: string) {
   return `menu-${navPanelId(title)}`;
@@ -307,15 +308,7 @@ export function Navbar() {
               )}{" "}
             </button>
           )}{" "}
-          <Link
-            href={AUTH_HREF}
-            className="homera-press inline-flex h-10 items-center gap-2 rounded-full border border-white/15 bg-white/8 px-4 text-note font-medium text-white backdrop-blur-sm transition-colors hover:bg-white/14"
-            aria-label="Se connecter"
-          >
-            {" "}
-            <UserRound className="h-4 w-4" aria-hidden="true" />{" "}
-            <span className="hidden xl:inline">Se connecter</span>{" "}
-          </Link>{" "}
+          <AccountControl tone="night" />{" "}
         </div>{" "}
         {/* Commandes mobile */}{" "}
         <div className="flex items-center gap-2 lg:hidden">
@@ -477,14 +470,7 @@ export function Navbar() {
               {" "}
               Explorer les biens vérifiés{" "}
             </Link>{" "}
-            <Link
-              href={AUTH_HREF}
-              onClick={() => setMobileOpen(false)}
-              className="homera-press flex w-full items-center justify-center gap-2 rounded-full border border-white/15 py-3.5 text-body-sm font-medium text-white"
-            >
-              {" "}
-              <UserRound className="h-4 w-4" aria-hidden="true" /> Se connecter{" "}
-            </Link>{" "}
+            <AccountMobileLinks tone="night" onNavigate={() => setMobileOpen(false)} />{" "}
             {mounted && (
               <button
                 type="button"

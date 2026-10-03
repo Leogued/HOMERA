@@ -3,8 +3,9 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
-import { ChevronDown, Menu, Moon, Sun, UserRound, X } from "lucide-react";
-import { AUTH_HREF, navPanelId, PUBLIC_NAV, type NavEntry } from "@/lib/nav";
+import { ChevronDown, Menu, Moon, Sun, X } from "lucide-react";
+import { navPanelId, PUBLIC_NAV, type NavEntry } from "@/lib/nav";
+import { AccountControl, AccountMobileLinks } from "@/components/auth/AccountControl";
 import { onScrollFrame, useMounted } from "@/lib/motion";
 import { TextRoll } from "@/components/ui/TextRoll"; /* ================================================================== HOMERA — EN-TÊTE DES PAGES PUBLIQUES ------------------------------------------------------------------ L’accueil garde son en-tête transparent posé sur la vidéo. Toutes les autres pages publiques partagent celui-ci : même mot-symbole, même navigation, mêmes panneaux déroulants — mais une surface lisible, parce que ces pages commencent sur du crème, pas sur une image. Rien n’est réservé aux comptes : chaque entrée mène à une page consultable librement. « Se connecter » annonce simplement l’espace à venir (voir /connexion). ================================================================== */ /** Identifiant de panneau stable (utilisé par aria-controls). */
 function panelId(title: string) {
@@ -265,14 +266,10 @@ export function PublicHeader() {
               )}{" "}
             </button>
           )}{" "}
-          <Link
-            href={AUTH_HREF}
-            className="homera-press hidden h-10 items-center gap-2 rounded-full border border-border bg-card px-4 text-note font-medium text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta sm:inline-flex"
-          >
+          <span className="hidden sm:inline-flex">
             {" "}
-            <UserRound className="h-4 w-4" aria-hidden="true" />{" "}
-            <span className="hidden xl:inline">Se connecter</span>{" "}
-          </Link>{" "}
+            <AccountControl />{" "}
+          </span>{" "}
           <button
             type="button"
             onClick={() => setMobileOpen(true)}
@@ -408,14 +405,7 @@ export function PublicHeader() {
               {" "}
               Explorer les biens vérifiés{" "}
             </Link>{" "}
-            <Link
-              href={AUTH_HREF}
-              onClick={() => setMobileOpen(false)}
-              className="homera-press flex w-full items-center justify-center gap-2 rounded-full border border-white/15 py-3.5 text-body-sm font-medium text-white"
-            >
-              {" "}
-              <UserRound className="h-4 w-4" aria-hidden="true" /> Se connecter{" "}
-            </Link>{" "}
+            <AccountMobileLinks onNavigate={() => setMobileOpen(false)} />{" "}
             {mounted && (
               <button
                 type="button"

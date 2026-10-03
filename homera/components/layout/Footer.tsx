@@ -30,6 +30,7 @@ import { Reveal } from "@/components/ui/Reveal";
         { label: "Acheter au Bénin", href: "/acheter" },
         { label: "Louer au Bénin", href: "/louer" },
         { label: "Nous contacter", href: "/contact" },
+        { label: "Créer un compte", href: "/inscription" },
         { label: "Espace personnel", href: "/connexion" },
       ],
     },

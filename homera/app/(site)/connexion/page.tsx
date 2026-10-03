@@ -1,111 +1,96 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Bell, CalendarCheck, Heart, KeyRound, Search, UserRound } from "lucide-react";
-import { PageHero } from "@/components/catalog/PageHero";
-import { SESSION_PAGE } from "@/lib/pages";
+import { AuthAsideTitle, AuthBenefits, AuthShell, AuthLink } from "@/components/auth/AuthPanel";
+import { ConnexionView } from "@/components/auth/ConnexionView";
+import { PilotNote, type StatusTone } from "@/components/auth/StatusNote";
+import { AUTH_PAGE } from "@/lib/pages";
+import { FORGOT_HREF, SIGNUP_HREF } from "@/lib/nav";
 
 /* ==================================================================
-   /connexion — L’ESPACE CONNECTÉ, ANNONCÉ SANS LE SIMULER
+   /connexion — SE CONNECTER
    ------------------------------------------------------------------
-   Tout ce qui est public se consulte sans compte : recherche, fiches,
-   catégories, services, contact — et, depuis la phase 2, les favoris et
-   les recherches enregistrées, conservés dans le navigateur du visiteur.
+   L’écran a deux visages : le formulaire quand aucune session n’existe,
+   la fiche du compte quand une session est ouverte. Le tout est rendu
+   côté client (la session vit dans le navigateur), mais la page reste
+   servie par le serveur avec sa copie, son fil d’Ariane et ses liens.
 
-   La page sépare donc deux colonnes honnêtes : ce qui fonctionne déjà
-   (avec un lien pour y aller), et ce que le compte apportera en plus
-   (synchronisation, alertes, suivi de dossier, espace propriétaire).
-   Aucun faux formulaire d’inscription.
+   `?etat=` transporte le résultat d’une étape précédente — mot de passe
+   réinitialisé, adresse confirmée, session fermée — plutôt que de le
+   perdre en chemin. Aucun texte n’est affiché sans qu’un état réel y
+   corresponde : une adresse inconnue n’affiche rien.
    ================================================================== */
 
 export const metadata: Metadata = {
-  title: "Espace personnel — HOMERA",
+  title: "Se connecter — HOMERA",
   description:
-    "L’espace personnel HOMERA arrive : synchronisation des favoris, alertes, demandes de visite et suivi de dossier. En attendant, tout le catalogue se consulte sans compte.",
+    "Connectez-vous à votre espace HOMERA : favoris, recherches enregistrées, rôle et confirmation d’adresse. Le compte du pilote est conservé dans votre navigateur.",
+  robots: { index: false, follow: true },
 };
 
-/** Les pictogrammes restent ici : lib/pages.ts ne contient que du texte. */
-const AVAILABLE_ICONS = { heart: Heart, search: Search } as const;
-const FEATURE_ICONS = { bell: Bell, calendar: CalendarCheck, key: KeyRound } as const;
+const COPY = AUTH_PAGE.connexion;
 
-export default function ConnexionPage() {
+/** Résultats d’étape acceptés en paramètre — tout le reste est ignoré. */
+const NOTICES: Record<string, { tone: StatusTone; title: string; body: string }> = {
+  reinitialise: {
+    tone: "success",
+    title: "Mot de passe modifié",
+    body:
+      "Le nouveau mot de passe est actif et l’ancien lien de réinitialisation a été consommé. Connectez-vous avec ce mot de passe.",
+  },
+  verifie: {
+    tone: "success",
+    title: "Adresse confirmée",
+    body:
+      "Votre adresse e-mail est vérifiée : le compte est complet du point de vue du pilote. Vos favoris et recherches sont inchangés.",
+  },
+  deconnecte: {
+    tone: "info",
+    title: "Session fermée",
+    body:
+      "Vous avez été déconnecté de ce navigateur. Vos favoris et vos recherches enregistrées, eux, restent en place.",
+  },
+};
+
+export default async function ConnexionPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const raw = params.etat;
+  const key = Array.isArray(raw) ? raw[0] : raw;
+  const notice = key && NOTICES[key] ? NOTICES[key] : null;
+
   return (
-    <>
-      <PageHero
-        crumbs={[{ label: "Accueil", href: "/" }, { label: SESSION_PAGE.breadcrumb }]}
-        eyebrow={SESSION_PAGE.hero.eyebrow}
-        title={SESSION_PAGE.hero.title}
-        intro={SESSION_PAGE.hero.intro}
-        actions={
-          <>
-            <Link
-              href="/explorer"
-              className="homera-press inline-flex min-h-12 items-center gap-2 rounded-btn homera-cta px-5 text-body-sm font-medium text-white transition-colors"
-            >
-              {SESSION_PAGE.hero.primaryAction}
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-            <Link
-              href="/contact"
-              className="homera-press inline-flex min-h-12 items-center gap-2 rounded-btn border border-border px-5 text-body-sm font-medium text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
-            >
-              {SESSION_PAGE.hero.secondaryAction}
-            </Link>
-          </>
-        }
-      />
-
-      <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-        {/* --- Ce qui marche déjà, et où le trouver --- */}
-        <h2 className="font-serif text-display-sm">{SESSION_PAGE.availableTitle}</h2>
-        <ul className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2">
-          {SESSION_PAGE.available.map((item) => {
-            const Icon = AVAILABLE_ICONS[item.icon];
-            return (
-              <li key={item.id} className="flex flex-col rounded-card border border-border bg-card p-5">
-                <Icon className="h-5 w-5 text-homera-terracotta" aria-hidden="true" />
-                <h3 className="mt-4 font-serif text-display-xs">{item.title}</h3>
-                <p className="mt-2 text-note leading-relaxed text-muted">{item.detail}</p>
-                <Link
-                  href={item.href}
-                  className="homera-underline mt-4 inline-flex min-h-10 items-center gap-2 self-start text-note font-medium homera-accent-ink"
-                >
-                  {item.action}
-                  <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-
-        {/* --- Ce que le compte ajoutera --- */}
-        <h2 className="mt-16 font-serif text-display-sm">{SESSION_PAGE.featuresTitle}</h2>
-        <ul className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {SESSION_PAGE.features.map((feature) => {
-            const Icon = FEATURE_ICONS[feature.icon];
-            return (
-              <li key={feature.id} className="rounded-card border border-border bg-card p-5">
-                <Icon className="h-5 w-5 text-homera-terracotta" aria-hidden="true" />
-                <h3 className="mt-4 font-serif text-display-xs">{feature.title}</h3>
-                <p className="mt-2 text-note leading-relaxed text-muted">{feature.detail}</p>
-              </li>
-            );
-          })}
-        </ul>
-
-        <div className="mt-14 flex flex-col gap-4 rounded-card border border-border bg-card/60 p-6 sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex items-start gap-3 text-body-sm leading-relaxed text-muted">
-            <Bell className="mt-0.5 h-4 w-4 shrink-0 text-homera-terracotta" aria-hidden="true" />
-            {SESSION_PAGE.notice}
-          </p>
-          <Link
-            href="/explorer"
-            className="homera-press inline-flex min-h-11 shrink-0 items-center gap-2 rounded-btn border border-border bg-card px-4 text-note font-medium text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
-          >
-            <UserRound className="h-4 w-4" aria-hidden="true" />
-            {SESSION_PAGE.noticeAction}
-          </Link>
+    <AuthShell
+      crumb={COPY.breadcrumb}
+      eyebrow={COPY.eyebrow}
+      title={COPY.title}
+      intro={COPY.intro}
+      facts={[...COPY.facts]}
+      aside={
+        <div className="space-y-8">
+          <div>
+            <AuthAsideTitle>{COPY.asideTitle}</AuthAsideTitle>
+            <AuthBenefits items={COPY.asidePoints} />
+          </div>
+          <div className="rounded-card border border-border bg-card/60 p-4">
+            <p className="text-note leading-relaxed text-muted">{COPY.asideNote}</p>
+            <div className="mt-3 flex flex-wrap gap-x-6">
+              <AuthLink href={SIGNUP_HREF}>Créer un compte</AuthLink>
+              <Link
+                href={FORGOT_HREF}
+                className="homera-underline inline-flex min-h-10 items-center gap-1.5 text-note font-medium homera-accent-ink"
+              >
+                Mot de passe oublié
+              </Link>
+            </div>
+          </div>
+          <PilotNote />
         </div>
-      </div>
-    </>
+      }
+    >
+      <ConnexionView notice={notice} />
+    </AuthShell>
   );
 }
