@@ -149,63 +149,117 @@ export const CONTACT_PAGE = {
 } as const;
 
 /* ------------------------------------------------------------------
-   /connexion — ce qui existe déjà, et ce que le compte ajoutera
+   /connexion, /inscription, /mot-de-passe-oublie,
+   /reinitialisation, /verification-email
+   ------------------------------------------------------------------
+   La copie des cinq écrans de compte. Elle assume une position claire,
+   répétée partout : phase 4 ouvre réellement les comptes — création,
+   connexion, rôles, confirmation d’adresse, mot de passe oublié — mais
+   aucun serveur ne les reçoit encore. Ce qui est vrai est dit ; le
+   reste est annoncé comme à venir, jamais simulé.
    ------------------------------------------------------------------ */
 
-export const SESSION_PAGE = {
-  breadcrumb: "Se connecter",
-  hero: {
+export const AUTH_PAGE = {
+  connexion: {
+    breadcrumb: "Se connecter",
     eyebrow: "Espace personnel",
-    title: "Votre espace HOMERA arrive",
+    title: "Se connecter à votre espace",
     intro:
-      "La création de compte n’est pas encore ouverte : nous préférons livrer un espace utile plutôt qu’un formulaire vide. En attendant, l’intégralité du catalogue, des fiches, des favoris et des recherches enregistrées se consulte librement, sans inscription.",
-    primaryAction: "Explorer les biens vérifiés",
-    secondaryAction: "Être prévenu de l’ouverture",
+      "Votre compte reprend vos favoris, vos recherches enregistrées et vos dossiers en cours. Le pilote n’ayant pas encore de serveur de comptes, il vit dans ce navigateur — et il reste facultatif pour consulter le catalogue.",
+    facts: [
+      { label: "Compte requis", value: "Aucun" },
+      { label: "Stockage", value: "Navigateur" },
+      { label: "Rôles", value: "3" },
+    ],
+    asideTitle: "Ce qu’ouvre un compte",
+    asidePoints: [
+      "Favoris et recherches enregistrées, réunis sous un même compte",
+      "Rôle déclaré (client, propriétaire, agent) et informations associées",
+      "Confirmation d’adresse et code de secours pour le mot de passe",
+    ],
+    asideNote:
+      "Vous n’avez pas encore de compte ? L’inscription prend une minute et demande des informations différentes selon votre rôle.",
   },
-  availableTitle: "Déjà disponible, sans compte",
-  /** `icon` reste une clé : les pictogrammes appartiennent aux pages. */
-  available: [
-    {
-      id: "favoris",
-      icon: "heart",
-      title: "Vos favoris",
-      detail: "Le cœur sur une carte suffit : votre sélection reste dans ce navigateur, accessible dès maintenant.",
-      href: "/favoris",
-      action: "Voir mes favoris",
-    },
-    {
-      id: "recherches",
-      icon: "search",
-      title: "Recherches enregistrées",
-      detail: "Une recherche filtrée s’enregistre telle quelle, avec son adresse partageable et son nombre de biens.",
-      href: "/favoris",
-      action: "Voir mes recherches",
-    },
-  ],
-  featuresTitle: "Ce que le compte apportera en plus",
-  features: [
-    {
-      id: "alertes",
-      icon: "bell",
-      title: "Synchronisation et alertes",
-      detail: "Retrouver favoris et recherches sur tous vos appareils, et être prévenu des nouveautés.",
-    },
-    {
-      id: "visites",
-      icon: "calendar",
-      title: "Visites et demandes",
-      detail: "Suivre vos demandes de visite et vos dossiers en cours.",
-    },
-    {
-      id: "proprietaire",
-      icon: "key",
-      title: "Espace propriétaire",
-      detail: "Déposer un bien, suivre sa vérification et sa publication.",
-    },
-  ],
-  notice:
-    "Vous cherchez un bien maintenant ? Tout est déjà accessible : filtrez par commune, budget et surface, puis contactez-nous avec la référence du bien.",
-  noticeAction: "Continuer sans compte",
+  inscription: {
+    breadcrumb: "Créer un compte",
+    eyebrow: "Ouvrir un compte",
+    title: "Créer un compte HOMERA",
+    intro:
+      "Trois rôles, trois dossiers : client, propriétaire ou agent. Choisissez le vôtre — les informations demandées s’adaptent à ce que vous venez faire ici, et rien de superflu ne vous sera demandé.",
+    facts: [
+      { label: "Rôles", value: "3" },
+      { label: "Champs", value: "Adaptés" },
+      { label: "Confirmation", value: "Par code" },
+    ],
+    asideTitle: "Ce qu’ouvre un compte",
+    asidePoints: [
+      "Favoris et recherches enregistrées, retrouvés à chaque visite",
+      "Suivi des demandes de visite et des dossiers, référence du bien à l’appui",
+      "Alertes sur vos critères, dès qu’un bien vérifié correspond",
+    ],
+    asideNote:
+      "Un compte n’est jamais nécessaire pour consulter le catalogue : les fiches, les filtres et le contact restent ouverts à tous.",
+  },
+  motDePasseOublie: {
+    breadcrumb: "Mot de passe oublié",
+    eyebrow: "Accès au compte",
+    title: "Mot de passe oublié",
+    intro:
+      "Indiquez l’adresse du compte : HOMERA prépare un lien de réinitialisation et un code de secours, valables trente minutes. Sans serveur d’envoi, ils s’affichent à l’écran — et fonctionnent réellement.",
+    facts: [
+      { label: "Validité", value: "30 minutes" },
+      { label: "Essais", value: "5" },
+      { label: "Envoi d’e-mail", value: "Aucun" },
+    ],
+    asideTitle: "Comment ça marche",
+    asidePoints: [
+      "Le lien et le code ne concernent qu’un seul compte, celui de l’adresse saisie",
+      "Ils expirent au bout de trente minutes et ne servent qu’une fois",
+      "Le mot de passe n’est jamais stocké en clair : l’empreinte est recalculée",
+    ],
+    asideNote:
+      "Adresse inconnue dans ce navigateur ? Le pilote ne partage pas encore les comptes entre appareils : créez le compte ici ou vérifiez l’adresse saisie.",
+  },
+  reinitialisation: {
+    breadcrumb: "Réinitialisation",
+    eyebrow: "Nouveau mot de passe",
+    title: "Choisir un nouveau mot de passe",
+    intro:
+      "Le lien reçu à l’étape précédente ouvre cet écran — un code à six chiffres fait la même chose. La robustesse affichée correspond exactement aux règles appliquées pour accepter le mot de passe.",
+    facts: [
+      { label: "Longueur minimale", value: "10 caractères" },
+      { label: "Validité du lien", value: "30 minutes" },
+      { label: "Usage du lien", value: "Une fois" },
+    ],
+    asideTitle: "Un mot de passe solide",
+    asidePoints: [
+      "Dix caractères minimum, une majuscule, une minuscule et un chiffre",
+      "Ni votre prénom, ni votre nom, ni votre adresse e-mail",
+      "Un caractère spécial et quatorze caractères ou plus le renforcent encore",
+    ],
+    asideNote:
+      "L’ancien mot de passe cesse immédiatement de fonctionner : HOMERA ne conserve qu’une empreinte, jamais le mot de passe lui-même.",
+  },
+  verification: {
+    breadcrumb: "Vérification de l’adresse",
+    eyebrow: "Confirmation d’adresse",
+    title: "Confirmer votre adresse e-mail",
+    intro:
+      "Le code à six chiffres protège votre adresse : quinze minutes de validité, cinq essais au total. Le pilote n’envoyant aucun e-mail, il s’affiche directement sur cette page — et vous pouvez le renvoyer à tout moment.",
+    facts: [
+      { label: "Validité", value: "15 minutes" },
+      { label: "Essais", value: "5" },
+      { label: "Envoi d’e-mail", value: "Aucun" },
+    ],
+    asideTitle: "Pourquoi confirmer",
+    asidePoints: [
+      "L’adresse identifie le compte : elle sert aux alertes et aux échanges",
+      "Une adresse confirmée évite les comptes ouverts par erreur de frappe",
+      "Confirmer n’est pas obligatoire pour explorer le catalogue",
+    ],
+    asideNote:
+      "Vous pouvez changer d’adresse avant de confirmer : un nouveau code est émis, l’ancien cesse d’être valable.",
+  },
 } as const;
 
 /* ------------------------------------------------------------------

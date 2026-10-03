@@ -15,8 +15,8 @@
 - Contrastes calculés des pigments de texte sur les fonds connus (clair / sombre).
 - HTML rendu : unicité des identifiants, résolution des `aria-controls`,
   `aria-labelledby`, `aria-describedby`, ancres et absence d’interactifs imbriqués.
-- **Site public entier** (`npm run audit:home`) : exploration des 90 pages atteignables
-  depuis l’accueil, aucun lien interne cassé, ancres inter-pages résolues
+- **Site public entier** (`npm run audit:home`) : exploration des 105 adresses atteignables
+  depuis l’accueil (catalogue, pages de projet, fiches, et les cinq écrans de compte), aucun lien interne cassé, ancres inter-pages résolues
   (`/services#gestion`, `/a-propos#protocole`…), un seul `h1` par page, images décrites,
   aucun `href="#"`, langue du document, titres et descriptions présents.
 - **Contrat de carte** : le nombre de liens vers une fiche égale le nombre de cartes
@@ -24,6 +24,11 @@
 - Catalogue : filtres par projet et par type réellement restrictifs, `?page=2` servant
   deux écrans sans JavaScript, état vide explicite, page hors bornes servie.
 - 404 : statut HTTP réel, contenu éditorial, sorties de secours présentes.
+- **Comptes (phase 4)** : les trois rôles et leurs champs réellement distincts, la politique
+  de mot de passe (longueur, casse, chiffre, refus d’un mot de passe identitaire), les
+  validations d’inscription des trois rôles, les codes (génération, expiration, cinq essais),
+  la relecture tolérante du stockage, le hachage PBKDF2 (verrouillé, jamais en clair) et le
+  parcours de bout en bout inscription → vérification → mot de passe changé.
 
 ### Phase 2 — à contrôler à la main
 
@@ -93,6 +98,34 @@ ne sont **pas** marquées comme validées par compilation ou par calcul.
 - [ ] Vérifier CLS et LCP dans Lighthouse / DevTools, plutôt que les déduire du build.
 - [ ] Safari iOS : sticky, viewport dynamique, ouverture / fermeture du menu et dialog.
 
+### Phase 4 — les cinq écrans de compte, dans un vrai navigateur
+
+Ce que l’automatisation ne couvre pas (elle teste les règles, pas le rendu) :
+
+- [ ] **Inscription** : choisir Client, puis Propriétaire, puis Agent — les champs changent
+  réellement, l’identité déjà saisie est conservée, le reste est remis à zéro ; l’adresse se
+  met à jour (`?role=`) et le rechargement garde le rôle.
+- [ ] **Saisie guidée** : le curseur de robustesse et la liste des critères réagissent à la
+  frappe ; le bouton « Afficher » montre le mot de passe sans sortir du champ ; un formulaire
+  fautif place le focus sur le premier champ signalé et l’erreur est annoncée.
+- [ ] **Confirmation d’adresse** : le code s’affiche (pilote), un code faux fait décroître le
+  compteur d’essais, un code expiré propose un renvoi immédiat, le changement d’adresse
+  invalide l’ancien code.
+- [ ] **Mot de passe oublié → réinitialisation** : le lien affiché fonctionne, le jeton est
+  refusé une seconde fois après usage, un code saisi à la main produit le même effet, et
+  l’ancien mot de passe ne permet plus de se connecter.
+- [ ] **Session** : « Rester connecté » décoché, la session disparaît à la fermeture de
+  l’onglet ; cochée, elle survit à une fermeture du navigateur puis expire au bout de 30 jours.
+- [ ] **En-tête** : la commande de compte remplace « Se connecter » après connexion, le
+  panneau s’ouvre au clavier (Entrée, Échap, Tab), le badge d’adresse à confirmer est visible
+  dans les deux thèmes, et la déconnexion referme le panneau.
+- [ ] **Stockage refusé** : en navigation privée stricte, l’inscription échoue avec un message
+  explicite plutôt qu’un faux succès.
+- [ ] **Lecteur d’écran** : les trois rôles s’annoncent comme un groupe de boutons radio, le
+  champ de code est utilisable au collage, les messages d’état sont lus une seule fois.
+- [ ] **Mobile** : le sélecteur de rôle et les formulaires restent lisibles et cliquables à
+  360 px, sans zoom involontaire sur les champs.
+
 ## Périmètre métier
 
 Les biens, statistiques et dossier sont une démonstration explicitement signalée :
@@ -100,7 +133,10 @@ chaque page de catalogue rappelle que les biens et visuels du pilote ne sont pas
 commercialisés. Les fiches ne constituent pas des offres de vente réelles.
 
 Depuis la phase 2, il n’existe plus d’ancre sans destination : `/connexion` remplace
-l’ancienne ancre `#login` et annonce honnêtement ce que le compte apportera en plus.
+l’ancienne ancre `#login`. Depuis la phase 4, cet écran sert réellement : les comptes
+s’ouvrent, se connectent, se confirment et se réinitialisent — dans ce navigateur uniquement,
+et chaque écran le dit. Les comptes ne sont ni partagés entre appareils ni envoyés à un
+serveur ; vider les données du navigateur les efface.
 Favoris et recherches enregistrées fonctionnent **sans compte**, dans le navigateur
 uniquement (`homera.visiteur.v1`). Les demandes de services et de visite ouvrent le
 client de messagerie, sans envoi automatique. La vue carte de l’explorateur et

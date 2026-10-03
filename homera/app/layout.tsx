@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { AuthProvider } from "@/components/providers/AuthProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { VisitorProvider } from "@/components/providers/VisitorProvider";
 import "./globals.css"; /* --------------------------------------------------------------- TYPOGRAPHIE HOMERA — 4 rôles, 4 polices (voir app/globals.css) 1. Mot-symbole « HOMERA » → Script MT Bold (police système Windows / Office). Non chargeable : le secours web Cakecafe est déclaré en @font-face dans globals.css. Jamais utilisée ailleurs sur le site. 2. Navigation, boutons, textes → Manrope (variable 200–800) 3. Grands titres → DM Serif Display (400) 4. Accents éditoriaux → Cormorant Garamond Italic (variable 300–700) Les polices 2 à 4 sont auto-hébergées via next/font/local : sous-ensembles latin (accents français inclus) commités dans public/fonts/. Aucun réseau au build, aucun appel externe au navigateur, pas de layout shift. --------------------------------------------------------------- */ // Manrope — police principale : Regular (textes), Medium (menus, boutons),
@@ -44,7 +45,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         {" "}
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {" "}
-          <VisitorProvider>{children}</VisitorProvider>{" "}
+          <AuthProvider>
+            {" "}
+            <VisitorProvider>{children}</VisitorProvider>{" "}
+          </AuthProvider>{" "}
         </ThemeProvider>{" "}
       </body>{" "}
     </html>

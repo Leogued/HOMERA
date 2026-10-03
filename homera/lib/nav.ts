@@ -255,7 +255,26 @@ export function navPanelId(title: string): string {
     .replace(/^-|-$/g, "");
 }
 
+/* ------------------------------------------------------------------
+   LES CINQ ADRESSES DU COMPTE (phase 4)
+   ------------------------------------------------------------------
+   Une seule source pour les en-têtes, les pieds de page et les renvois
+   entre écrans : aucune adresse n’est écrite deux fois.
+   ------------------------------------------------------------------ */
+
 export const AUTH_HREF = "/connexion";
+export const SIGNUP_HREF = "/inscription";
+export const FORGOT_HREF = "/mot-de-passe-oublie";
+export const RESET_HREF = "/reinitialisation";
+export const VERIFY_HREF = "/verification-email";
+
+export const ACCOUNT_LINKS = [
+  { href: AUTH_HREF, label: "Connexion" },
+  { href: SIGNUP_HREF, label: "Inscription" },
+  { href: FORGOT_HREF, label: "Mot de passe oublié" },
+  { href: RESET_HREF, label: "Réinitialisation" },
+  { href: VERIFY_HREF, label: "Vérification de l’adresse" },
+] as const;
 
 /** Sections de /a-propos, réutilisées par le sommaire de la page. */
 export const ABOUT_SECTIONS = [

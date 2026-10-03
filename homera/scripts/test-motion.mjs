@@ -597,3 +597,407 @@ await test('HOMERA : les identifiants de panneaux restent lisibles', () => {
   // Le menu tient la commande annoncée : Explorer → Favoris, rien d’autre.
   assert.deepEqual(nav.PUBLIC_NAV.map((entry) => entry.title), ['Explorer', 'Acheter', 'Louer', 'Séjour', 'Services', 'Favoris']);
 });
+
+/* ==================================================================
+   PHASE 4 — AUTHENTIFICATION
+   ------------------------------------------------------------------
+   Les mêmes règles que celles servies au navigateur : rôles, champs
+   adaptés, politique de mot de passe, codes, jetons, stockage.
+   Les modules de compte sont transpirés vers lib/auth.ts, comme les
+   autres : aucun test ne dépend de React ni d’un DOM.
+   ================================================================== */
+
+const authUrl = await moduleUrl('lib/auth.ts');
+const auth = await import(authUrl);
+const accountsUrl = await moduleUrl('lib/accounts.ts', { '@/lib/auth': authUrl });
+const accounts = await import(accountsUrl);
+
+await test('HOMERA : trois rôles, trois jeux de champs réellement différents', () => {
+  assert.deepEqual([...auth.ROLE_ORDER], ['client', 'proprietaire', 'agent']);
+  assert.deepEqual(
+    auth.ROLES.map((role) => role.label),
+    ['Client', 'Propriétaire', 'Agent'],
+  );
+
+  const names = (role) => auth.roleFields(role).map((field) => field.name);
+  const client = names('client');
+  const proprietaire = names('proprietaire');
+  const agent = names('agent');
+
+  // Le socle commun existe partout.
+  for (const field of ['prenom', 'nom', 'email', 'telephone', 'zone', 'motDePasse', 'confirmation', 'conditions']) {
+    assert.ok(client.includes(field), `client sans ${field}`);
+    assert.ok(proprietaire.includes(field), `propriétaire sans ${field}`);
+    assert.ok(agent.includes(field), `agent sans ${field}`);
+  }
+
+  // Ce qui n’appartient qu’à un rôle ne fuit pas chez les autres.
+  assert.ok(client.includes('projet') && client.includes('budget'));
+  assert.ok(proprietaire.includes('portefeuille') && proprietaire.includes('usage'));
+  assert.ok(agent.includes('structure') && agent.includes('identification'));
+  for (const role of auth.ROLE_ORDER) {
+    const others = auth.ROLE_ORDER.filter((entry) => entry !== role);
+    const peculiar = auth.profileFields(role).map((field) => field.name);
+    for (const other of others) {
+      const otherFields = auth.profileFields(other).map((field) => field.name);
+      for (const name of peculiar) {
+        assert.ok(otherFields.includes(name) || !otherFields.includes(name), 'lecture stable');
+      }
+      if (role === 'client') assert.ok(!otherFields.includes('budget'), `budget chez ${other}`);
+      if (role === 'agent') assert.ok(!otherFields.includes('structure'), `structure chez ${other}`);
+    }
+  }
+
+  // Chaque champ de profil porte un libellé, et les listes déroulantes des options.
+  for (const role of auth.ROLE_ORDER) {
+    assert.ok(auth.profileFields(role).length >= 3, `profil trop maigre : ${role}`);
+    for (const field of auth.roleFields(role)) {
+      assert.ok(field.label.trim().length >= 2, `libellé manquant : ${role}.${field.name}`);
+      if (field.kind === 'select') assert.ok((field.options ?? []).length >= 2, `options manquantes : ${field.name}`);
+    }
+  }
+
+  // Un rôle ne s’accepte pas depuis n’importe quelle valeur d’URL.
+  assert.equal(auth.roleFromParam('proprietaire'), 'proprietaire');
+  assert.equal(auth.roleFromParam('administrateur'), null);
+  assert.equal(auth.roleFromParam(undefined), null);
+});
+
+await test('HOMERA : la politique de mot de passe est celle qui est annoncée', () => {
+  assert.equal(auth.PASSWORD_MIN_LENGTH, 10);
+  assert.ok(!auth.passwordCriteria('court1A').find((entry) => entry.id === 'longueur').met);
+  assert.ok(auth.passwordCriteria('Fidjrosse-2026').every((entry) => !entry.required || entry.met));
+
+  // Un mot de passe qui reprend le prénom, le nom ou l’adresse est refusé.
+  const context = { prenom: 'Awa', nom: 'Dossou', email: 'awa.dossou@exemple.com' };
+  const weak = auth.passwordCriteria('Awa-Dossou-2026', context).find((entry) => entry.id === 'personnel');
+  assert.equal(weak.met, false, 'identité reprise dans le mot de passe');
+
+  const strength = (value) => auth.passwordStrength(value, context);
+  assert.equal(strength('').level, 0);
+  assert.equal(strength('azerty').tone, 'error');
+  assert.equal(strength('Fidjrosse-2026').tone, 'success');
+  assert.ok(strength('Fidjrosse-2026').score > strength('Fidjrosse1').score, 'un mot plus long pèse plus lourd');
+  assert.ok(auth.passwordProblems('azerty').length >= 3, 'trop peu de manques signalés');
+});
+
+await test('HOMERA : l’inscription refuse, accepte, puis compte les rôles', () => {
+  const fill = (role, extra = {}) => ({
+    ...auth.emptyValues(role),
+    prenom: 'Awa',
+    nom: 'Dossou',
+    email: 'awa.dossou@exemple.com',
+    telephone: '+229 01 97 00 00 00',
+    zone: 'Cotonou',
+    motDePasse: 'Fidjrosse-2026',
+    confirmation: 'Fidjrosse-2026',
+    conditions: true,
+    mandat: true,
+    ...extra,
+  });
+
+  // Champs vides : tout ce qui est obligatoire est signalé, sans exception.
+  const empty = auth.validateSignUp('client', auth.emptyValues('client'));
+  assert.equal(empty.ok, false);
+  for (const name of ['prenom', 'nom', 'email', 'telephone', 'zone', 'motDePasse', 'conditions']) {
+    assert.ok(empty.fields[name], `champ obligatoire non signalé : ${name}`);
+  }
+
+  // Adresses et numéros douteux.
+  assert.ok(auth.validateSignUp('client', fill('client', { email: 'awa@@exemple' })).fields.email);
+  assert.ok(auth.validateSignUp('client', fill('client', { telephone: '12345' })).fields.telephone);
+  assert.ok(!auth.validateSignUp('client', fill('client', { telephone: '01 97 00 00 00' })).fields.telephone);
+  assert.ok(!auth.validateSignUp('client', fill('client', { telephone: '+229 01 97 00 00 00' })).fields.telephone);
+
+  // Mots de passe : faible, non confirmé, identitaire.
+  assert.ok(auth.validateSignUp('client', fill('client', { motDePasse: 'azerty', confirmation: 'azerty' })).fields.motDePasse);
+  assert.ok(auth.validateSignUp('client', fill('client', { confirmation: 'Autre-Chose-2026' })).fields.confirmation);
+  assert.ok(
+    auth.validateSignUp('client', fill('client', { motDePasse: 'AwaDossou-2026', confirmation: 'AwaDossou-2026' }))
+      .fields.motDePasse,
+    'mot de passe reprenant l’identité accepté',
+  );
+
+  // Chaque rôle, complété avec ses propres champs, passe.
+  const profiles = {
+    client: { projet: 'louer', bienRecherche: 'appartement', budget: 'location-500' },
+    proprietaire: {
+      portefeuille: '2-5',
+      natureBiens: 'villa',
+      zoneBiens: 'Cotonou',
+      usage: 'location',
+      situation: 'diaspora',
+    },
+    agent: {
+      structure: 'Agence Fidjrossè',
+      identification: 'RB/COT/24 B 1234',
+      zoneExercice: 'Cotonou',
+      experience: '3-10',
+    },
+  };
+  for (const role of auth.ROLE_ORDER) {
+    const validated = auth.validateSignUp(role, fill(role, profiles[role]));
+    assert.equal(validated.ok, true, `rôle refusé à tort : ${role} — ${JSON.stringify(validated.fields)}`);
+    // Un consentement obligatoire retiré bloque bien.
+    const withoutConsent = auth.validateSignUp(role, fill(role, { ...profiles[role], conditions: false }));
+    assert.equal(withoutConsent.ok, false, `conditions non exigées : ${role}`);
+    if (role === 'client') {
+      assert.equal(auth.validateSignUp(role, fill(role, profiles[role])).ok, true);
+      assert.ok(!auth.validateSignUp(role, fill(role, profiles[role])).fields.alertes, 'alerte facultative exigée');
+    } else {
+      const noMandate = auth.validateSignUp(role, fill(role, { ...profiles[role], mandat: false }));
+      assert.ok(noMandate.fields.mandat, `mandat non exigé : ${role}`);
+    }
+  }
+
+  // IFU et RCCM : contrôlés seulement s’ils sont renseignés.
+  assert.ok(!auth.validateSignUp('proprietaire', fill('proprietaire', { ...profiles.proprietaire, ifu: '' })).fields.ifu);
+  assert.ok(auth.validateSignUp('proprietaire', fill('proprietaire', { ...profiles.proprietaire, ifu: '123' })).fields.ifu);
+  assert.ok(auth.validateSignUp('agent', fill('agent', { ...profiles.agent, identification: 'abc' })).fields.identification);
+  assert.ok(!auth.validateSignUp('agent', fill('agent', { ...profiles.agent, cartePro: '' })).fields.cartePro);
+});
+
+await test('HOMERA : connexion, masquage et robustesse des messages', () => {
+  assert.equal(auth.validateSignIn({ email: '', motDePasse: '' }).ok, false);
+  assert.ok(auth.validateSignIn({ email: 'pas-une-adresse', motDePasse: 'Fidjrosse-2026' }).fields.email);
+  assert.equal(auth.validateSignIn({ email: 'awa@exemple.com', motDePasse: 'Fidjrosse-2026' }).ok, true);
+  assert.ok(auth.validateEmailOnly('') && auth.validateEmailOnly('nawak'));
+  assert.equal(auth.validateEmailOnly('awa@exemple.com'), undefined);
+
+  assert.equal(auth.maskEmail('awa.dossou@exemple.com'), 'a•••••••••@exemple.com');
+  assert.ok(!auth.maskEmail('awa@exemple.com').includes('dossou'));
+  const masked = auth.maskPhone('+229 01 97 00 00 00');
+  assert.ok(masked.startsWith('+229'), masked);
+  assert.ok(masked.endsWith('00'), masked);
+  assert.ok(!masked.includes('97'), masked);
+
+  assert.equal(auth.fullName('', '', 'Votre compte'), 'Votre compte');
+  assert.equal(auth.initials('Awa', 'Dossou'), 'AD');
+  assert.equal(auth.initials('', ''), 'H');
+
+  // Fiche du compte : les valeurs techniques deviennent des libellés.
+  const lines = auth.describeProfile('agent', { structure: 'Agence Fidjrossè', experience: '3-10' });
+  assert.deepEqual(
+    lines.map((line) => line.label),
+    ['Structure ou agence', 'Expérience'],
+  );
+  assert.equal(lines.find((line) => line.label === 'Expérience').value, '3 à 10 ans');
+});
+
+await test('HOMERA : codes, jetons et échéances', () => {
+  // Générateur déterministe : les tests n’attendent pas la chance.
+  const sequence = [0.000001, 0.5, 0.999999];
+  let index = 0;
+  const random = () => sequence[index++ % sequence.length];
+
+  assert.equal(auth.generateCode(() => 0), '000000');
+  assert.equal(auth.generateCode(() => 0.999999).length, 6);
+  assert.match(auth.generateCode(random), /^\d{6}$/);
+  assert.equal(auth.generateToken(() => 0).length, 32);
+  assert.match(auth.generateToken(random), /^[a-f0-9]{32}$/);
+
+  assert.equal(auth.isVerificationCode('123456'), true);
+  assert.equal(auth.isVerificationCode('12345'), false);
+  assert.equal(auth.isVerificationCode('12a456'), false);
+  assert.ok(auth.validateCode('123456') === undefined);
+  assert.ok(auth.validateCode('12') !== undefined);
+
+  const now = 1_700_000_000_000;
+  const fresh = { code: '123456', expiresAt: now + 1000, attempts: 0 };
+  assert.equal(auth.codeState(fresh, now), 'ok');
+  assert.equal(auth.codeState({ ...fresh, expiresAt: now - 1 }, now), 'expired');
+  assert.equal(auth.codeState({ ...fresh, attempts: auth.MAX_CODE_ATTEMPTS }, now), 'locked');
+  assert.equal(auth.codeState(null, now), 'absent');
+  assert.equal(auth.attemptsLeft({ ...fresh, attempts: 4 }), 1);
+  assert.equal(auth.attemptsLeft(null), 0);
+  assert.equal(auth.durationLabel(60_000), '1 minute');
+  assert.equal(auth.durationLabel(180_000), '3 minutes');
+  assert.equal(auth.durationLabel(1_000), '1 seconde');
+});
+
+await test('HOMERA : le stockage des comptes ne fait confiance à rien', () => {
+  assert.deepEqual(accounts.parseAccounts(null), []);
+  assert.deepEqual(accounts.parseAccounts('nawak'), []);
+  assert.deepEqual(accounts.parseAccounts([1, 'deux', null, { id: '' }]), []);
+
+  const valid = {
+    id: 'HOM-CLI-00001',
+    role: 'client',
+    prenom: 'Awa',
+    nom: 'Dossou',
+    email: 'Awa.Dossou@Exemple.com',
+    telephone: '+229 01 97 00 00 00',
+    profile: { projet: 'louer', budget: 'location-500', sale: 12 },
+    password: { kdf: 'webcrypto-pbkdf2', salt: 'a'.repeat(32), hash: 'b'.repeat(64), iterations: 150000 },
+    emailVerified: false,
+    verification: { code: '123456', expiresAt: 1, attempts: 2, createdAt: 0 },
+    reset: null,
+    notify: true,
+    consentAt: '2026-01-01',
+    createdAt: '2026-01-01',
+    updatedAt: '2026-01-01',
+  };
+  const parsed = accounts.parseAccounts([valid, { ...valid, id: 'x', password: { salt: 'court' } }]);
+  assert.equal(parsed.length, 1, 'un compte sans empreinte valable est écarté');
+  assert.equal(parsed[0].emailKey, 'awa.dossou@exemple.com', 'adresse normalisée');
+  assert.deepEqual(parsed[0].profile, { projet: 'louer', budget: 'location-500' }, 'profil nettoyé');
+  assert.equal(parsed[0].verification.attempts, 2);
+  assert.equal(accounts.parseAccounts([{ ...valid, verification: { code: 'abc' } }])[0].verification, null);
+
+  assert.equal(accounts.parseSession(null), null);
+  assert.equal(accounts.parseSession({ accountId: '' }), null);
+  assert.ok(accounts.parseSession({ accountId: 'HOM-CLI-00001', startedAt: 10 }));
+
+  const session = { accountId: 'HOM-CLI-00001', startedAt: Date.now(), lastSeenAt: Date.now(), remember: false };
+  assert.equal(accounts.sessionIsValid(session, Date.now()), true);
+  assert.equal(
+    accounts.sessionIsValid({ ...session, remember: true, startedAt: Date.now() - accounts.SESSION_TTL_MS - 1 }, Date.now()),
+    false,
+    'une session « rester connecté » expire bien',
+  );
+  assert.equal(accounts.sessionIsValid(null, Date.now()), false);
+
+  // Vue publique : aucune empreinte, aucun code ne peut fuir par l’interface.
+  const publicView = accounts.publicAccount(parsed[0]);
+  assert.equal(publicView.password, undefined);
+  assert.equal(publicView.verification, undefined);
+  assert.equal(publicView.reset, undefined);
+  assert.equal(publicView.email, 'Awa.Dossou@Exemple.com');
+});
+
+await test('HOMERA : mot de passe haché, vérifié, jamais conservé en clair', async () => {
+  const password = 'Fidjrosse-2026';
+  const fast = { iterations: 1000 };
+  const record = await accounts.hashPassword(password, fast);
+
+  assert.equal(record.kdf, 'webcrypto-pbkdf2', 'contexte sécurisé attendu sous Node');
+  assert.equal(record.iterations, 1000);
+  assert.equal(record.hash.length, 64);
+  assert.ok(!record.hash.includes(password), 'mot de passe en clair dans l’empreinte');
+  assert.notEqual(record.salt, (await accounts.hashPassword(password, fast)).salt, 'le sel change à chaque compte');
+
+  assert.equal(await accounts.verifyPassword(record, password), true);
+  assert.equal(await accounts.verifyPassword(record, `${password} `), false);
+  assert.equal(await accounts.verifyPassword(record, 'autre-mot-de-passe'), false);
+  assert.equal(await accounts.verifyPassword({ ...record, hash: record.hash.replace(/.$/, '0') }, password), false);
+
+  // Comparaison à temps constant : longueur différente, contenu différent.
+  assert.equal(accounts.safeEqual('abcdef', 'abcdef'), true);
+  assert.equal(accounts.safeEqual('abcdef', 'abcdeg'), false);
+  assert.equal(accounts.safeEqual('abc', 'abcd'), false);
+
+  // Identifiants de compte : lisibles, uniques, préfixés par le rôle.
+  const ids = new Set();
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const id = accounts.accountId('proprietaire', Math.random, [...ids]);
+    assert.match(id, /^HOM-PRO-[0-9A-Z]{5}$/);
+    assert.ok(!ids.has(id), 'identifiant dupliqué');
+    ids.add(id);
+  }
+});
+
+await test('HOMERA : le parcours complet tient debout, de bout en bout', async () => {
+  // Inscription → code → vérification → connexion → mot de passe oublié →
+  // réinitialisation. Les fonctions pures suffisent : aucun DOM requis.
+  const values = {
+    ...auth.emptyValues('proprietaire'),
+    prenom: 'Awa',
+    nom: 'Dossou',
+    email: 'awa.dossou@exemple.com',
+    telephone: '+229 01 97 00 00 00',
+    zone: 'Cotonou',
+    portefeuille: '2-5',
+    natureBiens: 'villa',
+    zoneBiens: 'Cotonou',
+    usage: 'location',
+    situation: 'diaspora',
+    motDePasse: 'Fidjrosse-2026',
+    confirmation: 'Fidjrosse-2026',
+    conditions: true,
+    mandat: true,
+    alertes: true,
+  };
+  assert.equal(auth.validateSignUp('proprietaire', values).ok, true);
+
+  const now = 1_700_000_000_000;
+  const account = await accounts.createAccountRecord({ role: 'proprietaire', values, now, random: () => 0.424242 });
+  assert.match(account.id, /^HOM-PRO-/);
+  assert.equal(account.emailKey, 'awa.dossou@exemple.com');
+  assert.equal(account.emailVerified, false);
+  assert.equal(account.notify, true, 'consentement aux alertes conservé');
+  assert.deepEqual(account.profile, {
+    portefeuille: '2-5',
+    natureBiens: 'villa',
+    zoneBiens: 'Cotonou',
+    usage: 'location',
+    situation: 'diaspora',
+  });
+  assert.equal(account.profile.motDePasse, undefined, 'le mot de passe ne prend pas la place d’un champ de profil');
+  assert.equal(await accounts.verifyPassword(account.password, 'Fidjrosse-2026'), true);
+
+  // Le code émis expire : au-delà de la fenêtre, il n’est plus utilisable.
+  const verification = account.verification;
+  assert.equal(auth.codeState(verification, now + 1000), 'ok');
+  assert.equal(auth.codeState(verification, verification.expiresAt + 1), 'expired');
+  assert.equal(auth.VERIFICATION_TTL_MINUTES, 15);
+  assert.equal(auth.RESET_TTL_MINUTES, 30);
+
+  // Cinq essais, pas six : le compteur est réel.
+  let attempts = 0;
+  while (auth.codeState({ ...verification, attempts }, now + 1000) === 'ok') attempts++;
+  assert.equal(attempts, auth.MAX_CODE_ATTEMPTS);
+
+  // Vérification réussie → compte complet.
+  const verified = accounts.publicAccount({ ...account, emailVerified: true, verification: null });
+  assert.equal(verified.emailVerified, true);
+
+  // Mot de passe oublié : le jeton et le code sont émis ensemble, et expirent ensemble.
+  const reset = accounts.issueReset(now, () => 0.123456);
+  assert.match(reset.token, /^[a-f0-9]{32}$/);
+  assert.match(reset.code, /^\d{6}$/);
+  assert.equal(auth.codeState(reset, now + 60_000), 'ok');
+  assert.equal(auth.codeState(reset, reset.expiresAt + 1), 'expired');
+
+  // Nouveau mot de passe : refusé s’il est faible, accepté sinon, et l’ancien ne passe plus.
+  assert.equal(auth.validateNewPassword('azerty', 'azerty', { email: account.email }).ok, false);
+  assert.equal(auth.validateNewPassword('Fidjrosse-2026', 'Fidjrosse-2027', {}).fields.confirmation !== undefined, true);
+  const changed = await accounts.hashPassword('Cadjèhoun-2027', { iterations: 500 });
+  assert.equal(await accounts.verifyPassword(changed, 'Cadjèhoun-2027'), true);
+  assert.equal(await accounts.verifyPassword(changed, 'Fidjrosse-2026'), false, 'l’ancien mot de passe ne fonctionne plus');
+
+  // Un compte abîmé est écarté à la relecture, sans faire tomber la session des autres.
+  const store = accounts.parseAccounts([
+    account,
+    accounts.publicAccount(account),
+    { ...account, id: 'HOM-PRO-ABIME', password: { kdf: 'webcrypto-pbkdf2', salt: 'x', hash: 'y' } },
+  ]);
+  assert.equal(store.length, 1, 'seul un compte complet survit à la relecture');
+  assert.equal(accounts.findAccountByEmail(store, 'AWA.DOSSOU@EXEMPLE.COM').id, account.id);
+  assert.equal(accounts.findAccountByEmail(store, 'personne@exemple.com'), undefined);
+  assert.equal(accounts.replaceAccount(store, { ...account, emailVerified: true })[0].emailVerified, true);
+});
+
+await test('HOMERA : les cinq écrans de compte existent, sont liés et non indexables', async () => {
+  // La copy des cinq écrans vient de lib/pages.ts : elle doit rester complète.
+  const pagesUrl = await moduleUrl('lib/pages.ts');
+  const pages = await import(pagesUrl);
+  const copy = pages.AUTH_PAGE;
+  for (const key of ['connexion', 'inscription', 'motDePasseOublie', 'reinitialisation', 'verification']) {
+    const entry = copy[key];
+    assert.ok(entry, `copie manquante : ${key}`);
+    assert.ok(entry.title.length > 10 && entry.intro.length > 40, `copie trop courte : ${key}`);
+    assert.ok(entry.facts.length === 3, `repères manquants : ${key}`);
+    assert.ok(entry.asidePoints.length >= 3, `points latéraux manquants : ${key}`);
+  }
+
+  // Chaque adresse déclarée a sa page réelle, et aucune ne s’indexe.
+  for (const entry of nav.ACCOUNT_LINKS) {
+    const file = new URL(`../app/(site)${entry.href}/page.tsx`, import.meta.url);
+    const stats = await stat(file);
+    assert.ok(stats.isFile(), `page absente : ${entry.href}`);
+    const source = await readFile(file, 'utf8');
+    assert.ok(source.includes('robots: { index: false'), `${entry.href} : page indexable`);
+    assert.ok(source.includes('metadata'), `${entry.href} : métadonnées absentes`);
+  }
+  assert.equal(new Set(nav.ACCOUNT_LINKS.map((entry) => entry.href)).size, nav.ACCOUNT_LINKS.length);
+});

@@ -70,6 +70,9 @@ et barre de progression de lecture (desktop).
 | Moteur, timeline et préférences | `lib/motion.ts` + `lib/motion-frame.ts` |
 | Courbes / géométrie et tests | `lib/motion-math.ts` + `scripts/test-motion.mjs` |
 | Recherche partagée (hero ↔ sélection) | `components/providers/SearchProvider.tsx` |
+| Règles de compte et champs par rôle (phase 4) | `lib/auth.ts` |
+| Comptes, hachage du mot de passe, session | `lib/accounts.ts` |
+| Copy des cinq écrans de compte | `lib/pages.ts` → `AUTH_PAGE` |
 | Mouvement & matières (CSS) | `app/globals.css` (bloc *SYSTÈME DE MOUVEMENT*) |
 
 ### Chiffres de démonstration
@@ -130,7 +133,8 @@ renvoie vers une ancre morte.
 | `/biens/<identifiant>` | Fiche complète : faits, équipements, contrôle daté, biens proches | 36 pages générées |
 | `/favoris` | Favoris et recherches enregistrées du visiteur | statique, lecture locale |
 | `/services`, `/a-propos`, `/contact` | Écosystème, méthode, prise de contact | statique |
-| `/connexion`, `/legal` | Espace personnel annoncé, mentions et confidentialité | statique |
+| `/connexion`, `/inscription`, `/mot-de-passe-oublie`, `/reinitialisation`, `/verification-email` | Comptes : connexion, rôles, mot de passe, confirmation d’adresse | statique + paramètres d’URL |
+| `/legal` | Mentions, confidentialité et conditions | statique |
 | *(toute autre adresse)* | Page introuvable éditoriale, avec sorties réelles | 404 serveur |
 
 **Zones couvertes.** Quatre communes, décision produit validée : **Cotonou** (21 biens),
@@ -160,10 +164,47 @@ sans survol. Aucun badge d’ancienneté.
 `?page=2` en affiche deux : la recherche reste utilisable, seule la mise à jour
 progressive de l’adresse et les filtres instantanés nécessitent le client.
 
+---
+
+## Le compte (phase 4 — les comptes s’ouvrent, dans le navigateur)
+
+Phase 4 ouvre réellement les comptes. L’API n’existant pas encore, ils vivent **dans le
+navigateur**, comme les favoris de la phase 2 — et chaque écran le dit au lieu de le laisser
+deviner. Rien n’est simulé pour autant : le mot de passe est haché (PBKDF2-SHA-256,
+150 000 itérations, sel par compte), les codes expirent, les essais sont comptés, la session
+se ferme.
+
+| Adresse | Contenu |
+| --- | --- |
+| `/connexion` | Formulaire de connexion, ou fiche du compte connecté (rôle, adresse, profil, état de vérification) |
+| `/inscription` | Choix du rôle — **Client**, **Propriétaire**, **Agent** — puis champs adaptés à ce rôle, en trois blocs : identité, profil, sécurité et accords |
+| `/mot-de-passe-oublie` | Émission d’un lien (jeton 32 caractères) et d’un code de secours, valables 30 minutes |
+| `/reinitialisation` | Nouveau mot de passe par lien (`?jeton=`) ou par code, lien consommé après usage |
+| `/verification-email` | Code à six chiffres : 15 minutes, 5 essais, renvoi et changement d’adresse |
+
+**L’inscription s’adapte au rôle.** Un client déclare son projet et son budget ; un
+propriétaire, son portefeuille, la nature et la commune de ses biens, sa situation (résident
+ou diaspora) et certifie être propriétaire ou mandataire ; un agent déclare sa structure, son
+RCCM ou IFU, sa zone d’exercice et certifie détenir un mandat écrit par bien. Les champs
+communs (identité, contact, mot de passe, conditions) restent identiques pour tous.
+
+**Deux limites assumées, écrites sur les écrans :** aucun e-mail n’est envoyé — le code
+s’affiche donc à l’écran (`PilotCode`) ; aucun serveur ne reçoit les comptes — ils ne sont
+donc pas partagés entre appareils, et vider le navigateur les efface.
+
+**Fichiers** : `lib/auth.ts` (règles pures : rôles, champs, validations, politique de mot de
+passe, codes), `lib/accounts.ts` (stockage, hachage, session, relecture tolérante),
+`components/providers/AuthProvider.tsx` (huit actions), `components/auth/*` (champs, rôle,
+codes, messages, commande de compte de l’en-tête).
+
+Détail complet, matrice des champs, limites et point de couture pour l’API :
+**[docs/AUTH-HOMERA.md](docs/AUTH-HOMERA.md)**.
+
 ## Vérification
 
 ```bash
-npm test                  # ordonnanceur, inertie, géométrie, filtres, médias, contrastes
+npm test                  # 45 tests : ordonnanceur, inertie, géométrie, filtres, médias,
+                          # contrastes, comptes (rôles, mot de passe, codes, stockage)
 npx tsc --noEmit
 npm run lint
 npm run build

@@ -100,7 +100,10 @@ if (fromFile) {
    MODE HTTP — exploration réelle du site public
    ------------------------------------------------------------------ */
 const START = '/';
-const MAX_PAGES = 90;
+// Le site compte désormais plus de cent adresses distinctes : les fiches de bien,
+// les pages de catégorie, et un lien de contact par bien. La borne sert
+// uniquement à empêcher une exploration sans fin — pas à échantillonner.
+const MAX_PAGES = 140;
 const pages = new Map();
 const queue = [START];
 const failures = [];
@@ -158,7 +161,11 @@ const EXPECTED = {
   '/services': ['Sommaire des services', 'Fil d’Ariane', 'gestion'],
   '/a-propos': ['Sommaire de la page', 'protocole'],
   '/contact': ['Fil d’Ariane'],
-  '/connexion': ['sans compte', 'Fil d’Ariane'],
+  '/connexion': ['Espace personnel', 'Se connecter', 'Fil d’Ariane', 'navigateur'],
+  '/inscription': ['Créer un compte HOMERA', 'Client', 'Propriétaire', 'Agent', 'Fil d’Ariane'],
+  '/mot-de-passe-oublie': ['Mot de passe oublié', 'trente minutes', 'Fil d’Ariane'],
+  '/reinitialisation': ['Réinitialiser le mot de passe', 'Aucun lien dans l’adresse', 'Fil d’Ariane'],
+  '/verification-email': ['Confirmer votre adresse e-mail', 'six chiffres', 'Fil d’Ariane'],
   '/legal': ['Mentions légales', 'confidentialité'],
 };
 for (const [path, needles] of Object.entries(EXPECTED)) {
