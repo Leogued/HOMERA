@@ -1,4 +1,10 @@
-import type { Property, PropertyIntent, PropertyType } from "@/lib/content";
+import {
+  FEATURE_LABELS,
+  LAND_TITLE_LABELS,
+  type Property,
+  type PropertyIntent,
+  type PropertyType,
+} from "@/lib/content";
 
 /* ==================================================================
    HOMERA — LECTURE DES DONNÉES
@@ -16,6 +22,9 @@ export function formatNumber(value: number): string {
     .replace(/\u00A0/g, "\u202F")
     .replace(/\u202F/g, "\u202F");
 }
+
+/** Dictionnaires d’affichage : réexportés ici pour que les pages n’aient qu’une source. */
+export { FEATURE_LABELS, LAND_TITLE_LABELS };
 
 export const INTENT_LABELS: Record<PropertyIntent, string> = {
   acheter: "À vendre",
@@ -41,7 +50,7 @@ function normalize(value: string): string {
 }
 
 /** Les choix de « Type de bien » du module de recherche et le modèle interne diffèrent : on les relie ici. */
-const SEARCH_TYPE_TO_PROPERTY_TYPE: Record<string, PropertyType[]> = {
+export const SEARCH_TYPE_TO_PROPERTY_TYPE: Record<string, PropertyType[]> = {
   appartement: ["appartement"],
   studio: ["studio"],
   villa: ["villa"],
@@ -92,6 +101,38 @@ export function matchesCriteria(property: Property, criteria: SearchCriteria): b
   }
 
   return true;
+}
+
+/** « 280 m² » — surface d’un bien, chiffres tabulaires à l’affichage. */
+export function formatSurface(value: number): string {
+  return `${formatNumber(value)} m²`;
+}
+
+/** Prix complet d’une fiche : « 450 000 FCFA » + « / mois » quand le bien est périodique. */
+export function formatPropertyPrice(property: Pick<Property, "price" | "pricePeriod">): string {
+  return `${formatFCFA(property.price)}${property.pricePeriod ? ` ${property.pricePeriod}` : ""}`;
+}
+
+/** Nombre de jours entre deux dates ISO (AAAA-MM-JJ). */
+export function daysBetween(from: string, to: string): number {
+  const start = Date.parse(`${from}T00:00:00Z`);
+  const end = Date.parse(`${to}T00:00:00Z`);
+  if (Number.isNaN(start) || Number.isNaN(end)) return 0;
+  return Math.round((end - start) / 86_400_000);
+}
+
+/** Ancienneté lisible : « aujourd’hui », « hier », « il y a 5 jours », « il y a 2 mois ». */
+export function recencyLabel(iso: string, reference: string): string {
+  const days = daysBetween(iso, reference);
+  if (days <= 0) return "aujourd’hui";
+  if (days === 1) return "hier";
+  if (days < 7) return `il y a ${days} jours`;
+  if (days < 31) {
+    const weeks = Math.floor(days / 7);
+    return `il y a ${weeks} semaine${weeks > 1 ? "s" : ""}`;
+  }
+  const months = Math.floor(days / 30);
+  return `il y a ${months} mois`;
 }
 
 /** Compteur lisible : « 3 biens », « 1 bien », « aucun bien ». */

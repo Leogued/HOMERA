@@ -19,7 +19,7 @@
  * optimisés le sont, afin de garder le dépôt léger.
  */
 
-import { mkdir, writeFile, stat } from "node:fs/promises";
+import { mkdir, readFile, writeFile, stat } from "node:fs/promises";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { createRequire } from "node:module";
@@ -60,6 +60,21 @@ const RECIPES = [
 
   // Bandeau final — cinématique (21:9)
   { key: "cta-night", width: 1920, height: 823, quality: 74 },
+
+  // Catalogue public — visuels de biens supplémentaires (16:10)
+  // (phase 2 : la grille de résultats montre plusieurs biens à la fois,
+  // quatre visuels ne suffisaient plus à distinguer les typologies)
+  { key: "prop-villa-piscine", width: 1440, height: 900, quality: 74 },
+  { key: "prop-villa-cour", width: 1440, height: 900, quality: 74 },
+  { key: "prop-appartement-sejour", width: 1440, height: 900, quality: 74 },
+  { key: "prop-studio-meuble", width: 1440, height: 900, quality: 74 },
+  { key: "prop-local-commerce", width: 1440, height: 900, quality: 74 },
+  { key: "prop-terrain-borne", width: 1440, height: 900, quality: 74 },
+  { key: "prop-immeuble-bureaux", width: 1440, height: 900, quality: 74 },
+  { key: "prop-duplex-terrasse", width: 1440, height: 900, quality: 74 },
+
+  // Pages publiques — bandeau éditorial (21:9)
+  { key: "page-cotonou", width: 1920, height: 823, quality: 74 },
 ];
 
 async function findSource(key) {
@@ -70,18 +85,38 @@ async function findSource(key) {
   return null;
 }
 
+/**
+ * Manifeste déjà écrit.
+ * ------------------------------------------------------------------
+ * Les sources pleine résolution ne sont pas versionnées : relancer le
+ * pipeline sans elles ne doit pas amputer le site de ses visuels. Les
+ * entrées dont la source est absente sont donc REPRISES telles quelles,
+ * et seules celles qui viennent d'être produites sont réécrites.
+ */
+async function readPreviousManifest() {
+  try {
+    const text = await readFile(MANIFEST, "utf8");
+    const match = /export const MEDIA: Record<string, MediaAsset> = (\{[\s\S]*\}) as const;/.exec(text);
+    return match ? JSON.parse(match[1]) : {};
+  } catch {
+    return {};
+  }
+}
+
 async function main() {
   await mkdir(OUT_DIR, { recursive: true });
   await mkdir(path.dirname(MANIFEST), { recursive: true });
 
   /** @type {Record<string, {src:string,width:number,height:number,blurDataURL:string}>} */
-  const manifest = {};
+  const manifest = await readPreviousManifest();
   const skipped = [];
+  const missing = [];
 
   for (const recipe of RECIPES) {
     const source = await findSource(recipe.key);
     if (!source) {
-      skipped.push(recipe.key);
+      // Source absente : l'entrée existante (et son fichier) reste en place.
+      (manifest[recipe.key] ? skipped : missing).push(recipe.key);
       continue;
     }
 
@@ -138,7 +173,8 @@ export type MediaKey = keyof typeof MEDIA;
 
   await writeFile(MANIFEST, file);
   console.log(`\n→ ${Object.keys(manifest).length} visuels · manifeste écrit dans lib/media.generated.ts`);
-  if (skipped.length) console.log(`… sources absentes (ignorées) : ${skipped.join(", ")}`);
+  if (skipped.length) console.log(`… sources absentes (entrées conservées) : ${skipped.join(", ")}`);
+  if (missing.length) console.log(`… clés sans source NI entrée existante : ${missing.join(", ")}`);
 }
 
 main().catch((error) => {

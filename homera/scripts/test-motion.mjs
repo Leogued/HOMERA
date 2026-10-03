@@ -11,10 +11,26 @@ const moduleUrl = async (file, replacements = {}) => {
   return `data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`;
 };
 const math = await import(await moduleUrl('lib/motion-math.ts'));
-const format = await import(await moduleUrl('lib/format.ts'));
 const mediaUrl = await moduleUrl('lib/media.generated.ts');
 const media = await import(mediaUrl);
-const data = await import(await moduleUrl('lib/content.ts', { '@/lib/media.generated': mediaUrl }));
+// L’ordre compte : chaque module est transpiré vers l’URL de ses dépendances.
+const contentUrl = await moduleUrl('lib/content.ts', { '@/lib/media.generated': mediaUrl });
+const data = await import(contentUrl);
+const formatUrl = await moduleUrl('lib/format.ts', { '@/lib/content': contentUrl });
+const format = await import(formatUrl);
+const catalogUrl = await moduleUrl('lib/properties.ts', {
+  '@/lib/content': contentUrl,
+  '@/lib/format': formatUrl,
+});
+const catalog = await import(catalogUrl);
+const nav = await import(await moduleUrl('lib/nav.ts', {
+  '@/lib/content': contentUrl,
+  '@/lib/properties': catalogUrl,
+}));
+const visitorUrl = await moduleUrl('lib/persistence.ts', {
+  '@/lib/properties': catalogUrl,
+});
+const visitor = await import(visitorUrl);
 const { clamp, damp, phase, smoothstep, stickyProgress, storyIndex, storyPosition, galleryDepth } = math;
 
 // Le véritable ordonnanceur est testé avec une horloge rAF déterministe.
@@ -145,13 +161,17 @@ await test('HOMERA : filtre immobilier cohérent, sans perte de fonctions', () =
   assert.ok(data.INTENTS.some((intent) => intent.id === 'investir'));
   assert.equal(data.DEMO_DATA, true);
 });
-await test('HOMERA : les 16 médias référencés existent, les couvertures sont dédiées', async () => {
-  assert.equal(Object.keys(media.MEDIA).length, 16);
+await test('HOMERA : les médias référencés existent, y compris ceux du catalogue', async () => {
+  assert.ok(Object.keys(media.MEDIA).length >= 25, 'le catalogue a besoin de ses visuels');
   for (const asset of Object.values(media.MEDIA)) {
     assert.ok((await stat(new URL(`../public${asset.src}`, import.meta.url))).size > 0);
     assert.ok(asset.width > 0 && asset.height > 0 && asset.blurDataURL.startsWith('data:image/'));
   }
   for (const story of data.EDITORIAL.stories.slice(0, 3)) assert.ok(story.media.startsWith('editorial-'));
+  // Aucune fiche ne doit pointer vers un visuel absent du manifeste.
+  for (const property of data.PROPERTIES) {
+    assert.ok(media.MEDIA[property.media], `visuel manquant pour ${property.id} : ${property.media}`);
+  }
 });
 
 const css = await readFile(new URL('../app/globals.css', import.meta.url), 'utf8');
@@ -288,4 +308,271 @@ await test('HOMERA : aucune teinte hors palette ni courbe recopiée dans les com
     assert.doesNotMatch(source, /ease-\[/, `${url.pathname} : courbe recopiée à la main`);
     assert.doesNotMatch(source, /rounded-\[\d/, `${url.pathname} : rayon hors échelle`);
   }
+});
+
+/* ------------------------------------------------------------------
+   CATALOGUE PUBLIC — modèle, filtres, tri, pagination, facettes
+   ------------------------------------------------------------------ */
+
+await test('HOMERA : le catalogue couvre les quatre familles de biens et trois projets', () => {
+  const byIntent = (intent) => data.PROPERTIES.filter((property) => property.intent === intent);
+  assert.ok(data.PROPERTIES.length >= 30, 'assez de biens pour une grille réaliste');
+  for (const intent of ['acheter', 'louer', 'sejour']) {
+    assert.ok(byIntent(intent).length >= 8, `projet trop maigre : ${intent}`);
+  }
+  // Chaque projet couvre les familles annoncées dans le menu.
+  const families = {
+    acheter: ['villa', 'appartement', 'terrain', 'local'],
+    louer: ['villa', 'appartement', 'studio', 'local'],
+    sejour: ['villa', 'appartement', 'studio'],
+  };
+  for (const [intent, types] of Object.entries(families)) {
+    for (const type of types) {
+      assert.ok(byIntent(intent).some((property) => property.type === type), `${intent} sans ${type}`);
+    }
+  }
+});
+
+await test('HOMERA : données de fiche cohérentes (références, prix, dates, médias)', () => {
+  const ids = new Set();
+  const references = new Set();
+  for (const property of data.PROPERTIES) {
+    assert.ok(!ids.has(property.id), `identifiant dupliqué : ${property.id}`);
+    assert.ok(!references.has(property.homeraId), `référence dupliquée : ${property.homeraId}`);
+    ids.add(property.id);
+    references.add(property.homeraId);
+    assert.match(property.homeraId, /^HOM-[A-Z]{3}-\d{6}$/);
+    assert.match(property.verifiedOn, /^\d{2}\/\d{2}\/\d{4}$/);
+    assert.match(property.publishedAt, /^\d{4}-\d{2}-\d{2}$/);
+    assert.ok(property.price > 0 && property.surface > 0);
+    assert.ok(property.description && property.description.length > 40, `description trop courte : ${property.id}`);
+    assert.ok(property.features?.length, `équipements absents : ${property.id}`);
+    // Un prix se lit selon le projet : une vente n’a pas de période,
+    // une location ou un séjour en ont toujours une.
+    if (property.intent === 'acheter') assert.equal(property.pricePeriod, undefined);
+    else assert.ok(property.pricePeriod, `période de prix manquante : ${property.id}`);
+    if (property.type === 'terrain') assert.ok(property.landTitle, `foncier non déclaré : ${property.id}`);
+    if (property.intent === 'sejour') assert.ok(property.minNights >= 1, `durée minimale absente : ${property.id}`);
+  }
+});
+
+const { EMPTY_QUERY, parseCatalogQuery, buildCatalogParams, catalogHref, searchCatalog, queryCatalog, paginate, facets, priceBounds, summaryLabel, activeFilterCount, isPristine, criteriaToCatalogQuery, LATEST_PUBLISHED_AT, PER_PAGE } = catalog;
+
+await test('HOMERA : la requête survit à l’aller-retour par l’adresse', () => {
+  const query = parseCatalogQuery('intention=louer&type=villa&type=studio&ville=Cotonou&equipement=meuble&titre=acd&tri=prix-asc&page=2&prix-min=50000&chambres=2&surface-max=200&nouveautes=1&q=mer');
+  const roundTrip = parseCatalogQuery(buildCatalogParams(query).toString());
+  assert.deepEqual(roundTrip, query);
+  assert.equal(catalogHref(query), `/explorer?${buildCatalogParams(query).toString()}`);
+  // Les valeurs inconnues sont ignorées, pas propagées.
+  const tolerant = parseCatalogQuery('?intention=zzz&type=chateau&page=0&tri=nimporte');
+  assert.equal(tolerant.intent, '');
+  assert.deepEqual(tolerant.types, []);
+  assert.equal(tolerant.page, 1);
+  assert.equal(tolerant.sort, 'pertinence');
+  assert.ok(isPristine(tolerant));
+});
+
+await test('HOMERA : filtres du catalogue — projet, lieu, budget, équipements, durée', () => {
+  const lodges = searchCatalog(parseCatalogQuery('intention=louer&type=villa&ville=Cotonou'));
+  assert.ok(lodges.length >= 2);
+  assert.ok(lodges.every((property) => property.intent === 'louer' && property.type === 'villa' && property.city === 'Cotonou'));
+
+  const titled = searchCatalog(parseCatalogQuery('intention=acheter&type=terrain&titre=titre-foncier'));
+  assert.ok(titled.length >= 1);
+  assert.ok(titled.every((property) => property.landTitle === 'titre-foncier'));
+
+  const capped = searchCatalog(parseCatalogQuery('intention=acheter&prix-max=20000000&tri=prix-desc'));
+  assert.ok(capped.length >= 2);
+  assert.ok(capped.every((property) => property.price <= 20_000_000));
+
+  const equipped = searchCatalog(parseCatalogQuery('intention=acheter&equipement=piscine&equipement=jardin'));
+  assert.ok(equipped.length >= 1);
+  assert.ok(equipped.every((property) => property.features.includes('piscine') && property.features.includes('jardin')));
+
+  // La durée annoncée du séjour est un minimum réellement respecté.
+  for (const nights of [1, 2, 4, 7, 14]) {
+    const stays = searchCatalog(parseCatalogQuery(`intention=sejour&nuits=${nights}`));
+    assert.ok(stays.length >= 1, `aucun séjour pour ${nights} nuit(s)`);
+    assert.ok(stays.every((property) => (property.minNights ?? 1) <= nights));
+  }
+  assert.ok(searchCatalog(parseCatalogQuery('intention=sejour&nuits=1')).length < searchCatalog(parseCatalogQuery('intention=sejour&nuits=14')).length);
+
+  // Recherche texte : accents ignorés, référence reconnue.
+  assert.ok(searchCatalog(parseCatalogQuery('q=fidjrosse')).length >= 3);
+  assert.equal(searchCatalog(parseCatalogQuery('q=HOM-CTN-000421')).length, 1);
+  assert.equal(searchCatalog(parseCatalogQuery('q=aucun-bien-ne-porte-ce-nom')).length, 0);
+});
+
+await test('HOMERA : tri, pagination et compteurs restent cohérents', () => {
+  const byPrice = searchCatalog(parseCatalogQuery('intention=sejour&tri=prix-asc'));
+  for (let index = 1; index < byPrice.length; index++) assert.ok(byPrice[index].price >= byPrice[index - 1].price);
+  const bySurface = searchCatalog(parseCatalogQuery('intention=acheter&tri=surface-desc'));
+  for (let index = 1; index < bySurface.length; index++) assert.ok(bySurface[index].surface <= bySurface[index - 1].surface);
+  const byRecency = searchCatalog(parseCatalogQuery('tri=recent'));
+  assert.equal(byRecency[0].publishedAt, LATEST_PUBLISHED_AT);
+  // Le tri par prix regroupe par projet quand aucun n’est choisi : un loyer
+  // de 65 000 FCFA ne doit jamais passer devant un terrain de 12,5 M FCFA.
+  const mixed = searchCatalog(parseCatalogQuery('tri=prix-asc'));
+  const intents = mixed.map((property) => property.intent);
+  assert.deepEqual(intents, [...intents].sort((a, b) => ['acheter', 'louer', 'sejour'].indexOf(a) - ['acheter', 'louer', 'sejour'].indexOf(b)));
+
+  const all = searchCatalog(EMPTY_QUERY);
+  const first = paginate(all, 1);
+  assert.equal(first.items.length, Math.min(PER_PAGE, all.length));
+  assert.equal(first.total, all.length);
+  assert.equal(first.from, 1);
+  const second = paginate(all, 2);
+  assert.equal(second.items[0].id, all[PER_PAGE].id);
+  // Une page hors bornes retombe sur la dernière page réelle.
+  const beyond = paginate(all, 999);
+  assert.equal(beyond.page, beyond.pages);
+  assert.equal(queryCatalog({ ...EMPTY_QUERY, page: 2 }).items.length, Math.min(PER_PAGE, all.length - PER_PAGE));
+
+  // Facettes : chaque compteur ignore son propre filtre (sinon il serait nul).
+  const scoped = facets(data.PROPERTIES, parseCatalogQuery('intention=acheter&ville=Cotonou'));
+  assert.ok(scoped.types.some((entry) => entry.count > 0));
+  assert.equal(scoped.total, searchCatalog(parseCatalogQuery('intention=acheter&ville=Cotonou')).length);
+  const acheterFacets = facets(data.PROPERTIES, parseCatalogQuery('intention=acheter'));
+  const withVilla = facets(data.PROPERTIES, parseCatalogQuery('intention=acheter&type=villa'));
+  const villas = withVilla.types.find((entry) => entry.value === 'villa');
+  const terrains = withVilla.types.find((entry) => entry.value === 'terrain');
+  assert.equal(villas.count, data.PROPERTIES.filter((entry) => entry.intent === 'acheter' && entry.type === 'villa').length);
+  assert.ok(terrains.count > 0, 'un type non sélectionné doit rester cliquable');
+  assert.equal(terrains.count, data.PROPERTIES.filter((entry) => entry.intent === 'acheter' && entry.type === 'terrain').length);
+  assert.ok(withVilla.total <= acheterFacets.total, 'sélectionner un type ne peut pas élargir la liste');
+  assert.ok(withVilla.total < acheterFacets.total);
+});
+
+await test('HOMERA : bornes de prix, résumé et compteur de filtres', () => {
+  const bounds = priceBounds(searchCatalog(parseCatalogQuery('intention=louer')));
+  assert.equal(bounds.min % 10_000, 0);
+  assert.equal(bounds.max % 10_000, 0);
+  const query = parseCatalogQuery('intention=louer&type=villa&ville=Cotonou&prix-min=100000&nouveautes=1');
+  assert.equal(activeFilterCount(query), 5);
+  const label = summaryLabel(query);
+  for (const fragment of ['à louer', 'villa', 'Cotonou', 'nouveautés']) assert.ok(label.includes(fragment), label);
+});
+
+await test('HOMERA : la recherche de l’accueil ouvre la même recherche dans l’explorateur', () => {
+  const converted = criteriaToCatalogQuery({ project: 'louer', location: 'Cotonou', propertyType: 'maison', budget: '500 000' });
+  assert.equal(converted.intent, 'louer');
+  assert.deepEqual(converted.types, ['villa']);
+  assert.deepEqual(converted.cities, ['Cotonou']);
+  assert.equal(converted.priceMax, 500_000);
+  const results = searchCatalog(converted);
+  assert.ok(results.length >= 1, 'la sélection de l’accueil doit trouver au moins un bien réel');
+  assert.ok(results.every((property) => property.intent === 'louer' && property.type === 'villa' && property.price <= 500_000));
+  // Un budget trop serré reste honnête : zéro résultat plutôt qu’un résultat hors budget.
+  assert.equal(searchCatalog(criteriaToCatalogQuery({ project: 'louer', location: 'Cotonou', propertyType: 'maison', budget: '100 000' })).length, 0);
+
+  // Un quartier choisi dans le module reste un quartier, pas une ville.
+  const district = criteriaToCatalogQuery({ project: 'louer', location: 'Fidjrossè', propertyType: '', budget: '' });
+  assert.deepEqual(district.cities, []);
+  assert.deepEqual(district.districts, ['Fidjrossè']);
+  assert.ok(searchCatalog(district).length >= 1);
+
+  assert.ok(isPristine(criteriaToCatalogQuery({ project: '', location: '', propertyType: '', budget: '' })));
+});
+
+await test('HOMERA : chaque page publique du menu mène à des biens réels', () => {
+  for (const project of nav.PROJECT_PAGES) {
+    const query = nav.projectQuery(project.slug);
+    assert.ok(searchCatalog(query).length >= 8, `projet vide : ${project.slug}`);
+    for (const category of project.categories) {
+      const results = searchCatalog(nav.categoryQuery(category.filter));
+      assert.ok(results.length >= 1, `catégorie vide : /${project.slug}/${category.slug}`);
+      assert.ok(results.every((property) => property.intent === category.filter.intent));
+      if (category.filter.types) {
+        assert.ok(results.every((property) => category.filter.types.includes(property.type)));
+      }
+      if (category.filter.stayNights) {
+        assert.ok(results.every((property) => (property.minNights ?? 1) <= category.filter.stayNights));
+      }
+    }
+  }
+  // Le menu ne doit contenir aucune entrée sans adresse ni doublon d’adresse.
+  const hrefs = nav.PUBLIC_NAV.flatMap((entry) => [entry.href, ...(entry.children ?? []).map((child) => child.href)]);
+  assert.equal(new Set(hrefs).size, hrefs.length, 'adresse de menu dupliquée');
+  assert.ok(hrefs.every((href) => href.startsWith('/')));
+  assert.equal(nav.PUBLIC_NAV.filter((entry) => entry.title === 'Explorer').length, 1);
+});
+
+/* ------------------------------------------------------------------
+   MÉMOIRE DU VISITEUR — favoris et recherches enregistrées
+   ------------------------------------------------------------------ */
+
+await test('HOMERA : l’état local résiste aux données abîmées', () => {
+  assert.deepEqual(visitor.parseVisitorState(null), { favorites: [], searches: [] });
+  assert.deepEqual(visitor.parseVisitorState('nawak'), { favorites: [], searches: [] });
+  assert.deepEqual(visitor.parseVisitorState({ favorites: 'oui', searches: 3 }), { favorites: [], searches: [] });
+  const kept = visitor.parseVisitorState({
+    favorites: ['villa-fidjrosse', 42, 'appartement-haie-vive'],
+    searches: [
+      { id: '/explorer?intention=louer', label: 'À louer', href: '/explorer?intention=louer', count: 14, savedAt: '2026-10-01' },
+      { id: 'sans-adresse', label: 'cassée', href: 'javascript:alert(1)', count: 1, savedAt: '' },
+      null,
+    ],
+  });
+  assert.deepEqual(kept.favorites, ['villa-fidjrosse', 'appartement-haie-vive']);
+  assert.equal(kept.searches.length, 1, 'une recherche sans adresse interne est écartée');
+  assert.equal(kept.searches[0].href, '/explorer?intention=louer');
+});
+
+await test('HOMERA : enregistrer, dédoublonner et retirer une recherche', () => {
+  let state = { favorites: [], searches: [] };
+  const first = { id: '/explorer?intention=louer', label: 'À louer', href: '/explorer?intention=louer', count: 14, savedAt: '2026-10-01' };
+  const second = { id: '/explorer?intention=acheter', label: 'À vendre', href: '/explorer?intention=acheter', count: 13, savedAt: '2026-10-02' };
+  state = visitor.withSearch(state, first);
+  state = visitor.withSearch(state, second);
+  assert.deepEqual(state.searches.map((entry) => entry.label), ['À vendre', 'À louer']);
+  state = visitor.withSearch(state, { ...first, savedAt: '2026-10-03' });
+  assert.equal(state.searches.length, 2, 'aucun doublon');
+  assert.equal(state.searches[0].label, 'À louer', 'la recherche réenregistrée passe en tête');
+  state = visitor.withoutSearch(state, first.id);
+  assert.deepEqual(state.searches.map((entry) => entry.label), ['À vendre']);
+  // Le plafond protège le stockage local.
+  let many = { favorites: [], searches: [] };
+  for (let index = 0; index < visitor.MAX_SAVED_SEARCHES + 4; index++) {
+    many = visitor.withSearch(many, { ...first, id: `/explorer?page=${index}`, href: `/explorer?page=${index}` });
+  }
+  assert.equal(many.searches.length, visitor.MAX_SAVED_SEARCHES);
+});
+
+await test('HOMERA : favoris — bascule sans doublon', () => {
+  let state = { favorites: [], searches: [] };
+  state = visitor.toggleFavorite(state, 'villa-fidjrosse');
+  state = visitor.toggleFavorite(state, 'villa-fidjrosse');
+  assert.deepEqual(state.favorites, []);
+  state = visitor.toggleFavorite(state, 'villa-fidjrosse');
+  state = visitor.withFavorite(state, 'villa-fidjrosse');
+  assert.deepEqual(state.favorites, ['villa-fidjrosse'], 'un favori ne se duplique pas');
+  state = visitor.withoutFavorite(state, 'inconnu');
+  assert.deepEqual(state.favorites, ['villa-fidjrosse']);
+});
+
+await test('HOMERA : une recherche enregistrée reprend l’adresse exacte', () => {
+  const query = parseCatalogQuery('intention=louer&type=villa&ville=Cotonou&tri=prix-asc&page=3');
+  const search = visitor.describeSearch(query, '/explorer');
+  assert.ok(!search.href.includes('page='), 'la pagination ne fait pas partie de la recherche');
+  assert.ok(search.href.startsWith('/explorer?'));
+  assert.ok(search.label.includes('villa'), search.label);
+  assert.equal(search.count, searchCatalog({ ...query, page: 1 }).length);
+  // Deux ordres de paramètres différents décrivent la même recherche.
+  const other = visitor.describeSearch(parseCatalogQuery('ville=Cotonou&intention=louer&tri=prix-asc&type=villa'), '/explorer');
+  assert.equal(other.id, search.id);
+  // La page d’un projet conserve son chemin.
+  const category = visitor.describeSearch(nav.categoryQuery(nav.findCategory('louer', 'studios').category.filter), '/louer/studios');
+  assert.ok(category.href.startsWith('/louer/studios'), category.href);
+});
+
+await test('HOMERA : les identifiants de panneaux restent lisibles', () => {
+  assert.equal(nav.navPanelId('Séjour'), 'sejour');
+  assert.equal(nav.navPanelId('À propos'), 'a-propos');
+  assert.equal(nav.navPanelId('Locaux commerciaux'), 'locaux-commerciaux');
+  assert.equal(nav.navPanelId('Écosystème & services'), 'ecosysteme-services');
+  for (const entry of nav.PUBLIC_NAV) {
+    assert.ok(nav.navPanelId(entry.title).length > 0);
+  }
+  // Le menu tient la commande annoncée : Explorer → Favoris, rien d’autre.
+  assert.deepEqual(nav.PUBLIC_NAV.map((entry) => entry.title), ['Explorer', 'Acheter', 'Louer', 'Séjour', 'Services', 'Favoris']);
 });
