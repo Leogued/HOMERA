@@ -220,7 +220,7 @@ export function WorkspaceShell({
               <span className="block truncate text-note font-semibold text-white">{account.prenom} {account.nom}</span>
               <span className="block truncate text-caption text-white/60">{rolesLabel(account.roles)}</span>
             </span>
-            <Link href={profileHref(preferredRole(account.roles))} aria-label="Ouvrir mon profil" className="flex h-9 w-9 items-center justify-center rounded-xl text-white/65 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"><Settings2 className="h-4 w-4" aria-hidden="true" /></Link>
+            <Link href={profileHref(preferredRole(account.roles))} aria-label="Ouvrir mon profil" className="flex h-9 w-9 items-center justify-center rounded-xl text-white/65 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"><UserRound className="h-4 w-4" aria-hidden="true" /></Link>
           </div>
           <button type="button" onClick={signOut} className="mt-2 flex min-h-10 w-full items-center gap-2 rounded-xl px-3 text-note text-white/65 hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"><LogOut className="h-4 w-4" aria-hidden="true" />Se déconnecter</button>
           <Link href="/" className="mt-1 inline-flex min-h-10 items-center gap-2 px-3 text-caption text-white/50 transition-colors hover:text-homera-amber"><ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />Retour au site</Link>
@@ -278,7 +278,7 @@ function NotificationLine({ notification, onRead, compact = false }: { notificat
   return <div className={`flex items-start gap-2.5 rounded-xl px-2.5 py-3 ${notification.read ? "" : "bg-homera-terracotta/[0.045]"}`}>
     <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.read ? "bg-border" : "bg-homera-terracotta"}`} aria-hidden="true" />
     {notification.href ? <Link onClick={onRead} href={notification.href} className="min-w-0 flex-1 hover:underline">{content}</Link> : content}
-    {!notification.read && <button type="button" onClick={onRead} className="shrink-0 rounded-md px-1.5 py-1 text-[0.68rem] font-semibold text-homera-terracotta hover:bg-surface-hover">{compact ? "Lire" : "Marquer comme lue"}</button>}
+    {!notification.read && <button type="button" onClick={onRead} className="shrink-0 rounded-md px-1.5 py-1 text-[0.68rem] font-semibold text-homera-terracotta hover:bg-surface-hover">{compact ? "Marquer lue" : "Marquer comme lue"}</button>}
   </div>;
 }
 

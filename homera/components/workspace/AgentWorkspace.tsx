@@ -113,7 +113,7 @@ function AgentVisits({ authorizedPropertyIds }: { authorizedPropertyIds: Readonl
     updateData((current) => ({
       ...current,
       visits: current.visits.map((entry) => entry.id === visit.id && authorizedPropertyIds.has(entry.propertyId) ? { ...entry, status } : entry),
-      notifications: [makeNotification("visite", status === "confirmee" ? "Votre visite est confirmée" : status === "agent-indisponible" ? "Créneau indisponible" : "Visite terminée", `${visit.propertyTitle} · ${formatDateOnly(visit.date)}`, "/client/visites"), ...current.notifications],
+      notifications: [makeNotification("visite", status === "confirmee" ? "Votre visite est confirmée" : status === "agent-indisponible" ? "Créneau indisponible" : "Visite terminée", `${visit.propertyTitle} · ${formatDateOnly(visit.date)}`, "/agent/visites"), ...current.notifications],
     }));
   };
   return <>

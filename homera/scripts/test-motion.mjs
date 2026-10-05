@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { readdir, readFile, stat } from 'node:fs/promises';
+import { join, relative } from 'node:path';
 import { test } from 'node:test';
+import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
 const moduleUrl = async (file, replacements = {}) => {
@@ -1374,4 +1376,115 @@ await test('HOMERA : accès agent limité à son identité, au mandat exact et �
   }
   assert.ok(authorizedIds.size < data.PROPERTIES.length, 'l’agent ne voit pas l’ensemble du catalogue');
   assert.equal(new Set(active.map((entry) => `${entry.agentId}:${entry.propertyRef}`)).size, active.length);
+});
+
+/* ==================================================================
+   NAVIGATION — UN LIEN DOIT OUVRIR UNE PAGE, PAS DÉFILER
+   ------------------------------------------------------------------
+   Toute adresse interne écrite dans l’interface doit correspondre à une
+   route réellement déclarée dans `app/`. Les espaces de travail, les
+   menus de compte et les tableaux de bord ne doivent plus fabriquer de
+   navigation par fragment (`href="#…"`) : le défilement reste réservé
+   aux sections éditoriales d’une même page (accueil, sommaire, etc.).
+   ================================================================== */
+
+await test('HOMERA : chaque lien interne ouvre une route réelle, jamais une ancre de repli', async () => {
+  const root = fileURLToPath(new URL('..', import.meta.url));
+
+  const walk = async (dir) => {
+    const entries = await readdir(dir, { withFileTypes: true });
+    const files = [];
+    for (const entry of entries) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) files.push(...(await walk(full)));
+      else files.push(full);
+    }
+    return files;
+  };
+
+  const appFiles = await walk(join(root, 'app'));
+  const routePatterns = appFiles
+    .filter((file) => file.endsWith('page.tsx'))
+    .map((file) => {
+      const rel = relative(join(root, 'app'), file).replace(/\/?page\.tsx$/, '');
+      const segments = rel
+        .split('/')
+        .filter((segment) => segment && !/^\(.*\)$/.test(segment))
+        .map((segment) => (/^\[.*\]$/.test(segment) ? '*' : segment));
+      return segments.length ? `/${segments.join('/')}` : '/';
+    });
+  assert.ok(routePatterns.length > 40, `routes déclarées trop rares : ${routePatterns.length}`);
+
+  // `*` couvre un segment dynamique ; `${…}` dans un lien couvre ce qu’il compose.
+  const routeMatchers = routePatterns.map((pattern) => {
+    const body = pattern
+      .split('/')
+      .filter(Boolean)
+      .map((segment) => (segment === '*' ? '[^/]+' : segment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+      .join('/');
+    return new RegExp(`^/${body}/?$`);
+  });
+  const opensRoute = (href) => {
+    const path = href.split('#')[0].split('?')[0];
+    if (!path.startsWith('/')) return true;
+    const candidate = path.replace(/\$\{[^}]*\}/g, '[^/]*');
+    if (candidate.includes('[')) return true;
+    return routeMatchers.some((matcher) => matcher.test(candidate));
+  };
+
+  const sourceFiles = [...appFiles, ...(await walk(join(root, 'components')))].filter((file) => /\.(tsx|ts)$/.test(file));
+  const unresolved = [];
+  for (const file of sourceFiles) {
+    const source = await readFile(file, 'utf8');
+    const hrefs = [
+      ...source.matchAll(/href=(?:"([^"]*)"|'([^']*)'|\{`([^`]*)`\}|\{"([^"]*)"\})/g),
+      ...source.matchAll(/href:\s*(?:"([^"]*)"|'([^']*)'|`([^`]*)`)/g),
+    ];
+    for (const match of hrefs) {
+      const href = (match[1] ?? match[2] ?? match[3] ?? match[4] ?? '').trim();
+      if (!href.startsWith('/')) continue;
+      if (!opensRoute(href)) unresolved.push(`${relative(root, file)} → ${href}`);
+    }
+  }
+  assert.deepEqual(unresolved, [], `liens internes sans route :\n${unresolved.join('\n')}`);
+
+  // Les espaces de travail, le menu de compte et les deux en-têtes publics
+  // naviguent par route uniquement : plus aucun fragment de navigation.
+  const noFragmentFiles = [
+    'components/client/ClientDashboard.tsx',
+    'components/workspace/WorkspaceShell.tsx',
+    'components/workspace/CommunicationPages.tsx',
+    'components/auth/AccountControl.tsx',
+    'components/layout/Navbar.tsx',
+    'components/layout/PublicHeader.tsx',
+    'components/layout/Footer.tsx',
+  ];
+  for (const file of noFragmentFiles) {
+    const source = await readFile(join(root, file), 'utf8');
+    const fragments = [...source.matchAll(/href=(?:"(#[^"]*)"|\{`(#[^`]*)`\})/g)].map((match) => match[1] ?? match[2]);
+    assert.deepEqual(fragments, [], `${file} : navigation par fragment ${fragments.join(', ')}`);
+  }
+
+  // Les raccourcis de fonctionnalité du tableau de bord client visent les
+  // pages de gestion, jamais une section de la même page.
+  const dashboard = await readFile(join(root, 'components/client/ClientDashboard.tsx'), 'utf8');
+  for (const href of ['/client/favoris', '/client/visites', '/client/demandes', '/client/contrats', '/client/profil', '/client/parametres', '/notifications', '/messages']) {
+    assert.ok(dashboard.includes(href), `raccourci manquant : ${href}`);
+  }
+  assert.ok(!dashboard.includes('setActiveSection'), 'le tableau de bord ne pilote plus la navigation par état local');
+  assert.ok(!dashboard.includes('window.location.hash'), 'le tableau de bord ne lit plus le fragment d’URL');
+
+  // Les alertes d’un espace renvoient vers les pages de ce même espace.
+  const owner = await readFile(join(root, 'components/workspace/OwnerWorkspace.tsx'), 'utf8');
+  const agent = await readFile(join(root, 'components/workspace/AgentWorkspace.tsx'), 'utf8');
+  assert.ok(owner.includes('"/proprietaire/demandes"') && owner.includes('"/proprietaire/visites"'), 'alertes propriétaire dans son espace');
+  assert.ok(!owner.includes('"/client/demandes"') && !owner.includes('"/client/visites"'), 'aucune alerte propriétaire vers l’espace client');
+  assert.ok(agent.includes('"/agent/visites"'), 'alertes agent dans son espace');
+  assert.ok(!agent.includes('"/client/visites"'), 'aucune alerte agent vers l’espace client');
+
+  // Les rôles cumulés ne sont plus renvoyés vers l’espace client par défaut.
+  const connexion = await readFile(join(root, 'components/auth/ConnexionView.tsx'), 'utf8');
+  assert.ok(connexion.includes('workspaceHref') && connexion.includes('workspaceLabel'), 'destination après connexion nommée par rôle');
+  assert.ok(!connexion.includes('homeHref') && !connexion.includes('homeLabel'), 'ancienne destination après connexion retirée');
+  assert.ok(connexion.includes('proprietaire') && connexion.includes('agent'), 'destination adaptée au rôle détenu');
 });

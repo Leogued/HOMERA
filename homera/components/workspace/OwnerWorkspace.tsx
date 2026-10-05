@@ -97,7 +97,7 @@ function OwnerRequests() {
     return {
       ...current,
       applications: current.applications.map((entry) => entry.id === id ? { ...entry, stage } : entry),
-      notifications: request ? [makeNotification("demande", `Dossier mis à jour · ${stageLabel(stage)}`, request.propertyTitle, "/client/demandes"), ...current.notifications] : current.notifications,
+      notifications: request ? [makeNotification("demande", `Dossier mis à jour · ${stageLabel(stage)}`, request.propertyTitle, "/proprietaire/demandes"), ...current.notifications] : current.notifications,
     };
   });
   return <>
@@ -112,7 +112,7 @@ function OwnerVisits() {
   const setStatus = (visit: VisitRecord, status: VisitRecord["status"]) => updateData((current) => ({
     ...current,
     visits: current.visits.map((entry) => entry.id === visit.id ? { ...entry, status } : entry),
-    notifications: [makeNotification("visite", status === "confirmee" ? "Visite confirmée" : status === "agent-indisponible" ? "Créneau indisponible" : "Visite terminée", `${visit.propertyTitle} · ${formatDateOnly(visit.date)}`, "/client/visites"), ...current.notifications],
+    notifications: [makeNotification("visite", status === "confirmee" ? "Visite confirmée" : status === "agent-indisponible" ? "Créneau indisponible" : "Visite terminée", `${visit.propertyTitle} · ${formatDateOnly(visit.date)}`, "/proprietaire/visites"), ...current.notifications],
   }));
   return <>
     <WorkspaceHeading eyebrow="Agenda propriétaire" title="Visites" description="Confirmez les créneaux proposés et consignez la fin ou l’indisponibilité d’une visite." />
@@ -166,7 +166,7 @@ function OwnerDocuments() {
     ...current,
     contracts: current.contracts.map((entry) => entry.id === contract.id && entry.status === "brouillon" ? { ...entry, status: "envoye", sentAt: new Date().toISOString(), updatedAt: new Date().toISOString() } : entry),
     applications: current.applications.map((entry) => entry.id === contract.applicationId ? { ...entry, stage: "contrat" } : entry),
-    notifications: [makeNotification("contrat", "Contrat envoyé au client", contract.propertyTitle, "/client/contrats"), ...current.notifications],
+    notifications: [makeNotification("contrat", "Contrat envoyé au client", contract.propertyTitle, "/proprietaire/documents"), ...current.notifications],
   }));
 
   return <>

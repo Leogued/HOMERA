@@ -7,6 +7,7 @@ import { ChevronDown, Heart, LogOut, MailCheck, Search, UserRound, UserRoundPlus
 import { useAuth } from "@/components/providers/AuthProvider";
 import { initials, roleDefinition, rolesLabel } from "@/lib/auth";
 import { AUTH_HREF, CLIENT_HREF, SIGNUP_HREF, VERIFY_HREF } from "@/lib/nav";
+import type { PublicAccount } from "@/lib/accounts";
 
 /* ==================================================================
    HOMERA — COMMANDE DE COMPTE DANS L’EN-TÊTE
@@ -28,6 +29,12 @@ const PILL: Record<Tone, string> = {
   night:
     "border border-white/15 bg-white/8 text-white backdrop-blur-sm hover:bg-white/14",
 };
+
+function accountProfileHref(account: Pick<PublicAccount, "roles">): string {
+  if (account.roles.includes("proprietaire")) return "/proprietaire/profil";
+  if (account.roles.includes("agent")) return "/agent/profil";
+  return "/client/profil";
+}
 
 export function AccountControl({ tone = "light" }: { tone?: Tone }) {
   const { ready, account, signOut } = useAuth();
@@ -155,6 +162,14 @@ export function AccountControl({ tone = "light" }: { tone?: Tone }) {
               Mon espace client
             </Link>
             <Link
+              href={accountProfileHref(account)}
+              className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"
+            >
+              <UserRound className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />
+              Mon profil
+            </Link>
+            {account.profile.demoRole === "admin" && <Link href="/admin" className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"><UserRound className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />Administration</Link>}
+            <Link
               href="/client/favoris"
               className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"
             >
@@ -260,6 +275,8 @@ export function AccountMobileLinks({
       <ul className="mt-3 space-y-1">
         {[
           { href: CLIENT_HREF, label: "Mon espace client" },
+          { href: accountProfileHref(account), label: "Mon profil" },
+          ...(account.profile.demoRole === "admin" ? [{ href: "/admin", label: "Administration" }] : []),
           { href: "/client/favoris", label: "Favoris et recherches" },
           ...(account.roles.includes("proprietaire") ? [{ href: "/proprietaire", label: "Espace propriétaire" }] : []),
           ...(account.roles.includes("agent") ? [{ href: "/agent", label: "Espace agent" }] : []),

@@ -1,5 +1,6 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArrowRight, Check, Home, Paintbrush, Truck, Wrench, type LucideIcon } from "lucide-react";
 import { SERVICES, type Service } from "@/lib/content";
 import { SceneHeader } from "@/components/ui/Scene";
@@ -14,6 +15,7 @@ import { useRovingFocus } from "@/lib/motion";
 > = { home: Home, wrench: Wrench, truck: Truck, paint: Paintbrush };
 const SERVICE_EVENT = "homera:focus-service";
 export function ServicesSection() {
+  const router = useRouter();
   const [activeId, setActiveId] = useState(SERVICES[0].id);
   const [visited, setVisited] = useState(() => new Set([SERVICES[0].id]));
   const selectService = useCallback((id: string) => {
@@ -22,7 +24,7 @@ export function ServicesSection() {
   }, []);
   const requestService = (serviceId?: string) => {
     const slug = serviceId === "gestion" ? "gestion-immobiliere" : serviceId;
-    window.location.assign(slug ? `/services/${slug}` : "/services");
+    router.push(slug ? `/services/${slug}` : "/services");
   };
   const active = SERVICES.find((service) => service.id === activeId) ?? SERVICES[0];
   const ActiveIcon = ICONS[active.icon];

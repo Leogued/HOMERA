@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   ArrowRight,
@@ -62,35 +63,35 @@ type ClientNavGroup = {
 const CLIENT_NAV: ClientNavGroup[] = [
   {
     label: "Espace personnel",
-    items: [{ id: "accueil", label: "Accueil", href: "#accueil", icon: LayoutDashboard }],
+    items: [{ id: "accueil", label: "Accueil", href: "/client", icon: LayoutDashboard }],
   },
   {
     label: "Découvrir",
     items: [
       { id: "explorer", label: "Explorer", href: "/explorer", icon: Search },
-      { id: "favoris", label: "Favoris", href: "#favoris", icon: Heart },
+      { id: "favoris", label: "Favoris", href: "/client/favoris", icon: Heart },
     ],
   },
   {
     label: "Mon suivi",
     items: [
-      { id: "visites", label: "Mes visites", href: "#visites", icon: CalendarDays },
-      { id: "demandes", label: "Mes demandes", href: "#demandes", icon: ClipboardList },
-      { id: "locations", label: "Mes locations", href: "#locations", icon: House },
+      { id: "visites", label: "Mes visites", href: "/client/visites", icon: CalendarDays },
+      { id: "demandes", label: "Mes demandes", href: "/client/demandes", icon: ClipboardList },
+      { id: "locations", label: "Mes locations", href: "/client/contrats", icon: House },
     ],
   },
   {
     label: "Échanges",
     items: [
-      { id: "notifications", label: "Notifications", href: "#notifications", icon: Bell },
-      { id: "messages", label: "Messages", href: "#messages", icon: MessageCircle },
+      { id: "notifications", label: "Notifications", href: "/notifications", icon: Bell },
+      { id: "messages", label: "Messages", href: "/messages", icon: MessageCircle },
     ],
   },
   {
     label: "Mon compte",
     items: [
-      { id: "profil", label: "Profil", href: "#profil", icon: UserRound },
-      { id: "parametres", label: "Paramètres", href: "#parametres", icon: Settings2 },
+      { id: "profil", label: "Profil", href: "/client/profil", icon: UserRound },
+      { id: "parametres", label: "Paramètres", href: "/client/parametres", icon: Settings2 },
     ],
   },
 ];
@@ -100,7 +101,7 @@ export function ClientDashboard() {
   const visitor = useVisitor();
   const workflow = useWorkflow();
   const { resolvedTheme, setTheme } = useTheme();
-  const [activeSection, setActiveSection] = useState("accueil");
+  const pathname = usePathname();
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const mobileMenuButtonRef = useRef<HTMLButtonElement | null>(null);
 
@@ -127,19 +128,6 @@ export function ClientDashboard() {
   const currentThemeIsDark = resolvedTheme === "dark";
 
   useEffect(() => {
-    const syncHash = () => {
-      const section = window.location.hash.slice(1);
-      if (section) {
-                // Le premier rendu reste identique côté serveur et navigateur ; le hash est lu après montage.
-                setActiveSection(section);
-      }
-    };
-    syncHash();
-    window.addEventListener("hashchange", syncHash);
-    return () => window.removeEventListener("hashchange", syncHash);
-  }, []);
-
-  useEffect(() => {
     if (!mobileNavOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
@@ -150,10 +138,7 @@ export function ClientDashboard() {
     return () => document.removeEventListener("keydown", closeOnEscape);
   }, [mobileNavOpen]);
 
-  const handleNavigation = (item: ClientNavItem) => {
-    if (item.href.startsWith("#")) setActiveSection(item.id);
-    setMobileNavOpen(false);
-  };
+  const handleNavigation = () => setMobileNavOpen(false);
 
   if (!ready) return <ClientLoading />;
   if (!account) return <ClientSignIn />;
@@ -174,7 +159,7 @@ export function ClientDashboard() {
         </div>
 
         <DashboardNavigation
-          activeSection={activeSection}
+          currentPath={pathname}
           favoriteCount={visitor.ready ? visitor.favorites.length : 0}
           notificationCount={pendingActions}
           onNavigate={handleNavigation}
@@ -193,12 +178,11 @@ export function ClientDashboard() {
               <p className="truncate text-caption text-white/65">{rolesLabel(account.roles)}</p>
             </div>
             <Link
-              href="#profil"
-              onClick={() => handleNavigation({ id: "profil", label: "Profil", href: "#profil", icon: UserRound })}
+              href="/client/profil"
               aria-label="Ouvrir mon profil"
               className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white/70 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
             >
-              <Settings2 className="h-4 w-4" aria-hidden="true" />
+              <UserRound className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
           <button
@@ -256,9 +240,8 @@ export function ClientDashboard() {
                 <Search className="h-3.5 w-3.5" aria-hidden="true" />
                 Nouvelle recherche
               </Link>
-              <a
-                href="#notifications"
-                onClick={() => setActiveSection("notifications")}
+              <Link
+                href="/notifications"
                 aria-label={
                   pendingActions > 0
                     ? `Notifications, ${pendingActions} action à traiter`
@@ -272,7 +255,7 @@ export function ClientDashboard() {
                     {pendingActions}
                   </span>
                 )}
-              </a>
+              </Link>
               <div className="hidden items-center gap-2.5 pl-1 sm:flex">
                 <span className="flex h-9 w-9 items-center justify-center rounded-full bg-homera-cream-dark text-note font-semibold text-homera-brown">
                   {initials(account.prenom, account.nom)}
@@ -296,7 +279,7 @@ export function ClientDashboard() {
               className="fixed inset-x-3 top-[4.75rem] z-50 max-h-[calc(100svh-5.5rem)] overflow-y-auto rounded-2xl border border-border bg-card p-2 shadow-[var(--shadow-card-hover)] lg:hidden"
             >
               <DashboardNavigation
-                activeSection={activeSection}
+                currentPath={pathname}
                 favoriteCount={visitor.ready ? visitor.favorites.length : 0}
                 notificationCount={pendingActions}
                 onNavigate={handleNavigation}
@@ -350,14 +333,13 @@ export function ClientDashboard() {
                       Explorer les biens
                       <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </Link>
-                    <a
-                      href="#favoris"
-                      onClick={() => setActiveSection("favoris")}
+                    <Link
+                      href="/client/favoris"
                       className="inline-flex min-h-11 items-center gap-2 rounded-btn border border-white/20 bg-white/[0.06] px-4 text-note font-medium text-white transition-colors hover:bg-white/[0.12]"
                     >
                       <Heart className="h-4 w-4 text-homera-amber" aria-hidden="true" />
                       Voir mes favoris
-                    </a>
+                    </Link>
                   </div>
                 </div>
 
@@ -395,32 +377,28 @@ export function ClientDashboard() {
 
           <div className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
             <OverviewMetric
-              href="#favoris"
-              onActivate={() => setActiveSection("favoris")}
+              href="/client/favoris"
               icon={Heart}
               label="Biens favoris"
               value={visitor.ready ? String(favoriteProperties.length) : "—"}
               hint="Dans ce navigateur"
             />
             <OverviewMetric
-              href="#recherches"
-              onActivate={() => setActiveSection("recherches")}
+              href="/client/favoris"
               icon={Search}
               label="Recherches récentes"
               value={visitor.ready ? String(visitor.searches.length) : "—"}
               hint="Enregistrées ici"
             />
             <OverviewMetric
-              href="#profil"
-              onActivate={() => setActiveSection("profil")}
+              href="/client/profil"
               icon={ShieldCheck}
               label="État du compte"
               value={account.emailVerified ? "Confirmé" : "À vérifier"}
               hint={rolesLabel(account.roles)}
             />
             <OverviewMetric
-              href="#notifications"
-              onActivate={() => setActiveSection("notifications")}
+              href="/notifications"
               icon={BellRing}
               label="Notifications"
               value={pendingActions > 0 ? `${pendingActions} action` : "À venir"}
@@ -479,7 +457,7 @@ export function ClientDashboard() {
               eyebrow="Centre de notifications"
               title="Notifications"
               description={pendingActions > 0 ? `${pendingActions} action à traiter sur votre compte.` : "Votre point de contact pour les alertes HOMERA."}
-              action={{ href: "#parametres", label: "Préférences" }}
+              action={{ href: "/client/parametres", label: "Préférences" }}
               className="xl:col-span-5"
             >
               <div className="space-y-3">
@@ -766,16 +744,16 @@ export function ClientDashboard() {
 }
 
 function DashboardNavigation({
-  activeSection,
+  currentPath,
   favoriteCount,
   notificationCount,
   onNavigate,
   tone,
 }: {
-  activeSection: string;
+  currentPath: string;
   favoriteCount: number;
   notificationCount: number;
-  onNavigate: (item: ClientNavItem) => void;
+  onNavigate: () => void;
   tone: "light" | "night";
 }) {
   const dark = tone === "night";
@@ -789,7 +767,7 @@ function DashboardNavigation({
           <ul className="space-y-1">
             {group.items.map((item) => {
               const Icon = item.icon;
-              const active = activeSection === item.id;
+              const active = currentPath === item.href || currentPath.startsWith(`${item.href}/`);
               const count = item.id === "favoris" ? favoriteCount : item.id === "notifications" ? notificationCount : 0;
               const className = `group flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-note font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 ${
                 dark
@@ -833,18 +811,11 @@ function DashboardNavigation({
                   {active && <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />}
                 </>
               );
-              const onClick = () => onNavigate(item);
               return (
                 <li key={item.id}>
-                  {item.href.startsWith("#") ? (
-                    <a href={item.href} onClick={onClick} aria-current={active ? "location" : undefined} className={className}>
-                      {content}
-                    </a>
-                  ) : (
-                    <Link href={item.href} onClick={onClick} aria-current={active ? "page" : undefined} className={className}>
-                      {content}
-                    </Link>
-                  )}
+                  <Link href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined} className={className}>
+                    {content}
+                  </Link>
                 </li>
               );
             })}
@@ -857,23 +828,20 @@ function DashboardNavigation({
 
 function OverviewMetric({
   href,
-  onActivate,
   icon: Icon,
   label,
   value,
   hint,
 }: {
   href: string;
-  onActivate: () => void;
   icon: LucideIcon;
   label: string;
   value: string;
   hint: string;
 }) {
   return (
-    <a
+    <Link
       href={href}
-      onClick={onActivate}
       className="group min-h-[7.2rem] rounded-2xl border border-border bg-card p-4 transition-colors hover:border-homera-terracotta/35 sm:p-5"
     >
       <div className="flex items-center justify-between gap-2">
@@ -884,7 +852,7 @@ function OverviewMetric({
       </div>
       <p className="mt-2 truncate font-serif text-display-xs text-foreground sm:text-display-sm">{value}</p>
       <p className="mt-0.5 truncate text-[0.625rem] text-muted sm:text-caption">{hint}</p>
-    </a>
+    </Link>
   );
 }
 

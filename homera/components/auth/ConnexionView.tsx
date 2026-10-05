@@ -82,8 +82,20 @@ export function SignedInPanel({ notice, redirectTo }: { notice?: AuthNotice | nu
   const profile = describeProfile(account.roles, account.profile);
   const groups = capabilitiesByRole(account.roles);
   const missing = missingRoles(account.roles);
-  const homeHref = account.profile.demoRole === "admin" ? "/admin" : CLIENT_HREF;
-  const homeLabel = account.profile.demoRole === "admin" ? "Ouvrir l’administration" : "Ouvrir mon espace client";
+  const workspaceHref = account.profile.demoRole === "admin"
+    ? "/admin"
+    : account.roles.includes("proprietaire")
+      ? "/proprietaire"
+      : account.roles.includes("agent")
+        ? "/agent"
+        : CLIENT_HREF;
+  const workspaceLabel = account.profile.demoRole === "admin"
+    ? "Ouvrir l’administration"
+    : account.roles.includes("proprietaire")
+      ? "Ouvrir l’espace propriétaire"
+      : account.roles.includes("agent")
+        ? "Ouvrir l’espace agent"
+        : "Ouvrir mon espace client";
   const memberSince = new Date(account.createdAt).toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "long",
@@ -102,14 +114,14 @@ export function SignedInPanel({ notice, redirectTo }: { notice?: AuthNotice | nu
         footer={
           <div className="flex flex-wrap items-center justify-between gap-3">
             <Link
-              href={homeHref}
+              href={workspaceHref}
               className="homera-press inline-flex min-h-10 items-center gap-1.5 rounded-btn homera-cta px-4 text-note font-semibold text-white"
             >
-              {homeLabel}
+              {workspaceLabel}
               <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
             </Link>
             <Link
-              href="/favoris"
+              href="/client/favoris"
               className="homera-underline inline-flex min-h-10 items-center gap-1.5 text-note font-medium homera-accent-ink"
             >
               Voir mes favoris et mes recherches
