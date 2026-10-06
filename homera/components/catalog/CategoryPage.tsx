@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
+import { getCategoryVerificationNote } from "@/lib/editorial-guides";
 import { countLabel, formatFCFA } from "@/lib/format";
 import { PER_PAGE, buildCatalogParams, isPristine, parseCatalogQuery, searchCatalog } from "@/lib/properties";
 import { categoryQuery, type PublicCategory, type PublicProjectPage } from "@/lib/nav";
@@ -33,6 +34,7 @@ import { PageHero } from "@/components/catalog/PageHero";
   // (hors projet, type et durée, qui appartiennent à la page d’arrivée).
   const carried = buildCatalogParams({ ...parsed, intent: "", types: [], stayNights: null, page: 1 }).toString();
   const carry = carried ? `?${carried}` : "";
+  const verificationNote = getCategoryVerificationNote(project.slug, category.slug);
   return (
     <>
       {" "}
@@ -61,7 +63,35 @@ import { PageHero } from "@/components/catalog/PageHero";
         }
       />{" "}
       <div className="mx-auto max-w-7xl px-4 pb-24 pt-10 sm:px-6 lg:px-8">
-        {" "}
+        {verificationNote && (
+          <section
+            aria-labelledby="categorie-reperes"
+            className="mb-10 rounded-card border border-border bg-card p-6 shadow-[var(--shadow-card)] sm:p-7"
+          >
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+              <div>
+                <p className="inline-flex items-center gap-2 text-caption font-semibold uppercase tracking-[0.16em] text-homera-terracotta">
+                  <ShieldCheck className="h-4 w-4" aria-hidden="true" /> Repères de sélection HOMERA
+                </p>
+                <h2 id="categorie-reperes" className="mt-2 font-serif text-display-xs">
+                  {verificationNote.title}
+                </h2>
+                <p className="mt-2 text-note leading-relaxed text-muted">{verificationNote.summary}</p>
+              </div>
+              <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {verificationNote.checkpoints.map((checkpoint) => (
+                  <li
+                    key={checkpoint}
+                    className="flex flex-col gap-2 rounded-xl border border-border bg-background/70 p-4 text-caption leading-relaxed text-muted"
+                  >
+                    <CheckCircle2 className="h-4 w-4 shrink-0 text-homera-terracotta" aria-hidden="true" />
+                    <span className="text-foreground">{checkpoint}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </section>
+        )}
         <CatalogExplorer
           basePath={`/${project.slug}/${category.slug}`}
           initialQuery={initialQuery}

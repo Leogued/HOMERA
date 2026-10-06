@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -13,6 +13,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useWorkflow } from "@/components/providers/WorkflowProvider";
 import { hasWorkspaceRole, initials, rolesLabel } from "@/lib/auth";
 import type { AccountRole } from "@/lib/auth";
+import { DEMO_VERIFICATION_CASES } from "@/lib/portal-data";
 import type { AppNotification } from "@/lib/workflow";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY, DemoNotice } from "@/components/workspace/Primitives";
 
@@ -141,21 +142,48 @@ export function WorkspaceShell({
   const { ready: workflowReady, data, updateData, storageAvailable } = useWorkflow();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notificationsContainerRef = useRef<HTMLDivElement | null>(null);
+  const notificationsButtonRef = useRef<HTMLButtonElement | null>(null);
   const offline = !useSyncExternalStore(subscribeToNetwork, getOnlineStatus, () => true);
   const unread = data.notifications.filter((entry) => !entry.read).length;
+  const openVerificationCount = DEMO_VERIFICATION_CASES.filter((entry) =>
+    ["a-examiner", "modification-demandee"].includes(data.verificationDecisions[entry.id] ?? entry.initialDecision),
+  ).length + data.listings.filter((entry) =>
+    ["en-verification", "modification-demandee"].includes(data.listingStatusOverrides[entry.id] ?? entry.status),
+  ).length;
   const title = sectionTitle(role, section);
+  const activeRoleForProfile = role === "client" || role === "proprietaire" || role === "agent"
+    ? role
+    : preferredRole(account?.roles ?? []);
   const navGroups = role === "any" ? anyNavigation(preferredRole(account?.roles ?? [])) : NAV[role];
   const currentHref = pathname || "/";
 
   useEffect(() => {
-    if (!mobileOpen) return;
+    if (!mobileOpen && !notificationsOpen) return;
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "Escape") return;
-      setMobileOpen(false);
+      if (notificationsOpen) {
+        setNotificationsOpen(false);
+        notificationsButtonRef.current?.focus();
+      }
+      if (mobileOpen) {
+        setMobileOpen(false);
+      }
+    };
+    const onPointerDown = (event: MouseEvent) => {
+      if (!notificationsOpen) return;
+      const target = event.target as Node | null;
+      if (target && notificationsContainerRef.current && !notificationsContainerRef.current.contains(target)) {
+        setNotificationsOpen(false);
+      }
     };
     document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [mobileOpen]);
+    document.addEventListener("mousedown", onPointerDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      document.removeEventListener("mousedown", onPointerDown);
+    };
+  }, [mobileOpen, notificationsOpen]);
 
   const markRead = (id: string) => updateData((current) => ({
     ...current,
@@ -175,7 +203,7 @@ export function WorkspaceShell({
     <nav aria-label={`Navigation ${ROLE_LABEL[role].toLowerCase()}`} className="flex-1 space-y-5 overflow-y-auto px-3 pb-5 pt-2">
       {navGroups.map((group) => (
         <div key={group.label}>
-          <p className="px-3 pb-2 text-[0.62rem] font-semibold uppercase tracking-[0.19em] text-white/45">{group.label}</p>
+          <p className="px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] text-white/45">{group.label}</p>
           <ul className="space-y-1">
             {group.items.map((item) => {
               const active = item.href === "/client" || item.href === "/proprietaire" || item.href === "/agent" || item.href === "/admin"
@@ -191,8 +219,8 @@ export function WorkspaceShell({
                   >
                     <item.icon className={`h-[17px] w-[17px] shrink-0 ${active ? "text-homera-amber" : "text-white/55 group-hover:text-white"}`} aria-hidden="true" />
                     <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                    {item.badge && unread > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-homera-terracotta px-1.5 text-[0.62rem] font-semibold text-white">{unread}</span>}
-                    {item.id === "verifications" && role === "admin" && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-homera-amber px-1.5 text-[0.62rem] font-semibold text-homera-night">3</span>}
+                    {item.badge && item.id !== "verifications" && unread > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-homera-terracotta px-1.5 text-micro font-semibold text-white">{unread}</span>}
+                    {item.id === "verifications" && role === "admin" && openVerificationCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-homera-amber px-1.5 text-micro font-semibold text-homera-night">{openVerificationCount}</span>}
                   </Link>
                 </li>
               );
@@ -220,7 +248,7 @@ export function WorkspaceShell({
               <span className="block truncate text-note font-semibold text-white">{account.prenom} {account.nom}</span>
               <span className="block truncate text-caption text-white/60">{rolesLabel(account.roles)}</span>
             </span>
-            <Link href={profileHref(preferredRole(account.roles))} aria-label="Ouvrir mon profil" className="flex h-9 w-9 items-center justify-center rounded-xl text-white/65 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"><UserRound className="h-4 w-4" aria-hidden="true" /></Link>
+            <Link href={profileHref(activeRoleForProfile)} aria-label="Ouvrir mon profil" className="flex h-9 w-9 items-center justify-center rounded-xl text-white/65 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"><UserRound className="h-4 w-4" aria-hidden="true" /></Link>
           </div>
           <button type="button" onClick={signOut} className="mt-2 flex min-h-10 w-full items-center gap-2 rounded-xl px-3 text-note text-white/65 hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"><LogOut className="h-4 w-4" aria-hidden="true" />Se déconnecter</button>
           <Link href="/" className="mt-1 inline-flex min-h-10 items-center gap-2 px-3 text-caption text-white/50 transition-colors hover:text-homera-amber"><ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />Retour au site</Link>
@@ -234,7 +262,7 @@ export function WorkspaceShell({
               <button type="button" aria-label={mobileOpen ? "Fermer la navigation" : "Ouvrir la navigation"} aria-expanded={mobileOpen} aria-controls={mobileOpen ? "workspace-mobile-nav" : undefined} onClick={() => setMobileOpen((open) => !open)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-foreground lg:hidden">
                 {mobileOpen ? <X className="h-4 w-4" aria-hidden="true" /> : <Menu className="h-4 w-4" aria-hidden="true" />}
               </button>
-              <Link href="/" className="flex flex-col lg:hidden" aria-label="HOMERA, accueil"><span className="homera-brand text-brand-sm text-foreground">Homera</span><span className="-mt-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.15em] text-homera-terracotta">{ROLE_LABEL[role]}</span></Link>
+              <Link href="/" className="flex flex-col lg:hidden" aria-label="HOMERA, accueil"><span className="homera-brand text-brand-sm text-foreground">Homera</span><span className="-mt-0.5 text-micro font-semibold uppercase tracking-[0.15em] text-homera-terracotta">{ROLE_LABEL[role]}</span></Link>
               <div className="hidden min-w-0 lg:block">
                 <p className="text-caption font-semibold uppercase tracking-[0.17em] text-muted">{ROLE_LABEL[role]}</p>
                 <p className="mt-0.5 truncate text-note text-foreground">{title} <span className="px-1 text-muted-light">/</span> {account.prenom}</p>
@@ -243,8 +271,8 @@ export function WorkspaceShell({
             <div className="flex shrink-0 items-center gap-2 sm:gap-3">
               {role === "admin" && <span className="hidden rounded-full border border-warning/30 bg-warning/[0.08] px-3 py-1.5 text-caption font-semibold text-warning sm:inline-flex">Aperçu pilote</span>}
               <Link href="/explorer" className="hidden min-h-10 items-center gap-2 rounded-btn homera-cta px-3.5 text-note font-medium text-white sm:inline-flex"><Search className="h-3.5 w-3.5" aria-hidden="true" />Explorer</Link>
-              <div className="relative">
-                <button type="button" aria-label={unread ? `Notifications, ${unread} non lues` : "Notifications"} aria-expanded={notificationsOpen} aria-controls={notificationsOpen ? "workspace-notifications-menu" : undefined} onClick={() => setNotificationsOpen((open) => !open)} className="relative flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground hover:border-homera-terracotta hover:text-homera-terracotta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+              <div ref={notificationsContainerRef} className="relative">
+                <button ref={notificationsButtonRef} type="button" aria-label={unread ? `Notifications, ${unread} non lues` : "Notifications"} aria-expanded={notificationsOpen} aria-controls={notificationsOpen ? "workspace-notifications-menu" : undefined} onClick={() => setNotificationsOpen((open) => !open)} className="relative flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground hover:border-homera-terracotta hover:text-homera-terracotta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <Bell className="h-[18px] w-[18px]" aria-hidden="true" />
                   {unread > 0 && <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full border-2 border-background bg-homera-terracotta" />}
                 </button>
@@ -261,7 +289,7 @@ export function WorkspaceShell({
 
         {mobileOpen && <><button type="button" aria-label="Fermer la navigation" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-40 bg-homera-night/40 lg:hidden" /><div id="workspace-mobile-nav" className="fixed inset-x-3 top-[4.75rem] z-50 flex max-h-[calc(100svh-5.25rem)] flex-col overflow-hidden rounded-2xl border border-border bg-homera-night text-white shadow-[var(--shadow-card-hover)] lg:hidden"><div className="flex items-center justify-between border-b border-white/10 px-4 py-3"><span className="text-caption font-semibold uppercase tracking-[0.15em] text-homera-amber">{ROLE_LABEL[role]}</span><button type="button" onClick={() => setMobileOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full text-white/70 hover:bg-white/10" aria-label="Fermer"><X className="h-4 w-4" aria-hidden="true" /></button></div>{renderedNavigation}<div className="border-t border-white/10 p-3"><button type="button" onClick={signOut} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-note text-white/75 hover:bg-white/[0.07]"><LogOut className="h-4 w-4" aria-hidden="true" />Se déconnecter</button></div></div></>}
 
-        <main className="mx-auto max-w-[1600px] px-4 py-7 sm:px-6 sm:py-9 xl:px-9">
+        <main id="workspace-main" className="mx-auto max-w-[1600px] px-4 py-7 sm:px-6 sm:py-9 xl:px-9">
           {offline && <div className="mb-5 rounded-2xl border border-warning/30 bg-warning/[0.08] px-4 py-3 text-note text-foreground" role="status"><strong>Connexion perdue.</strong> Le prototype utilise vos données locales ; toute fonctionnalité serveur sera indisponible hors ligne.</div>}
           {!storageAvailable && <div className="mb-5 rounded-2xl border border-error/25 bg-error/[0.05] px-4 py-3 text-note text-error" role="alert"><strong>Stockage indisponible.</strong> Les changements restent en mémoire et seront perdus en fermant cet onglet.</div>}
           {role === "admin" && <div className="mb-5 rounded-2xl border border-warning/30 bg-warning/[0.07] px-4 py-3 text-caption leading-relaxed text-muted"><strong className="text-foreground">Mode aperçu administratif.</strong> L’accès et les décisions ci-dessous ne sont pas sécurisés côté serveur dans ce prototype.</div>}
@@ -274,11 +302,11 @@ export function WorkspaceShell({
 }
 
 function NotificationLine({ notification, onRead, compact = false }: { notification: AppNotification; onRead: () => void; compact?: boolean }) {
-  const content = <span className="min-w-0 flex-1"><span className="block text-note font-semibold text-foreground">{notification.title}</span><span className="mt-1 block text-caption leading-relaxed text-muted">{notification.body}</span><span className="mt-1 block text-[0.68rem] text-muted-light">{formatDate(notification.createdAt)}</span></span>;
+  const content = <span className="min-w-0 flex-1"><span className="block text-note font-semibold text-foreground">{notification.title}</span><span className="mt-1 block text-caption leading-relaxed text-muted">{notification.body}</span><span className="mt-1 block text-caption text-muted-light">{formatDate(notification.createdAt)}</span></span>;
   return <div className={`flex items-start gap-2.5 rounded-xl px-2.5 py-3 ${notification.read ? "" : "bg-homera-terracotta/[0.045]"}`}>
     <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${notification.read ? "bg-border" : "bg-homera-terracotta"}`} aria-hidden="true" />
     {notification.href ? <Link onClick={onRead} href={notification.href} className="min-w-0 flex-1 hover:underline">{content}</Link> : content}
-    {!notification.read && <button type="button" onClick={onRead} className="shrink-0 rounded-md px-1.5 py-1 text-[0.68rem] font-semibold text-homera-terracotta hover:bg-surface-hover">{compact ? "Marquer lue" : "Marquer comme lue"}</button>}
+    {!notification.read && <button type="button" onClick={onRead} className="shrink-0 rounded-md px-1.5 py-1 text-caption font-semibold text-homera-terracotta hover:bg-surface-hover">{compact ? "Marquer lue" : "Marquer comme lue"}</button>}
   </div>;
 }
 

@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { ArrowRight, Check, ShieldCheck } from "lucide-react";
+import { ArrowRight, Check, ChevronDown, ShieldCheck } from "lucide-react";
+import { PROJECT_DECISION_GUIDES } from "@/lib/editorial-guides";
 import { countLabel, formatFCFA } from "@/lib/format";
 import { PER_PAGE, isPristine, parseCatalogQuery, searchCatalog } from "@/lib/properties";
 import { categoryQuery, projectQuery, type PublicProjectPage } from "@/lib/nav";
@@ -21,6 +22,7 @@ import { Visual } from "@/components/ui/Visual";
   const prices = results.map((property) => property.price);
   const cities = new Set(results.map((property) => property.city));
   const initialVisible = Math.min(4, Math.max(1, query.page)) * PER_PAGE;
+  const decisionGuide = PROJECT_DECISION_GUIDES[project.slug];
   return (
     <>
       {" "}
@@ -177,6 +179,67 @@ import { Visual } from "@/components/ui/Visual";
           />{" "}
         </div>{" "}
       </section>{" "}
+      {/* ---------------- Guide de décision & FAQ du projet ---------------- */}
+      <section className="border-t border-border bg-card/40" aria-labelledby="projet-guide">
+        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
+          <div className="max-w-3xl">
+            <p className="text-label uppercase homera-accent-ink">Guide pratique HOMERA</p>
+            <h2 id="projet-guide" className="mt-2 font-serif text-display-sm">
+              {decisionGuide.title}
+            </h2>
+            <p className="mt-3 text-body-sm leading-relaxed text-muted">{decisionGuide.intro}</p>
+          </div>
+          <div className="mt-10 grid grid-cols-1 gap-6 lg:grid-cols-3">
+            {decisionGuide.pillars.map((pillar) => (
+              <article key={pillar.title} className="rounded-card border border-border bg-card p-6 shadow-[var(--shadow-card)]">
+                <p className="homera-num text-micro font-semibold uppercase tracking-[0.16em] text-homera-terracotta">
+                  {pillar.badge}
+                </p>
+                <h3 className="mt-3 font-serif text-display-xs text-foreground">{pillar.title}</h3>
+                <p className="mt-3 text-note leading-relaxed text-muted">{pillar.body}</p>
+              </article>
+            ))}
+          </div>
+          <div className="mt-14 border-t border-border pt-12">
+            <div className="grid grid-cols-1 gap-8 lg:grid-cols-[0.85fr_1.15fr]">
+              <div>
+                <p className="text-label uppercase text-muted">Questions fréquentes</p>
+                <h3 className="mt-2 font-serif text-display-xs">
+                  Ce qu’il faut savoir avant de {project.navLabel.toLowerCase()}
+                </h3>
+                <p className="mt-3 text-note leading-relaxed text-muted">
+                  Vous avez une question spécifique sur un dossier ou une référence HOMERA ? Notre équipe vous répond avec les éléments du bien.
+                </p>
+                <Link
+                  href="/contact"
+                  className="homera-underline mt-5 inline-flex min-h-10 items-center gap-2 text-note font-medium homera-accent-ink"
+                >
+                  Poser une question à l’équipe <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+              </div>
+              <div className="space-y-3">
+                {decisionGuide.faqs.map((faq) => (
+                  <details
+                    key={faq.question}
+                    className="group rounded-card border border-border bg-card px-5 py-4 transition-colors open:border-homera-terracotta/35"
+                  >
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-body-sm font-medium text-foreground">
+                      <span>{faq.question}</span>
+                      <ChevronDown
+                        className="h-4 w-4 shrink-0 text-homera-terracotta transition-transform duration-200 group-open:rotate-180"
+                        aria-hidden="true"
+                      />
+                    </summary>
+                    <p className="mt-3 border-t border-border pt-3 text-note leading-relaxed text-muted">
+                      {faq.answer}
+                    </p>
+                  </details>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
     </>
   );
 }

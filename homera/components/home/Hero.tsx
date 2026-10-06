@@ -127,7 +127,7 @@ export function Hero() {
               {" "}
               <div className="homera-reveal" data-revealed={entered} style={reveal(240)}>
                 {" "}
-                <p className="text-homera-cream-dark text-sm sm:text-body max-w-2xl mx-auto font-sans font-normal leading-relaxed lg:-translate-y-[max(7rem,calc(50svh-12.5rem))]">
+                <p className="text-homera-cream-dark text-body-sm sm:text-body max-w-2xl mx-auto font-sans font-normal leading-relaxed lg:-translate-y-[max(7rem,calc(50svh-12.5rem))]">
                   {" "}
                   Immobilier en toute sérénité, sans surprise ni intermédiaire douteux — la plateforme de confiance
                   pour tous vos projets au Bénin.{" "}

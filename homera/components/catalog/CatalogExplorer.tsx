@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
-import { ArrowRight, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
+import { ArrowRight, Compass, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
 import { DEMO_DATA, PROPERTIES } from "@/lib/content";
 import { countLabel } from "@/lib/format";
 import {
@@ -19,6 +19,7 @@ import {
 import { useInView } from "@/lib/motion";
 import { PropertyCard } from "@/components/catalog/PropertyCard";
 import { CatalogFilters } from "@/components/catalog/CatalogFilters";
+import { CommuneMapExplorer } from "@/components/catalog/CommuneMapExplorer";
 import { AssetPlaceholder } from "@/components/catalog/AssetPlaceholder";
 import { SaveSearchButton } from "@/components/catalog/SaveSearchButton";
 import { TextRoll } from "@/components/ui/TextRoll";
@@ -40,6 +41,9 @@ export function CatalogExplorer({
   const [query, setQuery] = useState<CatalogQuery>(initialQuery);
   const [visible, setVisible] = useState(Math.max(PER_PAGE, initialVisible));
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [mapOpen, setMapOpen] = useState(
+    basePath === "/explorer" || initialQuery.cities.length > 0 || initialQuery.districts.length > 0,
+  );
   const [term, setTerm] = useState(initialQuery.q); // Les mises à jour de liste passent par une transition : pendant le
   // calcul, l’écran reste réactif et quelques squelettes annoncent la suite.
   const [pending, startTransition] = useTransition();
@@ -144,8 +148,23 @@ export function CatalogExplorer({
               <TextRoll>Rechercher</TextRoll>{" "}
             </button>{" "}
           </form>{" "}
-          <div className="flex items-center justify-between gap-3 lg:justify-end">
+          <div className="flex flex-wrap items-center justify-between gap-3 lg:justify-end">
             {" "}
+            <button
+              type="button"
+              onClick={() => setMapOpen((open) => !open)}
+              aria-expanded={mapOpen}
+              aria-controls={mapOpen ? "homera-commune-map" : undefined}
+              className={`homera-press inline-flex h-11 items-center gap-2 rounded-input border px-3.5 text-note font-medium transition-colors ${
+                mapOpen
+                  ? "border-homera-terracotta/45 bg-homera-terracotta/[0.08] text-homera-terracotta"
+                  : "border-border bg-card text-foreground hover:border-homera-terracotta"
+              }`}
+            >
+              {" "}
+              <Compass className="h-4 w-4" aria-hidden="true" />{" "}
+              <span>Carte des communes</span>{" "}
+            </button>{" "}
             <label className="flex items-center gap-2 text-note text-muted">
               {" "}
               <span className="shrink-0">Trier</span>{" "}
@@ -180,6 +199,11 @@ export function CatalogExplorer({
           </div>{" "}
         </div>{" "}
       </div>{" "}
+      {mapOpen && (
+        <div id="homera-commune-map">
+          <CommuneMapExplorer query={query} facets={facetData} onChange={update} />
+        </div>
+      )}{" "}
       <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[19rem_1fr]">
         {" "}
         {/* ---------------- Filtres (desktop) ---------------- */}{" "}

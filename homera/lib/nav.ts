@@ -298,4 +298,6 @@ export const ABOUT_SECTIONS = [
   { id: "protocole", label: "Protocole de vérification" },
   { id: "piliers", label: "Nos convictions" },
   { id: "chiffres", label: "Repères" },
+  { id: "publics", label: "À qui s’adresse HOMERA" },
+  { id: "responsabilite", label: "Cadre légal" },
 ] as const;

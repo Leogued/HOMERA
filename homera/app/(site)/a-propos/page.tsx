@@ -14,6 +14,7 @@ import {
   Users,
 } from "lucide-react";
 import { DEMO_DATA, DOSSIER, PILLARS, STATS, VERIFICATION_STEPS } from "@/lib/content";
+import { ABOUT_AUDIENCES, ABOUT_VERIFICATION_BOUNDARY } from "@/lib/editorial-guides";
 import { formatNumber } from "@/lib/format";
 import { ABOUT_SECTIONS } from "@/lib/nav";
 import { ABOUT_PAGE } from "@/lib/pages";
@@ -214,6 +215,79 @@ export default function AProposPage() {
             })}{" "}
           </dl>{" "}
         </section>{" "}
+        {/* ---------------- À qui s'adresse HOMERA ---------------- */}
+        <section id="publics" aria-labelledby="publics-titre" className="mt-20 scroll-mt-28">
+          <p className="text-label uppercase homera-accent-ink">Acteurs du marché</p>
+          <h2 id="publics-titre" className="mt-2 font-serif text-display-sm">
+            {ABOUT_AUDIENCES.title}
+          </h2>
+          <p className="mt-3 max-w-2xl text-body-sm leading-relaxed text-muted">{ABOUT_AUDIENCES.intro}</p>
+          <ul className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-2">
+            {ABOUT_AUDIENCES.items.map((item) => (
+              <li
+                key={item.role}
+                className="flex flex-col justify-between rounded-card border border-border bg-card p-6 shadow-[var(--shadow-card)]"
+              >
+                <div>
+                  <p className="text-micro font-semibold uppercase tracking-[0.16em] text-homera-terracotta">
+                    {item.role}
+                  </p>
+                  <h3 className="mt-2 font-serif text-display-xs text-foreground">{item.title}</h3>
+                  <p className="mt-3 text-note leading-relaxed text-muted">{item.body}</p>
+                </div>
+                <Link
+                  href={item.ctaHref}
+                  className="homera-underline mt-6 inline-flex min-h-10 w-fit items-center gap-2 text-note font-medium homera-accent-ink"
+                >
+                  {item.ctaLabel} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* ---------------- Frontière de responsabilité ---------------- */}
+        <section
+          id="responsabilite"
+          aria-labelledby="responsabilite-titre"
+          className="mt-20 scroll-mt-28 rounded-card border border-border bg-card p-6 sm:p-10"
+        >
+          <div className="max-w-3xl">
+            <p className="text-label uppercase homera-accent-ink">Transparence & cadre légal</p>
+            <h2 id="responsabilite-titre" className="mt-2 font-serif text-display-sm">
+              {ABOUT_VERIFICATION_BOUNDARY.title}
+            </h2>
+            <p className="mt-3 text-body-sm leading-relaxed text-muted">{ABOUT_VERIFICATION_BOUNDARY.intro}</p>
+          </div>
+          <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
+            <div className="rounded-xl border border-homera-terracotta/25 bg-homera-terracotta/[0.05] p-6">
+              <h3 className="font-serif text-display-xs text-foreground">
+                {ABOUT_VERIFICATION_BOUNDARY.coveredTitle}
+              </h3>
+              <ul className="mt-4 space-y-3">
+                {ABOUT_VERIFICATION_BOUNDARY.covered.map((point) => (
+                  <li key={point} className="flex items-start gap-3 text-note leading-relaxed text-foreground">
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-homera-terracotta" aria-hidden="true" />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="rounded-xl border border-border bg-background/70 p-6">
+              <h3 className="font-serif text-display-xs text-foreground">
+                {ABOUT_VERIFICATION_BOUNDARY.notaryTitle}
+              </h3>
+              <ul className="mt-4 space-y-3">
+                {ABOUT_VERIFICATION_BOUNDARY.notary.map((point) => (
+                  <li key={point} className="flex items-start gap-3 text-note leading-relaxed text-muted">
+                    <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0 text-homera-terracotta" aria-hidden="true" />
+                    <span>{point}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
       </div>{" "}
     </>
   );

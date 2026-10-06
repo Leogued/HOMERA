@@ -283,7 +283,7 @@ function RentalApplicationCard({ application }: { application: { id: string; pro
       const effectiveIndex = RENTAL_STAGES.filter((entry) => !((!rejected && entry.id === "refusee") || (rejected && entry.id === "acceptee"))).findIndex((entry) => entry.id === stage.id);
       const active = stage.id === application.stage;
       const done = !rejected && effectiveIndex <= reachedIndex;
-      return <li key={stage.id} className={`rounded-xl border p-3 ${active ? "border-homera-terracotta/35 bg-homera-terracotta/[0.06]" : done ? "border-success/20 bg-success/[0.04]" : "border-border bg-background/50"}`}><p className="flex items-center gap-2 text-caption font-semibold"><span className={`flex h-5 w-5 items-center justify-center rounded-full ${active ? "bg-homera-terracotta text-white" : done ? "bg-success text-white" : "bg-surface-hover text-muted"}`}>{done && !active ? <Check className="h-3 w-3" aria-hidden="true" /> : <span className="sr-only">{active ? "Étape actuelle" : "À venir"}</span>}</span>{stage.label}</p><p className="mt-2 text-[0.68rem] leading-relaxed text-muted">{stage.description}</p></li>;
+      return <li key={stage.id} className={`rounded-xl border p-3 ${active ? "border-homera-terracotta/35 bg-homera-terracotta/[0.06]" : done ? "border-success/20 bg-success/[0.04]" : "border-border bg-background/50"}`}><p className="flex items-center gap-2 text-caption font-semibold"><span className={`flex h-5 w-5 items-center justify-center rounded-full ${active ? "bg-homera-terracotta text-white" : done ? "bg-success text-white" : "bg-surface-hover text-muted"}`}>{done && !active ? <Check className="h-3 w-3" aria-hidden="true" /> : <span className="sr-only">{active ? "Étape actuelle" : "À venir"}</span>}</span>{stage.label}</p><p className="mt-2 text-caption leading-relaxed text-muted">{stage.description}</p></li>;
     })}</ol>
     {contract && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background p-4"><div className="flex items-start gap-3"><FileText className="mt-0.5 h-4 w-4 shrink-0 text-homera-terracotta" aria-hidden="true" /><div><p className="text-note font-semibold">Contrat de location</p><p className="mt-1 text-caption text-muted">Statut : <StatusBadge status={contract.status} /></p></div></div><Link href={`/client/contrats/${contract.id}`} className={BUTTON_SECONDARY}>Consulter le contrat<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link></div>}
   </WorkspacePanel>;
@@ -345,12 +345,12 @@ export function ClientContractReader({ contractId }: { contractId: string }) {
 function PropertyMiniCard({ property, large = false }: { property: Property; large?: boolean }) {
   return <div className={`overflow-hidden rounded-2xl border border-border bg-card ${large ? "" : "grid grid-cols-[88px_1fr]"}`}>
     <div className={`relative ${large ? "aspect-[4/3]" : "h-full min-h-[94px]"}`}><Visual mediaKey={property.media} alt={property.alt} sizes={large ? "220px" : "100px"} veil="none" quality={68} className="absolute inset-0 h-full w-full" /></div>
-    <div className="min-w-0 p-3"><p className="line-clamp-2 text-note font-semibold">{property.title}</p><p className="mt-1 flex items-center gap-1 text-caption text-muted"><MapPin className="h-3 w-3 shrink-0 text-homera-terracotta" aria-hidden="true" />{property.district}, {property.city}</p><p className="mt-1 font-mono text-[0.65rem] text-muted">{property.homeraId}</p>{large && <p className="mt-2 text-caption text-foreground">{formatPropertyPrice(property)}</p>}</div>
+    <div className="min-w-0 p-3"><p className="line-clamp-2 text-note font-semibold">{property.title}</p><p className="mt-1 flex items-center gap-1 text-caption text-muted"><MapPin className="h-3 w-3 shrink-0 text-homera-terracotta" aria-hidden="true" />{property.district}, {property.city}</p><p className="mt-1 font-mono text-micro text-muted">{property.homeraId}</p>{large && <p className="mt-2 text-caption text-foreground">{formatPropertyPrice(property)}</p>}</div>
   </div>;
 }
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-xl border border-border bg-background/60 p-3"><dt className="text-[0.65rem] font-semibold uppercase tracking-[0.13em] text-muted">{label}</dt><dd className="mt-1 text-note font-medium text-foreground">{value}</dd></div>;
+  return <div className="rounded-xl border border-border bg-background/60 p-3"><dt className="text-micro font-semibold uppercase tracking-[0.13em] text-muted">{label}</dt><dd className="mt-1 text-note font-medium text-foreground">{value}</dd></div>;
 }
 
 function formatDateOnly(value: string): string {

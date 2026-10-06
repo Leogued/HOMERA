@@ -1727,3 +1727,136 @@ await test('HOMERA : le SVG du QR trace exactement la matrice vérifiée', async
   const [agentId, propertyRef] = ['AG-HOM-0248', 'COT-1182'];
   assert.equal(qr.decodeQrMatrix(matrix), `https://homera.bj/verification-agent?agent=${agentId}&bien=${propertyRef}`);
 });
+
+await test('HOMERA : cadre de gouvernance markdown complet et synchronisé', async () => {
+  const governanceFiles = [
+    'AGENTS.md',
+    'PROJECT.md',
+    'VISION.md',
+    'DESIGN_SYSTEM.md',
+    'FRONTEND_RULES.md',
+    'QUALITY_GATE.md',
+    'ROADMAP.md',
+    'CURRENT_STATE.md',
+    'docs/pages/README.md',
+    'docs/pages/PUBLIC_SITE.md',
+    'docs/pages/AUTH_FLOWS.md',
+    'docs/pages/WORKSPACES.md',
+    'docs/components/README.md',
+    'docs/components/PRIMITIVES_AND_LAYOUT.md',
+    'docs/components/CATALOG_AND_HOME.md',
+    'docs/components/WORKSPACE_AND_AUTH.md',
+    'docs/interactions/README.md',
+    'docs/interactions/MOTION_AND_SCROLL.md',
+    'docs/interactions/WORKFLOWS_AND_STATE.md',
+    'docs/interactions/ACCESSIBILITY_AND_RESPONSIVE.md',
+  ];
+  for (const rel of governanceFiles) {
+    const appDoc = await readFile(new URL(`../${rel}`, import.meta.url), 'utf8');
+    const rootDoc = await readFile(new URL(`../../${rel}`, import.meta.url), 'utf8');
+    assert.ok(appDoc.trim().length > 200, `document trop court : homera/${rel}`);
+    assert.equal(appDoc, rootDoc, `désynchronisation entre homera/${rel} et /${rel}`);
+  }
+  const agents = await readFile(new URL('../AGENTS.md', import.meta.url), 'utf8');
+  assert.ok(agents.includes('# HOMERA — CUSTOM DESIGN & VISUAL DIRECTION'), 'AGENTS.md intègre la direction de conception sur mesure');
+  assert.ok(agents.includes('# HOMERA — PRODUCT QUALITY & AUTONOMOUS DESIGN INTELLIGENCE'), 'AGENTS.md intègre le bloc Product Quality & Autonomous Design Intelligence');
+  assert.ok(agents.includes('OUI, AJOUTER') && agents.includes('OUI, SUPPRIMER') && agents.includes('BOUCLE AUTONOME'), 'AGENTS.md intègre le pouvoir de décision et la boucle autonome en 11 étapes');
+  assert.ok(agents.includes('PHASE 2 — RECHERCHE & INSPIRATION') && agents.includes('PHASE 5 — CRITIQUE & SUPPRESSION'), 'AGENTS.md intègre le workflow en 7 phases');
+  const qualityGate = await readFile(new URL('../QUALITY_GATE.md', import.meta.url), 'utf8');
+  assert.ok(qualityGate.includes('# 5. CUSTOM DESIGN & CREATIVE QUALITY'), 'QUALITY_GATE.md intègre la 5e catégorie Custom Design & Creative Quality');
+  assert.ok(qualityGate.includes('# 6. PRODUCT QUALITY & AUTONOMOUS DESIGN INTELLIGENCE'), 'QUALITY_GATE.md intègre la 6e catégorie Product Quality & Autonomous Design Intelligence');
+});
+
+await test('HOMERA : échelle typographique stricte (--text-*) dans tous les composants et pages', async () => {
+  const sources = [];
+  const walk = async (dir) => {
+    for (const entry of await readdir(new URL(dir, import.meta.url), { withFileTypes: true })) {
+      if (entry.isDirectory()) await walk(`${dir}${entry.name}/`);
+      else if (entry.name.endsWith('.tsx')) sources.push(new URL(`${dir}${entry.name}`, import.meta.url));
+    }
+  };
+  await walk('../components/');
+  await walk('../app/');
+  const allowedTextTokens = new Set([
+    'text-micro', 'text-caption', 'text-note', 'text-body-sm', 'text-label', 'text-body',
+    'text-display-xs', 'text-display-sm', 'text-display-md', 'text-display-lg', 'text-display-xl',
+    'text-display-2xl', 'text-display-fluid',
+    'text-figure', 'text-figure-lg', 'text-figure-fluid',
+    'text-accent', 'text-accent-lg',
+    'text-brand', 'text-brand-compact', 'text-brand-sm',
+    'text-[1.06em]',
+    'text-left', 'text-center', 'text-right', 'text-justify', 'text-start', 'text-end',
+    'text-wrap', 'text-nowrap', 'text-balance', 'text-pretty', 'text-ellipsis', 'text-clip',
+    'text-transparent', 'text-current', 'text-inherit', 'text-white', 'text-black',
+  ]);
+  const violations = [];
+  for (const url of sources) {
+    const src = await readFile(url, 'utf8');
+    src.split('\n').forEach((line, index) => {
+      const matches = line.match(/\btext-[a-zA-Z0-9_\[\].%-]+/g) || [];
+      for (const token of matches) {
+        if (allowedTextTokens.has(token)) continue;
+        if (/^text-(foreground|background|muted|muted-light|homera-|success|warning|error|info|ring|card|border)/.test(token)) continue;
+        if (line.includes('--text-')) continue;
+        violations.push(`${url.pathname}:${index + 1} -> ${token}`);
+      }
+      const classAttrs = line.match(/className=(?:"[^"]*"|\{`[^`]*`\})/g) || [];
+      for (const attr of classAttrs) {
+        if (/\bfont-serif\b/.test(attr) && /\bfont-(semibold|bold|extrabold|black)\b/.test(attr)) {
+          violations.push(`${url.pathname}:${index + 1} -> font-serif + graisse synthétique`);
+        }
+      }
+    });
+  }
+  assert.deepEqual(violations, [], `violations d’échelle typographique : ${violations.join(', ')}`);
+});
+
+await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (profil par rôle, labels, footer, notifications)', async () => {
+  const profileSettings = await readFile(new URL('../components/workspace/ProfileSettings.tsx', import.meta.url), 'utf8');
+  assert.ok(profileSettings.includes('describeProfile(role, account.profile)'), 'ProfilePage affiche les champs du rôle actif');
+
+  const primitives = await readFile(new URL('../components/workspace/Primitives.tsx', import.meta.url), 'utf8');
+  assert.ok(!primitives.includes('<span className="sr-only">{describedBy}</span>'), 'FormField n’expose pas les IDs DOM bruts aux lecteurs d’écran');
+
+  const ownerWorkspace = await readFile(new URL('../components/workspace/OwnerWorkspace.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(ownerWorkspace, /<label[^>]*>\s*<FormField/, 'aucun <label> imbriqué autour de FormField');
+
+  const workspaceFooter = await readFile(new URL('../components/workspace/WorkspaceFooter.tsx', import.meta.url), 'utf8');
+  assert.ok(workspaceFooter.includes('lg:pl-[calc(268px+1.5rem)]'), 'WorkspaceFooter compense la barre latérale fixe sur desktop');
+  assert.ok(!workspaceFooter.includes('new Date().getFullYear()'), 'WorkspaceFooter déterministe au rendu SSR/CSR');
+
+  const clientDashboard = await readFile(new URL('../components/client/ClientDashboard.tsx', import.meta.url), 'utf8');
+  assert.ok(clientDashboard.includes('unreadWorkflowNotifications'), 'ClientDashboard synchronise les notifications du workflow');
+
+  const agentVerification = await readFile(new URL('../components/workspace/AgentVerification.tsx', import.meta.url), 'utf8');
+  assert.ok(agentVerification.includes('action="/verification-agent"'), 'AgentVerification expose un formulaire de recherche interactif');
+
+  const clientFavorites = await readFile(new URL('../components/workspace/ClientFavorites.tsx', import.meta.url), 'utf8');
+  assert.ok(!clientFavorites.includes('Comparer · bientôt'), 'suppression du placeholder mort dans ClientFavorites');
+  assert.ok(clientFavorites.includes('PropertyComparison'), 'comparateur actif dans ClientFavorites');
+
+  const catalogExplorer = await readFile(new URL('../components/catalog/CatalogExplorer.tsx', import.meta.url), 'utf8');
+  assert.ok(catalogExplorer.includes('CommuneMapExplorer'), 'vue cartographique interactive des communes intégrée dans CatalogExplorer');
+
+  assert.ok(!ownerWorkspace.includes('Continuer vers le paiement · bientôt disponible'), 'suppression du bouton placeholder mort dans OwnerSubscription');
+  assert.ok(ownerWorkspace.includes('/contact?sujet=gestion'), 'OwnerSubscription oriente les formules sur devis vers /contact?sujet=gestion');
+
+  const adminWorkspace = await readFile(new URL('../components/workspace/AdminWorkspace.tsx', import.meta.url), 'utf8');
+  assert.ok(adminWorkspace.includes('data.visits.map') && adminWorkspace.includes('data.applications.map'), 'AdminRecords reflète les visites et demandes locales du workflow');
+
+  const agentWorkspace = await readFile(new URL('../components/workspace/AgentWorkspace.tsx', import.meta.url), 'utf8');
+  assert.ok(agentWorkspace.includes('describeProfile("agent", account.profile)'), 'AgentProfile affiche les champs détaillés du profil agent');
+
+  const propertyDetail = await readFile(new URL('../components/catalog/PropertyDetail.tsx', import.meta.url), 'utf8');
+  assert.ok(propertyDetail.includes('getNeighborhoodContext') && propertyDetail.includes('getPropertyCommitmentGuide'), 'PropertyDetail intègre le contexte du quartier et les repères financiers');
+
+  const projectPage = await readFile(new URL('../components/catalog/ProjectPage.tsx', import.meta.url), 'utf8');
+  assert.ok(projectPage.includes('PROJECT_DECISION_GUIDES'), 'ProjectPage intègre le guide de décision et la FAQ par projet');
+
+  const categoryPage = await readFile(new URL('../components/catalog/CategoryPage.tsx', import.meta.url), 'utf8');
+  assert.ok(categoryPage.includes('getCategoryVerificationNote'), 'CategoryPage intègre les points de contrôle par catégorie');
+
+  const serviceDetail = await readFile(new URL('../components/site/ServiceDetail.tsx', import.meta.url), 'utf8');
+  assert.ok(serviceDetail.includes('SERVICE_DETAILED_GUIDES'), 'ServiceDetail intègre le périmètre détaillé, les livrables et la FAQ de chaque métier');
+});
+

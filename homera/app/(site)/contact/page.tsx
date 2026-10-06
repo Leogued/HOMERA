@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, Clock, Mail, MapPin, Phone, ShieldCheck } from "lucide-react";
 import { ContactForm } from "@/components/catalog/ContactForm";
 import { PageHero } from "@/components/catalog/PageHero";
+import { CONTACT_PREPARATION_GUIDES } from "@/lib/editorial-guides";
 import { CONTACT_PAGE } from "@/lib/pages";
 import type { NextSearchParams } from "@/lib/search-params";
 /* ================================================================== /contact — PARLER À QUELQU’UN ------------------------------------------------------------------ Une page utile plutôt qu’un formulaire qui ne part nulle part : les coordonnées réelles, les horaires, et un message composé dans le client de messagerie du visiteur, référence du bien incluse. ================================================================== */ export const metadata: Metadata =
@@ -16,7 +17,7 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
   const params = await searchParams;
   const rawReference = params.bien;
   const reference = typeof rawReference === "string" ? rawReference.toUpperCase() : "";
-  const rawSubject = params.sujet;
+  const rawSubject = params.sujet ?? params.service;
   const subjectKey = typeof rawSubject === "string" ? rawSubject : "";
   return (
     <>
@@ -107,6 +108,22 @@ export default async function ContactPage({ searchParams }: { searchParams: Prom
           <p className="text-caption leading-relaxed text-muted">{CONTACT_PAGE.honesty}</p>{" "}
         </aside>{" "}
       </div>{" "}
+      <section className="border-t border-border bg-card/40" aria-labelledby="contact-preparation">
+        <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
+          <p className="text-label uppercase homera-accent-ink">Préparer votre échange</p>
+          <h2 id="contact-preparation" className="mt-2 font-serif text-display-xs">
+            Les informations utiles selon votre demande
+          </h2>
+          <div className="mt-6 grid grid-cols-1 gap-5 md:grid-cols-3">
+            {CONTACT_PREPARATION_GUIDES.map((item) => (
+              <article key={item.title} className="rounded-card border border-border bg-card p-5">
+                <h3 className="text-body-sm font-semibold text-foreground">{item.title}</h3>
+                <p className="mt-2 text-note leading-relaxed text-muted">{item.detail}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
     </>
   );
 }

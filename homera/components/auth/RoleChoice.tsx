@@ -76,7 +76,7 @@ export function RoleChoice({
                   aria-hidden="true"
                 />
                 {active ? (
-                  <span className="inline-flex items-center gap-1 text-[0.625rem] font-semibold uppercase tracking-[0.12em] homera-accent-ink">
+                  <span className="inline-flex items-center gap-1 text-micro font-semibold uppercase tracking-[0.12em] homera-accent-ink">
                     <Check className="h-3 w-3" aria-hidden="true" />
                     Choisi
                   </span>

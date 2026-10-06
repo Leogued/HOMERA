@@ -50,7 +50,7 @@ export function CodeField({
         onChange={(event) => onChange(event.target.value.replace(/\D/g, "").slice(0, 6))}
         aria-invalid={error ? true : undefined}
         aria-describedby={describedBy}
-        className={`homera-num h-14 w-full rounded-input border bg-background text-center font-mono text-[1.5rem] tracking-[0.5em] text-foreground outline-none transition-colors placeholder:tracking-[0.3em] placeholder:text-muted-light ${
+        className={`homera-num h-14 w-full rounded-input border bg-background text-center font-mono text-display-xs tracking-[0.5em] text-foreground outline-none transition-colors placeholder:tracking-[0.3em] placeholder:text-muted-light ${
           error ? "border-error/70" : "border-border hover:border-homera-terracotta/50 focus:border-homera-terracotta/70"
         }`}
         placeholder="000000"

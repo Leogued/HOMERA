@@ -6,6 +6,7 @@ import { ArrowRight, FolderHeart, Heart, Plus, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useVisitor } from "@/components/providers/VisitorProvider";
 import { PropertyCard } from "@/components/catalog/PropertyCard";
+import { PropertyComparison } from "@/components/catalog/PropertyComparison";
 import { PROPERTIES, type Property } from "@/lib/content";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY, DemoNotice, EmptyPanel, INPUT_CLASS, WorkspaceHeading } from "@/components/workspace/Primitives";
 
@@ -87,9 +88,9 @@ export function ClientFavorites() {
         {folderError && <p role="alert" className="mt-2 text-caption text-error">{folderError}</p>}
       </section>
       {!visible.length ? <div className="mt-5"><EmptyPanel icon={FolderHeart} title={`Le dossier « ${activeFolder} » est vide`} description="Déplacez un bien vers ce dossier depuis son menu sous la carte." action={<button type="button" onClick={() => setActiveFolder("Tous")} className={BUTTON_SECONDARY}>Voir tous les favoris</button>} /></div> : <ul className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">{visible.map((property) => <li key={property.id} className="flex min-w-0 flex-col gap-2"><PropertyCard property={property} layout="grid" /><label htmlFor={`folder-${property.id}`} className="text-caption font-semibold text-muted">Ranger dans</label><select id={`folder-${property.id}`} value={assignment[property.id] ?? "À étudier"} onChange={(event) => assignTo(property.id, event.target.value)} className={`${INPUT_CLASS} min-h-10 text-caption`} aria-label={`Ranger ${property.title}`}><option value="À étudier">À étudier</option>{folders.filter((folder) => folder !== "À étudier").map((folder) => <option key={folder} value={folder}>{folder}</option>)}</select></li>)}</ul>}
+      {visible.length >= 2 && <div className="mt-7"><PropertyComparison properties={visible} /></div>}
     </>}
-    <div className="mt-7 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-5"><p className="text-caption text-muted">Comparer des biens : disponible dans une prochaine phase.</p><button type="button" disabled className="min-h-10 cursor-not-allowed rounded-btn bg-surface-hover px-3 text-caption font-semibold text-muted opacity-65">Comparer · bientôt</button></div>
-    <div className="mt-5"><DemoNotice>Les favoris sont partagés avec la page publique /favoris. Leur classement est lié à ce compte dans ce navigateur; rien n’est envoyé au serveur.</DemoNotice></div>
+    <div className="mt-6"><DemoNotice>Les favoris sont partagés avec la page publique /favoris. Leur classement est lié à ce compte dans ce navigateur; rien n’est envoyé au serveur.</DemoNotice></div>
   </>;
 }
 

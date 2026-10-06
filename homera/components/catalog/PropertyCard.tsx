@@ -99,7 +99,7 @@ export function PropertyCard(props: {
   );
 
   const price = (
-    <p className="homera-num shrink-0 text-base font-semibold text-foreground">{formatPropertyPrice(property)}</p>
+    <p className="homera-num shrink-0 text-body font-semibold text-foreground">{formatPropertyPrice(property)}</p>
   );
 
   /**

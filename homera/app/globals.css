@@ -371,8 +371,8 @@
   --radius-media: var(--radius-2xl);
   --radius-modal: var(--radius-3xl);
 
-  --shadow-card: var(--shadow-card);
-  --shadow-card-hover: var(--shadow-card-hover);
+  --shadow-card: 0 4px 20px rgba(62, 36, 24, 0.08);
+  --shadow-card-hover: 0 12px 35px rgba(62, 36, 24, 0.16);
 }
 
 /* =================================

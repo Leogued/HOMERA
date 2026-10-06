@@ -9,6 +9,7 @@
     "lint": "eslint",
     "images": "node scripts/build-images.mjs",
     "test": "node scripts/test-motion.mjs",
+    "quality:gate": "node scripts/quality-gate.mjs",
     "audit:home": "node scripts/audit-home.mjs"
   },
   "dependencies": {

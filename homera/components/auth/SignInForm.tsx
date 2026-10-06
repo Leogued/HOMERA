@@ -105,11 +105,11 @@ export function SignInForm({ notice, redirectTo }: { notice?: AuthNotice | null;
             {DEMO_LOGIN_CREDENTIALS.map((credential) => <li key={credential.username}>
               <button type="button" onClick={() => { setEmail(credential.username); setPassword(credential.password); setErrors({}); setStatus(null); }} aria-label={`Utiliser le profil ${credential.label}, identifiant ${credential.username}, mot de passe ${credential.password}`} className="flex min-h-14 w-full flex-col items-start justify-center rounded-xl border border-border bg-background px-3 py-2 text-left transition-colors hover:border-homera-terracotta/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-terracotta">
                 <span className="text-caption font-semibold">{credential.label}</span>
-                <span className="mt-0.5 font-mono text-[0.68rem] text-muted">{credential.username} / {credential.password}</span>
+                <span className="mt-0.5 font-mono text-caption text-muted">{credential.username} / {credential.password}</span>
               </button>
             </li>)}
           </ul>
-          <p className="mt-3 text-[0.68rem] leading-relaxed text-muted">Ces comptes et mots de passe sont publics et réservés à la démonstration locale, jamais à la production.</p>
+          <p className="mt-3 text-caption leading-relaxed text-muted">Ces comptes et mots de passe sont publics et réservés à la démonstration locale, jamais à la production.</p>
         </section>
 
         <Field id={`${SIGNIN_FORM_ID}-email`} label="Adresse e-mail ou identifiant démo" error={errors.email} required hint="Identifiants disponibles : admin, user, agent ou prop.">

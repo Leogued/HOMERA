@@ -65,7 +65,7 @@ export function PropertyPreview({ property, onClose }: { property: Property; onC
             {" "}
             <MapPin className="h-4 w-4" aria-hidden="true" /> {property.district}, {property.city}{" "}
           </p>{" "}
-          <p className="homera-num mt-5 text-xl font-semibold text-foreground">{formatPropertyPrice(property)}</p>{" "}
+          <p className="homera-num mt-5 text-display-xs font-semibold text-foreground">{formatPropertyPrice(property)}</p>{" "}
           <ul className="mt-5 flex flex-wrap gap-x-6 gap-y-3 border-y border-border py-4 text-body-sm text-muted">
             {" "}
             {property.bedrooms > 0 && (

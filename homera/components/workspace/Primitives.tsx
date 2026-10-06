@@ -52,7 +52,7 @@ export function WorkspacePanel({
           <div className="flex min-w-0 items-start gap-3">
             {Icon && <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-homera-terracotta/[0.09] text-homera-terracotta"><Icon className="h-[18px] w-[18px]" aria-hidden="true" /></span>}
             <div>
-              <h2 className="text-body-md font-semibold">{title}</h2>
+              <h2 className="text-body font-semibold">{title}</h2>
               {description && <p className="mt-1 text-caption leading-relaxed text-muted">{description}</p>}
             </div>
           </div>
@@ -154,14 +154,12 @@ export function FormField({
   error?: string;
   required?: boolean;
 }) {
-  const describedBy = [hint ? `${name}-hint` : "", error ? `${name}-error` : ""].filter(Boolean).join(" ") || undefined;
   return (
     <div className="space-y-1.5">
       <label htmlFor={name} className="block text-note font-semibold text-foreground">{label}{required && <span aria-hidden="true" className="ml-1 text-homera-terracotta">*</span>}</label>
       {children}
       {hint && <p id={`${name}-hint`} className="text-caption text-muted">{hint}</p>}
       {error && <p id={`${name}-error`} role="alert" className="text-caption font-medium text-error">{error}</p>}
-      {describedBy && <span className="sr-only" id={`${name}-accessible-description`}>{describedBy}</span>}
     </div>
   );
 }

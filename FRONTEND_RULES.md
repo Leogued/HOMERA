@@ -1,0 +1,79 @@
+# FRONTEND RULES — Standards d'Ingénierie & UX HOMERA
+
+Ce document fixe les règles permanentes que tout développeur ou agent frontend autonome doit appliquer lorsqu'il crée ou modifie un composant dans HOMERA.
+
+---
+
+## 1. Architecture React 19 & Next.js 16 (App Router)
+
+1. **Séparation Server / Client Components** :
+   - Les `page.tsx` dans `app/` restent des Server Components chaque fois que possible pour exposer `metadata` (`title`, `description`, `robots`) et pré-rendre la structure HTML initiale.
+   - La directive `"use client"` est réservée aux composants interactifs (`components/auth/*`, `components/workspace/*`, `components/client/*`, filtres dynamiques, scènes animées).
+2. **Lecture des `searchParams` (Next.js 16)** :
+   - Dans Next.js 16, `params` et `searchParams` passés aux pages serveur sont des **Promises** (`await searchParams`). Utiliser systématiquement `lib/search-params.ts` (`firstParam`) pour normaliser les paramètres d'URL.
+3. **Hydratation sans divergence (Zéro Hydration Mismatch)** :
+   - **Interdiction absolue** de placer un nœud texte d'espaces (`{" "}`) directement sous `<html>`, `<head>`, `<table>`, `<thead>`, `<tbody>`, `<tfoot>`, `<tr>` ou `<colgroup>` (vérifié par l'AST TypeScript dans `scripts/test-motion.mjs`).
+   - **Interdiction de calculer une date ou l'origine du navigateur pendant le rendu initial serveur/client** : utiliser `useMounted()` (`lib/motion.ts`) ou `useSyncExternalStore` avec un snapshot serveur déterministe (voir `ClientJourneys.tsx` et `AgentWorkspace.tsx`).
+4. **Zéro dépendance superflue** :
+   - Ne jamais installer de bibliothèque externe d'animation (GSAP, Framer Motion), d'icônes supplémentaire ou de générateur de QR code (`qrcode.react`, `qrcode`). Utiliser les moteurs internes éprouvés (`lib/motion.ts`, `lib/qr.ts`).
+
+---
+
+## 2. Design System & Styling (Zéro fuite)
+
+1. **Tokens obligatoires** :
+   - Aucune classe `stone-*`, `gray-*`, `slate-*`, `zinc-*`, `neutral-*` de Tailwind par défaut.
+   - Aucune couleur hexadécimale (`#...`) codée en dur dans un fichier `.tsx`.
+   - Aucune courbe `ease-[cubic-bezier(...)]` recopiée à la main : utiliser `ease-standard`, `ease-soft`, `ease-in-out`.
+   - Aucun rayon arbitraire `rounded-[...]` : utiliser `rounded-btn`, `rounded-input`, `rounded-card`, `rounded-menu`, `rounded-media`, `rounded-modal`, `rounded-xl`, `rounded-2xl`, `rounded-3xl`, `rounded-4xl` ou `rounded-full`.
+2. **Typographie strictement contrôlée** :
+   - Utiliser exclusivement l'échelle `text-micro`, `text-caption`, `text-note`, `text-body-sm`, `text-body`, `text-label`, `text-display-xs` → `2xl`, `text-display-fluid`, `text-figure*`, `text-accent*`, `text-brand*`.
+   - Aucune classe `text-[...]` arbitraire (hors l'unique `text-[1.06em]` relatif du `h1` dans `Hero.tsx`), ni classe inexistante (`text-body-md`, `text-heading-lg`), ni taille Tailwind brute (`text-xs`, `text-sm`, `text-base`, `text-lg`, `text-xl`).
+   - Ne jamais combiner `font-serif` avec `font-semibold` ou `font-bold`.
+   - Toujours ajouter `.homera-num` (`font-variant-numeric: tabular-nums`) sur les prix, surfaces, compteurs et références.
+
+---
+
+## 3. Navigation & Contrats de liens
+
+1. **Toute cible `href="/..."` doit correspondre à une route réelle dans `app/`** :
+   - Vérifié automatiquement par `scripts/test-motion.mjs` et `scripts/audit-home.mjs`.
+   - Aucun lien mort `href="#"`.
+2. **Zéro navigation par fragment dans les espaces et en-têtes** :
+   - Les fichiers `ClientDashboard.tsx`, `WorkspaceShell.tsx`, `CommunicationPages.tsx`, `AccountControl.tsx`, `Navbar.tsx`, `PublicHeader.tsx` et `Footer.tsx` naviguent vers des routes dédiées (`/client/favoris`, `/client/visites`, `/notifications`, `/messages`, etc.), jamais par `#fragment` local.
+3. **Destination après connexion adaptée au rôle** :
+   - Utiliser `workspaceHref` / `workspaceLabel` selon les rôles détenus (`/admin`, `/proprietaire`, `/agent`, `/client`) et préserver les retours internes sûrs via `safeReturnTo()` (`lib/nav.ts`).
+4. **Contrat de la carte de bien (`PropertyCard.tsx`)** :
+   - Un seul arrêt de tabulation (`Tab`) vers la fiche du bien par carte (`data-card`).
+   - Clic sur toute la surface + activation au clavier (`Entrée` et `Espace`).
+   - Bouton favori (`FavoriteButton`) indépendant avec `aria-pressed`, placé hors du lien principal.
+
+---
+
+## 4. Accessibilité (WCAG AA) & Sémantique HTML
+
+1. **Structure documentaire** :
+   - Exactement **un seul `<h1>` par page rendue**.
+   - Lien d'évitement « Aller au contenu » en premier élément focusable pointant vers `#contenu`.
+   - Langue du document `lang="fr"`, `<title>` explicite et `<meta name="description">` de 20 caractères minimum sur toutes les pages publiques.
+2. **Interdiction des éléments interactifs ou labels imbriqués** :
+   - Jamais de `<button>` ou `<input>` dans un `<a>`, jamais de `<a>` dans un `<button>`, jamais de `<label>` dans un `<label>`.
+3. **Références ARIA résolues** :
+   - Tout attribut `aria-controls`, `aria-labelledby`, `aria-describedby` ou `aria-owns` doit pointer vers un `id` réellement présent et unique dans le DOM rendu au même instant (si un panneau est conditionnel, `aria-controls` ne doit être posé que lorsque le panneau est monté, ou le panneau doit rester monté avec `hidden`/`inert`).
+4. **Navigation clavier et gestion du focus** :
+   - Focus visible partout : anneau terracotta (`focus-visible:ring-ring`) sur fond clair, anneau ambre (`focus-visible:ring-homera-amber`) sur fond nocturne (`--homera-night`).
+   - Tout menu déroulant, tiroir mobile ou boîte de dialogue se ferme avec `Escape` et restitue le focus au bouton déclencheur.
+5. **Formulaires accessibles** :
+   - Chaque champ possède un `<label htmlFor="...">` explicite.
+   - Les messages d'erreur utilisent `role="alert"` ou `aria-live="polite"` et sont reliés au champ sans polluer la lecture vocale par des identifiants techniques bruts.
+
+---
+
+## 5. États d'interface & Responsive Design
+
+1. **Couverture complète des états** :
+   - Chaque vue ou composant de données prévoit : **Loading state** (`.homera-skeleton` + `aria-busy="true"`), **Empty state** (`EmptyPanel` / `EmptyState` avec explication et CTA pertinent), **Error state** (message clair + action de reprise), **Success state** (`role="status"`).
+2. **Responsive de 320 px à 1 920 px** :
+   - Cibles tactiles d'au moins `40×40 px` (`min-h-10` / `min-h-11` sur tous les boutons et liens d'action).
+   - Tableaux larges encapsulés dans `overflow-x-auto` ou remplacés par des cartes sur mobile (`sm:hidden` / `hidden sm:block`).
+   - Alignement des pieds de page et contenus principaux avec les barres latérales fixes (`lg:pl-[268px]` / `lg:pl-[264px]`) pour éviter tout recouvrement sur grand écran.

@@ -16,6 +16,11 @@ import {
   Users,
 } from "lucide-react";
 import { DEMO_DATA, FEATURE_LABELS, type Property } from "@/lib/content";
+import {
+  buildPropertyEditorialSynthesis,
+  getNeighborhoodContext,
+  getPropertyCommitmentGuide,
+} from "@/lib/editorial-guides";
 import { DEMO_AGENT_AUTHORIZATIONS } from "@/lib/portal-data";
 import {
   INTENT_LABELS,
@@ -68,6 +73,9 @@ export function PropertyDetail({ property }: { property: Property }) {
     .filter((entry) => entry.id !== property.id)
     .slice(0, 3);
   const fresh = daysBetween(property.publishedAt, LATEST_PUBLISHED_AT);
+  const editorialParagraphs = buildPropertyEditorialSynthesis(property);
+  const neighborhood = getNeighborhoodContext(property.city, property.district);
+  const commitmentGuide = getPropertyCommitmentGuide(property);
   return (
     <article className="bg-background text-foreground">
       {" "}
@@ -137,7 +145,7 @@ export function PropertyDetail({ property }: { property: Property }) {
                 </Link>
               )}{" "}
               <Link
-                href="/contact"
+                href={`/contact?bien=${property.homeraId}`}
                 className="homera-press inline-flex min-h-12 items-center gap-2 rounded-btn border border-border px-5 text-body-sm font-medium text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
               >
                 {" "}
@@ -177,55 +185,110 @@ export function PropertyDetail({ property }: { property: Property }) {
           <div className="space-y-12">
             {" "}
             <section aria-labelledby="detail-description">
-              {" "}
               <h2 id="detail-description" className="font-serif text-display-xs">
                 Le bien
-              </h2>{" "}
-              <p className="mt-4 max-w-2xl text-body-sm leading-relaxed text-muted sm:text-body">
-                {" "}
-                {property.description ??
-                  "La description détaillée de ce bien est en cours de rédaction. Demandez la fiche complète lors de votre prise de contact."}{" "}
-              </p>{" "}
+              </h2>
+              <div className="mt-4 max-w-2xl space-y-4 text-body-sm leading-relaxed text-muted sm:text-body">
+                {editorialParagraphs.map((paragraph, index) => (
+                  <p key={index} className={index === 0 ? "text-foreground" : "text-muted"}>
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
               {property.features && property.features.length > 0 && (
                 <>
-                  {" "}
-                  <h3 className="mt-8 text-label uppercase text-muted">Équipements déclarés</h3>{" "}
+                  <h3 className="mt-8 text-label uppercase text-muted">Équipements déclarés</h3>
                   <ul className="mt-4 flex flex-wrap gap-2">
-                    {" "}
                     {property.features.map((feature) => (
                       <li
                         key={feature}
                         className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-note text-foreground"
                       >
-                        {" "}
-                        <Check className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />{" "}
-                        {FEATURE_LABELS[feature]}{" "}
+                        <Check className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />
+                        {FEATURE_LABELS[feature]}
                       </li>
-                    ))}{" "}
-                  </ul>{" "}
+                    ))}
+                  </ul>
                 </>
-              )}{" "}
-            </section>{" "}
+              )}
+            </section>
             <section aria-labelledby="detail-facts">
-              {" "}
               <h2 id="detail-facts" className="font-serif text-display-xs">
                 Caractéristiques
-              </h2>{" "}
+              </h2>
               <dl className="mt-5 grid grid-cols-1 gap-x-10 gap-y-4 sm:grid-cols-2">
-                {" "}
                 {facts.map((fact) => (
                   <div key={fact.label} className="flex items-start gap-3 border-b border-border pb-3">
-                    {" "}
-                    <fact.icon className="mt-0.5 h-4 w-4 shrink-0 text-homera-terracotta" aria-hidden="true" />{" "}
+                    <fact.icon className="mt-0.5 h-4 w-4 shrink-0 text-homera-terracotta" aria-hidden="true" />
                     <div>
-                      {" "}
-                      <dt className="text-caption uppercase tracking-[0.14em] text-muted">{fact.label}</dt>{" "}
-                      <dd className="homera-num mt-0.5 text-body-sm font-medium text-foreground">{fact.value}</dd>{" "}
-                    </div>{" "}
+                      <dt className="text-caption uppercase tracking-[0.14em] text-muted">{fact.label}</dt>
+                      <dd className="homera-num mt-0.5 text-body-sm font-medium text-foreground">{fact.value}</dd>
+                    </div>
                   </div>
-                ))}{" "}
-              </dl>{" "}
-            </section>{" "}
+                ))}
+              </dl>
+            </section>
+            <section
+              aria-labelledby="detail-neighborhood"
+              className="rounded-card border border-border bg-card/60 p-6 sm:p-8"
+            >
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <p className="text-label uppercase homera-accent-ink">Cadre de vie & localisation</p>
+                  <h2 id="detail-neighborhood" className="mt-2 font-serif text-display-xs">
+                    {neighborhood.title}
+                  </h2>
+                  <p className="mt-1 text-caption font-medium text-foreground">{neighborhood.vibe}</p>
+                </div>
+                <Link
+                  href={`/explorer?villes=${encodeURIComponent(property.city)}&quartiers=${encodeURIComponent(property.district)}`}
+                  className="homera-press inline-flex min-h-9 items-center gap-1.5 rounded-full border border-border bg-card px-3.5 text-caption font-medium text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
+                >
+                  Autres biens à {property.district} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
+              </div>
+              <p className="mt-4 max-w-2xl text-body-sm leading-relaxed text-muted">{neighborhood.summary}</p>
+              <dl className="mt-6 grid grid-cols-1 gap-4 border-t border-border pt-5 sm:grid-cols-3">
+                {neighborhood.highlights.map((item) => (
+                  <div key={item.label} className="rounded-xl border border-border bg-background/70 p-4">
+                    <dt className="text-micro font-semibold uppercase tracking-[0.14em] text-homera-terracotta">
+                      {item.label}
+                    </dt>
+                    <dd className="mt-2 text-caption leading-relaxed text-muted">{item.detail}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+            <section
+              aria-labelledby="detail-commitment"
+              className="rounded-card border border-border bg-card p-6 sm:p-8"
+            >
+              <p className="text-label uppercase homera-accent-ink">Aide à la décision</p>
+              <h2 id="detail-commitment" className="mt-2 font-serif text-display-xs">
+                {commitmentGuide.title}
+              </h2>
+              <p className="mt-3 max-w-2xl text-body-sm leading-relaxed text-muted">{commitmentGuide.subtitle}</p>
+              <dl className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                {commitmentGuide.metrics.map((metric) => (
+                  <div key={metric.label} className="rounded-xl border border-border bg-background/70 p-4">
+                    <dt className="text-micro font-semibold uppercase tracking-[0.14em] text-muted">{metric.label}</dt>
+                    <dd className="homera-num mt-2 font-serif text-display-xs text-foreground">{metric.value}</dd>
+                    <p className="mt-1.5 text-caption leading-relaxed text-muted">{metric.note}</p>
+                  </div>
+                ))}
+              </dl>
+              <div className="mt-7 border-t border-border pt-6">
+                <h3 className="text-note font-semibold text-foreground">{commitmentGuide.stepsTitle}</h3>
+                <ol className="mt-4 space-y-4">
+                  {commitmentGuide.steps.map((step) => (
+                    <li key={step.title} className="rounded-xl border border-border bg-background/45 p-4">
+                      <p className="text-body-sm font-medium text-foreground">{step.title}</p>
+                      <p className="mt-1.5 text-caption leading-relaxed text-muted">{step.detail}</p>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            </section>
             <section
               aria-labelledby="detail-verification"
               className="rounded-card border border-border bg-card p-6 sm:p-8"
@@ -326,18 +389,32 @@ export function PropertyDetail({ property }: { property: Property }) {
             </div>{" "}
             <div className="rounded-card border border-homera-terracotta/25 bg-homera-terracotta/[0.06] p-6">
               {" "}
-              <h2 className="font-serif text-display-xs">Organiser une visite</h2>{" "}
+              <h2 className="font-serif text-display-xs">
+                {property.availabilityStatus === "indisponible" ? "Bien actuellement indisponible" : "Organiser une visite"}
+              </h2>{" "}
               <p className="mt-2 text-note leading-relaxed text-muted">
                 {" "}
-                Indiquez vos créneaux : un mandataire identifié vous répond et vous confirme l’accès au bien.{" "}
+                {property.availabilityStatus === "indisponible"
+                  ? "Les demandes de visite sont suspendues sur ce dossier. Consultez les biens similaires vérifiés dans la même catégorie."
+                  : "Indiquez vos créneaux : un mandataire identifié vous répond et vous confirme l’accès au bien."}{" "}
               </p>{" "}
-              <Link
-                href={`/client/visites/nouvelle?bien=${property.id}`}
-                className="homera-press mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-btn homera-cta text-note font-medium text-white "
-              >
-                {" "}
-                Demander une visite <ArrowRight className="h-4 w-4" aria-hidden="true" />{" "}
-              </Link>{" "}
+              {property.availabilityStatus === "indisponible" ? (
+                <Link
+                  href={PROJECT_HREF[property.intent]}
+                  className="homera-press mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-btn border border-border bg-card px-4 text-note font-medium text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
+                >
+                  {" "}
+                  Voir les biens disponibles <ArrowRight className="h-4 w-4" aria-hidden="true" />{" "}
+                </Link>
+              ) : (
+                <Link
+                  href={`/client/visites/nouvelle?bien=${property.id}`}
+                  className="homera-press mt-4 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-btn homera-cta text-note font-medium text-white "
+                >
+                  {" "}
+                  Demander une visite <ArrowRight className="h-4 w-4" aria-hidden="true" />{" "}
+                </Link>
+              )}{" "}
             </div>{" "}
             {DEMO_DATA && (
               <p className="text-caption leading-relaxed text-muted">

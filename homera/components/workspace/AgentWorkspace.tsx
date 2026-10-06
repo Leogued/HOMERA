@@ -11,6 +11,7 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useWorkflow } from "@/components/providers/WorkflowProvider";
 import { QrCode } from "@/components/ui/QrCode";
 import { Visual } from "@/components/ui/Visual";
+import { describeProfile } from "@/lib/auth";
 import { PROPERTIES } from "@/lib/content";
 import { formatPropertyPrice } from "@/lib/format";
 import { authorizationsForAgent, type AgentAuthorization } from "@/lib/portal-data";
@@ -147,7 +148,7 @@ function AgentAuthorizations({ authorizations }: { authorizations: AgentAuthoriz
 function QrPanel({ agentId, propertyRef }: { agentId: string; propertyRef: string }) {
   const origin = useSyncExternalStore(subscribeOrigin, getOrigin, () => "https://homera.example");
   const value = `${origin}/verification-agent?agent=${encodeURIComponent(agentId)}&bien=${encodeURIComponent(propertyRef)}`;
-  return <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-background p-4 text-center"><QrCode value={value} size={128} title={`QR code de vérification ${agentId} · ${propertyRef}`} className="text-homera-brown" /><p className="mt-3 text-caption font-semibold">Vérifier cette autorisation</p><p className="mt-1 max-w-40 break-all font-mono text-[0.58rem] text-muted">{agentId} · {propertyRef}</p></div>;
+  return <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-background p-4 text-center"><QrCode value={value} size={128} title={`QR code de vérification ${agentId} · ${propertyRef}`} className="text-homera-brown" /><p className="mt-3 text-caption font-semibold">Vérifier cette autorisation</p><p className="mt-1 max-w-40 break-all font-mono text-micro text-muted">{agentId} · {propertyRef}</p></div>;
 }
 
 function AgentDocuments({ authorizations }: { authorizations: AgentAuthorization[] }) {
@@ -163,10 +164,11 @@ function AgentProfile({ authorizations }: { authorizations: AgentAuthorization[]
   const verificationAuthorization = authorizations[0];
   const name = [account?.prenom, account?.nom].filter(Boolean).join(" ") || "Profil agent";
   const structure = account?.profile.structure || "Aucune structure renseignée";
+  const profileItems = account ? describeProfile("agent", account.profile) : [];
   return <>
-    <WorkspaceHeading eyebrow="Profil agent" title="Identité professionnelle" description="Votre profil public s’appuie sur un matricule et des autorisations qui peuvent être vérifiés bien par bien." />
-    <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
-      <WorkspacePanel title={name} description={structure} icon={UserRound}><dl className="space-y-3"><InfoCell label="Matricule" value={verificationAuthorization?.agentId ?? "En attente d’attribution"} /><InfoCell label="Statut du profil" value={authorizations.length ? "Mandat actif · démonstration" : "Aucune habilitation active"} /><InfoCell label="Autorisations actives" value={`${authorizations.length} bien(s)`} /></dl><Link href="/agent/autorisations" className={`${BUTTON_PRIMARY} mt-4`}>Consulter mes mandats<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link></WorkspacePanel>
+    <WorkspaceHeading eyebrow="Profil agent" title="Identité professionnelle" description="Votre profil public s’appuie sur un matricule et des autorisations qui peuvent être vérifiés bien par bien." actions={<Link href="/client/parametres" className={BUTTON_SECONDARY}>Modifier mes informations</Link>} />
+    <div className="grid gap-5 lg:grid-cols-[0.95fr_1.05fr]">
+      <WorkspacePanel title={name} description={structure} icon={UserRound}><dl className="grid gap-3 sm:grid-cols-2"><InfoCell label="Matricule" value={verificationAuthorization?.agentId ?? "En attente d’attribution"} /><InfoCell label="Statut du profil" value={authorizations.length ? "Mandat actif · démonstration" : "Aucune habilitation active"} /><InfoCell label="Autorisations actives" value={`${authorizations.length} bien(s)`} /><InfoCell label="E-mail" value={account?.email || "Non renseigné"} />{profileItems.map((entry) => <InfoCell key={entry.label} label={entry.label} value={entry.value || "À renseigner"} />)}</dl><Link href="/agent/autorisations" className={`${BUTTON_PRIMARY} mt-4`}>Consulter mes mandats<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link></WorkspacePanel>
       <WorkspacePanel title="Vérification publique" description="Partagez une page vérifiable attachée au mandat, jamais un accès général à vos annonces." icon={QrCodeIcon}><p className="text-note leading-relaxed text-muted">Une autorisation est valide pour un bien donné, un représentant identifié et une période précise. Le client peut scanner le code ou saisir la référence pour vérifier son état.</p>{verificationAuthorization ? <Link href={`/verification-agent?agent=${verificationAuthorization.agentId}&bien=${verificationAuthorization.propertyRef}`} className={`${BUTTON_SECONDARY} mt-4`}>Prévisualiser la vérification<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link> : <p className="mt-4 text-caption text-muted">Aucune autorisation ne peut être partagée pour ce compte.</p>}</WorkspacePanel>
     </div>
   </>;
@@ -177,7 +179,7 @@ function InfoTile({ label, value, icon: Icon }: { label: string; value: string; 
 }
 
 function InfoCell({ label, value }: { label: string; value: string }) {
-  return <div className="rounded-xl border border-border bg-background p-3"><dt className="text-[0.63rem] font-semibold uppercase tracking-[0.13em] text-muted">{label}</dt><dd className="mt-1 break-words text-caption font-medium">{value}</dd></div>;
+  return <div className="rounded-xl border border-border bg-background p-3"><dt className="text-micro font-semibold uppercase tracking-[0.13em] text-muted">{label}</dt><dd className="mt-1 break-words text-caption font-medium">{value}</dd></div>;
 }
 
 function downloadAuthorization(reference: string, agentName: string, agentId: string, proof: string, expiresAt: string) {

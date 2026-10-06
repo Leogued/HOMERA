@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { ArrowRight, BookmarkMinus, Heart, Search, ShieldCheck, Trash2 } from "lucide-react";
 import { PropertyCard } from "@/components/catalog/PropertyCard";
+import { PropertyComparison } from "@/components/catalog/PropertyComparison";
 import { useVisitor } from "@/components/providers/VisitorProvider";
 import type { Property } from "@/lib/content";
 import { countLabel } from "@/lib/format";
@@ -155,6 +156,7 @@ import { countLabel } from "@/lib/format";
           </ul>
         )}{" "}
       </section>{" "}
+      {favoriteProperties.length >= 2 && <PropertyComparison properties={favoriteProperties} />}{" "}
       <p className="flex flex-wrap items-center gap-2 border-t border-border pt-6 text-caption text-muted">
         {" "}
         <BookmarkMinus className="h-4 w-4 text-homera-terracotta" aria-hidden="true" /> Votre sélection est conservée

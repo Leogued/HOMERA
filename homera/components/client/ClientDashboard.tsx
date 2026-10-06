@@ -124,7 +124,11 @@ export function ClientDashboard() {
   const recentApplications = useMemo(() => [...workflow.data.applications].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)).slice(0, 3), [workflow.data.applications]);
   const activeRentals = workflow.data.applications.filter((application) => application.stage === "active");
   const recentMessages = useMemo(() => [...workflow.data.messages].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 3), [workflow.data.messages]);
-  const pendingActions = account && !account.emailVerified ? 1 : 0;
+  const unreadWorkflowNotifications = useMemo(
+    () => (workflow.ready ? workflow.data.notifications.filter((entry) => !entry.read) : []),
+    [workflow.data.notifications, workflow.ready],
+  );
+  const pendingActions = (account && !account.emailVerified ? 1 : 0) + unreadWorkflowNotifications.length;
   const currentThemeIsDark = resolvedTheme === "dark";
 
   useEffect(() => {
@@ -220,7 +224,7 @@ export function ClientDashboard() {
               </button>
               <Link href="/" className="flex flex-col lg:hidden" aria-label="HOMERA, accueil">
                 <span className="homera-brand text-brand-sm text-foreground">Homera</span>
-                <span className="-mt-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.16em] homera-accent-ink">
+                <span className="-mt-0.5 text-micro font-semibold uppercase tracking-[0.16em] homera-accent-ink">
                   Espace client
                 </span>
               </Link>
@@ -251,7 +255,7 @@ export function ClientDashboard() {
               >
                 <Bell className="h-[18px] w-[18px]" aria-hidden="true" />
                 {pendingActions > 0 && (
-                  <span className="absolute right-1 top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-homera-terracotta px-1 text-[9px] font-semibold leading-none text-white">
+                  <span className="absolute right-1 top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-homera-terracotta px-1 text-micro font-semibold leading-none text-white">
                     {pendingActions}
                   </span>
                 )}
@@ -401,8 +405,14 @@ export function ClientDashboard() {
               href="/notifications"
               icon={BellRing}
               label="Notifications"
-              value={pendingActions > 0 ? `${pendingActions} action` : "À venir"}
-              hint={pendingActions > 0 ? "Confirmez votre adresse" : "Alertes automatiques non actives"}
+              value={pendingActions > 0 ? `${pendingActions} non lue${pendingActions > 1 ? "s" : ""}` : "À venir"}
+              hint={
+                !account.emailVerified
+                  ? "Confirmez votre adresse"
+                  : unreadWorkflowNotifications.length > 0
+                    ? "Activité de votre espace"
+                    : "Alertes automatiques non actives"
+              }
             />
           </div>
 
@@ -482,6 +492,17 @@ export function ClientDashboard() {
                     </div>
                   </div>
                 )}
+
+                {unreadWorkflowNotifications.slice(0, 2).map((notification) => (
+                  <Link
+                    key={notification.id}
+                    href={notification.href || "/notifications"}
+                    className="block rounded-2xl border border-homera-terracotta/25 bg-homera-terracotta/[0.05] p-3.5 transition-colors hover:border-homera-terracotta/45"
+                  >
+                    <p className="text-note font-semibold text-foreground">{notification.title}</p>
+                    <p className="mt-1 text-caption leading-relaxed text-muted">{notification.body}</p>
+                  </Link>
+                ))}
 
                 <div className="rounded-2xl border border-border bg-background/60 p-4">
                   <div className="flex items-start gap-3">
@@ -637,7 +658,7 @@ export function ClientDashboard() {
                   description="Créez une conversation rattachée à un bien et à sa référence HOMERA. Les messages de démonstration restent locaux."
                   action={{ href: "/messages", label: "Ouvrir la messagerie" }}
                 />
-              ) : <div className="space-y-2">{recentMessages.map((thread) => { const lastMessage = thread.messages[thread.messages.length - 1]; return <Link key={thread.id} href="/messages" className="block rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/35"><span className="flex items-center justify-between gap-3"><span className="truncate text-note font-semibold text-foreground">{thread.propertyTitle}</span><span className="shrink-0 text-[0.65rem] text-muted">{formatDay(thread.updatedAt)}</span></span><span className="mt-1 block truncate text-caption text-muted">{lastMessage?.body ?? "Conversation créée"}</span></Link>; })}<Link href="/messages" className="inline-flex min-h-9 items-center text-caption font-semibold text-homera-terracotta hover:underline">Ouvrir la messagerie <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" /></Link></div>}
+              ) : <div className="space-y-2">{recentMessages.map((thread) => { const lastMessage = thread.messages[thread.messages.length - 1]; return <Link key={thread.id} href="/messages" className="block rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/35"><span className="flex items-center justify-between gap-3"><span className="truncate text-note font-semibold text-foreground">{thread.propertyTitle}</span><span className="shrink-0 text-micro text-muted">{formatDay(thread.updatedAt)}</span></span><span className="mt-1 block truncate text-caption text-muted">{lastMessage?.body ?? "Conversation créée"}</span></Link>; })}<Link href="/messages" className="inline-flex min-h-9 items-center text-caption font-semibold text-homera-terracotta hover:underline">Ouvrir la messagerie <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" /></Link></div>}
             </DashboardPanel>
 
             <DashboardPanel
@@ -761,7 +782,7 @@ function DashboardNavigation({
     <nav aria-label="Navigation de l’espace client" className={`min-h-0 flex-1 overflow-y-auto px-3 ${dark ? "pb-4" : "pb-2"}`}>
       {CLIENT_NAV.map((group) => (
         <div key={group.label} className="mb-5 last:mb-0">
-          <p className={`mb-2 px-3 text-[0.6rem] font-semibold uppercase tracking-[0.18em] ${dark ? "text-white/55" : "text-muted"}`}>
+          <p className={`mb-2 px-3 text-micro font-semibold uppercase tracking-[0.18em] ${dark ? "text-white/55" : "text-muted"}`}>
             {group.label}
           </p>
           <ul className="space-y-1">
@@ -795,7 +816,7 @@ function DashboardNavigation({
                   <span className="min-w-0 flex-1 truncate text-left">{item.label}</span>
                   {count > 0 && (
                     <span
-                      className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[0.625rem] font-semibold tabular-nums ${
+                      className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-micro font-semibold tabular-nums ${
                         item.id === "notifications"
                           ? dark
                             ? "bg-homera-amber text-homera-night"
@@ -851,7 +872,7 @@ function OverviewMetric({
         </span>
       </div>
       <p className="mt-2 truncate font-serif text-display-xs text-foreground sm:text-display-sm">{value}</p>
-      <p className="mt-0.5 truncate text-[0.625rem] text-muted sm:text-caption">{hint}</p>
+      <p className="mt-0.5 truncate text-micro text-muted sm:text-caption">{hint}</p>
     </Link>
   );
 }
@@ -889,7 +910,7 @@ function DashboardPanel({
             <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <p className="text-[0.6rem] font-semibold uppercase tracking-[0.17em] homera-accent-ink">{eyebrow}</p>
+            <p className="text-micro font-semibold uppercase tracking-[0.17em] homera-accent-ink">{eyebrow}</p>
             <div className="mt-0.5 flex flex-wrap items-center gap-2">
               <h2 id={`${id}-title`} className="font-serif text-display-xs text-foreground">{title}</h2>
               {badge}
@@ -918,7 +939,7 @@ function DashboardPanel({
 
 function AvailabilityBadge({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center rounded-full border border-warning/25 bg-warning/[0.07] px-2 py-0.5 text-[0.58rem] font-semibold uppercase tracking-[0.08em] text-warning">
+    <span className="inline-flex items-center rounded-full border border-warning/25 bg-warning/[0.07] px-2 py-0.5 text-micro font-semibold uppercase tracking-[0.08em] text-warning">
       {children}
     </span>
   );
@@ -969,7 +990,7 @@ function PanelLoading({ label }: { label: string }) {
 function ProfileItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-[0.6rem] font-semibold uppercase tracking-[0.15em] text-muted">{label}</dt>
+      <dt className="text-micro font-semibold uppercase tracking-[0.15em] text-muted">{label}</dt>
       <dd className="mt-1 break-words text-note font-medium text-foreground">{value}</dd>
     </div>
   );
@@ -997,7 +1018,7 @@ function ClientSignIn() {
         <div className="mx-auto flex max-w-7xl items-center justify-between">
           <Link href="/" className="flex flex-col" aria-label="HOMERA, accueil">
             <span className="homera-brand text-brand-sm text-foreground">Homera</span>
-            <span className="-mt-0.5 text-[0.55rem] font-semibold uppercase tracking-[0.16em] homera-accent-ink">Espace client</span>
+            <span className="-mt-0.5 text-micro font-semibold uppercase tracking-[0.16em] homera-accent-ink">Espace client</span>
           </Link>
           <Link href="/explorer" className="homera-underline inline-flex min-h-10 items-center gap-2 text-note font-medium homera-accent-ink">
             Explorer le catalogue <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />

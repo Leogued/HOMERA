@@ -4,6 +4,7 @@ import { ArrowRight, Check, Mail } from "lucide-react";
 import { SERVICES } from "@/lib/content";
 import { SERVICES_PAGE } from "@/lib/pages";
 import { PageHero } from "@/components/catalog/PageHero";
+import { serviceHref } from "@/components/site/ServiceDetail";
 import { Reveal } from "@/components/ui/Reveal";
 import { Visual } from "@/components/ui/Visual";
 /* ================================================================== /services — L’ÉCOSYSTÈME AUTOUR DU BIEN ------------------------------------------------------------------ Quatre métiers, une seule promesse : quelqu’un d’identifié prend en charge ce qui se passe après la remise des clés. Les demandes partent par e-mail — aucun formulaire ne prétend envoyer quelque chose qu’aucun serveur ne reçoit encore. ================================================================== */ export const metadata: Metadata =
@@ -112,13 +113,23 @@ export default function ServicesPage() {
                   </li>
                 ))}{" "}
               </ul>{" "}
-              <Link
-                href={`/contact?sujet=${service.id}`}
-                className="homera-underline mt-6 inline-flex min-h-10 items-center gap-2 text-note font-medium homera-accent-ink"
-              >
+              <div className="mt-6 flex flex-wrap items-center gap-4">
                 {" "}
-                {SERVICES_PAGE.serviceAction(service.title)} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />{" "}
-              </Link>{" "}
+                <Link
+                  href={serviceHref(service.id)}
+                  className="homera-press inline-flex min-h-10 items-center gap-2 rounded-btn border border-border bg-card px-4 text-note font-medium text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
+                >
+                  {" "}
+                  Voir la fiche dédiée <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />{" "}
+                </Link>{" "}
+                <Link
+                  href={`/contact?sujet=${service.id}`}
+                  className="homera-underline inline-flex min-h-10 items-center gap-2 text-note font-medium homera-accent-ink"
+                >
+                  {" "}
+                  {SERVICES_PAGE.serviceAction(service.title)} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />{" "}
+                </Link>{" "}
+              </div>{" "}
             </div>{" "}
           </section>
         ))}{" "}

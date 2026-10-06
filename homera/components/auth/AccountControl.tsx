@@ -131,7 +131,7 @@ export function AccountControl({ tone = "light" }: { tone?: Tone }) {
               {account.roles.map((entry) => (
                 <span
                   key={entry}
-                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-[0.12em] ${
+                  className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-micro font-semibold uppercase tracking-[0.12em] ${
                     entry === account.role
                       ? "border-homera-terracotta/40 homera-accent-ink"
                       : "border-border text-muted"
@@ -258,7 +258,7 @@ export function AccountMobileLinks({
         {account.roles.map((entry) => (
           <span
             key={entry}
-            className={`inline-flex rounded-full border px-2.5 py-0.5 text-[0.625rem] font-semibold uppercase tracking-[0.12em] ${
+            className={`inline-flex rounded-full border px-2.5 py-0.5 text-micro font-semibold uppercase tracking-[0.12em] ${
               entry === account.role
                 ? dark
                   ? "border-homera-amber/50 text-homera-amber"

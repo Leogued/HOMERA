@@ -103,7 +103,7 @@ export function PilotCode({
     <div className="rounded-card border border-homera-terracotta/35 bg-homera-terracotta/6 px-4 py-4">
       <p className="text-caption font-semibold uppercase tracking-[0.14em] homera-accent-ink">{label}</p>
       <div className="mt-2 flex flex-wrap items-center gap-3">
-        <span className="homera-num font-mono text-[2rem] font-semibold leading-none tracking-[0.35em] text-foreground">
+        <span className="homera-num font-mono text-display-md font-semibold leading-none tracking-[0.35em] text-foreground">
           {code}
         </span>
         <button
