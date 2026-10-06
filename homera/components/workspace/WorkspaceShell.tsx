@@ -12,7 +12,7 @@ import {
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useVisitor } from "@/components/providers/VisitorProvider";
 import { useWorkflow } from "@/components/providers/WorkflowProvider";
-import { accessibleWorkspaces, hasWorkspaceAccess, initials, rolesLabel, type WorkspaceModeId } from "@/lib/auth";
+import { accessibleWorkspaces, hasWorkspaceAccess, initials, type WorkspaceModeId } from "@/lib/auth";
 import type { AccountRole } from "@/lib/auth";
 import { DEMO_VERIFICATION_CASES } from "@/lib/portal-data";
 import type { AppNotification } from "@/lib/workflow";
@@ -204,47 +204,7 @@ export function WorkspaceShell({
 
   const renderedNavigation = (
     <nav aria-label={`Navigation ${ROLE_LABEL[activeWorkspaceId].toLowerCase()}`} className="space-y-5 px-3 pb-7 pt-2">
-      {/* Niveau 1 — Switch d’espace (uniquement si plusieurs espaces autorisés par les permissions réelles du compte) */}
-      {canSwitchWorkspaces && (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-2.5">
-          <p className="px-2 pb-1.5 text-micro font-semibold uppercase tracking-[0.18em] text-homera-amber">
-            Switch d’espace
-          </p>
-          <ul className="space-y-1">
-            {workspaces.map((space) => {
-              const isCurrentSpace = space.id === activeWorkspaceId;
-              return (
-                <li key={space.id}>
-                  <Link
-                    href={space.href}
-                    onClick={() => setMobileOpen(false)}
-                    aria-current={isCurrentSpace ? "page" : undefined}
-                    className={`flex min-h-10 items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${
-                      isCurrentSpace
-                        ? "border border-homera-amber/35 bg-homera-amber/15 font-semibold text-white"
-                        : "text-white/75 hover:bg-white/[0.08] hover:text-white"
-                    }`}
-                  >
-                    <span className="min-w-0 flex-1">
-                      <span className="block truncate">{space.label}</span>
-                      <span className="block truncate text-micro text-white/55">{space.description}</span>
-                    </span>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-micro font-semibold ${
-                      isCurrentSpace
-                        ? "bg-homera-amber text-homera-night"
-                        : "border border-white/15 text-white/70"
-                    }`}>
-                      {isCurrentSpace ? "Actif" : "Ouvrir"}
-                    </span>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      )}
-
-      {/* Niveau 2 — Navigation principale de l’espace actif */}
+      {/* Niveau 1 — Navigation principale : pages principales de l’espace actif */}
       {navGroups.map((group) => (
         <div key={group.label}>
           <p className="px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] text-white/45">{group.label}</p>
@@ -259,7 +219,7 @@ export function WorkspaceShell({
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
                     aria-current={active ? "page" : undefined}
-                    className={`group flex min-h-11 items-center gap-3 rounded-xl px-3 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${active ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/[0.06] hover:text-white"}`}
+                    className={`group flex min-h-10 items-center gap-3 rounded-xl px-3 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${active ? "bg-white/10 font-semibold text-white" : "text-white/70 hover:bg-white/[0.06] hover:text-white"}`}
                   >
                     <item.icon className={`h-[17px] w-[17px] shrink-0 ${active ? "text-homera-amber" : "text-white/55 group-hover:text-white"}`} aria-hidden="true" />
                     <span className="min-w-0 flex-1 truncate">{item.label}</span>
@@ -274,36 +234,65 @@ export function WorkspaceShell({
         </div>
       ))}
 
-      {/* Niveau 3 — Actions secondaires (Profil, Paramètres, Aide, Retour au site, Déconnexion) intégrées au même flux défilant */}
+      {/* Niveau 2 — Switch d’espace : espaces auxquels l’utilisateur possède réellement accès */}
+      {canSwitchWorkspaces && (
+        <div>
+          <p className="px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] text-white/45">
+            Switch d’espace
+          </p>
+          <ul className="space-y-1">
+            {workspaces.map((space) => {
+              const isCurrentSpace = space.id === activeWorkspaceId;
+              return (
+                <li key={space.id}>
+                  <Link
+                    href={space.href}
+                    onClick={() => setMobileOpen(false)}
+                    aria-current={isCurrentSpace ? "page" : undefined}
+                    className={`flex min-h-10 items-center justify-between gap-2 rounded-xl px-3 py-2 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${
+                      isCurrentSpace
+                        ? "border border-homera-amber/35 bg-homera-amber/15 font-semibold text-white"
+                        : "text-white/70 hover:bg-white/[0.06] hover:text-white"
+                    }`}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{space.label}</span>
+                      <span className="block truncate text-micro text-white/50">{space.description}</span>
+                    </span>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-micro font-semibold ${
+                      isCurrentSpace
+                        ? "bg-homera-amber text-homera-night"
+                        : "border border-white/15 text-white/65"
+                    }`}>
+                      {isCurrentSpace ? "Actif" : "Ouvrir"}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* Niveau 3 — Actions secondaires : Profil, paramètres, aide, retour au site, déconnexion (sans duplication, dans le même flux défilant) */}
       <div>
         <p className="px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] text-white/45">Actions secondaires</p>
         <ul className="space-y-1">
-          <li className="pb-1">
-            <Link
-              href={secondaryProfileHref}
-              onClick={() => setMobileOpen(false)}
-              className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-left transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
-            >
-              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 font-serif text-note text-homera-amber">
-                {initials(account.prenom, account.nom)}
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-note font-semibold text-white">{account.prenom} {account.nom}</span>
-                <span className="block truncate text-micro text-white/55">{rolesLabel(account.roles)} · {account.id}</span>
-              </span>
-            </Link>
-          </li>
           <li>
             <Link
               href={secondaryProfileHref}
               onClick={() => setMobileOpen(false)}
               aria-current={currentHref === secondaryProfileHref ? "page" : undefined}
-              className={`group flex min-h-11 items-center gap-3 rounded-xl px-3 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${
-                currentHref === secondaryProfileHref ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/[0.06] hover:text-white"
+              className={`group flex min-h-10 items-center gap-3 rounded-xl px-3 py-2 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${
+                currentHref === secondaryProfileHref ? "bg-white/10 font-semibold text-white" : "text-white/70 hover:bg-white/[0.06] hover:text-white"
               }`}
             >
-              <UserRound className={`h-[17px] w-[17px] shrink-0 ${currentHref === secondaryProfileHref ? "text-homera-amber" : "text-white/55 group-hover:text-white"}`} aria-hidden="true" />
-              <span className="min-w-0 flex-1 truncate">Profil</span>
+              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/12 font-serif text-micro text-homera-amber" aria-hidden="true">
+                {initials(account.prenom, account.nom)}
+              </span>
+              <span className="min-w-0 flex-1 truncate">
+                Profil · {account.prenom} {account.nom}
+              </span>
             </Link>
           </li>
           <li>
@@ -311,8 +300,8 @@ export function WorkspaceShell({
               href={secondarySettingsHref}
               onClick={() => setMobileOpen(false)}
               aria-current={currentHref === secondarySettingsHref ? "page" : undefined}
-              className={`group flex min-h-11 items-center gap-3 rounded-xl px-3 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${
-                currentHref === secondarySettingsHref ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/[0.06] hover:text-white"
+              className={`group flex min-h-10 items-center gap-3 rounded-xl px-3 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${
+                currentHref === secondarySettingsHref ? "bg-white/10 font-semibold text-white" : "text-white/70 hover:bg-white/[0.06] hover:text-white"
               }`}
             >
               <Settings2 className={`h-[17px] w-[17px] shrink-0 ${currentHref === secondarySettingsHref ? "text-homera-amber" : "text-white/55 group-hover:text-white"}`} aria-hidden="true" />
@@ -323,7 +312,7 @@ export function WorkspaceShell({
             <Link
               href="/contact"
               onClick={() => setMobileOpen(false)}
-              className="group flex min-h-11 items-center gap-3 rounded-xl px-3 text-note text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
+              className="group flex min-h-10 items-center gap-3 rounded-xl px-3 text-note text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
             >
               <HelpCircle className="h-[17px] w-[17px] shrink-0 text-white/55 group-hover:text-white" aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate">Aide & assistance</span>
@@ -333,7 +322,7 @@ export function WorkspaceShell({
             <Link
               href="/"
               onClick={() => setMobileOpen(false)}
-              className="group flex min-h-11 items-center gap-3 rounded-xl px-3 text-note text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
+              className="group flex min-h-10 items-center gap-3 rounded-xl px-3 text-note text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
             >
               <ArrowLeft className="h-[17px] w-[17px] shrink-0 text-white/55 group-hover:text-white" aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate">Retour au site</span>
@@ -346,7 +335,7 @@ export function WorkspaceShell({
                 setMobileOpen(false);
                 signOut();
               }}
-              className="group flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-note text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
+              className="group flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-left text-note text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
             >
               <LogOut className="h-[17px] w-[17px] shrink-0 text-white/55 group-hover:text-white" aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate">Se déconnecter</span>

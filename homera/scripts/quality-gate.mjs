@@ -237,6 +237,22 @@ await check("5. Cohérence fonctionnelle des espaces (Profil par rôle, Footer d
 
   const siteLoading = await readFile(path.join(appRoot, "app/(site)/loading.tsx"), "utf8");
   assert.ok(siteLoading.includes("homera-skeleton"), "app/(site)/loading.tsx doit fournir un état de chargement immédiat et stable");
+
+  const workspaceShell = await readFile(path.join(appRoot, "components/workspace/WorkspaceShell.tsx"), "utf8");
+  assert.ok(
+    workspaceShell.includes("Navigation principale") &&
+      workspaceShell.includes("Switch d’espace") &&
+      workspaceShell.includes("Actions secondaires"),
+    "WorkspaceShell doit structurer la navigation autour des 3 niveaux UX (Navigation principale, Switch d’espace, Actions secondaires)",
+  );
+  assert.ok(
+    workspaceShell.includes("homera-nav-scroll") && !workspaceShell.includes("mt-auto border-t"),
+    "WorkspaceShell doit défiler comme une seule zone continue (.homera-nav-scroll) sans pied de page fixe",
+  );
+  assert.ok(
+    clientDashboard.includes('<WorkspaceShell role="client" section="dashboard">') && !clientDashboard.includes("<aside"),
+    "ClientDashboard (/client) doit utiliser le système de navigation commun WorkspaceShell sans <aside> dupliqué",
+  );
 });
 
 const failed = checks.filter((c) => !c.ok);
