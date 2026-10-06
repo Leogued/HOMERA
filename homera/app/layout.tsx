@@ -41,19 +41,15 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="fr" data-scroll-behavior="smooth" suppressHydrationWarning>
-      {" "}
       <body className={`${manrope.variable} ${dmSerif.variable} ${cormorant.variable}`}>
-        {" "}
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {" "}
           <AuthProvider>
-            {" "}
             <VisitorProvider>
               <WorkflowProvider>{children}</WorkflowProvider>
-            </VisitorProvider>{" "}
-          </AuthProvider>{" "}
-        </ThemeProvider>{" "}
-      </body>{" "}
+            </VisitorProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </body>
     </html>
   );
 }

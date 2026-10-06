@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useWorkflow } from "@/components/providers/WorkflowProvider";
+import { useMounted } from "@/lib/motion";
 import { Visual } from "@/components/ui/Visual";
 import { PROPERTIES, type Property } from "@/lib/content";
 import { formatPropertyPrice } from "@/lib/format";
@@ -36,7 +37,13 @@ export function VisitScheduler({ initialPropertyId = "" }: { initialPropertyId?:
   const { account } = useAuth();
   const { updateData } = useWorkflow();
   const [propertyId, setPropertyId] = useState(initialPropertyId);
-  const [date, setDate] = useState(tomorrowISO());
+  const mounted = useMounted();
+  const [date, setDate] = useState("");
+  /* « Demain » dépend du fuseau du navigateur : la valeur n’est calculée qu’après
+     hydratation, sinon le HTML du serveur et celui du client divergeraient.
+     Tant que le visiteur n’a rien choisi, la date proposée reste celle de demain. */
+  const tomorrow = mounted ? tomorrowISO() : "";
+  const chosenDate = date || tomorrow;
   const [slot, setSlot] = useState("");
   const [step, setStep] = useState(0);
   const [error, setError] = useState("");
@@ -52,7 +59,7 @@ export function VisitScheduler({ initialPropertyId = "" }: { initialPropertyId?:
       setError("Ce bien est actuellement indisponible à la visite. Choisissez un autre bien ou enregistrez-le en favori.");
       return;
     }
-    if (step === 1 && (!date || !slot)) {
+    if (step === 1 && (!chosenDate || !slot)) {
       setError("Choisissez une date et un créneau pour demander la visite.");
       return;
     }
@@ -68,7 +75,7 @@ export function VisitScheduler({ initialPropertyId = "" }: { initialPropertyId?:
       propertyRef: property.homeraId,
       propertyTitle: property.title,
       clientName: `${account.prenom} ${account.nom}`.trim(),
-      date,
+      date: chosenDate,
       slot,
       status: "demande-envoyee",
       createdAt: new Date().toISOString(),
@@ -76,7 +83,7 @@ export function VisitScheduler({ initialPropertyId = "" }: { initialPropertyId?:
     updateData((current) => ({
       ...current,
       visits: [visit, ...current.visits],
-      notifications: [makeNotification("visite", "Demande de visite envoyée", `${property.title} · ${formatDateOnly(date)} · ${slot}`, "/client/visites"), ...current.notifications],
+      notifications: [makeNotification("visite", "Demande de visite envoyée", `${property.title} · ${formatDateOnly(chosenDate)} · ${slot}`, "/client/visites"), ...current.notifications],
     }));
     setCreatedVisit(visit);
   };
@@ -121,7 +128,7 @@ export function VisitScheduler({ initialPropertyId = "" }: { initialPropertyId?:
       {step === 1 && <WorkspacePanel title="Proposez votre disponibilité" description="La date choisie est une préférence, pas encore un rendez-vous confirmé." icon={CalendarDays}>
         <div className="grid gap-5 sm:grid-cols-2">
           <FormField label="Date souhaitée" name="visit-date" hint="Les créneaux sont proposés en heure locale du Bénin." required>
-            <input id="visit-date" type="date" min={tomorrowISO()} value={date} onChange={(event) => setDate(event.target.value)} className={INPUT_CLASS} />
+            <input id="visit-date" type="date" min={tomorrow || undefined} value={chosenDate} onChange={(event) => setDate(event.target.value)} className={INPUT_CLASS} />
           </FormField>
           <FormField label="Créneau souhaité" name="visit-slot" required>
             <select id="visit-slot" value={slot} onChange={(event) => setSlot(event.target.value)} className={INPUT_CLASS}><option value="">Choisir un créneau</option>{VISIT_SLOTS.map((item) => <option key={item} value={item}>{item}</option>)}</select>
@@ -130,11 +137,11 @@ export function VisitScheduler({ initialPropertyId = "" }: { initialPropertyId?:
         <p className="mt-5 flex items-start gap-2 rounded-2xl bg-info/[0.06] p-4 text-caption leading-relaxed text-muted"><Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-info" aria-hidden="true" />Le représentant confirmera ou proposera un autre créneau. N’effectuez aucun paiement avant la confirmation d’un rendez-vous par les canaux officiels HOMERA.</p>
       </WorkspacePanel>}
       {step === 2 && <WorkspacePanel title="Vérifiez votre demande" description="Prenez un instant pour vérifier que les informations sont exactes." icon={ClipboardCheck}>
-        {property ? <div className="grid gap-5 md:grid-cols-[220px_1fr]"><PropertyMiniCard property={property} large /><dl className="grid gap-3 sm:grid-cols-2"><SummaryItem label="Bien" value={property.title} /><SummaryItem label="Référence" value={property.homeraId} /><SummaryItem label="Date souhaitée" value={formatDateOnly(date)} /><SummaryItem label="Créneau" value={slot} /><SummaryItem label="État après envoi" value="Demande envoyée · en attente de réponse" /></dl></div> : <p className="text-note text-error">Le bien n’est plus disponible dans le catalogue. Revenez à l’étape précédente.</p>}
+        {property ? <div className="grid gap-5 md:grid-cols-[220px_1fr]"><PropertyMiniCard property={property} large /><dl className="grid gap-3 sm:grid-cols-2"><SummaryItem label="Bien" value={property.title} /><SummaryItem label="Référence" value={property.homeraId} /><SummaryItem label="Date souhaitée" value={formatDateOnly(chosenDate)} /><SummaryItem label="Créneau" value={slot} /><SummaryItem label="État après envoi" value="Demande envoyée · en attente de réponse" /></dl></div> : <p className="text-note text-error">Le bien n’est plus disponible dans le catalogue. Revenez à l’étape précédente.</p>}
       </WorkspacePanel>}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <button type="button" onClick={() => { setError(""); setStep((current) => Math.max(0, current - 1)); }} disabled={step === 0} className="min-h-11 rounded-btn px-4 text-note font-semibold text-muted hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40"><ArrowLeft className="mr-2 inline h-4 w-4" aria-hidden="true" />Précédent</button>
-        {step < 2 ? <button type="button" onClick={continueStep} disabled={step === 2} className={BUTTON_PRIMARY}>Continuer<ArrowRight className="h-4 w-4" aria-hidden="true" /></button> : <button type="button" onClick={requestVisit} disabled={!property || !slot || !date} className={BUTTON_PRIMARY}>Envoyer ma demande<CalendarCheck2 className="h-4 w-4" aria-hidden="true" /></button>}
+        {step < 2 ? <button type="button" onClick={continueStep} disabled={step === 2} className={BUTTON_PRIMARY}>Continuer<ArrowRight className="h-4 w-4" aria-hidden="true" /></button> : <button type="button" onClick={requestVisit} disabled={!property || !slot || !chosenDate} className={BUTTON_PRIMARY}>Envoyer ma demande<CalendarCheck2 className="h-4 w-4" aria-hidden="true" /></button>}
       </div>
       <div className="mt-8"><DemoNotice>Les demandes de visite de cette démo sont enregistrées sur cet appareil. Aucun agent ne reçoit une notification réelle tant que l’API HOMERA n’est pas connectée.</DemoNotice></div>
     </div>

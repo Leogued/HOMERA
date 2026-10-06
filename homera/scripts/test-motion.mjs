@@ -1488,3 +1488,77 @@ await test('HOMERA : chaque lien interne ouvre une route réelle, jamais une anc
   assert.ok(!connexion.includes('homeHref') && !connexion.includes('homeLabel'), 'ancienne destination après connexion retirée');
   assert.ok(connexion.includes('proprietaire') && connexion.includes('agent'), 'destination adaptée au rôle détenu');
 });
+
+/* ==================================================================
+   HYDRATATION — AUCUN NŒUD TEXTE BLANC SOUS UN PARENT SENSIBLE
+   ------------------------------------------------------------------
+   React refuse tout nœud texte sous <html>, <head>, <table>, <thead>,
+   <tbody>, <tfoot>, <tr>, <colgroup> et <frameset> : c’est une erreur
+   d’hydratation garantie. En JSX, l’espace est écrit explicitement
+   (`{" "}`) ; entre deux balises indentées il disparaît. On analyse
+   donc l’arbre JSX réel, pas les lignes de source.
+   ================================================================== */
+
+await test('HOMERA : aucun texte blanc sous <html>, <table> ou <head>', async () => {
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const sensitive = new Set(['html', 'head', 'table', 'thead', 'tbody', 'tfoot', 'tr', 'colgroup', 'frameset']);
+
+  const walk = async (dir) => {
+    const entries = await readdir(dir, { withFileTypes: true });
+    const files = [];
+    for (const entry of entries) {
+      const full = join(dir, entry.name);
+      if (entry.isDirectory()) files.push(...(await walk(full)));
+      else if (/\.tsx$/.test(entry.name)) files.push(full);
+    }
+    return files;
+  };
+
+  const tagNameOf = (node) => {
+    if (!ts.isJsxOpeningElement(node) && !ts.isJsxSelfClosingElement(node)) return null;
+    if (ts.isIdentifier(node.tagName)) return node.tagName.text.toLowerCase();
+    if (ts.isPropertyAccessExpression(node.tagName)) return node.tagName.name.text.toLowerCase();
+    return null;
+  };
+
+  // `{" "}` et équivalents : un vrai nœud texte, quel que soit le parent.
+  const isWhitespaceExpression = (child) => {
+    if (!ts.isJsxExpression(child) || !child.expression) return false;
+    const expression = child.expression;
+    if (!ts.isStringLiteral(expression) && !ts.isNoSubstitutionTemplateLiteral(expression)) return false;
+    return expression.text.length > 0 && /^[\s\u00a0]+$/.test(expression.text);
+  };
+  // Un texte JSX fait uniquement d’espaces sur la même ligne est conservé par le transform.
+  const isKeptWhitespaceText = (child, source) => {
+    if (!ts.isJsxText(child)) return false;
+    const text = child.getText(source);
+    return text.length > 0 && /^[ \t]*$/.test(text);
+  };
+
+  const findings = [];
+  for (const file of [...(await walk(join(root, 'app'))), ...(await walk(join(root, 'components')))]) {
+    const source = ts.createSourceFile(file, await readFile(file, 'utf8'), ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+    const visit = (node) => {
+      if (ts.isJsxElement(node)) {
+        const tag = tagNameOf(node.openingElement);
+        if (tag && sensitive.has(tag)) {
+          for (const child of node.children) {
+            if (isWhitespaceExpression(child) || isKeptWhitespaceText(child, source)) {
+              const { line } = source.getLineAndCharacterOfPosition(child.getStart(source));
+              findings.push(`${relative(root, file)}:${line + 1} → <${tag}>`);
+            }
+          }
+        }
+      }
+      ts.forEachChild(node, visit);
+    };
+    visit(source);
+  }
+
+  assert.deepEqual(findings, [], `nœud texte blanc sous un parent sensible :\n${findings.join('\n')}`);
+
+  // Le layout racine garde une structure stricte : <html> → <body>.
+  const layout = await readFile(join(root, 'app/layout.tsx'), 'utf8');
+  assert.ok(/<html[^>]*>\s*<body/.test(layout), 'le layout racine place <body> directement sous <html>');
+  assert.ok(/<\/body>\s*<\/html>/.test(layout), 'le layout racine referme <body> puis <html>');
+});
