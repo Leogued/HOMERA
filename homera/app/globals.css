@@ -1705,6 +1705,15 @@ a {
 .workspace-status-neutral { color: var(--muted); background: var(--background); border-color: var(--border); }
 .workspace-shell :is(input, select, textarea, button, a):focus-visible { outline: 3px solid color-mix(in srgb, var(--homera-terracotta) 65%, transparent); outline-offset: 2px; }
 .workspace-shell input:disabled, .workspace-shell select:disabled, .workspace-shell textarea:disabled, .workspace-shell button:disabled { cursor: not-allowed; opacity: .6; }
+.homera-nav-scroll {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.homera-nav-scroll::-webkit-scrollbar {
+  display: none;
+}
 @media (prefers-reduced-motion: reduce) { .workspace-panel { transition: none; } .workspace-panel:hover { transform: none; } }
 @media print {
   .workspace-print-hide, .workspace-shell aside, .workspace-shell header { display: none !important; }

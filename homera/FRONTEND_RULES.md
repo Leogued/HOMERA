@@ -92,3 +92,18 @@ Ce document fixe les règles permanentes que tout développeur ou agent frontend
 3. **Isolation des re-renders et du stockage local** :
    - Les fournisseurs de contexte (`AuthProvider`, `VisitorProvider`, `WorkflowProvider`) filtrent strictement les événements `storage` sur leurs clés respectives afin qu'une action locale (ex. clic sur un favori) ne déclenche jamais de re-render global inutile.
 
+---
+
+## 7. Système de navigation unifié des espaces & Switch d'espace par permissions
+
+1. **Un seul système de navigation commun (`WorkspaceShell`)** :
+   - Tous les espaces HOMERA (`Client` sur `/client` et `/client/*`, `Propriétaire` sur `/proprietaire/*`, `Agent` sur `/agent/*`, `Admin` sur `/admin/*`, ainsi que `/notifications` et `/messages`) partagent le **même composant de navigation (`WorkspaceShell.tsx`)**.
+   - Toute évolution de navigation s'applique automatiquement à tous les espaces, seuls les éléments visibles, permissions et destinations variant selon le rôle.
+2. **Zone unique entièrement défilante (`.homera-nav-scroll`)** :
+   - Le panneau latéral (`<aside>`) et le tiroir mobile (`#workspace-mobile-nav`) fonctionnent comme **une seule zone continue et entièrement défilante** (`overflow-y: auto; overscroll-behavior: contain; scrollbar-width: none;`), sans pied de page fixe (`mt-auto border-t`), sans double barre de défilement et sans barre de défilement visible inutile.
+3. **Architecture UX en 3 niveaux** :
+   - **Switch d'espace** : affiché uniquement lorsque les permissions réelles du compte (`accessibleWorkspaces(roles, profile)`) donnent accès à plusieurs espaces (`Client` simple → uniquement `Espace client` ; `Propriétaire`, `Agent` et `Admin` → bascule immédiate en 1 clic sans retour à l'accueil ni passage par le profil, aussi bien depuis le panneau latéral que depuis l'en-tête supérieur).
+   - **Navigation principale** : pages métier principales de l'espace actif et échanges (`Notifications`, `Messages`), sans duplication des liens de compte.
+   - **Actions secondaires** : fiche compacte du compte connecté, `Profil`, `Paramètres`, `Aide & assistance`, `Retour au site` et `Se déconnecter`, intégrés dans le même flux défilant.
+
+

@@ -273,6 +273,79 @@ export function rolesLabel(roles: readonly AccountRole[]): string {
   return held.map((role) => roleDefinition(role).label).join(" · ");
 }
 
+export type WorkspaceModeId = AccountRole | "admin";
+
+export type AccessibleWorkspace = {
+  id: WorkspaceModeId;
+  label: string;
+  shortLabel: string;
+  href: string;
+  description: string;
+};
+
+/** Vérifie si un compte possède l’autorisation d’accéder à un espace donné. */
+export function hasWorkspaceAccess(
+  roles: readonly AccountRole[],
+  target: WorkspaceModeId,
+  profile: Record<string, string> = {},
+): boolean {
+  const isAdmin = profile.demoRole === "admin";
+  if (target === "admin") return isAdmin;
+  if (isAdmin) return true;
+  return hasWorkspaceRole(roles, target);
+}
+
+/**
+ * Retourne la liste ordonnée des espaces de travail accessibles selon les permissions réelles du compte :
+ * - Client seul (`roles = ["client"]` sans accès admin) -> uniquement `Espace client` (`/client`).
+ * - Propriétaire -> `Espace propriétaire` (`/proprietaire`) + `Espace client` (`/client`) (+ `Espace agent` si cumulé).
+ * - Agent -> `Espace agent` (`/agent`) + `Espace client` (`/client`) (+ `Espace propriétaire` si cumulé).
+ * - Admin (`profile.demoRole === "admin"`) -> `Administration` (`/admin`), `Espace agent` (`/agent`), `Espace propriétaire` (`/proprietaire`) et `Espace client` (`/client`).
+ */
+export function accessibleWorkspaces(
+  roles: readonly AccountRole[],
+  profile: Record<string, string> = {},
+): AccessibleWorkspace[] {
+  const spaces: AccessibleWorkspace[] = [];
+  if (hasWorkspaceAccess(roles, "admin", profile)) {
+    spaces.push({
+      id: "admin",
+      label: "Administration",
+      shortLabel: "Admin",
+      href: "/admin",
+      description: "Vérifications, modération et supervision pilote",
+    });
+  }
+  if (hasWorkspaceAccess(roles, "proprietaire", profile)) {
+    spaces.push({
+      id: "proprietaire",
+      label: "Espace propriétaire",
+      shortLabel: "Propriétaire",
+      href: "/proprietaire",
+      description: "Biens publiés, demandes, visites et contrats",
+    });
+  }
+  if (hasWorkspaceAccess(roles, "agent", profile)) {
+    spaces.push({
+      id: "agent",
+      label: "Espace agent",
+      shortLabel: "Agent",
+      href: "/agent",
+      description: "Autorisations QR, visites terrain et clients",
+    });
+  }
+  if (hasWorkspaceAccess(roles, "client", profile)) {
+    spaces.push({
+      id: "client",
+      label: "Espace client",
+      shortLabel: "Client",
+      href: "/client",
+      description: "Recherches, favoris, visites et locations",
+    });
+  }
+  return spaces;
+}
+
 /* ------------------------------------------------------------------
    CHAMPS DEMANDÉS — communs, puis adaptés au rôle
    ------------------------------------------------------------------ */

@@ -5,13 +5,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity, ArrowLeft, ArrowRight, Bell, CalendarDays, CheckCheck,
-  ClipboardCheck, ClipboardList, FileBadge, FileText, Heart, House, LayoutDashboard,
+  ClipboardCheck, ClipboardList, FileBadge, FileText, Heart, HelpCircle, House, LayoutDashboard,
   LogOut, Menu, MessageCircle, Plus, Search, Settings2, ShieldCheck, UserRound,
   Users, WalletCards, X, type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
+import { useVisitor } from "@/components/providers/VisitorProvider";
 import { useWorkflow } from "@/components/providers/WorkflowProvider";
-import { hasWorkspaceRole, initials, rolesLabel } from "@/lib/auth";
+import { accessibleWorkspaces, hasWorkspaceAccess, initials, rolesLabel, type WorkspaceModeId } from "@/lib/auth";
 import type { AccountRole } from "@/lib/auth";
 import { DEMO_VERIFICATION_CASES } from "@/lib/portal-data";
 import type { AppNotification } from "@/lib/workflow";
@@ -46,76 +47,67 @@ function getCurrentLocalUrl() {
 
 const NAV: Record<Exclude<WorkspaceRole, "any">, NavigationGroup[]> = {
   client: [
-    { label: "Mon espace", items: [{ id: "dashboard", label: "Vue d’ensemble", href: "/client", icon: LayoutDashboard }] },
-    { label: "Mon projet", items: [
+    { label: "Navigation principale", items: [
+      { id: "dashboard", label: "Accueil", href: "/client", icon: LayoutDashboard },
+      { id: "explorer", label: "Explorer", href: "/explorer", icon: Search },
       { id: "favoris", label: "Favoris", href: "/client/favoris", icon: Heart },
-      { id: "visites", label: "Visites", href: "/client/visites", icon: CalendarDays },
-      { id: "demandes", label: "Demandes", href: "/client/demandes", icon: ClipboardList },
-      { id: "contrats", label: "Contrats", href: "/client/contrats", icon: FileText },
+      { id: "visites", label: "Mes visites", href: "/client/visites", icon: CalendarDays },
+      { id: "demandes", label: "Mes demandes", href: "/client/demandes", icon: ClipboardList },
+      { id: "contrats", label: "Mes locations", href: "/client/contrats", icon: FileText },
     ] },
     { label: "Échanges", items: [
       { id: "notifications", label: "Notifications", href: "/notifications", icon: Bell, badge: true },
       { id: "messages", label: "Messages", href: "/messages", icon: MessageCircle },
     ] },
-    { label: "Mon compte", items: [
-      { id: "profil", label: "Profil", href: "/client/profil", icon: UserRound },
-      { id: "parametres", label: "Paramètres", href: "/client/parametres", icon: Settings2 },
-    ] },
   ],
   proprietaire: [
-    { label: "Pilotage", items: [
+    { label: "Navigation principale", items: [
       { id: "dashboard", label: "Dashboard", href: "/proprietaire", icon: LayoutDashboard },
       { id: "biens", label: "Mes biens", href: "/proprietaire/biens", icon: House },
       { id: "ajouter-bien", label: "Ajouter un bien", href: "/proprietaire/ajouter-bien", icon: Plus },
-    ] },
-    { label: "Opérations", items: [
       { id: "demandes", label: "Demandes", href: "/proprietaire/demandes", icon: ClipboardList },
       { id: "visites", label: "Visites", href: "/proprietaire/visites", icon: CalendarDays },
       { id: "locations", label: "Locations", href: "/proprietaire/locations", icon: WalletCards },
       { id: "agents", label: "Agents", href: "/proprietaire/agents", icon: Users },
       { id: "documents", label: "Documents", href: "/proprietaire/documents", icon: FileText },
+      { id: "abonnement", label: "Abonnement", href: "/proprietaire/abonnement", icon: WalletCards },
     ] },
-    { label: "Compte", items: [
+    { label: "Échanges", items: [
       { id: "notifications", label: "Notifications", href: "/notifications", icon: Bell, badge: true },
       { id: "messages", label: "Messages", href: "/messages", icon: MessageCircle },
-      { id: "abonnement", label: "Abonnement", href: "/proprietaire/abonnement", icon: WalletCards },
-      { id: "profil", label: "Profil", href: "/proprietaire/profil", icon: UserRound },
-      { id: "parametres", label: "Paramètres", href: "/proprietaire/parametres", icon: Settings2 },
     ] },
   ],
   agent: [
-    { label: "Pilotage", items: [
+    { label: "Navigation principale", items: [
       { id: "dashboard", label: "Dashboard", href: "/agent", icon: LayoutDashboard },
       { id: "biens", label: "Biens autorisés", href: "/agent/biens", icon: House },
       { id: "visites", label: "Visites", href: "/agent/visites", icon: CalendarDays },
       { id: "clients", label: "Clients", href: "/agent/clients", icon: Users },
-    ] },
-    { label: "Gestion", items: [
       { id: "documents", label: "Documents", href: "/agent/documents", icon: FileText },
       { id: "autorisations", label: "Autorisations", href: "/agent/autorisations", icon: FileBadge },
+    ] },
+    { label: "Échanges", items: [
       { id: "notifications", label: "Notifications", href: "/notifications", icon: Bell, badge: true },
       { id: "messages", label: "Messages", href: "/messages", icon: MessageCircle },
-      { id: "profil", label: "Profil", href: "/agent/profil", icon: UserRound },
     ] },
   ],
   admin: [
-    { label: "Contrôle", items: [
+    { label: "Navigation principale", items: [
       { id: "dashboard", label: "Dashboard", href: "/admin", icon: LayoutDashboard },
+      { id: "verifications", label: "Vérifications", href: "/admin/verifications", icon: ClipboardCheck, badge: true },
+      { id: "biens", label: "Biens", href: "/admin/biens", icon: House },
       { id: "utilisateurs", label: "Utilisateurs", href: "/admin/utilisateurs", icon: Users },
       { id: "proprietaires", label: "Propriétaires", href: "/admin/proprietaires", icon: UserRound },
       { id: "agents", label: "Agents", href: "/admin/agents", icon: ShieldCheck },
-      { id: "biens", label: "Biens", href: "/admin/biens", icon: House },
-      { id: "verifications", label: "Vérifications", href: "/admin/verifications", icon: ClipboardCheck, badge: true },
       { id: "visites", label: "Visites", href: "/admin/visites", icon: CalendarDays },
       { id: "demandes", label: "Demandes", href: "/admin/demandes", icon: ClipboardList },
       { id: "signalements", label: "Signalements", href: "/admin/signalements", icon: Activity },
-    ] },
-    { label: "Système", items: [
       { id: "documents", label: "Documents", href: "/admin/documents", icon: FileText },
       { id: "statistiques", label: "Statistiques", href: "/admin/statistiques", icon: Activity },
+    ] },
+    { label: "Échanges", items: [
       { id: "notifications", label: "Notifications", href: "/notifications", icon: Bell, badge: true },
       { id: "messages", label: "Messages", href: "/messages", icon: MessageCircle },
-      { id: "parametres", label: "Paramètres", href: "/admin/parametres", icon: Settings2 },
     ] },
   ],
 };
@@ -139,6 +131,7 @@ export function WorkspaceShell({
 }) {
   const pathname = usePathname();
   const { ready: authReady, account, signOut } = useAuth();
+  const visitor = useVisitor();
   const { ready: workflowReady, data, updateData, storageAvailable } = useWorkflow();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
@@ -146,6 +139,7 @@ export function WorkspaceShell({
   const notificationsButtonRef = useRef<HTMLButtonElement | null>(null);
   const offline = !useSyncExternalStore(subscribeToNetwork, getOnlineStatus, () => true);
   const unread = data.notifications.filter((entry) => !entry.read).length;
+  const favoriteCount = visitor.ready ? visitor.favorites.length : 0;
   const openVerificationCount = DEMO_VERIFICATION_CASES.filter((entry) =>
     ["a-examiner", "modification-demandee"].includes(data.verificationDecisions[entry.id] ?? entry.initialDecision),
   ).length + data.listings.filter((entry) =>
@@ -155,7 +149,10 @@ export function WorkspaceShell({
   const activeRoleForProfile = role === "client" || role === "proprietaire" || role === "agent"
     ? role
     : preferredRole(account?.roles ?? []);
-  const navGroups = role === "any" ? anyNavigation(preferredRole(account?.roles ?? [])) : NAV[role];
+  const activeWorkspaceId: WorkspaceModeId = role === "any"
+    ? (account?.profile.demoRole === "admin" ? "admin" : preferredRole(account?.roles ?? []))
+    : role;
+  const navGroups = NAV[activeWorkspaceId];
   const currentHref = pathname || "/";
 
   useEffect(() => {
@@ -196,11 +193,58 @@ export function WorkspaceShell({
 
   if (!authReady || !workflowReady) return <WorkspaceLoading />;
   if (!account) return <AccessState mode="signin" role={role} pathname={currentHref} />;
-  if (role === "admin" && account.profile.demoRole !== "admin") return <AccessState mode="unauthorized" role={role} pathname={currentHref} />;
-  if (role !== "admin" && role !== "any" && !hasWorkspaceRole(account.roles, role)) return <AccessState mode="unauthorized" role={role} pathname={currentHref} />;
+  if (role !== "any" && !hasWorkspaceAccess(account.roles, role, account.profile)) {
+    return <AccessState mode="unauthorized" role={role} pathname={currentHref} />;
+  }
+
+  const workspaces = accessibleWorkspaces(account.roles, account.profile);
+  const canSwitchWorkspaces = workspaces.length > 1;
+  const secondaryProfileHref = profileHref(activeRoleForProfile);
+  const secondarySettingsHref = settingsHref(activeWorkspaceId);
 
   const renderedNavigation = (
-    <nav aria-label={`Navigation ${ROLE_LABEL[role].toLowerCase()}`} className="flex-1 space-y-5 overflow-y-auto px-3 pb-5 pt-2">
+    <nav aria-label={`Navigation ${ROLE_LABEL[activeWorkspaceId].toLowerCase()}`} className="space-y-5 px-3 pb-7 pt-2">
+      {/* Niveau 1 — Switch d’espace (uniquement si plusieurs espaces autorisés par les permissions réelles du compte) */}
+      {canSwitchWorkspaces && (
+        <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-2.5">
+          <p className="px-2 pb-1.5 text-micro font-semibold uppercase tracking-[0.18em] text-homera-amber">
+            Switch d’espace
+          </p>
+          <ul className="space-y-1">
+            {workspaces.map((space) => {
+              const isCurrentSpace = space.id === activeWorkspaceId;
+              return (
+                <li key={space.id}>
+                  <Link
+                    href={space.href}
+                    onClick={() => setMobileOpen(false)}
+                    aria-current={isCurrentSpace ? "page" : undefined}
+                    className={`flex min-h-10 items-center justify-between gap-2 rounded-xl px-2.5 py-2 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${
+                      isCurrentSpace
+                        ? "border border-homera-amber/35 bg-homera-amber/15 font-semibold text-white"
+                        : "text-white/75 hover:bg-white/[0.08] hover:text-white"
+                    }`}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate">{space.label}</span>
+                      <span className="block truncate text-micro text-white/55">{space.description}</span>
+                    </span>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-micro font-semibold ${
+                      isCurrentSpace
+                        ? "bg-homera-amber text-homera-night"
+                        : "border border-white/15 text-white/70"
+                    }`}>
+                      {isCurrentSpace ? "Actif" : "Ouvrir"}
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      )}
+
+      {/* Niveau 2 — Navigation principale de l’espace actif */}
       {navGroups.map((group) => (
         <div key={group.label}>
           <p className="px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] text-white/45">{group.label}</p>
@@ -219,8 +263,9 @@ export function WorkspaceShell({
                   >
                     <item.icon className={`h-[17px] w-[17px] shrink-0 ${active ? "text-homera-amber" : "text-white/55 group-hover:text-white"}`} aria-hidden="true" />
                     <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    {item.id === "favoris" && favoriteCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white/15 px-1.5 text-micro font-semibold text-white">{favoriteCount}</span>}
                     {item.badge && item.id !== "verifications" && unread > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-homera-terracotta px-1.5 text-micro font-semibold text-white">{unread}</span>}
-                    {item.id === "verifications" && role === "admin" && openVerificationCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-homera-amber px-1.5 text-micro font-semibold text-homera-night">{openVerificationCount}</span>}
+                    {item.id === "verifications" && activeWorkspaceId === "admin" && openVerificationCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-homera-amber px-1.5 text-micro font-semibold text-homera-night">{openVerificationCount}</span>}
                   </Link>
                 </li>
               );
@@ -228,31 +273,100 @@ export function WorkspaceShell({
           </ul>
         </div>
       ))}
+
+      {/* Niveau 3 — Actions secondaires (Profil, Paramètres, Aide, Retour au site, Déconnexion) intégrées au même flux défilant */}
+      <div>
+        <p className="px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] text-white/45">Actions secondaires</p>
+        <ul className="space-y-1">
+          <li className="pb-1">
+            <Link
+              href={secondaryProfileHref}
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 text-left transition-colors hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
+            >
+              <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10 font-serif text-note text-homera-amber">
+                {initials(account.prenom, account.nom)}
+              </span>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate text-note font-semibold text-white">{account.prenom} {account.nom}</span>
+                <span className="block truncate text-micro text-white/55">{rolesLabel(account.roles)} · {account.id}</span>
+              </span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              href={secondaryProfileHref}
+              onClick={() => setMobileOpen(false)}
+              aria-current={currentHref === secondaryProfileHref ? "page" : undefined}
+              className={`group flex min-h-11 items-center gap-3 rounded-xl px-3 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${
+                currentHref === secondaryProfileHref ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/[0.06] hover:text-white"
+              }`}
+            >
+              <UserRound className={`h-[17px] w-[17px] shrink-0 ${currentHref === secondaryProfileHref ? "text-homera-amber" : "text-white/55 group-hover:text-white"}`} aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">Profil</span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              href={secondarySettingsHref}
+              onClick={() => setMobileOpen(false)}
+              aria-current={currentHref === secondarySettingsHref ? "page" : undefined}
+              className={`group flex min-h-11 items-center gap-3 rounded-xl px-3 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${
+                currentHref === secondarySettingsHref ? "bg-white/10 text-white" : "text-white/70 hover:bg-white/[0.06] hover:text-white"
+              }`}
+            >
+              <Settings2 className={`h-[17px] w-[17px] shrink-0 ${currentHref === secondarySettingsHref ? "text-homera-amber" : "text-white/55 group-hover:text-white"}`} aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">Paramètres</span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/contact"
+              onClick={() => setMobileOpen(false)}
+              className="group flex min-h-11 items-center gap-3 rounded-xl px-3 text-note text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
+            >
+              <HelpCircle className="h-[17px] w-[17px] shrink-0 text-white/55 group-hover:text-white" aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">Aide & assistance</span>
+            </Link>
+          </li>
+          <li>
+            <Link
+              href="/"
+              onClick={() => setMobileOpen(false)}
+              className="group flex min-h-11 items-center gap-3 rounded-xl px-3 text-note text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
+            >
+              <ArrowLeft className="h-[17px] w-[17px] shrink-0 text-white/55 group-hover:text-white" aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">Retour au site</span>
+            </Link>
+          </li>
+          <li>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileOpen(false);
+                signOut();
+              }}
+              className="group flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-note text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
+            >
+              <LogOut className="h-[17px] w-[17px] shrink-0 text-white/55 group-hover:text-white" aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate">Se déconnecter</span>
+            </button>
+          </li>
+        </ul>
+      </div>
     </nav>
   );
 
   return (
     <div className="workspace-shell min-h-svh bg-background text-foreground">
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[268px] flex-col bg-homera-night text-homera-paper lg:flex">
-        <div className="px-6 pb-5 pt-7">
+      <aside className="homera-nav-scroll fixed inset-y-0 left-0 z-40 hidden w-[268px] flex-col bg-homera-night text-homera-paper lg:flex">
+        <div className="px-6 pb-3 pt-7">
           <Link href="/" className="inline-flex flex-col" aria-label="HOMERA, accueil public">
             <span className="homera-brand text-brand text-white">Homera</span>
-            <span className="mt-1 text-micro font-semibold uppercase tracking-[0.2em] text-homera-amber">{ROLE_LABEL[role]}</span>
+            <span className="mt-1 text-micro font-semibold uppercase tracking-[0.2em] text-homera-amber">{ROLE_LABEL[activeWorkspaceId]}</span>
           </Link>
         </div>
         {renderedNavigation}
-        <div className="mt-auto border-t border-white/10 px-4 py-4">
-          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 font-serif text-body-sm text-homera-amber">{initials(account.prenom, account.nom)}</span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-note font-semibold text-white">{account.prenom} {account.nom}</span>
-              <span className="block truncate text-caption text-white/60">{rolesLabel(account.roles)}</span>
-            </span>
-            <Link href={profileHref(activeRoleForProfile)} aria-label="Ouvrir mon profil" className="flex h-9 w-9 items-center justify-center rounded-xl text-white/65 hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"><UserRound className="h-4 w-4" aria-hidden="true" /></Link>
-          </div>
-          <button type="button" onClick={signOut} className="mt-2 flex min-h-10 w-full items-center gap-2 rounded-xl px-3 text-note text-white/65 hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"><LogOut className="h-4 w-4" aria-hidden="true" />Se déconnecter</button>
-          <Link href="/" className="mt-1 inline-flex min-h-10 items-center gap-2 px-3 text-caption text-white/50 transition-colors hover:text-homera-amber"><ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" />Retour au site</Link>
-        </div>
       </aside>
 
       <div className="min-h-svh lg:pl-[268px]">
@@ -262,14 +376,35 @@ export function WorkspaceShell({
               <button type="button" aria-label={mobileOpen ? "Fermer la navigation" : "Ouvrir la navigation"} aria-expanded={mobileOpen} aria-controls={mobileOpen ? "workspace-mobile-nav" : undefined} onClick={() => setMobileOpen((open) => !open)} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-foreground lg:hidden">
                 {mobileOpen ? <X className="h-4 w-4" aria-hidden="true" /> : <Menu className="h-4 w-4" aria-hidden="true" />}
               </button>
-              <Link href="/" className="flex flex-col lg:hidden" aria-label="HOMERA, accueil"><span className="homera-brand text-brand-sm text-foreground">Homera</span><span className="-mt-0.5 text-micro font-semibold uppercase tracking-[0.15em] text-homera-terracotta">{ROLE_LABEL[role]}</span></Link>
+              <Link href="/" className="flex flex-col lg:hidden" aria-label="HOMERA, accueil"><span className="homera-brand text-brand-sm text-foreground">Homera</span><span className="-mt-0.5 text-micro font-semibold uppercase tracking-[0.15em] text-homera-terracotta">{ROLE_LABEL[activeWorkspaceId]}</span></Link>
               <div className="hidden min-w-0 lg:block">
-                <p className="text-caption font-semibold uppercase tracking-[0.17em] text-muted">{ROLE_LABEL[role]}</p>
+                <p className="text-caption font-semibold uppercase tracking-[0.17em] text-muted">{ROLE_LABEL[activeWorkspaceId]}</p>
                 <p className="mt-0.5 truncate text-note text-foreground">{title} <span className="px-1 text-muted-light">/</span> {account.prenom}</p>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-              {role === "admin" && <span className="hidden rounded-full border border-warning/30 bg-warning/[0.08] px-3 py-1.5 text-caption font-semibold text-warning sm:inline-flex">Aperçu pilote</span>}
+              {canSwitchWorkspaces && (
+                <nav aria-label="Basculer d’espace" className="flex items-center gap-1 rounded-full border border-border bg-card p-1">
+                  {workspaces.map((space) => {
+                    const isCurrentSpace = space.id === activeWorkspaceId;
+                    return (
+                      <Link
+                        key={space.id}
+                        href={space.href}
+                        aria-current={isCurrentSpace ? "page" : undefined}
+                        className={`inline-flex min-h-8 items-center rounded-full px-3 text-caption font-semibold transition-colors ${
+                          isCurrentSpace
+                            ? "bg-homera-brown text-white"
+                            : "text-muted hover:bg-surface-hover hover:text-foreground"
+                        }`}
+                      >
+                        {space.shortLabel}
+                      </Link>
+                    );
+                  })}
+                </nav>
+              )}
+              {activeWorkspaceId === "admin" && <span className="hidden rounded-full border border-warning/30 bg-warning/[0.08] px-3 py-1.5 text-caption font-semibold text-warning xl:inline-flex">Aperçu pilote</span>}
               <Link href="/explorer" className="hidden min-h-10 items-center gap-2 rounded-btn homera-cta px-3.5 text-note font-medium text-white sm:inline-flex"><Search className="h-3.5 w-3.5" aria-hidden="true" />Explorer</Link>
               <div ref={notificationsContainerRef} className="relative">
                 <button ref={notificationsButtonRef} type="button" aria-label={unread ? `Notifications, ${unread} non lues` : "Notifications"} aria-expanded={notificationsOpen} aria-controls={notificationsOpen ? "workspace-notifications-menu" : undefined} onClick={() => setNotificationsOpen((open) => !open)} className="relative flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground hover:border-homera-terracotta hover:text-homera-terracotta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
@@ -287,7 +422,7 @@ export function WorkspaceShell({
           </div>
         </header>
 
-        {mobileOpen && <><button type="button" aria-label="Fermer la navigation" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-40 bg-homera-night/40 lg:hidden" /><div id="workspace-mobile-nav" className="fixed inset-x-3 top-[4.75rem] z-50 flex max-h-[calc(100svh-5.25rem)] flex-col overflow-hidden rounded-2xl border border-border bg-homera-night text-white shadow-[var(--shadow-card-hover)] lg:hidden"><div className="flex items-center justify-between border-b border-white/10 px-4 py-3"><span className="text-caption font-semibold uppercase tracking-[0.15em] text-homera-amber">{ROLE_LABEL[role]}</span><button type="button" onClick={() => setMobileOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full text-white/70 hover:bg-white/10" aria-label="Fermer"><X className="h-4 w-4" aria-hidden="true" /></button></div>{renderedNavigation}<div className="border-t border-white/10 p-3"><button type="button" onClick={signOut} className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-note text-white/75 hover:bg-white/[0.07]"><LogOut className="h-4 w-4" aria-hidden="true" />Se déconnecter</button></div></div></>}
+        {mobileOpen && <><button type="button" aria-label="Fermer la navigation" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-40 bg-homera-night/40 lg:hidden" /><div id="workspace-mobile-nav" className="homera-nav-scroll fixed inset-x-3 top-[4.75rem] z-50 flex max-h-[calc(100svh-5.25rem)] flex-col rounded-2xl border border-border bg-homera-night text-white shadow-[var(--shadow-card-hover)] lg:hidden"><div className="flex items-center justify-between px-4 pb-2 pt-3.5"><span className="text-caption font-semibold uppercase tracking-[0.15em] text-homera-amber">{ROLE_LABEL[activeWorkspaceId]}</span><button type="button" onClick={() => setMobileOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full text-white/70 hover:bg-white/10" aria-label="Fermer"><X className="h-4 w-4" aria-hidden="true" /></button></div>{renderedNavigation}</div></>}
 
         <main id="workspace-main" className="mx-auto max-w-[1600px] px-4 py-7 sm:px-6 sm:py-9 xl:px-9">
           {offline && <div className="mb-5 rounded-2xl border border-warning/30 bg-warning/[0.08] px-4 py-3 text-note text-foreground" role="status"><strong>Connexion perdue.</strong> Le prototype utilise vos données locales ; toute fonctionnalité serveur sera indisponible hors ligne.</div>}
@@ -331,19 +466,14 @@ function preferredRole(roles: AccountRole[]): Exclude<WorkspaceRole, "any" | "ad
   return roles.includes("proprietaire") ? "proprietaire" : roles.includes("agent") ? "agent" : "client";
 }
 
-function anyNavigation(role: Exclude<WorkspaceRole, "any" | "admin">): NavigationGroup[] {
-  return [
-    { label: "Espace", items: [{ id: "workspace", label: "Mon tableau de bord", href: role === "client" ? "/client" : `/${role}`, icon: LayoutDashboard }] },
-    { label: "Échanges", items: [
-      { id: "notifications", label: "Notifications", href: "/notifications", icon: Bell, badge: true },
-      { id: "messages", label: "Messages", href: "/messages", icon: MessageCircle },
-    ] },
-    { label: "Compte", items: [{ id: "profil", label: "Profil", href: profileHref(role), icon: UserRound }] },
-  ];
-}
-
 function profileHref(role: Exclude<WorkspaceRole, "any" | "admin">): string {
   return role === "client" ? "/client/profil" : `/${role}/profil`;
+}
+
+function settingsHref(workspaceId: WorkspaceModeId): string {
+  if (workspaceId === "proprietaire") return "/proprietaire/parametres";
+  if (workspaceId === "admin") return "/admin/parametres";
+  return "/client/parametres";
 }
 
 function sectionTitle(role: WorkspaceRole, section: string): string {

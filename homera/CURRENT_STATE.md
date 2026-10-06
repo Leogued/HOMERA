@@ -103,6 +103,15 @@ Lors de l'exécution du workflow `AGENTS.md` sur HOMERA, un audit exhaustif stat
      - Priorité d'affichage aux résultats (`Critical content first`) : `priority={index < 3}` sur les 3 premières cartes du catalogue et ouverture à la demande de `CommuneMapExplorer`.
      - Affichage SSR immédiat du titre et de la recherche dans `Hero.tsx` + `preload="metadata"` et `poster="/images/page-cotonou.jpg"` sur la vidéo d'accueil.
      - Création de `app/(site)/loading.tsx` (`.homera-skeleton` stable) et filtrage strict des clés `ACCOUNTS_STORAGE_KEY` / `SESSION_STORAGE_KEY` dans `AuthProvider.tsx`.
+13. **Refonte du système de navigation unifié des espaces & Switch d'espace global par permissions (`lib/auth.ts`, `WorkspaceShell.tsx`, `ClientDashboard.tsx`, `AccountControl.tsx`, `app/globals.css`)** :
+   - *Diagnostic* :
+     - `/client` (`ClientDashboard.tsx`) maintenait son propre `<aside>`, `<header>` et menu mobile séparés de `WorkspaceShell.tsx`.
+     - Le profil et le bouton « Se déconnecter » restaient bloqués en permanence dans un pied de page fixe (`mt-auto border-t`), découpant artificiellement la barre latérale avec une double zone de défilement.
+     - Les comptes autorisés à plusieurs espaces (`Propriétaire`, `Agent`, `Admin`) devaient revenir à l'accueil public (`/`) et ouvrir l'icône profil pour changer d'espace.
+   - *Implémentation* :
+     - Création de `hasWorkspaceAccess(roles, target, profile)` et `accessibleWorkspaces(roles, profile)` dans `lib/auth.ts` : un **Client** simple ne voit que `Espace client` (`/client`), tandis qu'un **Propriétaire**, un **Agent** ou un **Admin** (`Admin → Propriétaire → Agent → Client`) bascule en 1 clic entre ses espaces autorisés.
+     - Unification complète : `ClientDashboard.tsx` utilise désormais `<WorkspaceShell role="client" section="dashboard">`, garantissant un **seul système de navigation commun** pour tous les espaces.
+     - Panneau de navigation entièrement défilant en une seule zone continue (`.homera-nav-scroll` sans barre de défilement visible ni pied de page fixe), structuré en 3 niveaux UX : **Switch d'espace** (et accès rapide dans l'en-tête), **Navigation principale**, et **Actions secondaires** (`Profil`, `Paramètres`, `Aide & assistance`, `Retour au site`, `Se déconnecter`).
 
 ### 3.2 Accessibilité (WCAG AA) & Sémantique HTML
 1. **Lecteurs d'écran sur `FormField` (`components/workspace/Primitives.tsx`)** :

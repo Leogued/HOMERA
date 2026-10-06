@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useMemo, type ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useTheme } from "next-themes";
 import {
   ArrowRight,
@@ -12,15 +11,12 @@ import {
   Building2,
   CalendarDays,
   CheckCircle2,
-  ChevronRight,
   ClipboardList,
   Heart,
   House,
   Info,
   LayoutDashboard,
-  LogOut,
   MailCheck,
-  Menu,
   MessageCircle,
   Moon,
   Search,
@@ -29,7 +25,6 @@ import {
   Sparkles,
   Sun,
   UserRound,
-  X,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -42,6 +37,7 @@ import type { PublicAccount } from "@/lib/accounts";
 import { countLabel } from "@/lib/format";
 import { parseCatalogQuery } from "@/lib/properties";
 import { StatusBadge } from "@/components/workspace/Primitives";
+import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import type { SavedSearch } from "@/lib/persistence";
 
 const AUTOMATIC_ALERTS_CAPABILITY = CAPABILITIES.find((entry) => entry.id === "alertes");
@@ -60,7 +56,7 @@ type ClientNavGroup = {
   items: ClientNavItem[];
 };
 
-const CLIENT_NAV: ClientNavGroup[] = [
+export const CLIENT_NAV: ClientNavGroup[] = [
   {
     label: "Espace personnel",
     items: [{ id: "accueil", label: "Accueil", href: "/client", icon: LayoutDashboard }],
@@ -97,13 +93,18 @@ const CLIENT_NAV: ClientNavGroup[] = [
 ];
 
 export function ClientDashboard() {
-  const { ready, account, signOut } = useAuth();
+  return (
+    <WorkspaceShell role="client" section="dashboard">
+      <ClientDashboardContent />
+    </WorkspaceShell>
+  );
+}
+
+function ClientDashboardContent() {
+  const { account } = useAuth();
   const visitor = useVisitor();
   const workflow = useWorkflow();
   const { resolvedTheme, setTheme } = useTheme();
-  const pathname = usePathname();
-  const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const mobileMenuButtonRef = useRef<HTMLButtonElement | null>(null);
 
   const favoriteProperties = useMemo(
     () => visitor.favorites.map((id) => PROPERTIES.find((property) => property.id === id)).filter(isProperty),
@@ -131,182 +132,10 @@ export function ClientDashboard() {
   const pendingActions = (account && !account.emailVerified ? 1 : 0) + unreadWorkflowNotifications.length;
   const currentThemeIsDark = resolvedTheme === "dark";
 
-  useEffect(() => {
-    if (!mobileNavOpen) return;
-    const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key !== "Escape") return;
-      setMobileNavOpen(false);
-      mobileMenuButtonRef.current?.focus();
-    };
-    document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
-  }, [mobileNavOpen]);
-
-  const handleNavigation = () => setMobileNavOpen(false);
-
-  if (!ready) return <ClientLoading />;
-  if (!account) return <ClientSignIn />;
+  if (!account) return null;
 
   return (
-    <div className="min-h-svh bg-background text-foreground">
-      <aside
-        aria-label="Navigation de l’espace client"
-        className="fixed inset-y-0 left-0 z-30 hidden w-[264px] flex-col bg-homera-night text-homera-paper lg:flex"
-      >
-        <div className="px-6 pb-5 pt-7">
-          <Link href="/" className="inline-flex flex-col" aria-label="HOMERA — retourner à l’accueil public">
-            <span className="homera-brand text-brand text-white">Homera</span>
-            <span className="mt-1 text-micro font-semibold uppercase tracking-[0.22em] text-homera-amber">
-              Espace client
-            </span>
-          </Link>
-        </div>
-
-        <DashboardNavigation
-          currentPath={pathname}
-          favoriteCount={visitor.ready ? visitor.favorites.length : 0}
-          notificationCount={pendingActions}
-          onNavigate={handleNavigation}
-          tone="night"
-        />
-
-        <div className="mt-auto border-t border-white/10 px-4 py-4">
-          <div className="flex items-center gap-3 rounded-2xl border border-white/10 bg-white/[0.04] p-3">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/10 font-serif text-body-sm text-homera-amber">
-              {initials(account.prenom, account.nom)}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-note font-semibold text-white">
-                {account.prenom} {account.nom}
-              </p>
-              <p className="truncate text-caption text-white/65">{rolesLabel(account.roles)}</p>
-            </div>
-            <Link
-              href="/client/profil"
-              aria-label="Ouvrir mon profil"
-              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-white/70 transition-colors hover:bg-white/10 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
-            >
-              <UserRound className="h-4 w-4" aria-hidden="true" />
-            </Link>
-          </div>
-          <button
-            type="button"
-            onClick={signOut}
-            className="mt-2 inline-flex min-h-10 w-full items-center gap-2 rounded-xl px-3 text-note text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
-          >
-            <LogOut className="h-4 w-4" aria-hidden="true" />
-            Se déconnecter
-          </button>
-          <Link
-            href="/"
-            className="mt-2 inline-flex min-h-10 items-center gap-2 px-3 text-caption text-white/55 transition-colors hover:text-homera-amber"
-          >
-            <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-            Retour au site HOMERA
-          </Link>
-        </div>
-      </aside>
-
-      <div className="min-h-svh lg:pl-[264px]">
-        <header className="sticky top-0 z-20 border-b border-border/80 bg-background/95 backdrop-blur-md">
-          <div className="mx-auto flex h-[4.5rem] max-w-[1500px] items-center justify-between gap-3 px-4 sm:px-6 xl:px-9">
-            <div className="flex min-w-0 items-center gap-3">
-              <button
-                ref={mobileMenuButtonRef}
-                type="button"
-                aria-expanded={mobileNavOpen}
-                aria-controls="client-mobile-navigation"
-                aria-label={mobileNavOpen ? "Fermer la navigation" : "Ouvrir la navigation"}
-                onClick={() => setMobileNavOpen((open) => !open)}
-                className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta lg:hidden"
-              >
-                {mobileNavOpen ? <X className="h-4 w-4" aria-hidden="true" /> : <Menu className="h-4 w-4" aria-hidden="true" />}
-              </button>
-              <Link href="/" className="flex flex-col lg:hidden" aria-label="HOMERA, accueil">
-                <span className="homera-brand text-brand-sm text-foreground">Homera</span>
-                <span className="-mt-0.5 text-micro font-semibold uppercase tracking-[0.16em] homera-accent-ink">
-                  Espace client
-                </span>
-              </Link>
-              <div className="hidden min-w-0 lg:block">
-                <p className="text-caption font-semibold uppercase tracking-[0.16em] text-muted">Espace client</p>
-                <p className="mt-0.5 truncate text-note text-foreground">
-                  Accueil <span className="px-1 text-muted-light">/</span> Bonjour {account.prenom}
-                </p>
-              </div>
-            </div>
-
-            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-              <Link
-                href="/explorer"
-                className="homera-press hidden min-h-10 items-center gap-2 rounded-btn homera-cta px-4 text-note font-medium text-white sm:inline-flex"
-              >
-                <Search className="h-3.5 w-3.5" aria-hidden="true" />
-                Nouvelle recherche
-              </Link>
-              <Link
-                href="/notifications"
-                aria-label={
-                  pendingActions > 0
-                    ? `Notifications, ${pendingActions} action à traiter`
-                    : "Notifications"
-                }
-                className="relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
-              >
-                <Bell className="h-[18px] w-[18px]" aria-hidden="true" />
-                {pendingActions > 0 && (
-                  <span className="absolute right-1 top-1 flex h-[17px] min-w-[17px] items-center justify-center rounded-full bg-homera-terracotta px-1 text-micro font-semibold leading-none text-white">
-                    {pendingActions}
-                  </span>
-                )}
-              </Link>
-              <div className="hidden items-center gap-2.5 pl-1 sm:flex">
-                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-homera-cream-dark text-note font-semibold text-homera-brown">
-                  {initials(account.prenom, account.nom)}
-                </span>
-                <span className="hidden max-w-28 truncate text-note font-semibold md:block">{account.prenom}</span>
-              </div>
-            </div>
-          </div>
-        </header>
-
-        {mobileNavOpen && (
-          <>
-            <button
-              type="button"
-              aria-label="Fermer la navigation"
-              onClick={() => setMobileNavOpen(false)}
-              className="fixed inset-0 z-40 bg-homera-night/35 lg:hidden"
-            />
-            <div
-              id="client-mobile-navigation"
-              className="fixed inset-x-3 top-[4.75rem] z-50 max-h-[calc(100svh-5.5rem)] overflow-y-auto rounded-2xl border border-border bg-card p-2 shadow-[var(--shadow-card-hover)] lg:hidden"
-            >
-              <DashboardNavigation
-                currentPath={pathname}
-                favoriteCount={visitor.ready ? visitor.favorites.length : 0}
-                notificationCount={pendingActions}
-                onNavigate={handleNavigation}
-                tone="light"
-              />
-              <div className="mt-2 border-t border-border px-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    signOut();
-                    setMobileNavOpen(false);
-                  }}
-                  className="flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-note text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
-                >
-                  <LogOut className="h-4 w-4" aria-hidden="true" />
-                  Se déconnecter
-                </button>
-              </div>
-            </div>
-          </>
-        )}
-
-        <main id="contenu-client" className="mx-auto max-w-[1500px] px-4 pb-12 pt-6 sm:px-6 sm:pt-8 xl:px-9">
+    <div>
           <section
             id="accueil"
             aria-labelledby="client-welcome-title"
@@ -757,93 +586,7 @@ export function ClientDashboard() {
               </div>
             </DashboardPanel>
           </div>
-
-        </main>
-      </div>
     </div>
-  );
-}
-
-function DashboardNavigation({
-  currentPath,
-  favoriteCount,
-  notificationCount,
-  onNavigate,
-  tone,
-}: {
-  currentPath: string;
-  favoriteCount: number;
-  notificationCount: number;
-  onNavigate: () => void;
-  tone: "light" | "night";
-}) {
-  const dark = tone === "night";
-  return (
-    <nav aria-label="Navigation de l’espace client" className={`min-h-0 flex-1 overflow-y-auto px-3 ${dark ? "pb-4" : "pb-2"}`}>
-      {CLIENT_NAV.map((group) => (
-        <div key={group.label} className="mb-5 last:mb-0">
-          <p className={`mb-2 px-3 text-micro font-semibold uppercase tracking-[0.18em] ${dark ? "text-white/55" : "text-muted"}`}>
-            {group.label}
-          </p>
-          <ul className="space-y-1">
-            {group.items.map((item) => {
-              const Icon = item.icon;
-              const active = currentPath === item.href || currentPath.startsWith(`${item.href}/`);
-              const count = item.id === "favoris" ? favoriteCount : item.id === "notifications" ? notificationCount : 0;
-              const className = `group flex min-h-11 w-full items-center gap-3 rounded-xl px-3 text-note font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 ${
-                dark
-                  ? active
-                    ? "bg-homera-paper text-homera-brown focus-visible:ring-homera-amber"
-                    : "text-white/75 hover:bg-white/[0.07] hover:text-white focus-visible:ring-homera-amber"
-                  : active
-                    ? "bg-homera-terracotta/[0.09] text-homera-terracotta focus-visible:ring-homera-terracotta"
-                    : "text-foreground hover:bg-surface-hover focus-visible:ring-homera-terracotta"
-              }`;
-              const content = (
-                <>
-                  <Icon
-                    className={`h-[17px] w-[17px] shrink-0 ${
-                      active
-                        ? dark
-                          ? "text-homera-terracotta"
-                          : "text-homera-terracotta"
-                        : dark
-                          ? "text-white/60 group-hover:text-homera-amber"
-                          : "text-muted group-hover:text-homera-terracotta"
-                    }`}
-                    aria-hidden="true"
-                  />
-                  <span className="min-w-0 flex-1 truncate text-left">{item.label}</span>
-                  {count > 0 && (
-                    <span
-                      className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-micro font-semibold tabular-nums ${
-                        item.id === "notifications"
-                          ? dark
-                            ? "bg-homera-amber text-homera-night"
-                            : "bg-warning text-white"
-                          : dark
-                            ? "bg-white/12 text-white/80"
-                            : "bg-homera-terracotta/[0.1] homera-accent-ink"
-                      }`}
-                    >
-                      {count}
-                    </span>
-                  )}
-                  {active && <ChevronRight className="h-3.5 w-3.5 shrink-0 opacity-60" aria-hidden="true" />}
-                </>
-              );
-              return (
-                <li key={item.id}>
-                  <Link href={item.href} onClick={onNavigate} aria-current={active ? "page" : undefined} className={className}>
-                    {content}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ))}
-    </nav>
   );
 }
 
@@ -992,62 +735,6 @@ function ProfileItem({ label, value }: { label: string; value: string }) {
     <div className="min-w-0">
       <dt className="text-micro font-semibold uppercase tracking-[0.15em] text-muted">{label}</dt>
       <dd className="mt-1 break-words text-note font-medium text-foreground">{value}</dd>
-    </div>
-  );
-}
-
-function ClientLoading() {
-  return (
-    <main className="grid min-h-svh place-items-center bg-background px-4 text-foreground">
-      <div aria-busy="true" aria-live="polite" className="w-full max-w-md rounded-card border border-border bg-card p-7 text-center">
-        <p className="sr-only">Lecture de votre espace client…</p>
-        <div className="homera-brand text-brand-sm homera-accent-ink">Homera</div>
-        <h1 className="mt-6 font-serif text-display-xs text-foreground">Votre espace client</h1>
-        <div className="homera-skeleton mx-auto mt-4 h-8 w-2/3" />
-        <div className="homera-skeleton mx-auto mt-3 h-4 w-full" />
-        <div className="homera-skeleton mx-auto mt-2 h-4 w-4/5" />
-      </div>
-    </main>
-  );
-}
-
-function ClientSignIn() {
-  return (
-    <div className="flex min-h-svh flex-col bg-background text-foreground">
-      <header className="border-b border-border bg-background/90 px-4 py-4 sm:px-6">
-        <div className="mx-auto flex max-w-7xl items-center justify-between">
-          <Link href="/" className="flex flex-col" aria-label="HOMERA, accueil">
-            <span className="homera-brand text-brand-sm text-foreground">Homera</span>
-            <span className="-mt-0.5 text-micro font-semibold uppercase tracking-[0.16em] homera-accent-ink">Espace client</span>
-          </Link>
-          <Link href="/explorer" className="homera-underline inline-flex min-h-10 items-center gap-2 text-note font-medium homera-accent-ink">
-            Explorer le catalogue <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-          </Link>
-        </div>
-      </header>
-      <main className="grid flex-1 place-items-center px-4 py-12">
-        <section className="w-full max-w-2xl rounded-3xl border border-border bg-card p-6 text-center shadow-[var(--shadow-card)] sm:p-10">
-          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-homera-terracotta/[0.08] text-homera-terracotta">
-            <UserRound className="h-6 w-6" aria-hidden="true" />
-          </span>
-          <p className="mt-5 text-caption font-semibold uppercase tracking-[0.2em] homera-accent-ink">Votre espace personnel</p>
-          <h1 className="mt-3 font-serif text-display-md sm:text-display-lg">Connectez-vous à votre espace client.</h1>
-          <p className="mx-auto mt-4 max-w-xl text-body-sm leading-relaxed text-muted">
-            Retrouvez vos favoris et vos recherches enregistrées. Le compte du pilote est conservé dans ce navigateur ; les autres services s’ouvriront avec l’API.
-          </p>
-          <div className="mt-7 flex flex-wrap justify-center gap-3">
-            <Link href="/connexion" className="homera-press inline-flex min-h-11 items-center gap-2 rounded-btn homera-cta px-5 text-note font-semibold text-white">
-              Se connecter <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </Link>
-            <Link href="/inscription?role=client" className="homera-press inline-flex min-h-11 items-center gap-2 rounded-btn border border-border bg-background px-5 text-note font-semibold text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta">
-              Créer un compte
-            </Link>
-          </div>
-          <p className="mt-6 border-t border-border pt-4 text-caption leading-relaxed text-muted">
-            Vos favoris restent aussi consultables sans compte sur <Link href="/favoris" className="homera-underline font-semibold homera-accent-ink">la page Favoris</Link>.
-          </p>
-        </section>
-      </main>
     </div>
   );
 }

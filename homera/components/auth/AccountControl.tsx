@@ -5,8 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown, Heart, LogOut, MailCheck, Search, UserRound, UserRoundPlus } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
-import { initials, roleDefinition, rolesLabel } from "@/lib/auth";
-import { AUTH_HREF, CLIENT_HREF, SIGNUP_HREF, VERIFY_HREF } from "@/lib/nav";
+import { accessibleWorkspaces, initials, roleDefinition, rolesLabel } from "@/lib/auth";
+import { AUTH_HREF, SIGNUP_HREF, VERIFY_HREF } from "@/lib/nav";
 import type { PublicAccount } from "@/lib/accounts";
 
 /* ==================================================================
@@ -154,13 +154,16 @@ export function AccountControl({ tone = "light" }: { tone?: Tone }) {
           ) : null}
 
           <nav aria-label="Compte" className="py-1.5">
-            <Link
-              href={CLIENT_HREF}
-              className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"
-            >
-              <UserRound className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />
-              Mon espace client
-            </Link>
+            {accessibleWorkspaces(account.roles, account.profile).map((space) => (
+              <Link
+                key={space.id}
+                href={space.href}
+                className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"
+              >
+                <UserRound className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />
+                {space.label}
+              </Link>
+            ))}
             <Link
               href={accountProfileHref(account)}
               className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"
@@ -168,7 +171,6 @@ export function AccountControl({ tone = "light" }: { tone?: Tone }) {
               <UserRound className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />
               Mon profil
             </Link>
-            {account.profile.demoRole === "admin" && <Link href="/admin" className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"><UserRound className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />Administration</Link>}
             <Link
               href="/client/favoris"
               className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"
@@ -176,8 +178,6 @@ export function AccountControl({ tone = "light" }: { tone?: Tone }) {
               <Heart className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />
               Favoris et recherches
             </Link>
-            {account.roles.includes("proprietaire") && <Link href="/proprietaire" className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"><UserRound className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />Espace propriétaire</Link>}
-            {account.roles.includes("agent") && <Link href="/agent" className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"><UserRound className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />Espace agent</Link>}
             <Link
               href="/explorer"
               className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"
@@ -274,12 +274,12 @@ export function AccountMobileLinks({
       </p>
       <ul className="mt-3 space-y-1">
         {[
-          { href: CLIENT_HREF, label: "Mon espace client" },
+          ...accessibleWorkspaces(account.roles, account.profile).map((space) => ({
+            href: space.href,
+            label: space.label,
+          })),
           { href: accountProfileHref(account), label: "Mon profil" },
-          ...(account.profile.demoRole === "admin" ? [{ href: "/admin", label: "Administration" }] : []),
           { href: "/client/favoris", label: "Favoris et recherches" },
-          ...(account.roles.includes("proprietaire") ? [{ href: "/proprietaire", label: "Espace propriétaire" }] : []),
-          ...(account.roles.includes("agent") ? [{ href: "/agent", label: "Espace agent" }] : []),
           ...(account.emailVerified ? [] : [{ href: VERIFY_HREF, label: "Confirmer mon adresse" }]),
         ].map((entry) => (
           <li key={entry.href}>
