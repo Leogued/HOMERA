@@ -1874,10 +1874,10 @@ await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (pro
 
   // Switch d’espace basé sur les permissions réelles et navigation unifiée défilante
   assert.deepEqual(auth.accessibleWorkspaces(['client'], {}).map((entry) => entry.id), ['client'], 'un client simple ne voit que l’espace client');
-  assert.deepEqual(auth.accessibleWorkspaces(['proprietaire'], {}).map((entry) => entry.id), ['proprietaire', 'client'], 'un propriétaire bascule entre Propriétaire et Client');
-  assert.deepEqual(auth.accessibleWorkspaces(['agent'], {}).map((entry) => entry.id), ['agent', 'client'], 'un agent bascule entre Agent et Client');
-  assert.deepEqual(auth.accessibleWorkspaces(['client', 'proprietaire', 'agent'], {}).map((entry) => entry.id), ['proprietaire', 'agent', 'client'], 'un compte multi-rôle bascule entre Propriétaire, Agent et Client');
-  assert.deepEqual(auth.accessibleWorkspaces(['client'], { demoRole: 'admin' }).map((entry) => entry.id), ['admin', 'proprietaire', 'agent', 'client'], 'un compte admin bascule entre Admin, Propriétaire, Agent et Client');
+  assert.deepEqual(auth.accessibleWorkspaces(['proprietaire'], {}).map((entry) => entry.id), ['proprietaire', 'client'], 'un propriétaire n’a droit qu’à son espace et l’espace client');
+  assert.deepEqual(auth.accessibleWorkspaces(['client', 'proprietaire', 'agent'], {}).map((entry) => entry.id), ['proprietaire', 'client'], 'un propriétaire non-admin n’a droit qu’à son espace et l’espace client');
+  assert.deepEqual(auth.accessibleWorkspaces(['agent'], {}).map((entry) => entry.id), ['agent', 'client'], 'un agent n’a droit qu’à son espace et l’espace client');
+  assert.deepEqual(auth.accessibleWorkspaces(['client'], { demoRole: 'admin' }).map((entry) => entry.id), ['admin', 'agent', 'proprietaire', 'client'], 'un compte admin bascule entre Admin, Agent, Propriétaire et Client');
 
   const workspaceShell = await readFile(new URL('../components/workspace/WorkspaceShell.tsx', import.meta.url), 'utf8');
   assert.ok(workspaceShell.includes('Switch d’espace') && workspaceShell.includes('Navigation principale') && workspaceShell.includes('Actions secondaires'), 'WorkspaceShell structure la navigation en 3 niveaux UX');

@@ -204,40 +204,10 @@ export function WorkspaceShell({
 
   const renderedNavigation = (
     <nav aria-label={`Navigation ${ROLE_LABEL[activeWorkspaceId].toLowerCase()}`} className="space-y-5 px-3 pb-7 pt-2">
-      {/* Niveau 1 — Navigation principale : pages principales de l’espace actif */}
-      {navGroups.map((group) => (
-        <div key={group.label}>
-          <p className="px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] text-white/45">{group.label}</p>
-          <ul className="space-y-1">
-            {group.items.map((item) => {
-              const active = item.href === "/client" || item.href === "/proprietaire" || item.href === "/agent" || item.href === "/admin"
-                ? currentHref === item.href
-                : currentHref === item.href || currentHref.startsWith(`${item.href}/`);
-              return (
-                <li key={item.id}>
-                  <Link
-                    href={item.href}
-                    onClick={() => setMobileOpen(false)}
-                    aria-current={active ? "page" : undefined}
-                    className={`group flex min-h-10 items-center gap-3 rounded-xl px-3 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${active ? "bg-white/10 font-semibold text-white" : "text-white/70 hover:bg-white/[0.06] hover:text-white"}`}
-                  >
-                    <item.icon className={`h-[17px] w-[17px] shrink-0 ${active ? "text-homera-amber" : "text-white/55 group-hover:text-white"}`} aria-hidden="true" />
-                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                    {item.id === "favoris" && favoriteCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white/15 px-1.5 text-micro font-semibold text-white">{favoriteCount}</span>}
-                    {item.badge && item.id !== "verifications" && unread > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-homera-terracotta px-1.5 text-micro font-semibold text-white">{unread}</span>}
-                    {item.id === "verifications" && activeWorkspaceId === "admin" && openVerificationCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-homera-amber px-1.5 text-micro font-semibold text-homera-night">{openVerificationCount}</span>}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ))}
-
-      {/* Niveau 2 — Switch d’espace : espaces auxquels l’utilisateur possède réellement accès */}
+      {/* Switch d’espace : espaces auxquels l’utilisateur possède réellement accès */}
       {canSwitchWorkspaces && (
         <div>
-          <p className="px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] text-white/45">
+          <p className="px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] text-homera-amber">
             Switch d’espace
           </p>
           <ul className="space-y-1">
@@ -274,7 +244,37 @@ export function WorkspaceShell({
         </div>
       )}
 
-      {/* Niveau 3 — Actions secondaires : Profil, paramètres, aide, retour au site, déconnexion (sans duplication, dans le même flux défilant) */}
+      {/* Navigation principale : pages principales de l’espace actif */}
+      {navGroups.map((group) => (
+        <div key={group.label}>
+          <p className="px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] text-white/45">{group.label}</p>
+          <ul className="space-y-1">
+            {group.items.map((item) => {
+              const active = item.href === "/client" || item.href === "/proprietaire" || item.href === "/agent" || item.href === "/admin"
+                ? currentHref === item.href
+                : currentHref === item.href || currentHref.startsWith(`${item.href}/`);
+              return (
+                <li key={item.id}>
+                  <Link
+                    href={item.href}
+                    onClick={() => setMobileOpen(false)}
+                    aria-current={active ? "page" : undefined}
+                    className={`group flex min-h-10 items-center gap-3 rounded-xl px-3 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${active ? "bg-white/10 font-semibold text-white" : "text-white/70 hover:bg-white/[0.06] hover:text-white"}`}
+                  >
+                    <item.icon className={`h-[17px] w-[17px] shrink-0 ${active ? "text-homera-amber" : "text-white/55 group-hover:text-white"}`} aria-hidden="true" />
+                    <span className="min-w-0 flex-1 truncate">{item.label}</span>
+                    {item.id === "favoris" && favoriteCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white/15 px-1.5 text-micro font-semibold text-white">{favoriteCount}</span>}
+                    {item.badge && item.id !== "verifications" && unread > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-homera-terracotta px-1.5 text-micro font-semibold text-white">{unread}</span>}
+                    {item.id === "verifications" && activeWorkspaceId === "admin" && openVerificationCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-homera-amber px-1.5 text-micro font-semibold text-homera-night">{openVerificationCount}</span>}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+
+      {/* Actions secondaires : Profil, paramètres, aide, retour au site, déconnexion (sans duplication, dans le même flux défilant) */}
       <div>
         <p className="px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] text-white/45">Actions secondaires</p>
         <ul className="space-y-1">

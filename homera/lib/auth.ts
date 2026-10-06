@@ -283,23 +283,35 @@ export type AccessibleWorkspace = {
   description: string;
 };
 
-/** Vérifie si un compte possède l’autorisation d’accéder à un espace donné. */
+/**
+ * Vérifie si un compte possède l’autorisation d’accéder à un espace donné :
+ * - Client : uniquement `client` (`/client`).
+ * - Propriétaire : uniquement `proprietaire` (`/proprietaire`) et `client` (`/client`).
+ * - Agent : uniquement `agent` (`/agent`) et `client` (`/client`).
+ * - Admin (`profile.demoRole === "admin"`) : `admin`, `agent`, `proprietaire` et `client`.
+ */
 export function hasWorkspaceAccess(
   roles: readonly AccountRole[],
   target: WorkspaceModeId,
   profile: Record<string, string> = {},
 ): boolean {
   const isAdmin = profile.demoRole === "admin";
-  if (target === "admin") return isAdmin;
   if (isAdmin) return true;
-  return hasWorkspaceRole(roles, target);
+  if (target === "admin") return false;
+  if (roles.includes("proprietaire")) {
+    return target === "proprietaire" || target === "client";
+  }
+  if (roles.includes("agent")) {
+    return target === "agent" || target === "client";
+  }
+  return target === "client" && roles.length > 0;
 }
 
 /**
  * Retourne la liste ordonnée des espaces de travail accessibles selon les permissions réelles du compte :
- * - Client seul (`roles = ["client"]` sans accès admin) -> uniquement `Espace client` (`/client`).
- * - Propriétaire -> `Espace propriétaire` (`/proprietaire`) + `Espace client` (`/client`) (+ `Espace agent` si cumulé).
- * - Agent -> `Espace agent` (`/agent`) + `Espace client` (`/client`) (+ `Espace propriétaire` si cumulé).
+ * - Client -> uniquement `Espace client` (`/client`).
+ * - Propriétaire -> uniquement `Espace propriétaire` (`/proprietaire`) et `Espace client` (`/client`).
+ * - Agent -> uniquement `Espace agent` (`/agent`) et `Espace client` (`/client`).
  * - Admin (`profile.demoRole === "admin"`) -> `Administration` (`/admin`), `Espace agent` (`/agent`), `Espace propriétaire` (`/proprietaire`) et `Espace client` (`/client`).
  */
 export function accessibleWorkspaces(
@@ -316,15 +328,6 @@ export function accessibleWorkspaces(
       description: "Vérifications, modération et supervision pilote",
     });
   }
-  if (hasWorkspaceAccess(roles, "proprietaire", profile)) {
-    spaces.push({
-      id: "proprietaire",
-      label: "Espace propriétaire",
-      shortLabel: "Propriétaire",
-      href: "/proprietaire",
-      description: "Biens publiés, demandes, visites et contrats",
-    });
-  }
   if (hasWorkspaceAccess(roles, "agent", profile)) {
     spaces.push({
       id: "agent",
@@ -332,6 +335,15 @@ export function accessibleWorkspaces(
       shortLabel: "Agent",
       href: "/agent",
       description: "Autorisations QR, visites terrain et clients",
+    });
+  }
+  if (hasWorkspaceAccess(roles, "proprietaire", profile)) {
+    spaces.push({
+      id: "proprietaire",
+      label: "Espace propriétaire",
+      shortLabel: "Propriétaire",
+      href: "/proprietaire",
+      description: "Biens publiés, demandes, visites et contrats",
     });
   }
   if (hasWorkspaceAccess(roles, "client", profile)) {
