@@ -85,6 +85,8 @@ await check("1. Gouvernance documentaire complète et synchronisée (racine + ho
     "PHASE 7 — MISE À JOUR DE L'ÉTAT",
     "# HOMERA — CUSTOM DESIGN & VISUAL DIRECTION",
     "# HOMERA — PRODUCT QUALITY & AUTONOMOUS DESIGN INTELLIGENCE",
+    "# HOMERA — GLOBAL SPEED & FLUIDITY DIRECTIVE",
+    "HOMERA me répond immédiatement.",
     "OUI, AJOUTER",
     "OUI, SUPPRIMER",
     "BOUCLE AUTONOME",
@@ -108,6 +110,7 @@ await check("1. Gouvernance documentaire complète et synchronisée (racine + ho
     "## 5.7 Motion",
     "## 5.8 Final removal pass",
     "# 6. PRODUCT QUALITY & AUTONOMOUS DESIGN INTELLIGENCE",
+    "# 7. GLOBAL SPEED & FLUIDITY DIRECTIVE",
   ]) {
     assert.ok(qualityGate.includes(section), `QUALITY_GATE.md doit contenir « ${section} »`);
   }
@@ -223,6 +226,17 @@ await check("5. Cohérence fonctionnelle des espaces (Profil par rôle, Footer d
 
   const serviceDetail = await readFile(path.join(appRoot, "components/site/ServiceDetail.tsx"), "utf8");
   assert.ok(serviceDetail.includes("SERVICE_DETAILED_GUIDES"), "ServiceDetail (/services/[slug]) doit intégrer le périmètre détaillé, les livrables et la FAQ du métier");
+
+  assert.ok(catalogExplorer.includes("onTermChange") && catalogExplorer.includes("priority={index < 3}"), "CatalogExplorer doit filtrer en temps réel et précharger les 3 premières cartes (priority)");
+
+  const hero = await readFile(path.join(appRoot, "components/home/Hero.tsx"), "utf8");
+  assert.ok(hero.includes('preload="metadata"') && hero.includes('poster="/images/page-cotonou.jpg"'), "Hero doit utiliser preload=metadata et poster pour la rapidité mobile");
+
+  const authProvider = await readFile(path.join(appRoot, "components/providers/AuthProvider.tsx"), "utf8");
+  assert.ok(authProvider.includes("ACCOUNTS_STORAGE_KEY") && authProvider.includes("SESSION_STORAGE_KEY"), "AuthProvider doit filtrer strictement ses clés localStorage");
+
+  const siteLoading = await readFile(path.join(appRoot, "app/(site)/loading.tsx"), "utf8");
+  assert.ok(siteLoading.includes("homera-skeleton"), "app/(site)/loading.tsx doit fournir un état de chargement immédiat et stable");
 });
 
 const failed = checks.filter((c) => !c.ok);

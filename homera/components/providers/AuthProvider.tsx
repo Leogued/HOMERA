@@ -11,7 +11,9 @@ import {
 } from "react";
 import {
   ACCOUNTS_EVENT,
+  ACCOUNTS_STORAGE_KEY,
   SESSION_EVENT,
+  SESSION_STORAGE_KEY,
   clearSession,
   createAccountRecord,
   findAccountByEmail,
@@ -153,9 +155,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setAccount(current ? publicAccount(current) : null);
     };
     const onStorage = (event: StorageEvent) => {
-      // Toutes les clés de l’application commencent par « homera. » :
-      // les autres onglets, et eux seuls, sont concernés.
-      if (event.key && !event.key.startsWith("homera.")) return;
+      // Seules les clés de comptes et de session concernent AuthProvider :
+      // évite de re-rendre tout l’arbre lors d’un changement de favori ou de workflow.
+      if (
+        event.key !== null &&
+        event.key !== ACCOUNTS_STORAGE_KEY &&
+        event.key !== SESSION_STORAGE_KEY
+      ) {
+        return;
+      }
       sync();
     };
 

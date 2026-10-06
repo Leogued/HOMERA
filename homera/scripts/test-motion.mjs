@@ -1760,11 +1760,13 @@ await test('HOMERA : cadre de gouvernance markdown complet et synchronisé', asy
   const agents = await readFile(new URL('../AGENTS.md', import.meta.url), 'utf8');
   assert.ok(agents.includes('# HOMERA — CUSTOM DESIGN & VISUAL DIRECTION'), 'AGENTS.md intègre la direction de conception sur mesure');
   assert.ok(agents.includes('# HOMERA — PRODUCT QUALITY & AUTONOMOUS DESIGN INTELLIGENCE'), 'AGENTS.md intègre le bloc Product Quality & Autonomous Design Intelligence');
+  assert.ok(agents.includes('# HOMERA — GLOBAL SPEED & FLUIDITY DIRECTIVE'), 'AGENTS.md intègre la directive globale de vitesse et fluidité');
   assert.ok(agents.includes('OUI, AJOUTER') && agents.includes('OUI, SUPPRIMER') && agents.includes('BOUCLE AUTONOME'), 'AGENTS.md intègre le pouvoir de décision et la boucle autonome en 11 étapes');
   assert.ok(agents.includes('PHASE 2 — RECHERCHE & INSPIRATION') && agents.includes('PHASE 5 — CRITIQUE & SUPPRESSION'), 'AGENTS.md intègre le workflow en 7 phases');
   const qualityGate = await readFile(new URL('../QUALITY_GATE.md', import.meta.url), 'utf8');
   assert.ok(qualityGate.includes('# 5. CUSTOM DESIGN & CREATIVE QUALITY'), 'QUALITY_GATE.md intègre la 5e catégorie Custom Design & Creative Quality');
   assert.ok(qualityGate.includes('# 6. PRODUCT QUALITY & AUTONOMOUS DESIGN INTELLIGENCE'), 'QUALITY_GATE.md intègre la 6e catégorie Product Quality & Autonomous Design Intelligence');
+  assert.ok(qualityGate.includes('# 7. GLOBAL SPEED & FLUIDITY DIRECTIVE'), 'QUALITY_GATE.md intègre la 7e catégorie Global Speed & Fluidity Directive');
 });
 
 await test('HOMERA : échelle typographique stricte (--text-*) dans tous les composants et pages', async () => {
@@ -1858,5 +1860,16 @@ await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (pro
 
   const serviceDetail = await readFile(new URL('../components/site/ServiceDetail.tsx', import.meta.url), 'utf8');
   assert.ok(serviceDetail.includes('SERVICE_DETAILED_GUIDES'), 'ServiceDetail intègre le périmètre détaillé, les livrables et la FAQ de chaque métier');
+
+  assert.ok(catalogExplorer.includes('onTermChange') && catalogExplorer.includes('priority={index < 3}'), 'CatalogExplorer filtre au fil de la frappe et précharge les 3 premières cartes');
+
+  const hero = await readFile(new URL('../components/home/Hero.tsx', import.meta.url), 'utf8');
+  assert.ok(hero.includes('preload="metadata"') && hero.includes('poster="/images/page-cotonou.jpg"'), 'Hero optimise la vidéo pour mobile avec preload metadata et poster');
+
+  const authProvider = await readFile(new URL('../components/providers/AuthProvider.tsx', import.meta.url), 'utf8');
+  assert.ok(authProvider.includes('ACCOUNTS_STORAGE_KEY') && authProvider.includes('SESSION_STORAGE_KEY'), 'AuthProvider filtre strictement les événements storage');
+
+  const siteLoading = await readFile(new URL('../app/(site)/loading.tsx', import.meta.url), 'utf8');
+  assert.ok(siteLoading.includes('homera-skeleton'), 'app/(site)/loading.tsx fournit un squelette de transition immédiat');
 });
 

@@ -188,3 +188,26 @@ npm run audit:home        # 6. Audit HTTP/DOM complet des routes publiques (0 li
 - [x] La boucle complète `COMPRENDRE → ANALYSER → RECHERCHER → DÉCIDER → IMPLÉMENTER → TESTER → VISUALISER → CRITIQUER → CORRIGER → VALIDER → DOCUMENTER` a été exécutée
 - [x] Une seconde passe `CRITIQUE` a vérifié l'absence de faiblesse, de répétition, de surcharge ou d'information manquante
 
+---
+
+# 7. GLOBAL SPEED & FLUIDITY DIRECTIVE
+
+## 7.1 Réactivité immédiate (« HOMERA me répond immédiatement »)
+
+- [x] Chaque action utilisateur (clic, saisie, filtre, tri, favori, ouverture/fermeture, navigation) déclenche un retour immédiat sans attente artificielle
+- [x] La saisie dans la recherche de l'explorateur (`CatalogExplorer.tsx`) filtre les résultats en temps réel au fil de la frappe (`useTransition`) et propose un bouton d'effacement instantané (`×`)
+- [x] Priorité absolue : `réponse immédiate > transition courte > animation décorative`
+
+## 7.2 Priorité du contenu (« Critical content first ») & Mobile First
+
+- [x] Le titre principal et le module de recherche du Hero (`Hero.tsx`) s'affichent immédiatement dès le premier rendu HTML SSR (aucun masquage initial en attente de l'hydratation JS)
+- [x] La vidéo du Hero utilise `preload="metadata"` et une image `poster` immédiate (`/images/page-cotonou.jpg`) pour éviter tout écran noir ou saturation de bande passante sur mobile
+- [x] Les 3 premières cartes de biens visibles dans l'explorateur (`CatalogExplorer.tsx`) reçoivent `priority={index < 3}` pour précharger les visuels au-dessus de la ligne de flottaison (LCP optimal)
+- [x] Sur `/explorer`, la grille de résultats est immédiatement visible au-dessus de la ligne de flottaison (la carte des communes s'ouvre à la demande en 1 clic ou lorsqu'un filtre territorial est actif)
+
+## 7.3 Navigation sans friction, Stabilité & Performance technique
+
+- [x] Toutes les routes dynamiques publiques (`app/(site)/loading.tsx`), client (`app/(client)/loading.tsx`) et espaces (`app/(workspace)/loading.tsx`) disposent d'un état `.homera-skeleton` stable sans saut de mise en page (CLS = 0)
+- [x] `AuthProvider` filtre strictement les événements `storage` sur ses propres clés (`ACCOUNTS_STORAGE_KEY`, `SESSION_STORAGE_KEY`), évitant tout re-render global lors d'un ajout en favori ou d'une action de workflow
+
+

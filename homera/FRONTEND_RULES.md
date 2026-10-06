@@ -77,3 +77,18 @@ Ce document fixe les règles permanentes que tout développeur ou agent frontend
    - Cibles tactiles d'au moins `40×40 px` (`min-h-10` / `min-h-11` sur tous les boutons et liens d'action).
    - Tableaux larges encapsulés dans `overflow-x-auto` ou remplacés par des cartes sur mobile (`sm:hidden` / `hidden sm:block`).
    - Alignement des pieds de page et contenus principaux avec les barres latérales fixes (`lg:pl-[268px]` / `lg:pl-[264px]`) pour éviter tout recouvrement sur grand écran.
+
+---
+
+## 6. Vitesse, Fluidité & Performance Technique (`GLOBAL SPEED & FLUIDITY DIRECTIVE`)
+
+1. **Priorité absolue du contenu critique (`Critical content first`)** :
+   - Le titre principal et les outils de recherche critiques au-dessus de la ligne de flottaison doivent être visibles dès le premier rendu HTML SSR (ne jamais les masquer derrière un état JS `opacity: 0` en attente d'hydratation).
+   - Les premières images visibles (`index < 3` dans les grilles du catalogue, image principale d'une fiche de bien) reçoivent `priority={true}` ; les images sous la ligne de flottaison restent en `loading="lazy"` avec `placeholder="blur"`.
+   - Les vidéos d'arrière-plan utilisent `preload="metadata"` et un attribut `poster` léger afin de préserver la bande passante mobile et d'éviter tout écran noir au chargement.
+2. **Réactivité immédiate des interactions (`réponse immédiate > transition courte > animation décorative`)** :
+   - Toute saisie de recherche ou action de filtrage en mémoire met à jour les résultats immédiatement via `useTransition`, avec possibilité d'effacement instantané.
+   - Chaque groupe de routes dynamiques (`(site)`, `(client)`, `(workspace)`) fournit un fichier `loading.tsx` stable (`.homera-skeleton`) pour garantir un retour visuel instantané lors de la navigation sans saut de mise en page (`CLS = 0`).
+3. **Isolation des re-renders et du stockage local** :
+   - Les fournisseurs de contexte (`AuthProvider`, `VisitorProvider`, `WorkflowProvider`) filtrent strictement les événements `storage` sur leurs clés respectives afin qu'une action locale (ex. clic sur un favori) ne déclenche jamais de re-render global inutile.
+

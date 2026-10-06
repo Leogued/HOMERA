@@ -35,12 +35,13 @@ Le dépôt dispose désormais d'un système de gouvernance markdown complet sync
   - Boucle d'exécution autonome en **7 phases** (*1. Compréhension → 2. Recherche & Inspiration → 3. Audit & Direction → 4. Conception & Implémentation → 5. Critique & Suppression → 6. Tests & Validation → 7. Mise à jour de l'état*).
    - Bloc complet **`HOMERA — CUSTOM DESIGN & VISUAL DIRECTION`** en 17 sections (*Principe fondamental, Conception avant implémentation, Content Before Layout, Inspiration externe obligatoire, Borrow Patterns Not Interfaces, Recherche comparative, Architecture des sections, Nombre de sections, Densité et rythme visuel, Contenu sur mesure, Direction visuelle, Images et photographie, Motion design, Auto-critique obligatoire, Test de suppression, Test de nécessité, Standard final*).
    - Bloc complet **`HOMERA — PRODUCT QUALITY & AUTONOMOUS DESIGN INTELLIGENCE`** en 15 sections : identité simultanée à 10 rôles (*Senior Frontend Engineer, Senior Product Designer, Senior UX Designer, UI Designer, Content Designer, Information Architect, UX Writer, Accessibility Specialist, Conversion / Product Experience Specialist, Visual Quality Director*), audit en 15 questions avec pouvoir explicite de décision (`OUI, AJOUTER`, `OUI, MODIFIER`, `OUI, SUPPRIMER`, `NON, CONSERVER`), 10 dimensions de qualité et boucle autonome en 11 étapes (`COMPRENDRE → ANALYSER → RECHERCHER → DÉCIDER → IMPLÉMENTER → TESTER → VISUALISER → CRITIQUER → CORRIGER → VALIDER → DOCUMENTER`).
+   - Bloc complet **`HOMERA — GLOBAL SPEED & FLUIDITY DIRECTIVE`** en 15 sections (*Tout doit être rapide, Règle de réactivité, Ne pas confondre vitesse et animation, Éliminer les attentes inutiles, Performance technique, Performance perçue, Priorité du contenu, Navigation sans friction, Mobile first pour la rapidité, Stabilité, Erreurs, Mesure globale, Test utilisateur, Optimisation continue, Critère final*).
    - Garde-fous Next.js 16 (`<!-- BEGIN:nextjs-agent-rules -->`).
 - `VISION.md` — Positionnement éditorial, piliers de confiance immobilière au Bénin, axiomes `UTILITÉ > QUANTITÉ`, `Content Before Layout`, `Borrow Patterns, Not Interfaces` et discipline de suppression.
 - `PROJECT.md` — Architecture technique, cartographie des routes et flux de données (`content.ts`, `editorial-guides.ts`, `auth.ts`, `workflow.ts`, `portal-data.ts`, `qr.ts`).
 - `DESIGN_SYSTEM.md` — Palette (`#faf6ef`, `#3e2418`, `#b3502c`), typographie à 4 familles, échelle stricte `--text-*`, rayons `--radius-*`, ombres et mouvement.
-- `FRONTEND_RULES.md` — Standards de code React 19 / Next.js 16 / Tailwind v4, hydratation déterministe, accessibilité WCAG AA et anti-patterns interdits.
-- `QUALITY_GATE.md` — Checklist objective de validation en **6 catégories** (1. Fonctionnel, 2. Design System & Cohérence Visuelle, 3. UX & États d'interface, 4. Accessibilité & Qualité Technique, 5. **Custom Design & Creative Quality** : `5.1` à `5.8`, 6. **Product Quality & Autonomous Design Intelligence** : `6.1` à `6.4`) bloquante avant toute livraison.
+- `FRONTEND_RULES.md` — Standards de code React 19 / Next.js 16 / Tailwind v4, hydratation déterministe, accessibilité WCAG AA, directive de vitesse & fluidité et anti-patterns interdits.
+- `QUALITY_GATE.md` — Checklist objective de validation en **7 catégories** (1. Fonctionnel, 2. Design System & Cohérence Visuelle, 3. UX & États d'interface, 4. Accessibilité & Qualité Technique, 5. **Custom Design & Creative Quality** : `5.1` à `5.8`, 6. **Product Quality & Autonomous Design Intelligence** : `6.1` à `6.4`, 7. **Global Speed & Fluidity Directive** : `7.1` à `7.3`) bloquante avant toute livraison.
 - `ROADMAP.md` — Feuille de route incrémentale (Paliers 1 à 4).
 - `CURRENT_STATE.md` — Présent journal d'état et d'audit.
 - `docs/pages/` (`README.md`, `PUBLIC_SITE.md`, `AUTH_FLOWS.md`, `WORKSPACES.md`).
@@ -91,6 +92,17 @@ Lors de l'exécution du workflow `AGENTS.md` sur HOMERA, un audit exhaustif stat
      - Sur **`/acheter`, `/louer`, `/sejour`** (`ProjectPage.tsx`) et les **11 pages `/[projet]/[categorie]`** (`CategoryPage.tsx`) : guide de décision en 3 piliers + FAQ métier interactive (`<details>`) et points de contrôle par catégorie.
      - Sur les **4 fiches `/services/[slug]`** (`ServiceDetail.tsx`) : périmètre d'exécution en 4 étapes, profils accompagnés, livrables documentaires et FAQ dédiée à chaque métier.
      - Sur **`/a-propos`** et **`/contact`** : section **« À qui s'adresse HOMERA »** (4 profils), tableau comparatif **« Ce que couvre le contrôle HOMERA — et ce qui relève du notaire et de l'ANDF »**, et guide de préparation des demandes de contact.
+12. **Optimisation globale de la vitesse, de la réactivité et de la fluidité (`GLOBAL SPEED & FLUIDITY DIRECTIVE` — `CatalogExplorer.tsx`, `Hero.tsx`, `AuthProvider.tsx`, `app/(site)/loading.tsx`)** :
+   - *Diagnostic (`COMPRENDRE → ANALYSER`)* :
+     - La saisie dans la barre de recherche de l'explorateur (`CatalogExplorer.tsx`) attendait la soumission manuelle du formulaire au lieu de filtrer instantanément au fil de la frappe, et ne proposait pas de bouton d'effacement rapide (`×`).
+     - Les 3 premières cartes de biens de l'explorateur n'avaient pas `priority={index < 3}`, retardant le LCP des pages catalogue, et la carte des communes ouverte par défaut sur `/explorer` repoussait les résultats sous la ligne de flottaison sur mobile.
+     - Le Hero (`Hero.tsx`) masquait initialement son `<h1>` et son `SearchModule` (`entered = false`) jusqu'à l'hydratation JS et chargeait la vidéo en `preload="auto"` sans `poster`.
+     - Les routes dynamiques de `app/(site)/` ne disposaient pas de `loading.tsx`, et `AuthProvider.tsx` recalculait les comptes sur tout événement `storage` `homera.*`.
+   - *Implémentation* :
+     - Filtrage instantané au fil de la frappe (`onTermChange` + `useTransition`) et bouton d'effacement immédiat dans `CatalogExplorer.tsx`.
+     - Priorité d'affichage aux résultats (`Critical content first`) : `priority={index < 3}` sur les 3 premières cartes du catalogue et ouverture à la demande de `CommuneMapExplorer`.
+     - Affichage SSR immédiat du titre et de la recherche dans `Hero.tsx` + `preload="metadata"` et `poster="/images/page-cotonou.jpg"` sur la vidéo d'accueil.
+     - Création de `app/(site)/loading.tsx` (`.homera-skeleton` stable) et filtrage strict des clés `ACCOUNTS_STORAGE_KEY` / `SESSION_STORAGE_KEY` dans `AuthProvider.tsx`.
 
 ### 3.2 Accessibilité (WCAG AA) & Sémantique HTML
 1. **Lecteurs d'écran sur `FormField` (`components/workspace/Primitives.tsx`)** :

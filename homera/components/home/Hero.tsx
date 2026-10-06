@@ -7,7 +7,7 @@ import { cssVars, useMotionPreferences, usePointerMotion, useSceneMotion } from 
 import { phase } from "@/lib/motion-math";
 import { CHAPTERS } from "@/lib/content"; /* Cadrage, vidéo, titre et recherche d'origine conservés. Trois couches indépendantes : la vidéo dérive à peine, le titre se retire, la recherche reste présente plus longtemps. Aucun scroll détourné. */
 export function Hero() {
-  const [entered, setEntered] = useState(false);
+  const [entered] = useState(true);
   const [userPaused, setUserPaused] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const { reduced, compact } = useMotionPreferences();
@@ -30,10 +30,7 @@ export function Hero() {
   );
   const sectionRef = useSceneMotion<HTMLElement>(update, { enabled: !reduced, mode: "exit", response: 75 });
   const pointerRef = usePointerMotion<HTMLDivElement>({ strength: 5, enabled: !reduced, sourceRef: sectionRef });
-  useEffect(() => {
-    const frame = requestAnimationFrame(() => setEntered(true));
-    return () => cancelAnimationFrame(frame);
-  }, []); // Une vidéo hors champ ou un onglet masqué ne doit pas consommer de décodage.
+  // Une vidéo hors champ ou un onglet masqué ne doit pas consommer de décodage.
   useEffect(() => {
     const video = videoRef.current;
     const section = sectionRef.current;
@@ -81,7 +78,8 @@ export function Hero() {
           muted
           loop
           playsInline
-          preload="auto"
+          preload="metadata"
+          poster="/images/page-cotonou.jpg"
         >
           {" "}
           <source src="/video/background_video.mp4" type="video/mp4" />{" "}

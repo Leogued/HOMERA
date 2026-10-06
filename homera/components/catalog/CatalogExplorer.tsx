@@ -42,7 +42,7 @@ export function CatalogExplorer({
   const [visible, setVisible] = useState(Math.max(PER_PAGE, initialVisible));
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [mapOpen, setMapOpen] = useState(
-    basePath === "/explorer" || initialQuery.cities.length > 0 || initialQuery.districts.length > 0,
+    initialQuery.cities.length > 0 || initialQuery.districts.length > 0,
   );
   const [term, setTerm] = useState(initialQuery.q); // Les mises à jour de liste passent par une transition : pendant le
   // calcul, l’écran reste réactif et quelques squelettes annoncent la suite.
@@ -107,6 +107,10 @@ export function CatalogExplorer({
     if (filtersOpen && !dialog.open) dialog.showModal();
     if (!filtersOpen && dialog.open) dialog.close();
   }, [filtersOpen]);
+  const onTermChange = (nextValue: string) => {
+    setTerm(nextValue);
+    update({ q: nextValue.trim() });
+  };
   const submitTerm = (event: React.FormEvent) => {
     event.preventDefault();
     update({ q: term.trim() });
@@ -135,10 +139,20 @@ export function CatalogExplorer({
                 id="homera-explorer-term"
                 type="search"
                 value={term}
-                onChange={(event) => setTerm(event.target.value)}
+                onChange={(event) => onTermChange(event.target.value)}
                 placeholder="Quartier, type de bien, référence…"
-                className="h-11 w-full rounded-input border border-border bg-card pl-10 pr-3 text-body-sm text-foreground outline-none transition-colors placeholder:text-muted-light focus:border-homera-terracotta/60"
+                className="h-11 w-full rounded-input border border-border bg-card pl-10 pr-9 text-body-sm text-foreground outline-none transition-colors placeholder:text-muted-light focus:border-homera-terracotta/60"
               />{" "}
+              {term.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => onTermChange("")}
+                  aria-label="Effacer la recherche"
+                  className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-muted transition-colors hover:bg-surface-hover hover:text-foreground"
+                >
+                  <X className="h-3.5 w-3.5" aria-hidden="true" />
+                </button>
+              )}
             </div>{" "}
             <button
               type="submit"
@@ -363,10 +377,10 @@ export function CatalogExplorer({
                 aria-busy={pending && remaining > 0}
               >
                 {" "}
-                {shown.map((property) => (
+                {shown.map((property, index) => (
                   <li key={property.id} className="h-full">
                     {" "}
-                    <PropertyCard property={property} layout="grid" />{" "}
+                    <PropertyCard property={property} layout="grid" priority={index < 3} />{" "}
                   </li>
                 ))}{" "}
                 {pending && remaining > 0

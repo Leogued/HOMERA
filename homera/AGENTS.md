@@ -967,6 +967,374 @@ Mais :
 
 ---
 
+# HOMERA — GLOBAL SPEED & FLUIDITY DIRECTIVE
+
+## OBJECTIF ABSOLU
+
+HOMERA doit être une expérience **rapide, fluide, réactive et sans frustration**.
+
+La rapidité ne concerne pas uniquement le chargement initial.
+
+L'agent doit optimiser **l'ensemble de l'expérience utilisateur**, du premier affichage jusqu'à chaque interaction.
+
+L'objectif est que l'utilisateur ait constamment la sensation que :
+
+> **« HOMERA me répond immédiatement. »**
+
+---
+
+## 1. TOUT DOIT ÊTRE RAPIDE
+
+Auditer et optimiser simultanément :
+
+### Chargement
+- ouverture initiale du site ;
+- chargement des pages ;
+- chargement des images ;
+- chargement des données ;
+- affichage du contenu principal.
+
+### Navigation
+- passage d'une page à une autre ;
+- retour arrière ;
+- ouverture d'une fiche ;
+- changement de section ;
+- changement de route ;
+- navigation mobile ;
+- navigation entre les espaces utilisateur.
+
+### Recherche
+- ouverture de la recherche ;
+- saisie ;
+- suggestions ;
+- filtrage ;
+- tri ;
+- affichage des résultats ;
+- modification des critères.
+
+### Interactions
+- boutons ;
+- menus ;
+- dropdowns ;
+- modales ;
+- accordéons ;
+- onglets ;
+- carrousels ;
+- favoris ;
+- notifications ;
+- formulaires ;
+- validations ;
+- confirmations.
+
+### Données
+- récupération ;
+- affichage ;
+- mise à jour ;
+- sauvegarde ;
+- synchronisation ;
+- rafraîchissement.
+
+### Interface
+- animations ;
+- transitions ;
+- feedback ;
+- skeletons ;
+- états de chargement ;
+- changements visuels.
+
+Aucune partie importante de l'expérience ne doit être oubliée.
+
+---
+
+## 2. RÈGLE DE RÉACTIVITÉ
+
+Chaque action de l'utilisateur doit recevoir **un retour visuel approprié le plus rapidement possible**.
+
+Lorsqu'un utilisateur :
+- clique ;
+- tape ;
+- sélectionne ;
+- ouvre ;
+- ferme ;
+- navigue ;
+- recherche ;
+- filtre ;
+- valide ;
+
+l'interface doit réagir immédiatement ou fournir un feedback clair pendant le traitement.
+
+Ne jamais laisser l'utilisateur se demander :
+
+> « Est-ce que mon clic a fonctionné ? »
+
+---
+
+## 3. NE PAS CONFONDRE VITESSE ET ANIMATION
+
+Une animation ne doit jamais servir à donner artificiellement l'impression que le site travaille.
+
+Priorité :
+
+**réponse immédiate > transition courte > animation décorative.**
+
+Si une animation ralentit une action :
+**réduis-la ou supprime-la.**
+
+Si une transition n'apporte aucune compréhension :
+**supprime-la.**
+
+---
+
+## 4. ÉLIMINER LES ATTENTES INUTILES
+
+Pour chaque interaction, rechercher :
+
+> « Pourquoi l'utilisateur doit-il attendre ici ? »
+
+Si l'attente est causée par :
+- une requête inutile ;
+- une donnée chargée trop tôt ;
+- une requête séquentielle ;
+- un composant trop lourd ;
+- un rendu inutile ;
+- une hydratation inutile ;
+- une image trop lourde ;
+- une animation trop longue ;
+- une dépendance inutile ;
+- une architecture inefficace ;
+
+corriger **la cause**, pas seulement le symptôme.
+
+---
+
+## 5. PERFORMANCE TECHNIQUE
+
+Auditer continuellement :
+- JavaScript ;
+- bundle ;
+- imports ;
+- dépendances ;
+- Server Components ;
+- Client Components ;
+- hydratation ;
+- re-renders ;
+- mémoire ;
+- images ;
+- fonts ;
+- CSS ;
+- requêtes réseau ;
+- cache ;
+- données ;
+- rendu ;
+- DOM ;
+- animations.
+
+Utiliser les capacités natives de Next.js et React lorsqu'elles apportent un bénéfice réel.
+
+- Ne pas charger ce qui n'est pas nécessaire.
+- Ne pas exécuter ce qui peut être évité.
+- Ne pas recalculer ce qui peut être conservé.
+- Ne pas envoyer au navigateur ce qui peut rester côté serveur.
+
+---
+
+## 6. PERFORMANCE PERÇUE
+
+La vitesse réelle et la vitesse perçue doivent toutes les deux être optimisées.
+
+Lorsqu'une opération ne peut pas être instantanée :
+- fournir immédiatement un feedback ;
+- afficher progressivement les éléments utiles ;
+- utiliser un skeleton uniquement lorsqu'il améliore réellement la compréhension ;
+- éviter les écrans blancs ;
+- éviter les spinners inutiles ;
+- permettre à l'utilisateur de continuer à utiliser l'interface lorsque cela est possible.
+
+Mais :
+
+> **Ne jamais utiliser la performance perçue pour cacher une mauvaise performance technique que l'on peut réellement corriger.**
+
+---
+
+## 7. PRIORITÉ DU CONTENU
+
+Afficher en premier ce dont l'utilisateur a besoin.
+
+Ne pas bloquer :
+- le contenu principal ;
+
+à cause de :
+- contenu secondaire ;
+- animations ;
+- images non critiques ;
+- composants invisibles ;
+- données secondaires ;
+- fonctionnalités situées plus bas dans la page.
+
+Principe :
+
+> **Critical content first.**
+
+---
+
+## 8. NAVIGATION SANS FRICTION
+
+Chaque parcours important doit être analysé comme un utilisateur réel.
+
+Exemples :
+- **Accueil → Explorer → Bien → Détails → Action**
+- **Accueil → Louer → Filtres → Résultats → Bien**
+- **Connexion → Espace → Action → Confirmation**
+
+Pour chaque parcours :
+1. cliquer ;
+2. observer ;
+3. mesurer ;
+4. identifier chaque attente ;
+5. identifier chaque friction ;
+6. optimiser ;
+7. recommencer.
+
+Le parcours final doit être aussi direct que possible.
+
+---
+
+## 9. MOBILE FIRST POUR LA RAPIDITÉ
+
+Le mobile doit être considéré comme un environnement contraint.
+
+Tester notamment :
+- CPU moins puissant ;
+- réseau lent ;
+- mémoire limitée ;
+- écran plus petit ;
+- interactions tactiles.
+
+Une expérience rapide sur ordinateur mais lente sur mobile n'est pas considérée comme suffisamment optimisée.
+
+---
+
+## 10. STABILITÉ
+
+La rapidité ne doit pas créer d'instabilité.
+
+Éviter :
+- layout shifts ;
+- contenu qui saute ;
+- boutons qui se déplacent ;
+- images qui apparaissent brutalement ;
+- chargements qui déplacent la page ;
+- états incohérents ;
+- double clic nécessaire ;
+- interaction qui disparaît pendant le chargement.
+
+L'interface doit rester **stable et prévisible**.
+
+---
+
+## 11. ERREURS
+
+Une erreur non corrigée est également un problème de fluidité.
+
+Une erreur peut provoquer :
+- attente ;
+- blocage ;
+- écran vide ;
+- navigation interrompue ;
+- action impossible ;
+- comportement imprévisible.
+
+Toute erreur connue doit donc être :
+**identifiée → corrigée → testée → vérifiée.**
+
+Ne jamais considérer une erreur comme acceptable simplement parce qu'elle n'empêche pas complètement le build.
+
+---
+
+## 12. MESURE GLOBALE
+
+Ne mesure pas uniquement le chargement initial.
+
+Lorsque les outils disponibles le permettent, mesure :
+- LCP ;
+- INP ;
+- CLS ;
+- TTFB ;
+- temps de navigation ;
+- temps d'interaction ;
+- taille JavaScript ;
+- nombre de requêtes ;
+- poids des images ;
+- temps de rendu ;
+- erreurs console.
+
+Mais ne réduis jamais la qualité de HOMERA à quelques métriques.
+
+La question finale reste :
+
+> **« Est-ce que l'utilisateur ressent une expérience rapide et fluide ? »**
+
+---
+
+## 13. TEST UTILISATEUR
+
+Après les optimisations, parcours réellement les principales fonctionnalités.
+
+Effectue notamment :
+- ouverture du site ;
+- navigation ;
+- recherche ;
+- filtres ;
+- consultation d'un bien ;
+- retour arrière ;
+- connexion ;
+- formulaires ;
+- menus ;
+- notifications ;
+- espaces client ;
+- espaces propriétaire ;
+- espaces agent ;
+- interactions principales.
+
+À chaque étape, demande :
+- **« Est-ce que j'attends inutilement ? »**
+- **« Est-ce que l'interface répond immédiatement ? »**
+- **« Est-ce que je comprends ce qui se passe ? »**
+- **« Est-ce que quelque chose me ralentit ou me frustre ? »**
+
+---
+
+## 14. OPTIMISATION CONTINUE
+
+Ne considère jamais la performance comme une tâche effectuée une seule fois.
+
+Après chaque modification importante :
+
+**modifier → tester → mesurer → comparer → corriger.**
+
+- Une nouvelle fonctionnalité ne doit pas introduire inutilement une régression de vitesse.
+- Une amélioration visuelle ne doit pas dégrader la fluidité.
+- Une nouvelle animation ne doit pas dégrader la réactivité.
+- Une nouvelle dépendance doit avoir une justification.
+
+---
+
+## 15. CRITÈRE FINAL
+
+HOMERA doit donner l'impression d'une application :
+
+**rapide → réactive → fluide → stable → prévisible → sans attente inutile → sans friction inutile.**
+
+L'objectif n'est pas simplement :
+> « Le site charge rapidement. »
+
+L'objectif est :
+> **« À aucun moment important du parcours, l'utilisateur ne doit être inutilement ralenti ou frustré par l'interface. »**
+
+La performance est donc une propriété de **toute l'expérience HOMERA**, et non une simple métrique technique.
+
+---
+
 ## III. Commandes de travail (depuis `homera/`)
 
 | Étape | Commande | Exigence |
