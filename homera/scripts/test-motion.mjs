@@ -1,13 +1,14 @@
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 
-const moduleUrl = async (file, replacements = {}) => {
+const moduleUrl = async (file, replacements = {}, extraOptions = {}) => {
   let { outputText } = ts.transpileModule(await readFile(new URL(`../${file}`, import.meta.url), 'utf8'), {
-    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022 },
+    compilerOptions: { module: ts.ModuleKind.ESNext, target: ts.ScriptTarget.ES2022, ...extraOptions },
   });
   for (const [from, to] of Object.entries(replacements)) outputText = outputText.replaceAll(from, to);
   return `data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`;
@@ -41,6 +42,8 @@ const visitorUrl = await moduleUrl('lib/persistence.ts', {
 });
 const visitor = await import(visitorUrl);
 const { clamp, damp, phase, smoothstep, stickyProgress, storyIndex, storyPosition, galleryDepth } = math;
+const qrUrl = await moduleUrl('lib/qr.ts');
+const qr = await import(qrUrl);
 
 // Le véritable ordonnanceur est testé avec une horloge rAF déterministe.
 const frames = new Map();
@@ -1561,4 +1564,166 @@ await test('HOMERA : aucun texte blanc sous <html>, <table> ou <head>', async ()
   const layout = await readFile(join(root, 'app/layout.tsx'), 'utf8');
   assert.ok(/<html[^>]*>\s*<body/.test(layout), 'le layout racine place <body> directement sous <html>');
   assert.ok(/<\/body>\s*<\/html>/.test(layout), 'le layout racine referme <body> puis <html>');
+});
+
+await test('HOMERA : le QR code produit est identique à la référence ISO (vecteurs figés)', () => {
+  // Vecteurs calculés avec une implémentation de référence indépendante
+  // (paquet `qrcode`, mode octet forcé, niveau de correction M). Toute
+  // régression de l’encodage, du Reed-Solomon, du placement, du masque ou de
+  // l’information de format fait échouer ce test.
+  const vectors = [
+    { text: 'HOMERA', version: 1, mask: 0, size: 21, hash: '12496eed79c7a9e8513ae96fb03a404ca5564d859717a8c8b7ad8bcc728d54bd' },
+    { text: 'https://homera.example/verification-agent?agent=AG-2041&bien=COT-1182', version: 5, mask: 2, size: 37, hash: '765d3ce69492924036870a41d26ac2c61bed07b9138dbf70e9c57bc63e0f6c08' },
+    { text: 'https://homera.bj/verification-agent?agent=AG-1180&bien=COT-1094', version: 5, mask: 4, size: 37, hash: '626d96e7093f7d81e0de0490fbd71dd267daae59ba7984843b2932bd3e2148d9' },
+    { text: 'Autorisation vérifiée pour Ménon Kossi · Cotonou — éàçùîô', version: 5, mask: 2, size: 37, hash: 'dec4c466f945d794ff1c52b359f92691dd9776062fc621a4b9a6b0856277edee' },
+    { text: 'x'.repeat(500), version: 17, mask: 0, size: 85, hash: '8ad4bef894a27c851cb7b0672603fc3947f818375f22c94354433756c7a79211' },
+    { text: 'x'.repeat(2300), version: 40, mask: 0, size: 177, hash: '8ffd1c60658f3e454d3db9789f4950df73dfd200acb6cb259233cc3be31e2207' },
+  ];
+
+  for (const vector of vectors) {
+    const matrix = qr.createQrMatrix(vector.text);
+    assert.equal(matrix.version, vector.version, `version attendue pour ${vector.text.slice(0, 24)}`);
+    assert.equal(matrix.mask, vector.mask, `masque attendu pour ${vector.text.slice(0, 24)}`);
+    assert.equal(matrix.size, vector.size, `taille attendue pour ${vector.text.slice(0, 24)}`);
+    const digest = createHash('sha256').update(`${qr.qrToRows(matrix).join('\n')}\n`).digest('hex');
+    assert.equal(digest, vector.hash, `symbole différent de la référence pour ${vector.text.slice(0, 24)}`);
+  }
+
+  // Masque imposé : les huit motifs doivent rester conformes.
+  for (let mask = 0; mask < 8; mask += 1) {
+    const forced = qr.createQrMatrix('https://homera.bj/verification-agent?agent=AG-1180&bien=COT-1094', { mask });
+    assert.equal(forced.mask, mask);
+    assert.equal(forced.version, 5);
+  }
+
+  // Contenu vide et contenu trop long sont refusés explicitement.
+  assert.throws(() => qr.createQrMatrix(''), /vide/);
+  assert.throws(() => qr.createQrMatrix('x'.repeat(2400)), /trop longues/);
+});
+
+await test('HOMERA : le QR code produit se relit sans perte', () => {
+  const payloads = [
+    'HOMERA',
+    'https://homera.example/verification-agent?agent=AG-2041&bien=COT-1182',
+    'Référence COT-1182 · mandat vérifié · éàçùîô',
+    'x'.repeat(700),
+  ];
+  for (const text of payloads) {
+    assert.equal(qr.decodeQrMatrix(qr.createQrMatrix(text)), text);
+  }
+
+  // La référence affichée par l’espace agent se relit à l’identique.
+  const authorization = portalData.DEMO_AGENT_AUTHORIZATIONS[0];
+  const url = `https://homera.example/verification-agent?agent=${encodeURIComponent(authorization.agentId)}&bien=${encodeURIComponent(authorization.propertyRef)}`;
+  assert.equal(qr.decodeQrMatrix(qr.createQrMatrix(url)), url);
+});
+
+await test('HOMERA : le QR code ne dépend d’aucun paquet externe', async () => {
+  const manifest = JSON.parse(await readFile(new URL('../package.json', import.meta.url), 'utf8'));
+  const declared = { ...manifest.dependencies, ...manifest.devDependencies };
+  for (const name of Object.keys(declared)) {
+    assert.ok(!/^qrcode|^qr\.|^jsqr/.test(name), `dépendance QR externe déclarée : ${name}`);
+  }
+  const lock = await readFile(new URL('../package-lock.json', import.meta.url), 'utf8');
+  assert.ok(!lock.includes('qrcode.react'), 'le verrou contient encore qrcode.react');
+  assert.ok(!lock.includes('node_modules/qrcode"'), 'le verrou contient encore un paquet QR externe');
+
+  // Aucun fichier du projet n’importe une bibliothèque de QR code.
+  const root = fileURLToPath(new URL('..', import.meta.url));
+  const walk = async (directory) => {
+    const entries = await readdir(directory, { withFileTypes: true });
+    const files = [];
+    for (const entry of entries) {
+      if (entry.name === 'node_modules' || entry.name === '.next' || entry.name === '.git') continue;
+      const full = join(directory, entry.name);
+      if (entry.isDirectory()) files.push(...(await walk(full)));
+      else if (/\.(tsx?|mts|mjs|jsx?)$/.test(entry.name)) files.push(full);
+    }
+    return files;
+  };
+  const offenders = [];
+  for (const file of [...(await walk(join(root, 'app'))), ...(await walk(join(root, 'components'))), ...(await walk(join(root, 'lib')))]) {
+    const source = await readFile(file, 'utf8');
+    if (/from\s+["'](?:qrcode|qrcode\.react|jsqr)["']|require\(["'](?:qrcode|qrcode\.react|jsqr)["']\)/.test(source)) {
+      offenders.push(relative(root, file));
+    }
+  }
+  assert.deepEqual(offenders, [], `fichiers important une bibliothèque QR externe : ${offenders.join(', ')}`);
+});
+
+await test('HOMERA : le QR code est rendu sans état (même arbre serveur et navigateur)', async () => {
+  const component = await readFile(new URL('../components/ui/QrCode.tsx', import.meta.url), 'utf8');
+  assert.ok(component.includes('createQrMatrix'), 'le composant s’appuie sur lib/qr.ts');
+  assert.ok(/shapeRendering="crispEdges"/.test(component), 'les modules restent nets à l’écran');
+  assert.ok(/QUIET_ZONE = 4/.test(component), 'la zone silencieuse de 4 modules est incluse');
+  for (const forbidden of ['use client', 'useState', 'useEffect', 'useSyncExternalStore']) {
+    assert.ok(!component.includes(forbidden), `composant QR non déterminé : ${forbidden}`);
+  }
+
+  const workspace = await readFile(new URL('../components/workspace/AgentWorkspace.tsx', import.meta.url), 'utf8');
+  assert.ok(!workspace.includes('qrcode.react'), 'l’espace agent n’importe plus de paquet externe');
+  assert.ok(workspace.includes('@/components/ui/QrCode'), 'l’espace agent utilise le composant interne');
+
+  // L’URL encodée correspond exactement à celle de la page publique.
+  const pagesSource = await readFile(new URL('../components/workspace/AgentVerification.tsx', import.meta.url), 'utf8');
+  assert.ok(pagesSource.includes('verification-agent') || pagesSource.includes('agentId'), 'la page publique lit agent et bien');
+
+  // Aucun espace blanc parasite dans le SVG (mêmes règles que le reste du projet).
+  assert.ok(!/<\/svg>\s*\{["']\s/.test(component), 'pas d’espace JSX après le SVG');
+});
+
+await test('HOMERA : le SVG du QR trace exactement la matrice vérifiée', async () => {
+  // Le composant est transpilé et rendu avec un runtime JSX minimal : on
+  // vérifie l’arbre produit (et non un aperçu) sans navigateur.
+  const shim = `data:text/javascript;base64,${Buffer.from(
+    "export const Fragment = Symbol('Fragment');export const jsx = (type, props, key) => ({ type, props: props ?? {}, key });export const jsxs = jsx;export const jsxDEV = jsx;",
+  ).toString('base64')}`;
+  const componentUrl = await moduleUrl(
+    'components/ui/QrCode.tsx',
+    { 'react/jsx-runtime': shim, '@/lib/qr': qrUrl },
+    { jsx: ts.JsxEmit.ReactJSX },
+  );
+  const { QrCode } = await import(componentUrl);
+
+  const value = 'https://homera.bj/verification-agent?agent=AG-HOM-0248&bien=COT-1182';
+  const title = 'QR code de vérification AG-HOM-0248 · COT-1182';
+  const element = QrCode({ value, size: 128, title, className: 'text-homera-brown' });
+
+  assert.equal(element.type, 'svg');
+  assert.equal(element.props.role, 'img');
+  assert.equal(element.props['aria-label'], title);
+  assert.equal(element.props.width, 128);
+  assert.equal(element.props.height, 128);
+  assert.equal(element.props.shapeRendering, 'crispEdges', 'les modules restent nets');
+
+  const matrix = qr.createQrMatrix(value);
+  assert.equal(matrix.size, 37, 'le contenu tient dans un symbole de version 5');
+  const margin = 4;
+  assert.equal(element.props.viewBox, `${-margin} ${-margin} ${matrix.size + margin * 2} ${matrix.size + margin * 2}`, 'zone silencieuse de 4 modules');
+
+  const children = Array.isArray(element.props.children) ? element.props.children : [element.props.children];
+  const titleNode = children.find((child) => child && child.type === 'title');
+  const pathNode = children.find((child) => child && child.type === 'path');
+  assert.ok(titleNode, 'le SVG porte un <title>');
+  assert.equal(titleNode.props.children, title);
+  assert.ok(pathNode, 'le SVG porte un <path>');
+  assert.equal(pathNode.props.fill, 'currentColor', 'la couleur suit la classe du parent');
+
+  let dark = 0;
+  for (let row = 0; row < matrix.size; row += 1) {
+    for (let col = 0; col < matrix.size; col += 1) if (matrix.modules[row][col]) dark += 1;
+  }
+  const commands = pathNode.props.d.match(/M(-?\d+) (-?\d+)h1v1h-1z/g) ?? [];
+  assert.equal(commands.length, dark, 'un rectangle SVG par module sombre');
+
+  // Chaque rectangle reste dans la zone des modules (jamais dans la marge).
+  for (const command of commands) {
+    const [, col, row] = command.match(/M(-?\d+) (-?\d+)/);
+    assert.ok(Number(col) >= 0 && Number(col) < matrix.size, `colonne hors symbole : ${col}`);
+    assert.ok(Number(row) >= 0 && Number(row) < matrix.size, `ligne hors symbole : ${row}`);
+  }
+
+  // Le contenu encodé correspond à l’URL de la page publique de vérification.
+  const [agentId, propertyRef] = ['AG-HOM-0248', 'COT-1182'];
+  assert.equal(qr.decodeQrMatrix(matrix), `https://homera.bj/verification-agent?agent=${agentId}&bien=${propertyRef}`);
 });

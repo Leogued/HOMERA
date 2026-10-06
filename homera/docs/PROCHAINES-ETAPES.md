@@ -12,9 +12,10 @@ utilisateurs au Bénin (Cotonou, montants en FCFA).
 | --- | --- | --- |
 | Style | `npm run lint` | 0 erreur, 0 avertissement |
 | Types | `npx tsc --noEmit` | OK |
-| Tests | `npm test` | **59 / 59** |
+| Tests | `npm test` | **64 / 64** |
 | Build production | `npm run build` | Succès (~30 s), 48 routes |
 | HTML prérendu | analyse de `.next/server/app/**/*.html` | **106 / 106** pages sans nœud texte blanc sous `<html>`, `</body></html>` contigus |
+| Installation froide | `rm -rf node_modules .next && npm ci && npm run build` | Succès — plus aucune dépendance QR externe |
 | HTML servi | `next start` sur 8 routes clés (`/`, `/client`, `/client/visites/nouvelle`, `/explorer`, `/proprietaire`, `/agent`, `/admin`, `/messages`) | Structure conforme, aucune date précalculée côté serveur |
 | Audit HTTP | `npm run audit:home` | 161 URL publiques, 1 791 identifiants, **0 lien interne cassé**, accueil / catalogue / CSS conformes |
 | Erreur console signalée | *« In HTML, whitespace text nodes cannot be a child of \<html\> »* | **Corrigée** (voir le commit `fix(hydration): supprimer les nœuds texte blancs sous <html>`) et bloquée par le test n° 59 |
@@ -43,7 +44,7 @@ Deux causes distinctes ont été corrigées :
 | Comptes | Démo locale (`admin/admin`, `user/user`, `agent/agent`, `prop/prop`) | Identité serveur, mots de passe hachés, sessions httpOnly, vérification d’e-mail |
 | Données | `localStorage` du navigateur (`homera.*`) | Base de données, API, synchronisation entre appareils |
 | Visites, demandes, contrats | Fonctionnels en local | Enregistrement serveur, notifications, e-mails |
-| Autorisations agent | Affichage + page de vérification + récapitulatif `.txt` | Mandat PDF téléversé, portée vérifiée par référence exacte, expiration, QR code |
+| Autorisations agent | Affichage + page de vérification + récapitulatif `.txt` + QR code généré dans le projet (`lib/qr.ts`, conforme ISO, vérifié bit à bit) | Mandat PDF téléversé, portée vérifiée par référence exacte, expiration, QR alimenté par les données serveur |
 | Suppression de compte | Bouton **désactivé**, texte explicite | Service d’identité serveur + effacement réel + export des données |
 | Changement de propriétaire | Non journalisé | Événement horodaté (auteur, ancien/nouveau, motif) |
 | Paiements | Absents | Encaissement Mobile Money / carte |
@@ -78,6 +79,12 @@ Deux causes distinctes ont été corrigées :
 - **Effort indicatif** : 6–9 jours-homme.
 
 ### 1.3 Autorisations agents (cœur de la promesse HOMERA)
+
+> État : le QR code de vérification est désormais produit **dans le dépôt**
+> (`lib/qr.ts`, mode octet, niveau M, masque choisi par pénalités) et rendu en SVG
+> par `components/ui/QrCode.tsx` — aucune dépendance externe. Il reste à
+> l’alimenter avec les données serveur (mandat, portée, expiration) plutôt qu’avec
+> les données de démonstration.
 
 - **Objectif** : qu’un client puisse vérifier l’autorisation exacte d’un agent pour une
   référence précise, comme la page `/verification-agent` le promet déjà.

@@ -2,14 +2,14 @@
 
 import { useSyncExternalStore } from "react";
 import Link from "next/link";
-import { QRCodeSVG } from "qrcode.react";
 import {
   ArrowRight, BadgeCheck, CalendarDays, Check, CheckCircle2,
-  Download, FileBadge, FileCheck2, FileText, House, QrCode,
+  Download, FileBadge, FileCheck2, FileText, House, QrCode as QrCodeIcon,
   ShieldCheck, Users, UserRound, XCircle,
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useWorkflow } from "@/components/providers/WorkflowProvider";
+import { QrCode } from "@/components/ui/QrCode";
 import { Visual } from "@/components/ui/Visual";
 import { PROPERTIES } from "@/lib/content";
 import { formatPropertyPrice } from "@/lib/format";
@@ -97,7 +97,7 @@ function AgentProperties({ authorizations }: { authorizations: AgentAuthorizatio
         <div className="grid gap-4 sm:grid-cols-[150px_1fr]">
           <div className="relative aspect-[4/3] overflow-hidden rounded-xl"><Visual mediaKey={property.media} alt={property.alt} sizes="150px" veil="none" quality={68} className="absolute inset-0 h-full w-full" /></div>
           <div><p className="text-note font-semibold">{formatPropertyPrice(property)}</p><p className="mt-2 text-caption leading-relaxed text-muted">{auth.scope}</p><p className="mt-2 text-caption text-muted">Mandat valable jusqu’au {formatDateOnly(auth.expiresAt)}</p>
-            <div className="mt-4 flex flex-wrap gap-2"><Link href={`/biens/${property.id}`} className={BUTTON_SECONDARY}>Ouvrir la fiche<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link><Link href={`/verification-agent?agent=${auth.agentId}&bien=${auth.propertyRef}`} className={BUTTON_SECONDARY}><QrCode className="h-4 w-4" aria-hidden="true" />Vérification publique</Link></div>
+            <div className="mt-4 flex flex-wrap gap-2"><Link href={`/biens/${property.id}`} className={BUTTON_SECONDARY}>Ouvrir la fiche<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link><Link href={`/verification-agent?agent=${auth.agentId}&bien=${auth.propertyRef}`} className={BUTTON_SECONDARY}><QrCodeIcon className="h-4 w-4" aria-hidden="true" />Vérification publique</Link></div>
           </div>
         </div>
       </WorkspacePanel>;
@@ -147,7 +147,7 @@ function AgentAuthorizations({ authorizations }: { authorizations: AgentAuthoriz
 function QrPanel({ agentId, propertyRef }: { agentId: string; propertyRef: string }) {
   const origin = useSyncExternalStore(subscribeOrigin, getOrigin, () => "https://homera.example");
   const value = `${origin}/verification-agent?agent=${encodeURIComponent(agentId)}&bien=${encodeURIComponent(propertyRef)}`;
-  return <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-background p-4 text-center"><QRCodeSVG value={value} size={128} level="M" title={`QR code de vérification ${agentId} · ${propertyRef}`} bgColor="transparent" fgColor="var(--homera-brown)" /><p className="mt-3 text-caption font-semibold">Vérifier cette autorisation</p><p className="mt-1 max-w-40 break-all font-mono text-[0.58rem] text-muted">{agentId} · {propertyRef}</p></div>;
+  return <div className="flex flex-col items-center justify-center rounded-2xl border border-border bg-background p-4 text-center"><QrCode value={value} size={128} title={`QR code de vérification ${agentId} · ${propertyRef}`} className="text-homera-brown" /><p className="mt-3 text-caption font-semibold">Vérifier cette autorisation</p><p className="mt-1 max-w-40 break-all font-mono text-[0.58rem] text-muted">{agentId} · {propertyRef}</p></div>;
 }
 
 function AgentDocuments({ authorizations }: { authorizations: AgentAuthorization[] }) {
@@ -167,7 +167,7 @@ function AgentProfile({ authorizations }: { authorizations: AgentAuthorization[]
     <WorkspaceHeading eyebrow="Profil agent" title="Identité professionnelle" description="Votre profil public s’appuie sur un matricule et des autorisations qui peuvent être vérifiés bien par bien." />
     <div className="grid gap-5 lg:grid-cols-[0.8fr_1.2fr]">
       <WorkspacePanel title={name} description={structure} icon={UserRound}><dl className="space-y-3"><InfoCell label="Matricule" value={verificationAuthorization?.agentId ?? "En attente d’attribution"} /><InfoCell label="Statut du profil" value={authorizations.length ? "Mandat actif · démonstration" : "Aucune habilitation active"} /><InfoCell label="Autorisations actives" value={`${authorizations.length} bien(s)`} /></dl><Link href="/agent/autorisations" className={`${BUTTON_PRIMARY} mt-4`}>Consulter mes mandats<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link></WorkspacePanel>
-      <WorkspacePanel title="Vérification publique" description="Partagez une page vérifiable attachée au mandat, jamais un accès général à vos annonces." icon={QrCode}><p className="text-note leading-relaxed text-muted">Une autorisation est valide pour un bien donné, un représentant identifié et une période précise. Le client peut scanner le code ou saisir la référence pour vérifier son état.</p>{verificationAuthorization ? <Link href={`/verification-agent?agent=${verificationAuthorization.agentId}&bien=${verificationAuthorization.propertyRef}`} className={`${BUTTON_SECONDARY} mt-4`}>Prévisualiser la vérification<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link> : <p className="mt-4 text-caption text-muted">Aucune autorisation ne peut être partagée pour ce compte.</p>}</WorkspacePanel>
+      <WorkspacePanel title="Vérification publique" description="Partagez une page vérifiable attachée au mandat, jamais un accès général à vos annonces." icon={QrCodeIcon}><p className="text-note leading-relaxed text-muted">Une autorisation est valide pour un bien donné, un représentant identifié et une période précise. Le client peut scanner le code ou saisir la référence pour vérifier son état.</p>{verificationAuthorization ? <Link href={`/verification-agent?agent=${verificationAuthorization.agentId}&bien=${verificationAuthorization.propertyRef}`} className={`${BUTTON_SECONDARY} mt-4`}>Prévisualiser la vérification<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link> : <p className="mt-4 text-caption text-muted">Aucune autorisation ne peut être partagée pour ce compte.</p>}</WorkspacePanel>
     </div>
   </>;
 }
