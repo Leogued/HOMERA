@@ -253,6 +253,15 @@ await check("5. Cohérence fonctionnelle des espaces (Profil par rôle, Footer d
     clientDashboard.includes('<WorkspaceShell role="client" section="dashboard">') && !clientDashboard.includes("<aside"),
     "ClientDashboard (/client) doit utiliser le système de navigation commun WorkspaceShell sans <aside> dupliqué",
   );
+
+  const paymentPanel = await readFile(path.join(appRoot, "components/workspace/PaymentMethodsPanel.tsx"), "utf8");
+  assert.ok(
+    paymentPanel.includes("PAYMENT_PROVIDERS") &&
+      paymentPanel.includes("maskPaymentIdentifier") &&
+      ownerWorkspace.includes("PaymentMethodsWorkspace") &&
+      profileSettings.includes("PaymentMethodsWorkspace"),
+    "PaymentMethodsPanel doit gérer les moyens de paiement Bénin/UEMOA et être intégré aux espaces",
+  );
 });
 
 const failed = checks.filter((c) => !c.ok);

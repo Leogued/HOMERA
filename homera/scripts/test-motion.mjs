@@ -1883,6 +1883,30 @@ await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (pro
   assert.ok(workspaceShell.includes('Switch d’espace') && workspaceShell.includes('Navigation principale') && workspaceShell.includes('Actions secondaires'), 'WorkspaceShell structure la navigation en 3 niveaux UX');
   assert.ok(workspaceShell.includes('homera-nav-scroll') && !workspaceShell.includes('mt-auto border-t'), 'WorkspaceShell défile comme une seule zone continue sans pied de page fixe');
   assert.ok(clientDashboard.includes('<WorkspaceShell role="client" section="dashboard">') && !clientDashboard.includes('<aside'), 'ClientDashboard utilise le système de navigation commun WorkspaceShell');
+
+  // Moyens de paiement Bénin / UEMOA (Mobile Money, Carte, Virement UEMOA) et quittances locales
+  assert.equal(workflow.PAYMENT_PROVIDERS.length, 5, '5 canaux de paiement Bénin / UEMOA disponibles');
+  assert.match(workflow.maskPaymentIdentifier('mtn-momo', '+229 01 97 12 34 56'), /^\+229 01 •• •• •• 56$/);
+  assert.equal(workflow.maskPaymentIdentifier('carte-bancaire', '4821'), 'Carte •••• 4821');
+  assert.equal(workflow.maskPaymentIdentifier('virement-uemoa', 'BJ06000100029102', 'BOA Bénin'), 'BOA Bénin · BJ06 •••• •••• 9102');
+
+  const parsedWithPayments = workflow.parseWorkspace({
+    paymentMethods: [
+      { id: 'pm-1', provider: 'mtn-momo', holderName: 'Awa Dossou', maskedIdentifier: '+229 01 •• •• •• 56', usage: 'paiement', isDefault: true, createdAt: '2026-10-07T10:00:00.000Z' },
+      { id: 'pm-invalid', provider: 'unknown-provider', holderName: 'Test', maskedIdentifier: '123' },
+    ],
+    transactions: [
+      { id: 'tx-1', reference: 'PAY-CTN-102030', kind: 'loyer', label: 'Loyer Octobre', amount: 350000, provider: 'mtn-momo', methodSummary: 'MTN MoMo', status: 'confirme', createdAt: '2026-10-07T10:05:00.000Z' },
+      { id: 'tx-invalid', reference: 'BAD', provider: 'bad' },
+    ],
+  });
+  assert.equal(parsedWithPayments.paymentMethods.length, 1, 'seuls les moyens de paiement valides sont conservés');
+  assert.equal(parsedWithPayments.transactions.length, 1, 'seules les transactions valides sont conservées');
+
+  const paymentPanel = await readFile(new URL('../components/workspace/PaymentMethodsPanel.tsx', import.meta.url), 'utf8');
+  assert.ok(paymentPanel.includes('PAYMENT_PROVIDERS') && paymentPanel.includes('maskPaymentIdentifier'), 'PaymentMethodsPanel gère les canaux Mobile Money, Carte et Virement UEMOA');
+  assert.ok(ownerWorkspace.includes('PaymentMethodsWorkspace') && profileSettings.includes('PaymentMethodsWorkspace'), 'PaymentMethodsWorkspace est intégré dans OwnerWorkspace et ProfileSettings');
 });
+
 
 

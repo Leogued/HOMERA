@@ -21,6 +21,7 @@ import {
   MetricCard, StatusBadge, WorkspaceHeading, WorkspacePanel,
 } from "@/components/workspace/Primitives";
 import { ProfilePage, PreferencesPage } from "@/components/workspace/ProfileSettings";
+import { PaymentMethodsWorkspace } from "@/components/workspace/PaymentMethodsPanel";
 
 const OWNER_BASE_PROPERTY_IDS = DEMO_OWNER_LISTINGS.flatMap((item) => item.propertyId ? [item.propertyId] : []);
 
@@ -203,9 +204,10 @@ function OwnerSubscription() {
   ];
   const selectedPlan = plans.find((entry) => entry.id === plan) ?? plans[0];
   return <>
-    <WorkspaceHeading eyebrow="Services propriétaires" title="Abonnement" description="Choisissez le niveau d’accompagnement qui correspond à votre portefeuille." />
+    <WorkspaceHeading eyebrow="Services propriétaires & encaissements" title="Abonnement & moyens de paiement" description="Choisissez votre formule d’accompagnement et configurez vos comptes Mobile Money, carte ou RIB UEMOA pour vos encaissements de loyers." />
     <div className="grid gap-4 lg:grid-cols-3">{plans.map((entry) => <article key={entry.id} className={`rounded-card border bg-card p-5 shadow-[var(--shadow-card)] ${plan === entry.id ? "border-homera-terracotta/50 ring-1 ring-homera-terracotta/30" : "border-border"}`}><p className="text-caption font-semibold uppercase tracking-[0.14em] text-homera-terracotta">{entry.name}</p><p className="mt-3 font-serif text-display-sm">{entry.price === "0" ? "Gratuit" : entry.price}</p><p className="mt-3 min-h-12 text-caption leading-relaxed text-muted">{entry.description}</p><button type="button" onClick={() => setPlan(entry.id)} aria-pressed={plan === entry.id} className={`${plan === entry.id ? BUTTON_PRIMARY : BUTTON_SECONDARY} mt-5 w-full`}>{plan === entry.id ? "Offre sélectionnée" : "Choisir cette offre"}</button></article>)}</div>
-    <WorkspacePanel title={`Formule active : ${selectedPlan.name}`} description="Aucun prélèvement bancaire ni Mobile Money n’est activé dans ce pilote." icon={CircleDollarSign} className="mt-6"><p className="text-note leading-relaxed text-muted">{plan === "essentiel" ? "L’offre Essentiel vous permet de déposer gratuitement vos dossiers de biens et de suivre leur contrôle documentaire dans ce navigateur." : `L’offre ${selectedPlan.name} fait l’objet d’un cadrage sur mesure (nombre de lots, suivi locatif, maintenance). Échangez avec l’équipe HOMERA pour définir le périmètre.`}</p><div className="mt-4 flex flex-wrap gap-3">{plan === "essentiel" ? <Link href="/proprietaire/ajouter-bien" className={BUTTON_PRIMARY}><Plus className="h-4 w-4" aria-hidden="true" />Déposer un bien</Link> : <Link href="/contact?sujet=gestion" className={BUTTON_PRIMARY}>Demander un devis {selectedPlan.name}<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>}<Link href="/services/gestion-immobiliere" className={BUTTON_SECONDARY}>Découvrir la gestion HOMERA</Link></div></WorkspacePanel>
+    <WorkspacePanel title={`Formule active : ${selectedPlan.name}`} description="Aucun prélèvement bancaire ni Mobile Money réel n’est exécuté dans ce pilote." icon={CircleDollarSign} className="mt-6 mb-6"><p className="text-note leading-relaxed text-muted">{plan === "essentiel" ? "L’offre Essentiel vous permet de déposer gratuitement vos dossiers de biens et de suivre leur contrôle documentaire dans ce navigateur." : `L’offre ${selectedPlan.name} fait l’objet d’un cadrage sur mesure (nombre de lots, suivi locatif, maintenance). Échangez avec l’équipe HOMERA pour définir le périmètre.`}</p><div className="mt-4 flex flex-wrap gap-3">{plan === "essentiel" ? <Link href="/proprietaire/ajouter-bien" className={BUTTON_PRIMARY}><Plus className="h-4 w-4" aria-hidden="true" />Déposer un bien</Link> : <Link href="/contact?sujet=gestion" className={BUTTON_PRIMARY}>Demander un devis {selectedPlan.name}<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>}<Link href="/services/gestion-immobiliere" className={BUTTON_SECONDARY}>Découvrir la gestion HOMERA</Link></div></WorkspacePanel>
+    <PaymentMethodsWorkspace contextRole="proprietaire" embedded />
   </>;
 }
 

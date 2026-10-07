@@ -45,6 +45,7 @@ Ce document structure la feuille de route du frontend et du produit HOMERA par j
 ### 6.1 Enrichissements Frontend optionnels
 - [x] Comparateur côte à côte des biens favoris dans `/favoris` et `/client/favoris` (`components/catalog/PropertyComparison.tsx`).
 - [x] Vue cartographique interactive des communes (Cotonou, Abomey-Calavi, Ouidah, Porto-Novo) dans `/explorer` (`components/catalog/CommuneMapExplorer.tsx`).
+- [x] Frontend complet des moyens de paiement Bénin / UEMOA (`MTN MoMo`, `Moov Money`, `Celtiis Cash`, `Carte Visa/Mastercard`, `Virement UEMOA`) et quittances de démonstration (`components/workspace/PaymentMethodsPanel.tsx`, `/client/paiements`, `/client/contrats`, `/proprietaire/abonnement`).
 - [ ] Tests E2E navigateur multi-viewports automatisés (Playwright) dès qu'un binaire Chromium est disponible dans l'environnement CI.
 
 ### 6.2 Socle Serveur & Production (voir `docs/PROCHAINES-ETAPES.md`)

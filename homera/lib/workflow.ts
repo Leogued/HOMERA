@@ -211,6 +211,140 @@ export type WorkspacePreferences = {
   language: "fr" | "en";
 };
 
+export type PaymentProviderId =
+  | "mtn-momo"
+  | "moov-money"
+  | "celtiis-cash"
+  | "carte-bancaire"
+  | "virement-uemoa";
+
+export type PaymentMethodUsage = "paiement" | "reversement" | "mixte";
+
+export type PaymentProviderSpec = {
+  id: PaymentProviderId;
+  label: string;
+  shortLabel: string;
+  category: "mobile-money" | "carte" | "virement";
+  badge: string;
+  description: string;
+  placeholder: string;
+  processingNote: string;
+};
+
+export const PAYMENT_PROVIDERS: readonly PaymentProviderSpec[] = [
+  {
+    id: "mtn-momo",
+    label: "MTN Mobile Money (MoMo)",
+    shortLabel: "MTN MoMo",
+    category: "mobile-money",
+    badge: "Mobile Money Bénin",
+    description: "Validation USSD / push immédiate sur numéro MTN Bénin (+229 01).",
+    placeholder: "+229 01 97 00 00 00",
+    processingNote: "Confirmation par code secret MoMo sur le téléphone du titulaire.",
+  },
+  {
+    id: "moov-money",
+    label: "Moov Money (Flooz)",
+    shortLabel: "Moov Money",
+    category: "mobile-money",
+    badge: "Mobile Money Bénin",
+    description: "Règlement et encaissement sur portefeuille Moov Africa Bénin (+229 01).",
+    placeholder: "+229 01 95 00 00 00",
+    processingNote: "Confirmation directe via notification push Moov Money.",
+  },
+  {
+    id: "celtiis-cash",
+    label: "Celtiis Cash",
+    shortLabel: "Celtiis Cash",
+    category: "mobile-money",
+    badge: "Opérateur national SBIN",
+    description: "Portefeuille mobile national Celtiis Bénin (+229 01).",
+    placeholder: "+229 01 40 00 00 00",
+    processingNote: "Validation sécurisée sur le numéro Celtiis Cash enregistré.",
+  },
+  {
+    id: "carte-bancaire",
+    label: "Carte bancaire (Visa / Mastercard)",
+    shortLabel: "Visa / Mastercard",
+    category: "carte",
+    badge: "Local & Diaspora",
+    description: "Paiement par carte internationale ou régionale avec authentification 3D Secure.",
+    placeholder: "4821",
+    processingNote: "Seuls les 4 derniers chiffres et l’échéance sont conservés à titre de repère.",
+  },
+  {
+    id: "virement-uemoa",
+    label: "Virement bancaire UEMOA (RIB / IBAN)",
+    shortLabel: "Virement UEMOA",
+    category: "virement",
+    badge: "Banques Bénin & UEMOA",
+    description: "Compte bancaire pour loyers, cautions et reversements propriétaires (BOA, Ecobank, Orabank, NSIA, UBA, SG…).",
+    placeholder: "BJ06 0001 0002 0003 0004 9102",
+    processingNote: "Rapprochement par référence HOMERA sur relevé bancaire UEMOA.",
+  },
+] as const;
+
+export const UEMOA_BANKS: readonly string[] = [
+  "Bank of Africa (BOA) Bénin",
+  "Ecobank Bénin",
+  "Orabank Bénin",
+  "NSIA Banque Bénin",
+  "UBA Bénin",
+  "Société Générale Bénin",
+  "Coris Bank International Bénin",
+  "BGFI Bank Bénin",
+] as const;
+
+export type SavedPaymentMethod = {
+  id: string;
+  provider: PaymentProviderId;
+  holderName: string;
+  maskedIdentifier: string;
+  bankOrNetwork?: string;
+  expiry?: string;
+  usage: PaymentMethodUsage;
+  isDefault: boolean;
+  createdAt: string;
+};
+
+export type PaymentTransactionKind = "loyer" | "caution" | "abonnement" | "reservation";
+export type PaymentTransactionStatus = "confirme" | "en-verification";
+
+export type PaymentTransactionRecord = {
+  id: string;
+  reference: string;
+  kind: PaymentTransactionKind;
+  label: string;
+  amount: number;
+  provider: PaymentProviderId;
+  methodSummary: string;
+  propertyRef?: string;
+  contractId?: string;
+  status: PaymentTransactionStatus;
+  createdAt: string;
+};
+
+/** Masque un numéro Mobile Money, les 4 derniers chiffres d’une carte ou un RIB/IBAN UEMOA. */
+export function maskPaymentIdentifier(provider: PaymentProviderId, raw: string, bankName?: string): string {
+  const cleaned = raw.trim();
+  if (provider === "carte-bancaire") {
+    const digits = cleaned.replace(/\D/g, "");
+    const last4 = digits.slice(-4).padStart(4, "0");
+    return `Carte •••• ${last4}`;
+  }
+  if (provider === "virement-uemoa") {
+    const alnum = cleaned.replace(/\s+/g, "").toUpperCase();
+    const prefix = alnum.slice(0, 4) || "BJ06";
+    const suffix = alnum.slice(-4).padStart(4, "0");
+    const bankPrefix = bankName ? `${bankName} · ` : "";
+    return `${bankPrefix}${prefix} •••• •••• ${suffix}`;
+  }
+  const digits = cleaned.replace(/\D/g, "");
+  const suffix = digits.slice(-2).padStart(2, "0");
+  const prefix = digits.startsWith("229") ? "+229 01" : "+229 01";
+  return `${prefix} •• •• •• ${suffix}`;
+}
+
 export type WorkspaceData = {
   visits: VisitRecord[];
   applications: RentalApplication[];
@@ -223,6 +357,8 @@ export type WorkspaceData = {
   verificationHistory: Record<string, VerificationHistoryEvent[]>;
   draftProperty: PropertyDraft | null;
   preferences: WorkspacePreferences;
+  paymentMethods: SavedPaymentMethod[];
+  transactions: PaymentTransactionRecord[];
 };
 
 export const EMPTY_PROPERTY_DRAFT: PropertyDraft = {
@@ -269,6 +405,8 @@ export const EMPTY_WORKSPACE: WorkspaceData = {
     marketingNotifications: false,
     language: "fr",
   },
+  paymentMethods: [],
+  transactions: [],
 };
 
 export type RentalRequestFailure =
@@ -502,6 +640,54 @@ function parseVerificationHistory(value: unknown): Record<string, VerificationHi
   return parsed;
 }
 
+function isPaymentProviderId(value: unknown): value is PaymentProviderId {
+  return ["mtn-momo", "moov-money", "celtiis-cash", "carte-bancaire", "virement-uemoa"].includes(String(value));
+}
+
+function isPaymentMethodUsage(value: unknown): value is PaymentMethodUsage {
+  return ["paiement", "reversement", "mixte"].includes(String(value));
+}
+
+function parsePaymentMethod(value: unknown): SavedPaymentMethod | null {
+  if (!isRecord(value) || typeof value.id !== "string" || !isPaymentProviderId(value.provider)) return null;
+  const holderName = stringValue(value.holderName).trim();
+  const maskedIdentifier = stringValue(value.maskedIdentifier).trim();
+  if (!holderName || !maskedIdentifier) return null;
+  return {
+    id: value.id,
+    provider: value.provider,
+    holderName,
+    maskedIdentifier,
+    bankOrNetwork: typeof value.bankOrNetwork === "string" ? value.bankOrNetwork : undefined,
+    expiry: typeof value.expiry === "string" ? value.expiry : undefined,
+    usage: isPaymentMethodUsage(value.usage) ? value.usage : "mixte",
+    isDefault: value.isDefault === true,
+    createdAt: stringValue(value.createdAt) || new Date(0).toISOString(),
+  };
+}
+
+function parsePaymentTransaction(value: unknown): PaymentTransactionRecord | null {
+  if (!isRecord(value) || typeof value.id !== "string" || typeof value.reference !== "string" || !isPaymentProviderId(value.provider)) return null;
+  const amount = typeof value.amount === "number" && Number.isFinite(value.amount) && value.amount >= 0 ? value.amount : 0;
+  const kind: PaymentTransactionKind =
+    value.kind === "loyer" || value.kind === "caution" || value.kind === "abonnement" || value.kind === "reservation"
+      ? value.kind
+      : "loyer";
+  return {
+    id: value.id,
+    reference: value.reference,
+    kind,
+    label: stringValue(value.label) || "Règlement HOMERA",
+    amount,
+    provider: value.provider,
+    methodSummary: stringValue(value.methodSummary),
+    propertyRef: typeof value.propertyRef === "string" ? value.propertyRef : undefined,
+    contractId: typeof value.contractId === "string" ? value.contractId : undefined,
+    status: value.status === "en-verification" ? "en-verification" : "confirme",
+    createdAt: stringValue(value.createdAt) || new Date(0).toISOString(),
+  };
+}
+
 /** Relecture défensive : le stockage navigateur n’est jamais considéré comme une source fiable. */
 export function parseWorkspace(value: unknown): WorkspaceData {
   if (!isRecord(value)) return EMPTY_WORKSPACE;
@@ -528,5 +714,11 @@ export function parseWorkspace(value: unknown): WorkspaceData {
       marketingNotifications: preferences.marketingNotifications === true,
       language: preferences.language === "en" ? "en" : "fr",
     },
+    paymentMethods: Array.isArray(value.paymentMethods)
+      ? value.paymentMethods.map(parsePaymentMethod).filter((entry): entry is SavedPaymentMethod => entry !== null)
+      : [],
+    transactions: Array.isArray(value.transactions)
+      ? value.transactions.map(parsePaymentTransaction).filter((entry): entry is PaymentTransactionRecord => entry !== null)
+      : [],
   };
 }

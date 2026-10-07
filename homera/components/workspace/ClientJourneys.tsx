@@ -29,6 +29,7 @@ import {
   BUTTON_PRIMARY, BUTTON_SECONDARY, DemoNotice, EmptyPanel, FormField,
   INPUT_CLASS, StatusBadge, WorkspaceHeading, WorkspacePanel,
 } from "@/components/workspace/Primitives";
+import { PaymentMethodsWorkspace } from "@/components/workspace/PaymentMethodsPanel";
 
 const VISIT_SLOTS = ["09:00 – 11:00", "11:00 – 13:00", "14:00 – 16:00", "16:00 – 18:00"];
 const VISIT_STEPS = ["Le bien", "Date & créneau", "Confirmation"];
@@ -292,8 +293,9 @@ function RentalApplicationCard({ application }: { application: { id: string; pro
 export function ClientContracts() {
   const { data } = useWorkflow();
   return <>
-    <WorkspaceHeading eyebrow="Documents de location" title="Mes contrats" description="Consultez les contrats envoyés, téléchargez une copie imprimable et suivez la signature." />
-    {data.contracts.length ? <ul className="grid gap-4 md:grid-cols-2">{data.contracts.map((contract) => <li key={contract.id}><ContractCard contract={contract} /></li>)}</ul> : <EmptyPanel icon={FileText} title="Aucun contrat transmis" description="Lorsqu’une demande de location sera acceptée et qu’un contrat vous sera envoyé, vous pourrez le consulter et le signer ici." action={<Link href="/client/demandes" className={BUTTON_SECONDARY}>Voir mes demandes<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} />}
+    <WorkspaceHeading eyebrow="Documents de location & règlements" title="Mes contrats & moyens de paiement" description="Consultez les contrats envoyés, téléchargez une copie imprimable, suivez la signature et gérez vos moyens de paiement." actions={<Link href="/client/paiements" className={BUTTON_SECONDARY}>Moyens de paiement<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} />
+    {data.contracts.length ? <ul className="mb-8 grid gap-4 md:grid-cols-2">{data.contracts.map((contract) => <li key={contract.id}><ContractCard contract={contract} /></li>)}</ul> : <div className="mb-8"><EmptyPanel icon={FileText} title="Aucun contrat transmis" description="Lorsqu’une demande de location sera acceptée et qu’un contrat vous sera envoyé, vous pourrez le consulter et le signer ici." action={<Link href="/client/demandes" className={BUTTON_SECONDARY}>Voir mes demandes<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} /></div>}
+    <PaymentMethodsWorkspace contextRole="client" embedded />
   </>;
 }
 

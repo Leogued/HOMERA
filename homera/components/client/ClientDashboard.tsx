@@ -25,6 +25,7 @@ import {
   Sparkles,
   Sun,
   UserRound,
+  WalletCards,
   type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -74,6 +75,7 @@ export const CLIENT_NAV: ClientNavGroup[] = [
       { id: "visites", label: "Mes visites", href: "/client/visites", icon: CalendarDays },
       { id: "demandes", label: "Mes demandes", href: "/client/demandes", icon: ClipboardList },
       { id: "locations", label: "Mes locations", href: "/client/contrats", icon: House },
+      { id: "paiements", label: "Moyens de paiement", href: "/client/paiements", icon: WalletCards },
     ],
   },
   {
@@ -427,8 +429,9 @@ function ClientDashboardContent() {
               id="locations"
               icon={House}
               eyebrow="Mon logement"
-              title="Location active"
-              description="Contrat, échéances et informations de votre logement."
+              title="Location active & paiements"
+              description="Contrat, échéances, quittances et moyens de paiement."
+              action={{ href: "/client/paiements", label: "Moyens de paiement" }}
               badge={<AvailabilityBadge>Prototype local</AvailabilityBadge>}
               className="xl:col-span-6"
             >

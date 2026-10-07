@@ -54,6 +54,7 @@ const NAV: Record<Exclude<WorkspaceRole, "any">, NavigationGroup[]> = {
       { id: "visites", label: "Mes visites", href: "/client/visites", icon: CalendarDays },
       { id: "demandes", label: "Mes demandes", href: "/client/demandes", icon: ClipboardList },
       { id: "contrats", label: "Mes locations", href: "/client/contrats", icon: FileText },
+      { id: "paiements", label: "Moyens de paiement", href: "/client/paiements", icon: WalletCards },
     ] },
     { label: "Échanges", items: [
       { id: "notifications", label: "Notifications", href: "/notifications", icon: Bell, badge: true },

@@ -109,9 +109,14 @@ Lors de l'exécution du workflow `AGENTS.md` sur HOMERA, un audit exhaustif stat
      - Le profil et le bouton « Se déconnecter » restaient bloqués en permanence dans un pied de page fixe (`mt-auto border-t`), découpant artificiellement la barre latérale avec une double zone de défilement.
      - Les comptes autorisés à plusieurs espaces (`Propriétaire`, `Agent`, `Admin`) devaient revenir à l'accueil public (`/`) et ouvrir l'icône profil pour changer d'espace.
    - *Implémentation* :
-     - Création de `hasWorkspaceAccess(roles, target, profile)` et `accessibleWorkspaces(roles, profile)` dans `lib/auth.ts` : un **Client** simple ne voit que `Espace client` (`/client`), tandis qu'un **Propriétaire**, un **Agent** ou un **Admin** (`Admin → Propriétaire → Agent → Client`) bascule en 1 clic entre ses espaces autorisés.
+     - Création de `hasWorkspaceAccess(roles, target, profile)` et `accessibleWorkspaces(roles, profile)` dans `lib/auth.ts` : un **Client** simple ne voit que `Espace client` (`/client`), un **Propriétaire** accède à `Espace propriétaire` et `Espace client`, un **Agent** accède à `Espace agent` et `Espace client`, et un **Admin** (`Admin → Agent → Propriétaire → Client`) bascule en 1 clic entre les 4 espaces.
      - Unification complète : `ClientDashboard.tsx` utilise désormais `<WorkspaceShell role="client" section="dashboard">`, garantissant un **seul système de navigation commun** pour tous les espaces.
      - Panneau de navigation entièrement défilant en une seule zone continue (`.homera-nav-scroll` sans barre de défilement visible ni pied de page fixe), structuré en 3 niveaux UX : **Switch d'espace** (et accès rapide dans l'en-tête), **Navigation principale**, et **Actions secondaires** (`Profil`, `Paramètres`, `Aide & assistance`, `Retour au site`, `Se déconnecter`).
+13. **Frontend des moyens de paiement Bénin / UEMOA & Quittances (`lib/workflow.ts`, `components/workspace/PaymentMethodsPanel.tsx`, `/client/paiements`)** :
+   - *Implémentation* :
+     - Intégration des 5 canaux adaptés au Bénin et à la diaspora : **MTN Mobile Money (MoMo)**, **Moov Money (Flooz)**, **Celtiis Cash**, **Carte bancaire (Visa / Mastercard)** et **Virement bancaire UEMOA (RIB / IBAN — BOA, Ecobank, Orabank, NSIA, UBA, Société Générale, Coris, BGFI)**.
+     - Masquage automatique des identifiants sensibles (`maskPaymentIdentifier`), gestion du moyen par défaut, simulateur de règlement en FCFA et téléchargement de quittance/reçu de démonstration (`.txt`).
+     - Intégration dans `/client/paiements`, `/client/contrats`, `/proprietaire/abonnement` et `PreferencesPage` (`/client/parametres`, `/proprietaire/parametres`, `/admin/parametres`).
 
 ### 3.2 Accessibilité (WCAG AA) & Sémantique HTML
 1. **Lecteurs d'écran sur `FormField` (`components/workspace/Primitives.tsx`)** :
