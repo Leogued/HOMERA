@@ -86,6 +86,8 @@ await check("1. Gouvernance documentaire complète et synchronisée (racine + ho
     "# HOMERA — CUSTOM DESIGN & VISUAL DIRECTION",
     "# HOMERA — PRODUCT QUALITY & AUTONOMOUS DESIGN INTELLIGENCE",
     "# HOMERA — GLOBAL SPEED & FLUIDITY DIRECTIVE",
+    "# HOMERA — UI PATTERNS & PRODUCT INTERFACE MODELS",
+    "Le modèle sert l'expérience. L'expérience ne doit jamais être forcée dans un modèle.",
     "HOMERA me répond immédiatement.",
     "OUI, AJOUTER",
     "OUI, SUPPRIMER",
@@ -111,6 +113,7 @@ await check("1. Gouvernance documentaire complète et synchronisée (racine + ho
     "## 5.8 Final removal pass",
     "# 6. PRODUCT QUALITY & AUTONOMOUS DESIGN INTELLIGENCE",
     "# 7. GLOBAL SPEED & FLUIDITY DIRECTIVE",
+    "# 8. UI PATTERNS & PRODUCT INTERFACE MODELS",
   ]) {
     assert.ok(qualityGate.includes(section), `QUALITY_GATE.md doit contenir « ${section} »`);
   }

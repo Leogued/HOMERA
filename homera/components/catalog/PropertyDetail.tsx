@@ -455,6 +455,27 @@ export function PropertyDetail({ property }: { property: Property }) {
             </ul>{" "}
           </section>
         )}{" "}
+      </div>
+      <div
+        role="region"
+        aria-label="Action rapide sur ce bien"
+        className="sticky bottom-0 z-30 border-t border-border bg-card/95 px-5 py-3 backdrop-blur-md lg:hidden"
+      >
+        <div className="mx-auto flex max-w-7xl items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="font-mono text-micro text-muted">{property.homeraId}</p>
+            <p className="homera-num truncate font-serif text-display-xs text-foreground">
+              {formatPropertyPrice(property)}
+            </p>
+          </div>
+          <Link
+            href={`/client/visites/nouvelle?bien=${property.id}`}
+            className="homera-cta inline-flex min-h-11 shrink-0 items-center gap-2 rounded-btn px-4 py-2.5 text-caption font-semibold"
+          >
+            Planifier une visite
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </Link>
+        </div>
       </div>{" "}
     </article>
   );

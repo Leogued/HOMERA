@@ -210,4 +210,25 @@ npm run audit:home        # 6. Audit HTTP/DOM complet des routes publiques (0 li
 - [x] Toutes les routes dynamiques publiques (`app/(site)/loading.tsx`), client (`app/(client)/loading.tsx`) et espaces (`app/(workspace)/loading.tsx`) disposent d'un état `.homera-skeleton` stable sans saut de mise en page (CLS = 0)
 - [x] `AuthProvider` filtre strictement les événements `storage` sur ses propres clés (`ACCOUNTS_STORAGE_KEY`, `SESSION_STORAGE_KEY`), évitant tout re-render global lors d'un ajout en favori ou d'une action de workflow
 
+---
+
+# 8. UI PATTERNS & PRODUCT INTERFACE MODELS
+
+## 8.1 Adéquation du modèle d'interface au rôle, à la fréquence et à l'action (`AGENTS.md` §§1–14)
+
+- [x] **Modèles de Dashboard différenciés par rôle** :
+  - `/client` : **Dashboard overview** (synthèse personnelle, favoris, prochaines visites, location active).
+  - `/proprietaire` : **Dashboard hybride** (synthèse portefeuille + actions prioritaires sur les biens, demandes, visites et locations).
+  - `/agent` : **Dashboard opérationnel** (agenda de visites terrain, mandats actifs et vérification QR).
+  - `/admin` : **Command center & Dashboard opérationnel** (file de contrôle prioritaire, décisions de vérification, supervision multi-entités).
+- [x] **Modèles de Listes adaptés à la donnée (Grid vs Liste vs Table)** :
+  - **Grid** réservé aux contenus visuels (catalogue de biens `/explorer`, `/acheter`, `/louer`, `/sejour`).
+  - **Table structurée (Desktop) → Cartes prioritaires (Mobile)** pour l'administration (`AdminRecords`) et le journal des transactions financières (`PaymentMethodsPanel`).
+  - **Liste compacte** pour les notifications, l'historique d'audit (`/historique/[reference]`) et les événements récents.
+- [x] **Modèles de Paiement & Fiches (`AGENTS.md` §§4, 10, 11, 15)** :
+  - Parcours de règlement structuré avec **récapitulatif fixe** et filtrage du journal des quittances dans `PaymentMethodsPanel.tsx`.
+  - **Paiement intégré au contrat** dans `ClientContractReader` (`/client/contrats/[id]`) permettant de régler loyer ou caution en contexte.
+  - **Sticky action mobile** sur les fiches de biens (`PropertyDetail.tsx`) pour garder le prix et l'action principale (`Planifier une visite`) immédiatement accessibles sur smartphone.
+
+
 

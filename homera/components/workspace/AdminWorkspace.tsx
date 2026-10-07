@@ -1,15 +1,16 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   Activity, ArrowRight, BadgeCheck, Building2, CalendarDays, Check,
-  ClipboardCheck, ClipboardList, FileText, Flag, ShieldCheck, UserRound,
+  ClipboardCheck, ClipboardList, FileText, Flag, Search, ShieldCheck, UserRound,
   Users, XCircle,
 } from "lucide-react";
 import { useWorkflow } from "@/components/providers/WorkflowProvider";
 import { DEMO_AGENT_AUTHORIZATIONS, DEMO_VERIFICATION_CASES, type VerificationCase } from "@/lib/portal-data";
 import { recordVerificationDecision, type ListingStatus, type VerificationDecision, type VerificationHistoryEvent, type WorkspaceListing } from "@/lib/workflow";
-import { BUTTON_PRIMARY, BUTTON_SECONDARY, DemoNotice, EmptyPanel, MetricCard, StatusBadge, WorkspaceHeading, WorkspacePanel } from "@/components/workspace/Primitives";
+import { BUTTON_PRIMARY, BUTTON_SECONDARY, DemoNotice, EmptyPanel, INPUT_CLASS, MetricCard, StatusBadge, WorkspaceHeading, WorkspacePanel } from "@/components/workspace/Primitives";
 import { PreferencesPage } from "@/components/workspace/ProfileSettings";
 
 export function AdminWorkspace({ section }: { section: string }) {
@@ -108,6 +109,8 @@ function AdminStatistics() {
 
 function AdminRecords({ section }: { section: string }) {
   const { data } = useWorkflow();
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const content: Record<string, { title: string; eyebrow: string; description: string; icon: typeof Users; rows: { name: string; detail: string; status: string }[] }> = {
     utilisateurs: { title: "Utilisateurs", eyebrow: "Comptes & accès", description: "Vérifiez les informations de compte et les rôles déclarés.", icon: Users, rows: [{ name: "Clarisse Ahouansou", detail: "Propriétaire · Cotonou", status: "Compte vérifié (démo)" }, { name: "Koffi Ahouansou", detail: "Agent · AG-HOM-0248", status: "Actif (démo)" }, { name: "Client pilote", detail: "Client · Abomey-Calavi", status: "Adresse à confirmer" }] },
     proprietaires: { title: "Propriétaires", eyebrow: "Profils propriétaire", description: "Portefeuilles, coordonnées et pièces déclarées.", icon: UserRound, rows: [{ name: "Clarisse Ahouansou", detail: "2 biens · Cotonou", status: "Profil en revue" }, { name: "Éric Hounkpatin", detail: "1 bien · Haie Vive", status: "Document manquant" }] },
@@ -161,9 +164,31 @@ function AdminRecords({ section }: { section: string }) {
   };
   const item = content[section] ?? content.utilisateurs;
   const Icon = item.icon;
-  return <><WorkspaceHeading eyebrow={item.eyebrow} title={item.title} description={item.description} /><WorkspacePanel title={item.title} description="Données de démonstration · aucun enregistrement réel" icon={Icon}>
-    <ul className="space-y-3 sm:hidden" aria-label={item.title}>{item.rows.map((row, index) => <li key={`${row.name}-${index}`} className="rounded-xl border border-border bg-background p-3"><p className="text-note font-semibold">{row.name}</p><p className="mt-1 text-caption leading-relaxed text-muted">{row.detail}</p><span className="mt-2 inline-flex rounded-full border border-border bg-card px-2.5 py-1 text-caption font-semibold">{row.status}</span></li>)}</ul>
-    <div className="hidden overflow-x-auto sm:block"><table className="w-full min-w-[560px] border-collapse text-left text-note"><thead><tr className="border-b border-border text-caption text-muted"><th scope="col" className="pb-3 pr-4 font-semibold">Élément</th><th scope="col" className="pb-3 pr-4 font-semibold">Détail</th><th scope="col" className="pb-3 font-semibold">État</th></tr></thead><tbody>{item.rows.map((row, index) => <tr key={`${row.name}-${index}`} className="border-b border-border/70 last:border-0"><td className="py-4 pr-4 font-semibold">{row.name}</td><td className="py-4 pr-4 text-caption text-muted">{row.detail}</td><td className="py-4"><span className="inline-flex rounded-full border border-border bg-background px-2.5 py-1 text-caption font-semibold">{row.status}</span></td></tr>)}</tbody></table></div>
+  const uniqueStatuses = Array.from(new Set(item.rows.map((row) => row.status)));
+  const normalizedQuery = query.trim().toLowerCase();
+  const filteredRows = item.rows.filter((row) => {
+    const matchesStatus = statusFilter === "all" || row.status === statusFilter;
+    const matchesQuery =
+      !normalizedQuery ||
+      row.name.toLowerCase().includes(normalizedQuery) ||
+      row.detail.toLowerCase().includes(normalizedQuery) ||
+      row.status.toLowerCase().includes(normalizedQuery);
+    return matchesStatus && matchesQuery;
+  });
+  return <><WorkspaceHeading eyebrow={item.eyebrow} title={item.title} description={item.description} /><WorkspacePanel title={`${item.title} (${filteredRows.length})`} description="Table structurée sur grand écran et cartes prioritaires sur mobile · filtrage instantané" icon={Icon}>
+    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="relative flex-1 sm:max-w-xs">
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
+        <label htmlFor={`admin-search-${section}`} className="sr-only">Rechercher dans {item.title}</label>
+        <input id={`admin-search-${section}`} type="search" value={query} onChange={(event) => setQuery(event.target.value)} placeholder={`Filtrer ${item.title.toLowerCase()}…`} className={`${INPUT_CLASS} pl-10`} />
+      </div>
+      <div className="flex flex-wrap gap-1.5" role="group" aria-label={`Filtrer ${item.title} par état`}>
+        <button type="button" aria-pressed={statusFilter === "all"} onClick={() => setStatusFilter("all")} className={`min-h-9 rounded-full border px-3 py-1 text-caption font-semibold transition-colors ${statusFilter === "all" ? "border-homera-terracotta bg-homera-terracotta text-white" : "border-border bg-background text-muted hover:text-foreground"}`}>Tous</button>
+        {uniqueStatuses.map((status) => <button key={status} type="button" aria-pressed={statusFilter === status} onClick={() => setStatusFilter(status)} className={`min-h-9 rounded-full border px-3 py-1 text-caption font-semibold transition-colors ${statusFilter === status ? "border-homera-terracotta bg-homera-terracotta text-white" : "border-border bg-background text-muted hover:text-foreground"}`}>{status}</button>)}
+      </div>
+    </div>
+    <ul className="space-y-3 sm:hidden" aria-label={item.title}>{filteredRows.map((row, index) => <li key={`${row.name}-${index}`} className="rounded-xl border border-border bg-background p-3"><p className="text-note font-semibold">{row.name}</p><p className="mt-1 text-caption leading-relaxed text-muted">{row.detail}</p><span className="mt-2 inline-flex rounded-full border border-border bg-card px-2.5 py-1 text-caption font-semibold">{row.status}</span></li>)}</ul>
+    <div className="hidden overflow-x-auto sm:block"><table className="w-full min-w-[560px] border-collapse text-left text-note"><thead><tr className="border-b border-border text-caption text-muted"><th scope="col" className="pb-3 pr-4 font-semibold">Élément</th><th scope="col" className="pb-3 pr-4 font-semibold">Détail</th><th scope="col" className="pb-3 font-semibold">État</th></tr></thead><tbody>{filteredRows.map((row, index) => <tr key={`${row.name}-${index}`} className="border-b border-border/70 last:border-0"><td className="py-4 pr-4 font-semibold">{row.name}</td><td className="py-4 pr-4 text-caption text-muted">{row.detail}</td><td className="py-4"><span className="inline-flex rounded-full border border-border bg-background px-2.5 py-1 text-caption font-semibold">{row.status}</span></td></tr>)}</tbody></table></div>
   </WorkspacePanel><div className="mt-6"><DemoNotice>Les données administratives ne sont pas connectées. Cette interface sert à valider les pages, états et actions avant la mise en place d’une API et d’un contrôle d’accès sécurisé.</DemoNotice></div></>;
 }
 

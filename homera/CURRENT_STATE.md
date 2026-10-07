@@ -115,8 +115,14 @@ Lors de l'exécution du workflow `AGENTS.md` sur HOMERA, un audit exhaustif stat
 13. **Frontend des moyens de paiement Bénin / UEMOA & Quittances (`lib/workflow.ts`, `components/workspace/PaymentMethodsPanel.tsx`, `/client/paiements`)** :
    - *Implémentation* :
      - Intégration des 5 canaux adaptés au Bénin et à la diaspora : **MTN Mobile Money (MoMo)**, **Moov Money (Flooz)**, **Celtiis Cash**, **Carte bancaire (Visa / Mastercard)** et **Virement bancaire UEMOA (RIB / IBAN — BOA, Ecobank, Orabank, NSIA, UBA, Société Générale, Coris, BGFI)**.
-     - Masquage automatique des identifiants sensibles (`maskPaymentIdentifier`), gestion du moyen par défaut, simulateur de règlement en FCFA et téléchargement de quittance/reçu de démonstration (`.txt`).
-     - Intégration dans `/client/paiements`, `/client/contrats`, `/proprietaire/abonnement` et `PreferencesPage` (`/client/parametres`, `/proprietaire/parametres`, `/admin/parametres`).
+     - Masquage automatique des identifiants sensibles (`maskPaymentIdentifier`), gestion du moyen par défaut, simulateur de règlement en FCFA avec **récapitulatif fixe** et téléchargement de quittance/reçu de démonstration (`.txt`).
+     - Journal des règlements structuré en **Table de données sur desktop (`md:block`)** et **Cartes prioritaires sur mobile (`md:hidden`)** avec **chips de filtrage** par nature (`Tous`, `Loyers`, `Cautions`, `Séjours`, `Services`).
+     - Intégration dans `/client/paiements`, `/client/contrats`, `/client/contrats/[id]` (paiement de loyer ou caution intégré au contrat), `/proprietaire/abonnement` et `PreferencesPage` (`/client/parametres`, `/proprietaire/parametres`, `/admin/parametres`).
+14. **Modèles d'interfaces produit (`# HOMERA — UI PATTERNS & PRODUCT INTERFACE MODELS`, Sections 1 à 20)** :
+   - *Implémentation* :
+     - Intégration complète des 20 sections dans `AGENTS.md` et `QUALITY_GATE.md` (§8).
+     - Ajout d'une **barre d'action sticky mobile (`lg:hidden`)** au bas des fiches de biens (`PropertyDetail.tsx`) pour conserver le prix (`homera-num`) et le CTA principal (`Planifier une visite`) immédiatement accessibles pendant la lecture.
+     - Enrichissement du **Command center administratif (`AdminRecords` dans `AdminWorkspace.tsx`)** avec recherche instantanée et chips de filtrage par statut au-dessus du couple Table (desktop) / Cartes (mobile).
 
 ### 3.2 Accessibilité (WCAG AA) & Sémantique HTML
 1. **Lecteurs d'écran sur `FormField` (`components/workspace/Primitives.tsx`)** :

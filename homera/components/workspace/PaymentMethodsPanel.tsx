@@ -101,12 +101,17 @@ export function PaymentMethodsWorkspace({
       : "Règlement loyer mensuel · dossier pilote",
   );
   const [selectedMethodId, setSelectedMethodId] = useState<string>("");
+  const [txFilter, setTxFilter] = useState<"all" | PaymentTransactionKind>("all");
 
   const activeSpec = providerSpec(provider);
   const savedMethods = data.paymentMethods;
   const defaultMethod = savedMethods.find((entry) => entry.isDefault) ?? savedMethods[0];
   const effectiveMethod =
     savedMethods.find((entry) => entry.id === selectedMethodId) ?? defaultMethod;
+  const filteredTransactions =
+    txFilter === "all"
+      ? data.transactions
+      : data.transactions.filter((tx) => tx.kind === txFilter);
 
   const handleAddMethod = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -222,7 +227,7 @@ export function PaymentMethodsWorkspace({
       ? `${chosenSpec.shortLabel} · ${effectiveMethod.maskedIdentifier}`
       : `${chosenSpec.shortLabel} · règlement direct`;
     const now = new Date().toISOString();
-    const reference = `PAY-CTN-${Math.floor(100000 + Math.random() * 900000)}`;
+    const reference = createLocalId("PAY-CTN").toUpperCase();
 
     const record: PaymentTransactionRecord = {
       id: createLocalId("tx"),
@@ -571,13 +576,13 @@ export function PaymentMethodsWorkspace({
         </WorkspacePanel>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
-        <WorkspacePanel
-          title="Simuler un règlement (aperçu pilote)"
-          description="Testez un règlement Mobile Money, carte ou virement UEMOA et générez immédiatement une quittance de démonstration."
-          icon={Building2}
-        >
-          <form onSubmit={handleSimulatePayment} className="space-y-4">
+      <WorkspacePanel
+        title="Simuler un règlement avec récapitulatif fixe (aperçu pilote)"
+        description="Testez un règlement Mobile Money, carte ou virement UEMOA et générez immédiatement une quittance de démonstration."
+        icon={Building2}
+      >
+        <form onSubmit={handleSimulatePayment} className="grid gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
+          <div className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <FormField label="Nature du règlement" name="tx-kind" required>
                 <select
@@ -637,32 +642,96 @@ export function PaymentMethodsWorkspace({
                 className={INPUT_CLASS}
               />
             </FormField>
+          </div>
 
-            <button type="submit" className={`${BUTTON_PRIMARY} w-full`}>
-              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-              Valider le règlement de démonstration ({formatMoney(Number(txAmount) || 0)} FCFA)
-            </button>
-          </form>
-        </WorkspacePanel>
-
-        <WorkspacePanel
-          title={`Journal des règlements & quittances (${data.transactions.length})`}
-          description="Chaque opération validée génère un justificatif téléchargeable pour vos archives."
-          icon={Receipt}
-        >
-          {data.transactions.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-border bg-background/60 p-6 text-center">
-              <Receipt className="mx-auto h-8 w-8 text-homera-terracotta" aria-hidden="true" />
-              <p className="mt-3 text-note font-semibold text-foreground">
-                Aucune transaction enregistrée
+          <aside
+            aria-label="Récapitulatif fixe du règlement"
+            className="flex flex-col justify-between rounded-2xl border border-border bg-background p-5"
+          >
+            <div>
+              <p className="text-micro font-semibold uppercase tracking-[0.14em] text-homera-terracotta">
+                Récapitulatif du règlement
               </p>
-              <p className="mt-1 text-caption leading-relaxed text-muted">
-                Validez un règlement de loyer, de caution ou d’accompagnement à gauche (ou depuis un contrat de location) pour afficher son reçu ici.
-              </p>
+              <dl className="mt-4 space-y-2.5 text-caption">
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-muted">Nature</dt>
+                  <dd className="font-semibold text-foreground">{TRANSACTION_KIND_LABELS[txKind]}</dd>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-muted">Canal sélectionné</dt>
+                  <dd className="font-semibold text-foreground">
+                    {effectiveMethod
+                      ? `${providerSpec(effectiveMethod.provider).shortLabel} (${effectiveMethod.maskedIdentifier})`
+                      : activeSpec.shortLabel}
+                  </dd>
+                </div>
+                <div className="flex items-center justify-between gap-2">
+                  <dt className="text-muted">Frais de service pilote</dt>
+                  <dd className="font-semibold text-success">0 FCFA · inclus</dd>
+                </div>
+                <div className="flex items-center justify-between gap-2 border-t border-border pt-3">
+                  <dt className="text-note font-semibold text-foreground">Total à valider</dt>
+                  <dd className="homera-num text-body font-bold text-foreground">
+                    {formatMoney(Number(txAmount) || 0)} FCFA
+                  </dd>
+                </div>
+              </dl>
             </div>
-          ) : (
-            <ul className="space-y-3" aria-label="Historique des règlements">
-              {data.transactions.map((tx) => (
+
+            <button type="submit" className={`${BUTTON_PRIMARY} mt-5 w-full`}>
+              <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+              Valider le règlement ({formatMoney(Number(txAmount) || 0)} FCFA)
+            </button>
+          </aside>
+        </form>
+      </WorkspacePanel>
+
+      <WorkspacePanel
+        title={`Journal des règlements & quittances (${filteredTransactions.length})`}
+        description="Table structurée sur grand écran et cartes prioritaires sur mobile. Chaque opération génère une quittance téléchargeable."
+        icon={Receipt}
+        action={
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filtrer par nature de règlement">
+            {(
+              [
+                { id: "all", label: "Tous" },
+                { id: "loyer", label: "Loyers" },
+                { id: "caution", label: "Cautions" },
+                { id: "reservation", label: "Séjours" },
+                { id: "abonnement", label: "Services" },
+              ] as const
+            ).map((chip) => (
+              <button
+                key={chip.id}
+                type="button"
+                aria-pressed={txFilter === chip.id}
+                onClick={() => setTxFilter(chip.id)}
+                className={`min-h-9 rounded-full border px-3 py-1 text-caption font-semibold transition-colors ${
+                  txFilter === chip.id
+                    ? "border-homera-terracotta bg-homera-terracotta text-white"
+                    : "border-border bg-background text-muted hover:text-foreground"
+                }`}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+        }
+      >
+        {filteredTransactions.length === 0 ? (
+          <div className="rounded-2xl border border-dashed border-border bg-background/60 p-6 text-center">
+            <Receipt className="mx-auto h-8 w-8 text-homera-terracotta" aria-hidden="true" />
+            <p className="mt-3 text-note font-semibold text-foreground">
+              Aucune transaction dans cette catégorie
+            </p>
+            <p className="mt-1 text-caption leading-relaxed text-muted">
+              Validez un règlement ci-dessus (ou depuis un contrat de location) pour afficher son reçu et télécharger la quittance.
+            </p>
+          </div>
+        ) : (
+          <>
+            <ul className="space-y-3 md:hidden" aria-label="Historique des règlements">
+              {filteredTransactions.map((tx) => (
                 <li
                   key={tx.id}
                   className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background p-4"
@@ -697,9 +766,10 @@ export function PaymentMethodsWorkspace({
                 </li>
               ))}
             </ul>
-          )}
-        </WorkspacePanel>
-      </div>
+            <div className="hidden overflow-x-auto md:block"><table className="w-full min-w-[640px] border-collapse text-left text-note"><thead><tr className="border-b border-border text-caption text-muted"><th scope="col" className="pb-3 pr-4 font-semibold">Référence & Date</th><th scope="col" className="pb-3 pr-4 font-semibold">Libellé & Nature</th><th scope="col" className="pb-3 pr-4 font-semibold">Canal utilisé</th><th scope="col" className="pb-3 pr-4 font-semibold">Statut</th><th scope="col" className="pb-3 pr-4 font-semibold">Montant</th><th scope="col" className="pb-3 text-right font-semibold">Action</th></tr></thead><tbody>{filteredTransactions.map((tx) => <tr key={tx.id} className="border-b border-border/70 last:border-0"><td className="py-3.5 pr-4"><span className="block font-mono text-caption font-semibold text-homera-terracotta">{tx.reference}</span><span className="mt-0.5 block text-caption text-muted">{formatDateTime(tx.createdAt)}</span></td><td className="py-3.5 pr-4"><span className="block font-semibold text-foreground">{tx.label}</span><span className="mt-0.5 block text-caption text-muted">{TRANSACTION_KIND_LABELS[tx.kind]}</span></td><td className="py-3.5 pr-4 text-caption text-muted">{tx.methodSummary}</td><td className="py-3.5 pr-4"><span className="inline-flex rounded-full border border-success/30 bg-success/[0.08] px-2.5 py-0.5 text-micro font-semibold text-success">{tx.status === "confirme" ? "Confirmé · démo" : "Rapprochement · démo"}</span></td><td className="homera-num py-3.5 pr-4 font-bold text-foreground">{formatMoney(tx.amount)} FCFA</td><td className="py-3.5 text-right"><button type="button" onClick={() => downloadReceipt(tx)} className={BUTTON_SECONDARY}><Download className="h-4 w-4" aria-hidden="true" />Quittance</button></td></tr>)}</tbody></table></div>
+          </>
+        )}
+      </WorkspacePanel>
     </div>
   );
 }

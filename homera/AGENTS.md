@@ -1335,6 +1335,450 @@ La performance est donc une propriété de **toute l'expérience HOMERA**, et no
 
 ---
 
+# HOMERA — UI PATTERNS & PRODUCT INTERFACE MODELS
+
+## OBJECTIF
+
+Lorsqu'il conçoit ou améliore le frontend, l'agent doit connaître et savoir utiliser les principaux modèles d'interfaces modernes.
+
+Il ne doit cependant jamais appliquer un modèle simplement parce qu'il est populaire.
+
+Le modèle d'interface doit être choisi en fonction :
+
+* du type de page ;
+* du rôle utilisateur ;
+* de la quantité d'information ;
+* de la fréquence d'utilisation ;
+* de l'action attendue ;
+* du contexte ;
+* du niveau de complexité ;
+* du device ;
+* de la priorité utilisateur.
+
+**Le modèle sert l'expérience. L'expérience ne doit jamais être forcée dans un modèle.**
+
+---
+
+## 1. MODÈLES DE DASHBOARD
+
+L'agent doit savoir concevoir et évaluer différents modèles de dashboards modernes :
+
+### Dashboard overview
+Vue synthétique :
+* résumé ;
+* indicateurs principaux ;
+* actions prioritaires ;
+* activité récente ;
+* alertes ;
+* raccourcis.
+
+À utiliser lorsqu'un utilisateur doit rapidement comprendre **où il en est** (ex. `/client`).
+
+### Dashboard opérationnel
+Priorité aux actions :
+* tâches ;
+* demandes ;
+* dossiers ;
+* validations ;
+* éléments nécessitant une intervention.
+
+À privilégier lorsque l'utilisateur vient principalement **agir** plutôt que consulter des statistiques (ex. `/agent`, `/admin/verifications`).
+
+### Dashboard analytique
+Priorité aux données :
+* statistiques ;
+* graphiques ;
+* tendances ;
+* comparaisons ;
+* périodes ;
+* indicateurs.
+
+Ne pas utiliser ce modèle si les données analytiques n'apportent aucune valeur réelle.
+
+### Dashboard hybride
+Combinaison :
+**synthèse + actions + activité + données.**
+
+À utiliser uniquement lorsque la complexité du rôle le justifie (ex. `/proprietaire`, `/admin`).
+
+---
+
+## 2. MODÈLES DE WORKSPACE
+
+Pour les espaces professionnels, l'agent doit connaître :
+* sidebar fixe ;
+* sidebar compacte ;
+* navigation secondaire ;
+* top navigation ;
+* navigation hybride ;
+* workspace multi-vues ;
+* command center ;
+* interface à panneaux.
+
+Le choix dépend de la fréquence et de la complexité des tâches.
+Un client occasionnel ne doit pas recevoir la même interface qu'un administrateur qui travaille plusieurs heures par jour.
+
+---
+
+## 3. MODÈLES DE LISTES
+
+L'agent doit savoir choisir entre :
+
+### Grid
+Pour :
+* biens immobiliers ;
+* images ;
+* produits ;
+* contenus visuels.
+
+### Liste
+Pour :
+* nombreuses informations ;
+* comparaison ;
+* historique ;
+* opérations.
+
+### Table
+Pour :
+* données structurées ;
+* administration ;
+* transactions ;
+* gestion ;
+* comparaison précise.
+
+### Liste compacte
+Pour :
+* activité ;
+* notifications ;
+* événements ;
+* opérations récentes.
+
+Ne jamais utiliser une grille de cartes simplement parce qu'elle est esthétique.
+
+---
+
+## 4. MODÈLES DE FICHES
+
+Pour une fiche de bien ou une ressource importante, connaître notamment :
+* hero + informations essentielles ;
+* galerie + détails ;
+* galerie immersive ;
+* information progressive ;
+* sticky action ;
+* résumé + détails ;
+* panneaux secondaires.
+
+Pour HOMERA, déterminer la structure selon l'objectif :
+**découvrir → comprendre → vérifier → comparer → agir.**
+
+---
+
+## 5. MODÈLES DE RECHERCHE
+
+L'agent doit connaître :
+* barre de recherche simple ;
+* recherche progressive ;
+* recherche avec filtres ;
+* filtres horizontaux ;
+* filtres dans un panneau ;
+* filtres en drawer mobile ;
+* recherche + carte ;
+* recherche + liste ;
+* recherche guidée.
+
+Choisir le modèle qui minimise l'effort cognitif.
+
+---
+
+## 6. MODÈLES DE FILTRAGE
+
+Le filtrage peut utiliser :
+* chips ;
+* dropdown ;
+* segmented control ;
+* checkbox ;
+* radio ;
+* range ;
+* drawer ;
+* modal ;
+* panneau latéral ;
+* filtres persistants.
+
+Ne jamais multiplier les contrôles.
+Afficher d'abord les critères les plus importants.
+
+---
+
+## 7. MODÈLES DE FORMULAIRES
+
+L'agent doit connaître :
+* formulaire simple ;
+* formulaire en étapes ;
+* formulaire conversationnel ;
+* formulaire à sections ;
+* formulaire progressif ;
+* formulaire avec aperçu ;
+* formulaire avec sauvegarde.
+
+Pour les formulaires complexes, privilégier la **progressive disclosure** plutôt que d'afficher tout simultanément.
+
+---
+
+## 8. MODÈLES DE NAVIGATION
+
+Connaître et choisir entre :
+* navigation horizontale ;
+* sidebar ;
+* bottom navigation mobile ;
+* tabs ;
+* breadcrumbs ;
+* navigation contextuelle ;
+* navigation secondaire ;
+* menu command ;
+* navigation hybride.
+
+La navigation doit être déterminée par la fréquence des destinations et non par une préférence esthétique.
+
+---
+
+## 9. MODÈLES DE NOTIFICATIONS
+
+Pour les notifications, connaître :
+* badge ;
+* dropdown ;
+* inbox ;
+* toast ;
+* notification inline ;
+* centre de notifications ;
+* notification contextuelle.
+
+Une notification simple ne nécessite pas toujours une page entière.
+
+---
+
+## 10. MODÈLES D'ACTIONS
+
+Les actions peuvent être présentées sous forme de :
+* bouton principal ;
+* action secondaire ;
+* action contextuelle ;
+* menu d'actions ;
+* sticky action ;
+* floating action ;
+* action dans une carte ;
+* action dans une toolbar.
+
+Toujours déterminer :
+**action principale → action secondaire → actions rares.**
+
+---
+
+## 11. MODÈLES DE PAIEMENT
+
+Pour les paiements, connaître :
+* checkout classique ;
+* checkout en étapes ;
+* paiement intégré à une fiche ;
+* paiement dans une modal ;
+* paiement dans un panneau latéral ;
+* paiement avec récapitulatif fixe ;
+* paiement mobile simplifié.
+
+Choisir le modèle en fonction du niveau de risque, de complexité et du contexte.
+
+---
+
+## 12. MODÈLES DE PROFIL ET DE COMPTE
+
+Connaître :
+* profil simple ;
+* account center ;
+* settings page ;
+* settings avec sidebar ;
+* profil + activité ;
+* profil + vérification ;
+* profil professionnel.
+
+Le modèle doit dépendre du nombre de paramètres réellement nécessaires.
+
+---
+
+## 13. MODÈLES DE WORKFLOW
+
+Pour les opérations complexes :
+* timeline ;
+* stepper ;
+* status tracker ;
+* kanban ;
+* liste d'étapes ;
+* progression ;
+* détail + historique ;
+* workflow multi-écrans.
+
+Utiliser le modèle permettant à l'utilisateur de comprendre :
+**où il est → ce qui a été fait → ce qui reste → ce qu'il doit faire.**
+
+---
+
+## 14. MODÈLES DE CONTENU
+
+L'agent doit également savoir utiliser :
+* editorial layout ;
+* storytelling ;
+* sections immersives ;
+* comparaison ;
+* contenu en couches ;
+* accordéons ;
+* information progressive ;
+* résumé + détails.
+
+Ne jamais ajouter du storytelling simplement pour rendre une page plus longue.
+
+---
+
+## 15. MODÈLES RESPONSIVES
+
+Chaque modèle doit être pensé pour :
+**desktop → tablette → mobile**
+et non simplement réduit proportionnellement.
+
+Un dashboard desktop peut devenir :
+* navigation mobile ;
+* sections empilées ;
+* cards simplifiées ;
+* bottom navigation ;
+* panneaux transformés en drawers.
+
+Une table peut devenir :
+* liste ;
+* cartes ;
+* informations prioritaires + détails dépliables.
+
+L'agent doit adapter intelligemment le modèle plutôt que créer un simple responsive mécanique.
+
+---
+
+## 16. COMPOSANTS MODERNES À CONNAÎTRE
+
+L'agent doit être capable d'utiliser intelligemment :
+* cards ;
+* drawers ;
+* sheets ;
+* dialogs ;
+* popovers ;
+* tooltips ;
+* command menus ;
+* tabs ;
+* accordions ;
+* carousels ;
+* breadcrumbs ;
+* badges ;
+* chips ;
+* skeletons ;
+* empty states ;
+* status indicators ;
+* progress indicators ;
+* timelines ;
+* steppers ;
+* data tables ;
+* charts ;
+* maps ;
+* sticky actions.
+
+Mais :
+> **Connaître un composant ne signifie pas qu'il faut l'utiliser.**
+
+Chaque composant doit avoir une justification.
+
+---
+
+## 17. RÈGLE DE SÉLECTION
+
+Avant de choisir un modèle d'interface, l'agent doit déterminer :
+* **Qui utilise cette interface ?**
+* **À quelle fréquence ?**
+* **Quelle quantité d'information doit être visible ?**
+* **Quelle est l'action principale ?**
+* **Quel est le niveau de complexité ?**
+* **Quel device est prioritaire ?**
+* **Quelle information doit être immédiatement visible ?**
+* **Qu'est-ce qui peut rester secondaire ?**
+
+Puis sélectionner le modèle le plus approprié.
+
+---
+
+## 18. INSPIRATION DES PRODUITS MODERNES
+
+L'agent doit observer les standards des meilleurs produits numériques modernes lorsqu'il doit résoudre un problème d'interface.
+
+Il peut s'inspirer de patterns provenant notamment de :
+* produits immobiliers ;
+* marketplaces ;
+* plateformes de réservation ;
+* fintech ;
+* SaaS ;
+* e-commerce ;
+* hospitality ;
+* applications mobiles ;
+* outils professionnels ;
+* produits éditoriaux ;
+* interfaces premium.
+
+Il doit chercher à comprendre **pourquoi une interface fonctionne**, pas simplement à reproduire son apparence.
+
+---
+
+## 19. SYNTHÈSE HOMERA
+
+Ne jamais copier un modèle complet.
+
+Le résultat doit être une synthèse adaptée à HOMERA :
+
+**meilleur pattern de recherche**
++
+**meilleure hiérarchie de contenu**
++
+**meilleur modèle d'action**
++
+**meilleure ergonomie**
++
+**identité HOMERA**
+
+=
+
+**interface HOMERA**
+
+---
+
+## 20. RÈGLE FINALE
+
+L'agent doit être capable de dire :
+> « Cette page devrait être une grille. »
+ou :
+> « Cette page ne devrait surtout pas être une grille. »
+
+Il doit pouvoir dire :
+> « Cette information mérite une section. »
+ou :
+> « Cette section doit être supprimée. »
+
+Il doit pouvoir dire :
+> « Ce dashboard contient trop d'informations. »
+ou :
+> « Ce rôle nécessite effectivement un dashboard plus riche. »
+
+Il doit pouvoir dire :
+> « Cette interaction doit être une drawer sur mobile. »
+ou :
+> « Une simple action inline est plus rapide ici. »
+
+**La compétence recherchée n'est donc pas de connaître beaucoup de composants.**
+C'est de savoir **choisir le bon modèle au bon moment pour le bon utilisateur**.
+Le frontend HOMERA doit être conçu comme un véritable produit numérique, pas comme une collection de composants.
+
+---
+
 ## III. Commandes de travail (depuis `homera/`)
 
 | Étape | Commande | Exigence |
