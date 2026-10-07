@@ -12,6 +12,7 @@ import { DEMO_AGENT_AUTHORIZATIONS, DEMO_VERIFICATION_CASES, type VerificationCa
 import { recordVerificationDecision, type ListingStatus, type VerificationDecision, type VerificationHistoryEvent, type WorkspaceListing } from "@/lib/workflow";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY, DemoNotice, EmptyPanel, INPUT_CLASS, MetricCard, StatusBadge, WorkspaceHeading, WorkspacePanel } from "@/components/workspace/Primitives";
 import { PreferencesPage } from "@/components/workspace/ProfileSettings";
+import { PaymentMethodsWorkspace } from "@/components/workspace/PaymentMethodsPanel";
 
 export function AdminWorkspace({ section }: { section: string }) {
   if (section === "dashboard") return <AdminDashboard />;
@@ -104,7 +105,7 @@ function VerificationCaseCard({ item, status, onDecision }: { item: Verification
 
 function AdminStatistics() {
   const rows = [{ label: "Vérifications reçues", value: "146", amount: 78 }, { label: "Visites demandées", value: "92", amount: 58 }, { label: "Dossiers de location", value: "37", amount: 42 }, { label: "Autorisations agent", value: "214", amount: 83 }];
-  return <><WorkspaceHeading eyebrow="Pilotage de l’activité" title="Statistiques" description="Indicateurs maquettes, conçus pour valider la hiérarchie et le contenu du futur tableau de bord." /><WorkspacePanel title="Activité du mois" description="Volumes fictifs · aucun calcul analytique serveur." icon={Activity}><div className="space-y-5">{rows.map((row) => <div key={row.label}><div className="flex items-center justify-between gap-3"><p className="text-note font-semibold">{row.label}</p><p className="homera-num font-serif text-display-xs">{row.value}</p></div><div className="mt-2 h-2.5 overflow-hidden rounded-full bg-surface-hover"><div className="h-full rounded-full bg-homera-terracotta" style={{ width: `${row.amount}%` }} /></div></div>)}</div></WorkspacePanel></>;
+  return <><WorkspaceHeading eyebrow="Pilotage de l’activité & flux financiers" title="Statistiques & revenus HOMERA" description="Supervision des opérations, commissions HOMERA, reversements propriétaires, parts agents et retraits." /><WorkspacePanel title="Activité du mois" description="Volumes fictifs · aucun calcul analytique serveur." icon={Activity}><div className="space-y-5">{rows.map((row) => <div key={row.label}><div className="flex items-center justify-between gap-3"><p className="text-note font-semibold">{row.label}</p><p className="homera-num font-serif text-display-xs">{row.value}</p></div><div className="mt-2 h-2.5 overflow-hidden rounded-full bg-surface-hover"><div className="h-full rounded-full bg-homera-terracotta" style={{ width: `${row.amount}%` }} /></div></div>)}</div></WorkspacePanel><div className="mt-8"><PaymentMethodsWorkspace contextRole="admin" embedded /></div></>;
 }
 
 function AdminRecords({ section }: { section: string }) {

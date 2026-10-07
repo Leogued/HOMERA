@@ -87,7 +87,9 @@ await check("1. Gouvernance documentaire complète et synchronisée (racine + ho
     "# HOMERA — PRODUCT QUALITY & AUTONOMOUS DESIGN INTELLIGENCE",
     "# HOMERA — GLOBAL SPEED & FLUIDITY DIRECTIVE",
     "# HOMERA — UI PATTERNS & PRODUCT INTERFACE MODELS",
+    "# HOMERA — MODÈLE ÉCONOMIQUE, PAIEMENTS ET FLUX FINANCIERS",
     "Le modèle sert l'expérience. L'expérience ne doit jamais être forcée dans un modèle.",
+    "autorisation sur un bien ≠ droit automatique à recevoir de l'argent.",
     "HOMERA me répond immédiatement.",
     "OUI, AJOUTER",
     "OUI, SUPPRIMER",
@@ -114,6 +116,7 @@ await check("1. Gouvernance documentaire complète et synchronisée (racine + ho
     "# 6. PRODUCT QUALITY & AUTONOMOUS DESIGN INTELLIGENCE",
     "# 7. GLOBAL SPEED & FLUIDITY DIRECTIVE",
     "# 8. UI PATTERNS & PRODUCT INTERFACE MODELS",
+    "# 9. MODÈLE ÉCONOMIQUE, PAIEMENTS ET FLUX FINANCIERS",
   ]) {
     assert.ok(qualityGate.includes(section), `QUALITY_GATE.md doit contenir « ${section} »`);
   }

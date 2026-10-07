@@ -17,6 +17,7 @@ import { formatPropertyPrice } from "@/lib/format";
 import { authorizationsForAgent, type AgentAuthorization } from "@/lib/portal-data";
 import { makeNotification, type VisitRecord } from "@/lib/workflow";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY, DemoNotice, EmptyPanel, MetricCard, StatusBadge, WorkspaceHeading, WorkspacePanel } from "@/components/workspace/Primitives";
+import { PaymentMethodsWorkspace } from "@/components/workspace/PaymentMethodsPanel";
 
 const subscribeOrigin = () => () => {};
 const getOrigin = () => typeof window === "undefined" ? "https://homera.example" : window.location.origin;
@@ -141,6 +142,7 @@ function AgentAuthorizations({ authorizations }: { authorizations: AgentAuthoriz
       const property = PROPERTIES.find((entry) => entry.id === auth.propertyId);
       return <WorkspacePanel key={auth.propertyRef} title={property?.title ?? auth.propertyRef} description={`${auth.propertyRef} · ${auth.agency}`} icon={ShieldCheck} action={<StatusBadge status="valide" />}><div className="grid gap-5 lg:grid-cols-[1fr_200px]"><div className="space-y-4"><dl className="grid gap-3 sm:grid-cols-2"><InfoCell label="Agent" value={`${auth.agentName} · ${auth.agentId}`} /><InfoCell label="Mandat" value={auth.proof} /><InfoCell label="Autorisé le" value={formatDateOnly(auth.authorizedAt)} /><InfoCell label="Expiration" value={formatDateOnly(auth.expiresAt)} /><InfoCell label="Périmètre" value={auth.scope} /></dl><div className="flex flex-wrap gap-2"><Link href={`/verification-agent?agent=${auth.agentId}&bien=${auth.propertyRef}`} className={BUTTON_PRIMARY}><ShieldCheck className="h-4 w-4" aria-hidden="true" />Ouvrir la page de vérification</Link><button type="button" onClick={() => downloadAuthorization(auth.propertyRef, auth.agentName, auth.agentId, auth.proof, auth.expiresAt)} className={BUTTON_SECONDARY}><Download className="h-4 w-4" aria-hidden="true" />Télécharger le récapitulatif</button></div></div><QrPanel agentId={auth.agentId} propertyRef={auth.propertyRef} /></div></WorkspacePanel>;
     })}</div>}
+    <div className="mt-8"><PaymentMethodsWorkspace contextRole="agent" agentId={authorizations[0]?.agentId} embedded /></div>
     <div className="mt-6"><DemoNotice>Le QR code pointe vers la page publique de vérification. Les justificatifs montrés restent des données d’exemple et ne remplacent pas l’original signé.</DemoNotice></div>
   </>;
 }

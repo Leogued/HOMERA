@@ -1779,6 +1779,249 @@ Le frontend HOMERA doit être conçu comme un véritable produit numérique, pas
 
 ---
 
+# HOMERA — MODÈLE ÉCONOMIQUE, PAIEMENTS ET FLUX FINANCIERS
+
+## 1. RÈGLE FONDAMENTALE
+
+Ne jamais ajouter un bouton, une page ou un moyen de paiement sans comprendre au préalable **l'opération économique concernée**.
+
+Pour chaque paiement, déterminer obligatoirement :
+* qui paie ;
+* qui reçoit ;
+* pourquoi le paiement est effectué ;
+* à quel moment il devient possible ;
+* quel montant est payé ;
+* quels frais/commissions sont appliqués ;
+* quelle part revient à HOMERA ;
+* quelle part revient au propriétaire ;
+* quelle part revient éventuellement à l'agent ;
+* quel est le statut de l'opération ;
+* qui peut consulter l'opération ;
+* qui peut recevoir ou retirer les fonds.
+
+Le frontend doit refléter le modèle économique réel de HOMERA et non inventer un modèle de marketplace générique.
+
+---
+
+## 2. ACTEURS FINANCIERS
+
+### CLIENT
+Le client peut effectuer des paiements lorsqu'une opération le nécessite :
+* frais liés à une visite lorsqu'ils sont applicables ;
+* location ;
+* séjour / courte durée ;
+* achat lorsque le paiement est intégré ;
+* autres services HOMERA activés ultérieurement.
+
+Le client ne doit voir un bouton de paiement que lorsqu'il existe réellement une somme due et que l'étape du workflow autorise le paiement.
+
+### PROPRIÉTAIRE
+Le propriétaire peut recevoir les sommes qui lui sont dues dans le cadre d'une opération.
+Son espace doit pouvoir présenter :
+* revenus ;
+* paiements reçus ;
+* paiements en attente ;
+* commissions HOMERA ;
+* frais éventuels ;
+* historique des opérations ;
+* montant disponible ;
+* montant en attente ;
+* retrait lorsque cette fonctionnalité est activée.
+
+Le propriétaire ne doit jamais pouvoir considérer comme disponible une somme encore en attente de confirmation.
+
+### AGENT
+L'agent est un acteur professionnel autorisé sur les biens concernés.
+Le frontend doit distinguer clairement :
+**autorisation sur un bien ≠ droit automatique à recevoir de l'argent.**
+
+Si le modèle économique prévoit une rémunération ou une commission pour l'agent sur une opération donnée, celle-ci doit être rattachée explicitement :
+* au bien ;
+* à l'opération ;
+* à l'agent autorisé ;
+* au montant ;
+* au statut de l'opération.
+
+L'agent doit pouvoir voir les sommes qui lui sont réellement dues et, lorsque le modèle le permet, leur statut :
+**en attente → disponible → retiré.**
+
+Ne jamais afficher un bouton de retrait à un agent simplement parce qu'il possède un compte.
+Le droit au retrait dépend de l'opération et des règles économiques correspondantes.
+
+### HOMERA
+HOMERA doit pouvoir recevoir les revenus qui lui reviennent :
+* commissions ;
+* frais de service ;
+* abonnements professionnels ;
+* frais liés aux opérations lorsque prévus par le modèle.
+
+Le système doit distinguer les revenus HOMERA des sommes appartenant aux autres acteurs.
+
+---
+
+## 3. PRINCIPE DU FLUX FINANCIER
+
+Lorsqu'une transaction passe par HOMERA, le frontend doit représenter correctement le flux :
+
+**CLIENT** → paiement → **HOMERA / système de paiement** → calcul des commissions et frais → attribution des montants → **PROPRIÉTAIRE / AGENT selon les règles de l'opération** → disponibilité → retrait.
+
+Le frontend ne doit jamais présenter un simple :
+**« Client → Propriétaire »**
+si la transaction passe réellement par HOMERA.
+
+---
+
+## 4. LE BOUTON « PAYER »
+
+Le bouton **Payer** ne doit apparaître que lorsque :
+1. une opération financière existe ;
+2. le montant est déterminé ;
+3. le bénéficiaire est déterminé ;
+4. le workflow autorise le paiement ;
+5. les conditions nécessaires sont remplies.
+
+Le bouton doit être contextualisé. Exemples :
+* **Payer les frais de visite**
+* **Payer la réservation**
+* **Payer la location · 350 000 FCFA**
+* **Payer le dépôt de garantie · 700 000 FCFA**
+
+Éviter le bouton générique **« Payer »** lorsque le contexte peut être explicité.
+
+---
+
+## 5. LE PAIEMENT N'EST PAS UNE ÉTAPE UNIVERSELLE
+
+Toutes les actions HOMERA ne déclenchent pas un paiement. Le système doit déterminer le paiement à partir du workflow :
+* **Recherche** → aucun paiement
+* **Demande de visite** → éventuellement frais de visite selon les règles
+* **Visite** → résultat de visite
+* **Demande de location** → étude / acceptation
+* **Contrat** → signature
+* **Paiement** → uniquement lorsque le workflow et les conditions économiques l'autorisent
+* **Location active** → suivi de l'opération
+
+Ne jamais placer un paiement prématurément dans le parcours simplement parce qu'il existe une transaction.
+
+---
+
+## 6. COMMISSIONS ET FRAIS HOMERA
+
+Le frontend doit être capable de distinguer :
+* montant brut ;
+* commission HOMERA ;
+* frais de service ;
+* éventuelle rémunération de l'agent ;
+* montant revenant au propriétaire ;
+* montant réellement payé par le client.
+
+Ne jamais mélanger ces montants dans une seule valeur. Lorsqu'une commission HOMERA est applicable, l'utilisateur concerné doit pouvoir comprendre son impact.
+
+---
+
+## 7. LOCATION LONGUE DURÉE
+
+Pour une location longue durée, respecter le modèle économique défini par HOMERA et distinguer :
+* montant du loyer ;
+* frais/commission HOMERA ;
+* éventuelle rémunération liée à l'opération ;
+* montant revenant au propriétaire ;
+* montant dû par le client.
+
+---
+
+## 8. COURTE DURÉE / SÉJOUR
+
+Pour une réservation de courte durée, distinguer :
+* prix de la nuitée ou du séjour ;
+* durée ;
+* montant total ;
+* frais éventuels ;
+* commission HOMERA ;
+* montant revenant au propriétaire ;
+* éventuelle rémunération de l'agent lorsqu'elle est prévue.
+
+Le client doit connaître **le montant total avant la confirmation du paiement**.
+
+---
+
+## 9. VISITES
+
+Si des frais de visite sont appliqués, ils doivent être présentés uniquement dans le parcours de visite concerné et liés à : la visite, le client, le bien, l'agent concerné, la date, le montant et le statut. Ne pas transformer automatiquement les frais de visite en frais de location.
+
+---
+
+## 10. VENTE
+
+Pour les ventes (maison, appartement, immeuble, terrain, local), distinguer :
+**prix du bien ≠ commission HOMERA ≠ éventuelle rémunération professionnelle.**
+
+---
+
+## 11. RETRAITS
+
+Le bouton **Retirer** ne doit jamais être globalement visible pour tous les utilisateurs. Il doit apparaître uniquement lorsque :
+* l'utilisateur possède un rôle autorisé ;
+* une somme lui appartient réellement ;
+* cette somme est disponible ;
+* les conditions de retrait sont remplies ;
+* le retrait est activé dans le système.
+
+Prévoir les états : **Disponible → Retrait en cours → Retrait effectué** ainsi que : retrait refusé, retrait échoué, retrait annulé, retrait en attente.
+Le montant disponible doit toujours être distinct du montant en attente.
+
+---
+
+## 12. MOYENS DE PAIEMENT ET DE RETRAIT
+
+Les moyens de paiement et les moyens de retrait ne doivent pas être considérés comme automatiquement identiques :
+* **Paiement par le client (`CLIENT_PAYMENT_PROVIDERS`)** : MTN Mobile Money, Moov Money, Celtiis Cash, carte bancaire, virement bancaire.
+* **Réception / retrait (`PAYOUT_RECEPTION_PROVIDERS`)** : portefeuilles Mobile Money vérifiés et virement bancaire UEMOA (jamais sur carte bancaire).
+
+---
+
+## 13. ESPACES UTILISATEURS
+
+* **CLIENT** : afficher uniquement les paiements qui concernent le client (`à payer`, `en cours`, `confirmés`, `échoués`, `historique`).
+* **PROPRIÉTAIRE** : afficher revenus, opérations, commissions, montants en attente, montants disponibles, retraits.
+* **AGENT** : afficher opérations auxquelles il est réellement associé, rémunérations éventuelles, montants en attente, montants disponibles, retraits autorisés.
+* **HOMERA / ADMIN** : afficher transactions, commissions, frais, revenus, reversements, retraits, statuts, anomalies, historique financier.
+
+---
+
+## 14. ANTI-CONTOURNEMENT
+
+Lorsqu'une opération est initiée ou réalisée via HOMERA, elle doit rester liée à : l'identifiant du bien, l'identifiant du client, le propriétaire, l'agent autorisé, l'opération, la visite ou le contrat concerné, la transaction et les montants correspondants.
+
+---
+
+## 15. TRANSPARENCE
+
+Chaque acteur doit comprendre uniquement les informations financières qui le concernent :
+* Le client voit : **ce qu'il doit payer.**
+* Le propriétaire voit : **ce qu'il reçoit (brut, commission HOMERA, net).**
+* L'agent voit : **ce qui lui revient lorsqu'une rémunération est prévue.**
+* HOMERA voit : **ce qui revient à la plateforme et l'ensemble des flux.**
+
+Ne pas exposer inutilement les données financières privées d'un autre acteur.
+
+---
+
+## 16. RÈGLE DE CONCEPTION
+
+Avant d'ajouter un bouton financier, répondre obligatoirement à :
+> **Qui doit payer ? Qui reçoit ? Pourquoi ? Combien ? À quel moment ? Selon quelle règle économique ? Le montant est-il disponible ou encore en attente ? Qui peut retirer ?**
+
+Si l'une de ces réponses n'est pas définie dans les règles métier, **ne pas inventer la réponse dans le frontend**.
+
+---
+
+## 17. RÈGLE FINALE
+
+Le frontend ne doit jamais créer le modèle économique. Il doit **traduire fidèlement le modèle économique HOMERA en expérience utilisateur compréhensible**. Aucun bouton « Payer » ou « Retirer » ne doit être ajouté simplement parce qu'il semble utile : il doit exister parce que le modèle économique et le workflow HOMERA le justifient.
+
+---
+
 ## III. Commandes de travail (depuis `homera/`)
 
 | Étape | Commande | Exigence |

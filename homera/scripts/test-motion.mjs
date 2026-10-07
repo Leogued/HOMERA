@@ -1884,11 +1884,46 @@ await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (pro
   assert.ok(workspaceShell.includes('homera-nav-scroll') && !workspaceShell.includes('mt-auto border-t'), 'WorkspaceShell défile comme une seule zone continue sans pied de page fixe');
   assert.ok(clientDashboard.includes('<WorkspaceShell role="client" section="dashboard">') && !clientDashboard.includes('<aside'), 'ClientDashboard utilise le système de navigation commun WorkspaceShell');
 
-  // Moyens de paiement Bénin / UEMOA (Mobile Money, Carte, Virement UEMOA) et quittances locales
+  // Moyens de paiement Bénin / UEMOA, modèle économique et flux financiers HOMERA
   assert.equal(workflow.PAYMENT_PROVIDERS.length, 5, '5 canaux de paiement Bénin / UEMOA disponibles');
+  assert.equal(workflow.CLIENT_PAYMENT_PROVIDERS.length, 5, '5 moyens de paiement client');
+  assert.equal(workflow.PAYOUT_RECEPTION_PROVIDERS.length, 4, 'la carte bancaire est exclue des moyens de réception / retrait');
+  assert.ok(!workflow.PAYOUT_RECEPTION_PROVIDERS.some((p) => p.id === 'carte-bancaire'), 'jamais de retrait sur carte bancaire');
+
   assert.match(workflow.maskPaymentIdentifier('mtn-momo', '+229 01 97 12 34 56'), /^\+229 01 •• •• •• 56$/);
   assert.equal(workflow.maskPaymentIdentifier('carte-bancaire', '4821'), 'Carte •••• 4821');
   assert.equal(workflow.maskPaymentIdentifier('virement-uemoa', 'BJ06000100029102', 'BOA Bénin'), 'BOA Bénin · BJ06 •••• •••• 9102');
+
+  // Conditionnement strict du bouton Payer à l'étape du workflow (contrat signé uniquement)
+  const unsignedContract = { id: 'c-1', applicationId: 'a-1', propertyId: 'p-1', propertyRef: 'HOM-CTN-000421', propertyTitle: 'Villa pilote', rent: 350000, duration: '12 mois', clauses: '', status: 'envoye', updatedAt: '2026-10-07T10:00:00.000Z' };
+  const signedContract = { ...unsignedContract, status: 'signe' };
+  assert.equal(workflow.canClientPayContract(unsignedContract, [], 'loyer').allowed, false, 'aucun paiement autorisé avant signature du contrat');
+  assert.equal(workflow.canClientPayContract(unsignedContract, [], 'loyer').reason, 'workflow-non-signe');
+  const allowedRent = workflow.canClientPayContract(signedContract, [], 'loyer');
+  assert.equal(allowedRent.allowed, true, 'paiement autorisé après signature du contrat');
+  assert.match(allowedRent.contextualLabel, /Payer la location · 350[\s\u202f]000 FCFA/, 'bouton contextualisé avec montant');
+
+  // Ventilation économique : Brut Client -> Commission HOMERA -> Part Agent éventuelle -> Net Propriétaire
+  const splitWithAgent = workflow.computeFinancialBreakdown('loyer', 350000, 'AG-HOM-0248');
+  assert.equal(splitWithAgent.grossAmount, 350000);
+  assert.equal(splitWithAgent.homeraFee + splitWithAgent.agentAmount + splitWithAgent.ownerNetAmount, 350000);
+  assert.ok(splitWithAgent.homeraFee > 0 && splitWithAgent.agentAmount > 0 && splitWithAgent.ownerNetAmount > 0);
+
+  // Soldes acteurs : somme en attente != somme disponible, et autorisation agent != droit automatique
+  const sampleTxs = [
+    { id: 'tx-confirmed', reference: 'PAY-1', kind: 'loyer', label: 'Loyer 1', amount: 350000, provider: 'mtn-momo', methodSummary: 'MTN MoMo', status: 'confirme', agentId: 'AG-HOM-0248', createdAt: '2026-10-07T10:00:00.000Z' },
+    { id: 'tx-pending', reference: 'PAY-2', kind: 'loyer', label: 'Loyer 2', amount: 500000, provider: 'virement-uemoa', methodSummary: 'Virement', status: 'en-verification', createdAt: '2026-10-07T10:05:00.000Z' },
+  ];
+  const ownerBalances = workflow.computeActorBalances(sampleTxs, [], 'proprietaire');
+  assert.equal(ownerBalances.availableAmount, splitWithAgent.ownerNetAmount, 'seule la transaction confirmée est disponible');
+  assert.ok(ownerBalances.pendingAmount > 0, 'la transaction en vérification reste en attente');
+  assert.equal(ownerBalances.canWithdraw, true);
+
+  const authorizedAgentBalances = workflow.computeActorBalances(sampleTxs, [], 'agent', 'AG-HOM-0248');
+  assert.equal(authorizedAgentBalances.availableAmount, splitWithAgent.agentAmount, 'l’agent rattaché à l’opération voit sa part disponible');
+  const otherAgentBalances = workflow.computeActorBalances(sampleTxs, [], 'agent', 'AG-HOM-9999');
+  assert.equal(otherAgentBalances.availableAmount, 0, 'un agent non rattaché à l’opération ne reçoit rien');
+  assert.equal(otherAgentBalances.canWithdraw, false, 'aucun bouton de retrait pour un agent sans solde disponible');
 
   const parsedWithPayments = workflow.parseWorkspace({
     paymentMethods: [
@@ -1904,7 +1939,7 @@ await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (pro
   assert.equal(parsedWithPayments.transactions.length, 1, 'seules les transactions valides sont conservées');
 
   const paymentPanel = await readFile(new URL('../components/workspace/PaymentMethodsPanel.tsx', import.meta.url), 'utf8');
-  assert.ok(paymentPanel.includes('PAYMENT_PROVIDERS') && paymentPanel.includes('maskPaymentIdentifier'), 'PaymentMethodsPanel gère les canaux Mobile Money, Carte et Virement UEMOA');
+  assert.ok(paymentPanel.includes('PAYMENT_PROVIDERS') && paymentPanel.includes('maskPaymentIdentifier') && paymentPanel.includes('canClientPayContract') && paymentPanel.includes('computeActorBalances'), 'PaymentMethodsPanel respecte le modèle économique et les flux financiers HOMERA');
   assert.ok(ownerWorkspace.includes('PaymentMethodsWorkspace') && profileSettings.includes('PaymentMethodsWorkspace'), 'PaymentMethodsWorkspace est intégré dans OwnerWorkspace et ProfileSettings');
 });
 

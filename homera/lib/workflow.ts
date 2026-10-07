@@ -229,6 +229,8 @@ export type PaymentProviderSpec = {
   description: string;
   placeholder: string;
   processingNote: string;
+  supportsClientPayment: boolean;
+  supportsPayoutWithdrawal: boolean;
 };
 
 export const PAYMENT_PROVIDERS: readonly PaymentProviderSpec[] = [
@@ -241,6 +243,8 @@ export const PAYMENT_PROVIDERS: readonly PaymentProviderSpec[] = [
     description: "Validation USSD / push immédiate sur numéro MTN Bénin (+229 01).",
     placeholder: "+229 01 97 00 00 00",
     processingNote: "Confirmation par code secret MoMo sur le téléphone du titulaire.",
+    supportsClientPayment: true,
+    supportsPayoutWithdrawal: true,
   },
   {
     id: "moov-money",
@@ -248,9 +252,11 @@ export const PAYMENT_PROVIDERS: readonly PaymentProviderSpec[] = [
     shortLabel: "Moov Money",
     category: "mobile-money",
     badge: "Mobile Money Bénin",
-    description: "Règlement et encaissement sur portefeuille Moov Africa Bénin (+229 01).",
+    description: "Règlement et réception sur portefeuille Moov Africa Bénin (+229 01).",
     placeholder: "+229 01 95 00 00 00",
     processingNote: "Confirmation directe via notification push Moov Money.",
+    supportsClientPayment: true,
+    supportsPayoutWithdrawal: true,
   },
   {
     id: "celtiis-cash",
@@ -261,16 +267,20 @@ export const PAYMENT_PROVIDERS: readonly PaymentProviderSpec[] = [
     description: "Portefeuille mobile national Celtiis Bénin (+229 01).",
     placeholder: "+229 01 40 00 00 00",
     processingNote: "Validation sécurisée sur le numéro Celtiis Cash enregistré.",
+    supportsClientPayment: true,
+    supportsPayoutWithdrawal: true,
   },
   {
     id: "carte-bancaire",
     label: "Carte bancaire (Visa / Mastercard)",
     shortLabel: "Visa / Mastercard",
     category: "carte",
-    badge: "Local & Diaspora",
-    description: "Paiement par carte internationale ou régionale avec authentification 3D Secure.",
+    badge: "Paiement Client · Local & Diaspora",
+    description: "Paiement par carte internationale ou régionale avec authentification 3D Secure (non utilisable pour les retraits).",
     placeholder: "4821",
     processingNote: "Seuls les 4 derniers chiffres et l’échéance sont conservés à titre de repère.",
+    supportsClientPayment: true,
+    supportsPayoutWithdrawal: false,
   },
   {
     id: "virement-uemoa",
@@ -278,11 +288,16 @@ export const PAYMENT_PROVIDERS: readonly PaymentProviderSpec[] = [
     shortLabel: "Virement UEMOA",
     category: "virement",
     badge: "Banques Bénin & UEMOA",
-    description: "Compte bancaire pour loyers, cautions et reversements propriétaires (BOA, Ecobank, Orabank, NSIA, UBA, SG…).",
+    description: "Compte bancaire pour paiements et reversements (BOA, Ecobank, Orabank, NSIA, UBA, SG…).",
     placeholder: "BJ06 0001 0002 0003 0004 9102",
     processingNote: "Rapprochement par référence HOMERA sur relevé bancaire UEMOA.",
+    supportsClientPayment: true,
+    supportsPayoutWithdrawal: true,
   },
 ] as const;
+
+export const CLIENT_PAYMENT_PROVIDERS = PAYMENT_PROVIDERS.filter((item) => item.supportsClientPayment);
+export const PAYOUT_RECEPTION_PROVIDERS = PAYMENT_PROVIDERS.filter((item) => item.supportsPayoutWithdrawal);
 
 export const UEMOA_BANKS: readonly string[] = [
   "Bank of Africa (BOA) Bénin",
@@ -307,8 +322,10 @@ export type SavedPaymentMethod = {
   createdAt: string;
 };
 
-export type PaymentTransactionKind = "loyer" | "caution" | "abonnement" | "reservation";
-export type PaymentTransactionStatus = "confirme" | "en-verification";
+export type PaymentTransactionKind = "loyer" | "caution" | "abonnement" | "reservation" | "visite" | "vente";
+export type PaymentTransactionStatus = "a-payer" | "en-cours" | "confirme" | "en-verification" | "echoue";
+export type FundsAvailabilityStatus = "en-attente" | "disponible" | "retire";
+export type WithdrawalStatus = "en-attente" | "en-cours" | "effectue" | "refuse" | "echoue" | "annule";
 
 export type PaymentTransactionRecord = {
   id: string;
@@ -316,13 +333,192 @@ export type PaymentTransactionRecord = {
   kind: PaymentTransactionKind;
   label: string;
   amount: number;
+  homeraFee?: number;
+  ownerNetAmount?: number;
+  agentAmount?: number;
   provider: PaymentProviderId;
   methodSummary: string;
+  propertyId?: string;
   propertyRef?: string;
+  visitId?: string;
   contractId?: string;
+  agentId?: string;
   status: PaymentTransactionStatus;
+  fundsAvailability?: FundsAvailabilityStatus;
   createdAt: string;
 };
+
+export type WithdrawalRecord = {
+  id: string;
+  reference: string;
+  actorRole: "proprietaire" | "agent";
+  agentId?: string;
+  amount: number;
+  destinationSummary: string;
+  status: WithdrawalStatus;
+  createdAt: string;
+};
+
+export type FinancialBreakdown = {
+  grossAmount: number;
+  homeraFee: number;
+  ownerNetAmount: number;
+  agentAmount: number;
+};
+
+/**
+ * Calcule la ventilation économique d'une opération passant par HOMERA :
+ * CLIENT -> HOMERA -> Attribution (HOMERA / Propriétaire / Agent autorisé).
+ */
+export function computeFinancialBreakdown(
+  kind: PaymentTransactionKind,
+  grossAmount: number,
+  agentId?: string,
+): FinancialBreakdown {
+  const safeGross = Math.max(0, Math.round(grossAmount));
+  if (kind === "abonnement") {
+    return { grossAmount: safeGross, homeraFee: safeGross, ownerNetAmount: 0, agentAmount: 0 };
+  }
+  if (kind === "caution") {
+    return { grossAmount: safeGross, homeraFee: 0, ownerNetAmount: safeGross, agentAmount: 0 };
+  }
+  if (kind === "visite") {
+    const homeraFee = Math.round(safeGross * 0.4);
+    const agentAmount = agentId ? safeGross - homeraFee : 0;
+    const ownerNetAmount = agentId ? 0 : safeGross - homeraFee;
+    return { grossAmount: safeGross, homeraFee, ownerNetAmount, agentAmount };
+  }
+  // Location, réservation court séjour ou vente : distinction explicite brute / frais HOMERA / part agent éventuelle / net propriétaire
+  const homeraFee = Math.round(safeGross * 0.08);
+  const agentAmount = agentId ? Math.round(safeGross * 0.02) : 0;
+  const ownerNetAmount = Math.max(0, safeGross - homeraFee - agentAmount);
+  return { grossAmount: safeGross, homeraFee, ownerNetAmount, agentAmount };
+}
+
+/**
+ * Vérifie les 5 conditions obligatoires avant d'afficher un bouton « Payer » sur un contrat :
+ * 1. opération existante ; 2. montant > 0 ; 3. bien/bénéficiaire identifié ;
+ * 4. contrat signé dans le workflow ; 5. non déjà réglé.
+ */
+export function canClientPayContract(
+  contract: ContractRecord | undefined,
+  transactions: readonly PaymentTransactionRecord[],
+  kind: "loyer" | "caution" = "loyer",
+): { allowed: boolean; amount: number; contextualLabel: string; reason?: string } {
+  if (!contract) {
+    return { allowed: false, amount: 0, contextualLabel: "", reason: "contrat-introuvable" };
+  }
+  const amount = kind === "caution" ? contract.rent * 2 : contract.rent;
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { allowed: false, amount: 0, contextualLabel: "", reason: "montant-indetermine" };
+  }
+  if (!contract.propertyRef) {
+    return { allowed: false, amount, contextualLabel: "", reason: "beneficiaire-indetermine" };
+  }
+  if (contract.status !== "signe") {
+    return { allowed: false, amount, contextualLabel: "", reason: "workflow-non-signe" };
+  }
+  const alreadyPaid = transactions.some(
+    (tx) =>
+      tx.contractId === contract.id &&
+      tx.kind === kind &&
+      (tx.status === "confirme" || tx.status === "en-verification" || tx.status === "en-cours"),
+  );
+  if (alreadyPaid) {
+    return { allowed: false, amount, contextualLabel: "", reason: "deja-regle" };
+  }
+  const formatted = new Intl.NumberFormat("fr-FR").format(Math.round(amount));
+  const contextualLabel =
+    kind === "caution"
+      ? `Payer le dépôt de garantie · ${formatted} FCFA`
+      : `Payer la location · ${formatted} FCFA`;
+  return { allowed: true, amount, contextualLabel };
+}
+
+export type ActorBalanceSummary = {
+  pendingAmount: number;
+  availableAmount: number;
+  withdrawnAmount: number;
+  homeraRevenueAmount: number;
+  canWithdraw: boolean;
+};
+
+/**
+ * Calcule les soldes d'un acteur selon les règles strictes HOMERA :
+ * - Une somme en attente de confirmation (status !== "confirme") n'est JAMAIS considérée comme disponible.
+ * - Un agent ne voit et ne peut retirer que les sommes explicitement rattachées à son identifiant d'agent autorisé et à une opération réelle.
+ */
+export function computeActorBalances(
+  transactions: readonly PaymentTransactionRecord[],
+  withdrawals: readonly WithdrawalRecord[],
+  actorRole: "proprietaire" | "agent" | "admin",
+  agentId?: string,
+): ActorBalanceSummary {
+  let pendingAmount = 0;
+  let confirmedGrossForActor = 0;
+  let homeraRevenueAmount = 0;
+
+  for (const tx of transactions) {
+    if (tx.status === "echoue" || tx.status === "a-payer") continue;
+    const split = computeFinancialBreakdown(tx.kind, tx.amount, tx.agentId);
+    const homeraPart = typeof tx.homeraFee === "number" ? tx.homeraFee : split.homeraFee;
+    const ownerPart = typeof tx.ownerNetAmount === "number" ? tx.ownerNetAmount : split.ownerNetAmount;
+    const agentPart = typeof tx.agentAmount === "number" ? tx.agentAmount : split.agentAmount;
+
+    if (tx.status === "confirme") {
+      homeraRevenueAmount += homeraPart;
+    }
+
+    if (actorRole === "proprietaire") {
+      if (ownerPart <= 0) continue;
+      if (tx.status === "confirme" && tx.fundsAvailability !== "en-attente") {
+        confirmedGrossForActor += ownerPart;
+      } else {
+        pendingAmount += ownerPart;
+      }
+    } else if (actorRole === "agent") {
+      if (!agentId || tx.agentId !== agentId || agentPart <= 0) continue;
+      if (tx.status === "confirme" && tx.fundsAvailability !== "en-attente") {
+        confirmedGrossForActor += agentPart;
+      } else {
+        pendingAmount += agentPart;
+      }
+    } else if (actorRole === "admin") {
+      if (tx.status === "confirme") {
+        confirmedGrossForActor += homeraPart;
+      } else {
+        pendingAmount += homeraPart;
+      }
+    }
+  }
+
+  const relevantWithdrawals = withdrawals.filter((w) => {
+    if (w.status === "refuse" || w.status === "echoue" || w.status === "annule") return false;
+    if (actorRole === "proprietaire") return w.actorRole === "proprietaire";
+    if (actorRole === "agent") return w.actorRole === "agent" && Boolean(agentId) && w.agentId === agentId;
+    return false;
+  });
+
+  const withdrawnAmount = relevantWithdrawals
+    .filter((w) => w.status === "effectue")
+    .reduce((sum, w) => sum + w.amount, 0);
+  const lockedInWithdrawal = relevantWithdrawals
+    .filter((w) => w.status === "en-attente" || w.status === "en-cours")
+    .reduce((sum, w) => sum + w.amount, 0);
+
+  const availableAmount = Math.max(0, confirmedGrossForActor - withdrawnAmount - lockedInWithdrawal);
+  const canWithdraw =
+    (actorRole === "proprietaire" || (actorRole === "agent" && Boolean(agentId))) &&
+    availableAmount > 0;
+
+  return {
+    pendingAmount,
+    availableAmount,
+    withdrawnAmount,
+    homeraRevenueAmount,
+    canWithdraw,
+  };
+}
 
 /** Masque un numéro Mobile Money, les 4 derniers chiffres d’une carte ou un RIB/IBAN UEMOA. */
 export function maskPaymentIdentifier(provider: PaymentProviderId, raw: string, bankName?: string): string {
@@ -359,6 +555,7 @@ export type WorkspaceData = {
   preferences: WorkspacePreferences;
   paymentMethods: SavedPaymentMethod[];
   transactions: PaymentTransactionRecord[];
+  withdrawals: WithdrawalRecord[];
 };
 
 export const EMPTY_PROPERTY_DRAFT: PropertyDraft = {
@@ -407,6 +604,7 @@ export const EMPTY_WORKSPACE: WorkspaceData = {
   },
   paymentMethods: [],
   transactions: [],
+  withdrawals: [],
 };
 
 export type RentalRequestFailure =
@@ -670,20 +868,77 @@ function parsePaymentTransaction(value: unknown): PaymentTransactionRecord | nul
   if (!isRecord(value) || typeof value.id !== "string" || typeof value.reference !== "string" || !isPaymentProviderId(value.provider)) return null;
   const amount = typeof value.amount === "number" && Number.isFinite(value.amount) && value.amount >= 0 ? value.amount : 0;
   const kind: PaymentTransactionKind =
-    value.kind === "loyer" || value.kind === "caution" || value.kind === "abonnement" || value.kind === "reservation"
+    value.kind === "loyer" ||
+    value.kind === "caution" ||
+    value.kind === "abonnement" ||
+    value.kind === "reservation" ||
+    value.kind === "visite" ||
+    value.kind === "vente"
       ? value.kind
       : "loyer";
+  const status: PaymentTransactionStatus =
+    value.status === "a-payer" ||
+    value.status === "en-cours" ||
+    value.status === "en-verification" ||
+    value.status === "echoue" ||
+    value.status === "confirme"
+      ? value.status
+      : "confirme";
+  const agentId = typeof value.agentId === "string" ? value.agentId : undefined;
+  const split = computeFinancialBreakdown(kind, amount, agentId);
+  const fundsAvailability: FundsAvailabilityStatus =
+    status !== "confirme"
+      ? "en-attente"
+      : value.fundsAvailability === "retire"
+        ? "retire"
+        : value.fundsAvailability === "en-attente"
+          ? "en-attente"
+          : "disponible";
   return {
     id: value.id,
     reference: value.reference,
     kind,
     label: stringValue(value.label) || "Règlement HOMERA",
     amount,
+    homeraFee: typeof value.homeraFee === "number" && Number.isFinite(value.homeraFee) ? value.homeraFee : split.homeraFee,
+    ownerNetAmount: typeof value.ownerNetAmount === "number" && Number.isFinite(value.ownerNetAmount) ? value.ownerNetAmount : split.ownerNetAmount,
+    agentAmount: typeof value.agentAmount === "number" && Number.isFinite(value.agentAmount) ? value.agentAmount : split.agentAmount,
     provider: value.provider,
     methodSummary: stringValue(value.methodSummary),
+    propertyId: typeof value.propertyId === "string" ? value.propertyId : undefined,
     propertyRef: typeof value.propertyRef === "string" ? value.propertyRef : undefined,
+    visitId: typeof value.visitId === "string" ? value.visitId : undefined,
     contractId: typeof value.contractId === "string" ? value.contractId : undefined,
-    status: value.status === "en-verification" ? "en-verification" : "confirme",
+    agentId,
+    status,
+    fundsAvailability,
+    createdAt: stringValue(value.createdAt) || new Date(0).toISOString(),
+  };
+}
+
+function parseWithdrawal(value: unknown): WithdrawalRecord | null {
+  if (!isRecord(value) || typeof value.id !== "string" || typeof value.reference !== "string") return null;
+  const actorRole = value.actorRole === "agent" ? "agent" : value.actorRole === "proprietaire" ? "proprietaire" : null;
+  if (!actorRole) return null;
+  const amount = typeof value.amount === "number" && Number.isFinite(value.amount) && value.amount > 0 ? value.amount : 0;
+  if (amount <= 0) return null;
+  const status: WithdrawalStatus =
+    value.status === "en-attente" ||
+    value.status === "en-cours" ||
+    value.status === "effectue" ||
+    value.status === "refuse" ||
+    value.status === "echoue" ||
+    value.status === "annule"
+      ? value.status
+      : "en-attente";
+  return {
+    id: value.id,
+    reference: value.reference,
+    actorRole,
+    agentId: typeof value.agentId === "string" ? value.agentId : undefined,
+    amount,
+    destinationSummary: stringValue(value.destinationSummary) || "Compte de réception HOMERA",
+    status,
     createdAt: stringValue(value.createdAt) || new Date(0).toISOString(),
   };
 }
@@ -719,6 +974,9 @@ export function parseWorkspace(value: unknown): WorkspaceData {
       : [],
     transactions: Array.isArray(value.transactions)
       ? value.transactions.map(parsePaymentTransaction).filter((entry): entry is PaymentTransactionRecord => entry !== null)
+      : [],
+    withdrawals: Array.isArray(value.withdrawals)
+      ? value.withdrawals.map(parseWithdrawal).filter((entry): entry is WithdrawalRecord => entry !== null)
       : [],
   };
 }

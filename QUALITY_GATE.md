@@ -226,9 +226,30 @@ npm run audit:home        # 6. Audit HTTP/DOM complet des routes publiques (0 li
   - **Table structurée (Desktop) → Cartes prioritaires (Mobile)** pour l'administration (`AdminRecords`) et le journal des transactions financières (`PaymentMethodsPanel`).
   - **Liste compacte** pour les notifications, l'historique d'audit (`/historique/[reference]`) et les événements récents.
 - [x] **Modèles de Paiement & Fiches (`AGENTS.md` §§4, 10, 11, 15)** :
-  - Parcours de règlement structuré avec **récapitulatif fixe** et filtrage du journal des quittances dans `PaymentMethodsPanel.tsx`.
-  - **Paiement intégré au contrat** dans `ClientContractReader` (`/client/contrats/[id]`) permettant de régler loyer ou caution en contexte.
+  - Parcours de règlement structuré avec **échéances réelles du workflow** et filtrage du journal dans `PaymentMethodsPanel.tsx`.
+  - **Paiement conditionné à la signature du contrat** dans `ClientContractReader` (`/client/contrats/[id]`).
   - **Sticky action mobile** sur les fiches de biens (`PropertyDetail.tsx`) pour garder le prix et l'action principale (`Planifier une visite`) immédiatement accessibles sur smartphone.
+
+---
+
+# 9. MODÈLE ÉCONOMIQUE, PAIEMENTS ET FLUX FINANCIERS
+
+## 9.1 Flux financier HOMERA, Séparation des canaux & Confidentialité par acteur (`AGENTS.md` §§1–17)
+
+- [x] **Flux financier centralisé via HOMERA** (`computeFinancialBreakdown` dans `lib/workflow.ts`) :
+  - Chaque transaction distingue explicitement : `grossAmount` (payé par le client), `homeraFee` (commission / frais HOMERA), `ownerNetAmount` (part propriétaire) et `agentAmount` (part éventuelle de l'agent autorisé).
+  - Aucune transaction ne court-circuite HOMERA sous la forme simpliste « Client → Propriétaire ».
+- [x] **Bouton « Payer » strictement conditionné au workflow (`canClientPayContract`)** :
+  - Aucun simulateur libre déconnecté du parcours : le client ne voit un bouton de paiement (`Payer la location · {montant} FCFA`, `Payer le dépôt de garantie · {montant} FCFA`) que lorsqu'un contrat est **signé (`status === "signe"`)**, que le montant et le bien sont déterminés, et que l'échéance n'est pas déjà réglée.
+- [x] **Séparation Moyens de paiement Client vs Moyens de réception / retrait (`CLIENT_PAYMENT_PROVIDERS` vs `PAYOUT_RECEPTION_PROVIDERS`)** :
+  - La carte bancaire (`Visa / Mastercard`) est réservée aux paiements clients (`supportsPayoutWithdrawal: false`) et n'est jamais proposée comme compte de réception ou de retrait.
+- [x] **Disponibilité des fonds, Retraits & Règle Agent (`computeActorBalances`)** :
+  - Une somme non confirmée (`status !== "confirme"`) reste toujours `en-attente` et n'est **jamais** comptabilisée dans le solde `disponible`.
+  - Le bouton **`Retirer`** n'apparaît que pour un propriétaire ou un agent disposant d'un solde réellement `disponible > 0`.
+  - **Autorisation sur un bien ≠ droit automatique à recevoir de l'argent** : un agent ne voit et ne peut retirer que les sommes explicitement rattachées à son `agentId` et à une opération réelle.
+- [x] **Transparence et confidentialité par rôle (§15)** :
+  - Le **Client** voit uniquement ce qu'il doit payer ; le **Propriétaire** voit ses revenus, la commission HOMERA et son net ; l'**Agent** voit uniquement ce qui lui revient sur ses mandats ; **HOMERA / Admin** voit la ventilation complète.
+
 
 
 

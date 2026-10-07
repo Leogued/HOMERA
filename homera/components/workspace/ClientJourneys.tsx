@@ -14,6 +14,8 @@ import { Visual } from "@/components/ui/Visual";
 import { PROPERTIES, type Property } from "@/lib/content";
 import { formatPropertyPrice } from "@/lib/format";
 import {
+  canClientPayContract,
+  computeFinancialBreakdown,
   createLocalId,
   eligibleRentalVisits,
   makeNotification,
@@ -327,22 +329,32 @@ export function ClientContractReader({ contractId }: { contractId: string }) {
     URL.revokeObjectURL(url);
   };
   const payContractAmount = (kind: "loyer" | "caution") => {
-    const amount = kind === "caution" ? contract.rent * 2 : contract.rent;
+    const effectiveContract: ContractRecord = signed ? { ...contract, status: "signe" } : contract;
+    const check = canClientPayContract(effectiveContract, data.transactions, kind);
+    if (!check.allowed) return;
+    const amount = check.amount;
     const provider = defaultMethod?.provider ?? "mtn-momo";
     const providerSpec = PAYMENT_PROVIDERS.find((entry) => entry.id === provider) ?? PAYMENT_PROVIDERS[0];
     const reference = createLocalId("PAY-CTN").toUpperCase();
     const now = new Date().toISOString();
+    const split = computeFinancialBreakdown(kind, amount);
+    const txStatus = provider === "virement-uemoa" ? "en-verification" : "confirme";
     const record: PaymentTransactionRecord = {
       id: createLocalId("tx"),
       reference,
       kind,
       label: `${kind === "caution" ? "Dépôt de garantie (2 mois)" : "Loyer mensuel"} · ${contract.propertyTitle}`,
       amount,
+      homeraFee: split.homeraFee,
+      ownerNetAmount: split.ownerNetAmount,
+      agentAmount: split.agentAmount,
       provider,
       methodSummary: defaultMethod ? `${providerSpec.shortLabel} · ${defaultMethod.maskedIdentifier}` : `${providerSpec.shortLabel} · direct`,
+      propertyId: contract.propertyId,
       propertyRef: contract.propertyRef,
       contractId: contract.id,
-      status: provider === "virement-uemoa" ? "en-verification" : "confirme",
+      status: txStatus,
+      fundsAvailability: txStatus === "confirme" ? "disponible" : "en-attente",
       createdAt: now,
     };
     updateData((current) => ({
@@ -353,7 +365,7 @@ export function ClientContractReader({ contractId }: { contractId: string }) {
         ...current.notifications,
       ],
     }));
-    setPaidFeedback(`Règlement ${reference} (${formatMoney(amount)} FCFA) enregistré dans votre journal de quittances.`);
+    setPaidFeedback(`Règlement ${reference} (${formatMoney(amount)} FCFA) enregistré via HOMERA.`);
   };
   const sign = () => {
     if (!accepted) return;
@@ -366,14 +378,17 @@ export function ClientContractReader({ contractId }: { contractId: string }) {
     }));
     setSigned(true);
   };
-  if (signed || contract.status === "signe") return <div className="mx-auto max-w-4xl"><WorkspaceHeading eyebrow="Contrat" title="Votre signature est enregistrée" description="Le statut du contrat est mis à jour dans ce navigateur." actions={<Link href="/client/contrats" className={BUTTON_SECONDARY}><ArrowLeft className="h-4 w-4" aria-hidden="true" />Tous mes contrats</Link>} /><div className="rounded-card border border-success/25 bg-success/[0.04] p-6 text-center sm:p-10"><CheckCircle2 className="mx-auto h-12 w-12 text-success" aria-hidden="true" /><h2 className="mt-4 font-serif text-display-sm">Contrat signé · prototype</h2><p className="mt-2 text-body-sm text-muted">La signature électronique légalement opposable n’est pas connectée.</p><p className="mt-4 font-mono text-caption text-muted">{contract.propertyRef}</p>{paidFeedback && <p role="status" className="mt-4 rounded-xl border border-success/30 bg-card px-4 py-2.5 text-caption font-semibold text-foreground">{paidFeedback}</p>}<div className="mt-6 flex flex-wrap justify-center gap-3"><button type="button" onClick={() => payContractAmount("loyer")} className={BUTTON_PRIMARY}>Régler le loyer ({formatMoney(contract.rent)} FCFA)</button><button type="button" onClick={() => payContractAmount("caution")} className={BUTTON_SECONDARY}>Régler la caution ({formatMoney(contract.rent * 2)} FCFA)</button><Link href="/client/paiements" className={BUTTON_SECONDARY}>Voir mes quittances<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link></div></div></div>;
+  const effectiveContract: ContractRecord = signed ? { ...contract, status: "signe" } : contract;
+  const rentPaymentCheck = canClientPayContract(effectiveContract, data.transactions, "loyer");
+  const depositPaymentCheck = canClientPayContract(effectiveContract, data.transactions, "caution");
+  if (signed || contract.status === "signe") return <div className="mx-auto max-w-4xl"><WorkspaceHeading eyebrow="Contrat" title="Votre signature est enregistrée" description="Le statut du contrat est mis à jour dans ce navigateur. Le règlement via HOMERA est désormais ouvert." actions={<Link href="/client/contrats" className={BUTTON_SECONDARY}><ArrowLeft className="h-4 w-4" aria-hidden="true" />Tous mes contrats</Link>} /><div className="rounded-card border border-success/25 bg-success/[0.04] p-6 text-center sm:p-10"><CheckCircle2 className="mx-auto h-12 w-12 text-success" aria-hidden="true" /><h2 className="mt-4 font-serif text-display-sm">Contrat signé · échéances ouvertes</h2><p className="mt-2 text-body-sm text-muted">La signature du contrat autorise le règlement de la location et du dépôt de garantie auprès de HOMERA.</p><p className="mt-4 font-mono text-caption text-muted">{contract.propertyRef}</p>{paidFeedback && <p role="status" className="mt-4 rounded-xl border border-success/30 bg-card px-4 py-2.5 text-caption font-semibold text-foreground">{paidFeedback}</p>}<div className="mt-6 flex flex-wrap justify-center gap-3">{rentPaymentCheck.allowed && <button type="button" onClick={() => payContractAmount("loyer")} className={BUTTON_PRIMARY}>{rentPaymentCheck.contextualLabel}</button>}{depositPaymentCheck.allowed && <button type="button" onClick={() => payContractAmount("caution")} className={BUTTON_SECONDARY}>{depositPaymentCheck.contextualLabel}</button>}<Link href="/client/paiements" className={BUTTON_SECONDARY}>Voir mes paiements & justificatifs<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link></div></div></div>;
   return <div className="mx-auto max-w-5xl"><WorkspaceHeading eyebrow="Espace documentaire" title="Contrat de location" description="Document de démonstration, à relire avant signature. L’identité, l’horodatage et la valeur juridique de la signature nécessitent un service sécurisé." actions={<Link href="/client/contrats" className={BUTTON_SECONDARY}><ArrowLeft className="h-4 w-4" aria-hidden="true" />Mes contrats</Link>} />
     <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]"><article className="contract-paper rounded-card border border-border bg-card p-6 shadow-[var(--shadow-card)] sm:p-10"><div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6"><div><p className="homera-brand text-brand-sm text-homera-brown">Homera</p><p className="mt-1 text-caption uppercase tracking-[0.18em] text-muted">Contrat de location · aperçu</p></div><div className="text-right"><StatusBadge status={contract.status} /><p className="mt-2 font-mono text-caption text-muted">{contract.propertyRef}</p></div></div>
       <h2 className="mt-8 font-serif text-display-sm">Bail d’habitation</h2><p className="mt-2 text-body-sm text-muted">Document généré pour l’aperçu du parcours de location.</p>
       <dl className="mt-7 grid gap-4 sm:grid-cols-2"><SummaryItem label="Bien concerné" value={contract.propertyTitle} /><SummaryItem label="Référence HOMERA" value={contract.propertyRef} /><SummaryItem label="Loyer mensuel" value={`${formatMoney(contract.rent)} FCFA`} /><SummaryItem label="Durée prévue" value={contract.duration} /><SummaryItem label="Locataire" value="Titulaire du compte connecté" /><SummaryItem label="Propriétaire" value="À confirmer par les parties" /></dl>
       <div className="mt-8 space-y-5 text-body-sm leading-relaxed text-muted"><section><h3 className="font-semibold text-foreground">1. Objet du contrat</h3><p className="mt-2">Le logement référencé ci-dessus est proposé à la location. Les parties devront vérifier l’identité des signataires, le titre de propriété et les pièces annexées avant tout engagement définitif.</p></section><section><h3 className="font-semibold text-foreground">2. Conditions financières</h3><p className="mt-2">Le loyer indiqué est une donnée de démonstration. Le dépôt de garantie, les charges et les modalités de paiement devront être précisés dans un document final.</p></section><section><h3 className="font-semibold text-foreground">3. Durée et entrée dans les lieux</h3><p className="mt-2">{contract.duration}. La date d’entrée, l’état des lieux et la remise des clés devront faire l’objet d’un accord distinct entre les parties.</p></section><section><h3 className="font-semibold text-foreground">4. Clauses complémentaires</h3><p className="mt-2">{contract.clauses}</p></section><p className="border-t border-border pt-5 text-caption font-medium text-warning">Ce document ne constitue pas un contrat juridiquement valable et ne doit pas être signé en dehors du parcours sécurisé HOMERA.</p></div>
       <div className="mt-8 border-t border-border pt-5"><label className="flex cursor-pointer items-start gap-3 text-note leading-relaxed"><input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} className="mt-1 h-4 w-4 accent-homera-terracotta" /><span>J’ai lu ce document de démonstration et comprends qu’il ne s’agit pas d’une signature électronique juridiquement opposable.</span></label><button type="button" onClick={sign} disabled={!accepted || contract.status === "brouillon" || contract.status === "annule"} className={`${BUTTON_PRIMARY} mt-4 disabled:cursor-not-allowed disabled:opacity-45`}><CheckCircle2 className="h-4 w-4" aria-hidden="true" />Signer l’aperçu</button></div>
-    </article><aside className="space-y-4"><WorkspacePanel title="Actions document" description="Télécharger ou enregistrer en PDF depuis votre navigateur." icon={FileText}><button type="button" onClick={downloadSummary} className={`${BUTTON_SECONDARY} w-full`}><Download className="h-4 w-4" aria-hidden="true" />Télécharger le récapitulatif</button><button type="button" onClick={printContract} className={`${BUTTON_SECONDARY} mt-2 w-full`}><FileText className="h-4 w-4" aria-hidden="true" />Imprimer / enregistrer PDF</button><p className="mt-4 text-caption leading-relaxed text-muted">Statut actuel : <StatusBadge status={contract.status} /></p>{application && <p className="mt-3 text-caption leading-relaxed text-muted">Demande rattachée : {application.id}</p>}</WorkspacePanel><WorkspacePanel title="Règlement lié au contrat" description="Simulez le paiement du loyer ou de la caution avec votre moyen par défaut." icon={CheckCircle2}>{paidFeedback && <p role="status" className="mb-3 rounded-xl border border-success/30 bg-success/[0.06] px-3 py-2 text-caption font-medium text-foreground">{paidFeedback}</p>}<button type="button" onClick={() => payContractAmount("loyer")} className={`${BUTTON_PRIMARY} w-full`}>Loyer ({formatMoney(contract.rent)} FCFA)</button><button type="button" onClick={() => payContractAmount("caution")} className={`${BUTTON_SECONDARY} mt-2 w-full`}>Caution ({formatMoney(contract.rent * 2)} FCFA)</button><Link href="/client/paiements" className="mt-3 inline-flex min-h-9 items-center gap-1.5 text-caption font-semibold text-homera-terracotta hover:underline">Moyens de paiement & quittances<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link></WorkspacePanel><DemoNotice>Le fichier téléchargé est un récapitulatif de démonstration. La génération, l’envoi et la signature contractuelle nécessitent l’API HOMERA.</DemoNotice></aside></div>
+    </article><aside className="space-y-4"><WorkspacePanel title="Actions document" description="Télécharger ou enregistrer en PDF depuis votre navigateur." icon={FileText}><button type="button" onClick={downloadSummary} className={`${BUTTON_SECONDARY} w-full`}><Download className="h-4 w-4" aria-hidden="true" />Télécharger le récapitulatif</button><button type="button" onClick={printContract} className={`${BUTTON_SECONDARY} mt-2 w-full`}><FileText className="h-4 w-4" aria-hidden="true" />Imprimer / enregistrer PDF</button><p className="mt-4 text-caption leading-relaxed text-muted">Statut actuel : <StatusBadge status={contract.status} /></p>{application && <p className="mt-3 text-caption leading-relaxed text-muted">Demande rattachée : {application.id}</p>}</WorkspacePanel><WorkspacePanel title="Règlement conditionné à la signature" description="Aucun paiement n’est demandé avant la signature du contrat." icon={CheckCircle2}><p className="text-caption leading-relaxed text-muted">Conformément au parcours HOMERA (<strong className="text-foreground">Contrat → Signature → Paiement</strong>), le bouton de paiement de la location ({formatMoney(contract.rent)} FCFA) ne s’active qu’une fois le contrat signé.</p><Link href="/client/paiements" className="mt-3 inline-flex min-h-9 items-center gap-1.5 text-caption font-semibold text-homera-terracotta hover:underline">Gérer mes moyens de paiement<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link></WorkspacePanel><DemoNotice>Le fichier téléchargé est un récapitulatif de démonstration. La génération, l’envoi et la signature contractuelle nécessitent l’API HOMERA.</DemoNotice></aside></div>
   </div>;
 }
 
