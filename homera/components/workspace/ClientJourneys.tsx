@@ -12,9 +12,11 @@ import { useWorkflow } from "@/components/providers/WorkflowProvider";
 import { useMounted } from "@/lib/motion";
 import { Visual } from "@/components/ui/Visual";
 import { PROPERTIES, type Property } from "@/lib/content";
-import { formatPropertyPrice } from "@/lib/format";
+import { DEMO_AGENT_AUTHORIZATIONS } from "@/lib/portal-data";
+import { formatFCFA, formatPropertyPrice } from "@/lib/format";
 import {
   canClientPayContract,
+  canClientPayVisit,
   computeFinancialBreakdown,
   createLocalId,
   eligibleRentalVisits,
@@ -180,13 +182,159 @@ export function ClientVisits() {
 }
 
 function VisitCard({ visit, hasApplication, feedback, onFeedbackChange, onFeedbackSave, onCancel }: { visit: VisitRecord; hasApplication: boolean; feedback: { rating: number; comment: string }; onFeedbackChange: (next: { rating: number; comment: string }) => void; onFeedbackSave: () => void; onCancel: () => void }) {
+  const { data, updateData } = useWorkflow();
   const canCancel = ["demande-envoyee", "en-attente", "confirmee"].includes(visit.status);
-  const rentalListing = PROPERTIES.find((property) => property.id === visit.propertyId)?.intent === "louer";
+  const property = PROPERTIES.find((item) => item.id === visit.propertyId);
+  const rentalListing = property?.intent === "louer";
+  const isStayListing = property?.intent === "sejour";
+  const minNights = property?.minNights ?? 2;
+  const [stayNights, setStayNights] = useState<number>(minNights);
+
+  const activeAgentAuth = DEMO_AGENT_AUTHORIZATIONS.find(
+    (auth) => auth.propertyId === visit.propertyId && auth.status === "active",
+  );
+  const visitPaymentCheck = canClientPayVisit(visit, data.transactions, 5000);
+  const existingVisitTx = data.transactions.find(
+    (tx) => tx.visitId === visit.id && (tx.kind === "visite" || tx.kind === "reservation"),
+  );
+  const clientMethods = data.paymentMethods.filter(
+    (m) => m.usage === "paiement" || m.usage === "mixte",
+  );
+  const defaultMethod = clientMethods.find((m) => m.isDefault) ?? clientMethods[0];
+
+  const handleConfirmedVisitPayment = (kind: "visite" | "reservation", amount: number) => {
+    const provider = defaultMethod?.provider ?? "mtn-momo";
+    const providerMeta = PAYMENT_PROVIDERS.find((p) => p.id === provider) ?? PAYMENT_PROVIDERS[0];
+    const methodSummary = defaultMethod
+      ? `${providerMeta.shortLabel} (${defaultMethod.maskedIdentifier})`
+      : `${providerMeta.shortLabel} (Mobile Money Bénin)`;
+    const split = computeFinancialBreakdown(kind, amount, activeAgentAuth?.agentId);
+    const reference = createLocalId("PAY-CTN").toUpperCase();
+    const label =
+      kind === "reservation"
+        ? `Réservation séjour (${stayNights} nuits) — ${visit.propertyTitle}`
+        : `Frais de visite confirmée (${formatDateOnly(visit.date)}) — ${visit.propertyTitle}`;
+    const tx: PaymentTransactionRecord = {
+      id: createLocalId("tx"),
+      reference,
+      kind,
+      label,
+      amount: split.grossAmount,
+      homeraFee: split.homeraFee,
+      ownerNetAmount: split.ownerNetAmount,
+      agentAmount: split.agentAmount,
+      provider,
+      methodSummary,
+      propertyId: visit.propertyId,
+      propertyRef: visit.propertyRef,
+      visitId: visit.id,
+      agentId: activeAgentAuth?.agentId,
+      status: provider === "virement-uemoa" ? "en-verification" : "confirme",
+      fundsAvailability: provider === "virement-uemoa" ? "en-attente" : "disponible",
+      createdAt: new Date().toISOString(),
+    };
+    updateData((current) => ({
+      ...current,
+      transactions: [tx, ...current.transactions],
+      notifications: [
+        makeNotification(
+          "visite",
+          kind === "reservation" ? "Réservation court séjour réglée" : "Frais de visite réglés",
+          `${label} · Réf. ${reference}`,
+          "/client/paiements",
+        ),
+        ...current.notifications,
+      ],
+    }));
+  };
+
   return <WorkspacePanel title={visit.propertyTitle} description={`${formatDateOnly(visit.date)} · ${visit.slot} · ${visit.propertyRef}`} icon={CalendarDays} action={<StatusBadge status={visit.status} />}>
     <div className="grid gap-5 md:grid-cols-[1fr_auto] md:items-center">
       <div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background text-homera-terracotta"><MapPin className="h-4 w-4" aria-hidden="true" /></span><div><p className="text-note font-semibold">{visit.status === "demande-envoyee" ? "Le représentant doit répondre" : visit.status === "confirmee" ? "Rendez-vous confirmé" : visit.status === "terminee" ? "Comment s’est passée la visite ?" : VISIT_STATUS_LABELS[visit.status]}</p><p className="mt-1 text-caption leading-relaxed text-muted">{visit.status === "demande-envoyee" ? "Votre créneau est une proposition. Il sera confirmé ou remplacé dans cet espace." : visit.status === "agent-indisponible" ? "Le créneau demandé ne peut pas être assuré. Choisissez-en un autre depuis la fiche du bien." : "Conservez la référence du bien pour vos échanges avec le représentant."}</p></div></div>
       <div className="flex flex-wrap gap-2">{canCancel && <button type="button" onClick={onCancel} className="inline-flex min-h-10 items-center gap-2 rounded-btn border border-border px-3 text-caption font-semibold text-muted hover:border-error/50 hover:text-error"><XCircle className="h-4 w-4" aria-hidden="true" />Annuler</button>}<Link href={`/biens/${visit.propertyId}`} className="inline-flex min-h-10 items-center gap-2 rounded-btn border border-border px-3 text-caption font-semibold text-foreground hover:border-homera-terracotta hover:text-homera-terracotta">Voir le bien<ChevronRight className="h-4 w-4" aria-hidden="true" /></Link></div>
     </div>
+    {visit.status === "confirmee" && (
+      <div className="mt-5 rounded-2xl border border-border bg-background p-4">
+        {existingVisitTx ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="flex items-center gap-2 text-note font-semibold text-success">
+                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
+                {existingVisitTx.kind === "reservation" ? "Réservation court séjour réglée" : "Frais de visite réglés"} · {formatFCFA(existingVisitTx.amount)}
+              </p>
+              <p className="mt-1 font-mono text-caption text-muted">
+                Réf. {existingVisitTx.reference} · {existingVisitTx.methodSummary} · Bien {visit.propertyRef}
+              </p>
+            </div>
+            <Link href="/client/paiements" className={BUTTON_SECONDARY}>
+              Consulter le reçu
+            </Link>
+          </div>
+        ) : isStayListing && property ? (
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-note font-semibold text-foreground">Confirmation de court séjour (§8)</p>
+                <p className="mt-0.5 text-caption text-muted">
+                  Tarif nuitée : {formatFCFA(property.price)} · Frais de service HOMERA inclus · Montant total affiché avant paiement.
+                </p>
+              </div>
+              <div className="flex items-center gap-1.5" role="group" aria-label="Durée du séjour">
+                {[minNights, 4, 7, 14]
+                  .filter((value, index, array) => array.indexOf(value) === index && value >= minNights)
+                  .map((nights) => (
+                    <button
+                      key={nights}
+                      type="button"
+                      aria-pressed={stayNights === nights}
+                      onClick={() => setStayNights(nights)}
+                      className={`min-h-9 rounded-full border px-3 text-caption font-semibold transition-colors ${
+                        stayNights === nights
+                          ? "border-homera-terracotta bg-homera-terracotta text-white"
+                          : "border-border bg-card text-muted hover:text-foreground"
+                      }`}
+                    >
+                      {nights} nuits
+                    </button>
+                  ))}
+              </div>
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
+              <p className="text-caption text-muted">
+                Total pour <strong className="text-foreground">{stayNights} nuits</strong> :{" "}
+                <strong className="homera-num text-foreground">{formatFCFA(property.price * stayNights)}</strong>
+              </p>
+              <button
+                type="button"
+                onClick={() => handleConfirmedVisitPayment("reservation", property.price * stayNights)}
+                className={BUTTON_PRIMARY}
+              >
+                Payer la réservation · {formatFCFA(property.price * stayNights)}
+                <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </button>
+            </div>
+          </div>
+        ) : visitPaymentCheck.allowed ? (
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-note font-semibold text-foreground">Frais d’organisation de visite confirmée (§9)</p>
+              <p className="mt-0.5 text-caption text-muted">
+                Rattachés uniquement à la visite {visit.id} ({formatDateOnly(visit.date)}) sur {visit.propertyRef}
+                {activeAgentAuth ? ` avec ${activeAgentAuth.agentName}` : ""}. Ne constituent jamais une avance sur loyer.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleConfirmedVisitPayment("visite", visitPaymentCheck.amount)}
+              className={BUTTON_SECONDARY}
+            >
+              {visitPaymentCheck.contextualLabel}
+              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+        ) : null}
+      </div>
+    )}
     {visit.status === "terminee" && (visit.rating ? <div className="mt-5 rounded-2xl border border-success/20 bg-success/[0.05] p-4"><p className="flex items-center gap-2 text-note font-semibold"><CheckCircle2 className="h-4 w-4 text-success" aria-hidden="true" />Votre retour est enregistré · {visit.rating}/5</p>{visit.comment && <p className="mt-2 text-note text-muted">« {visit.comment} »</p>}</div> : <div className="mt-5 rounded-2xl border border-border bg-background p-4"><p className="text-note font-semibold">Votre avis nous aide</p><div className="mt-3 flex flex-wrap items-center gap-1" role="radiogroup" aria-label={`Votre note pour la visite de ${visit.propertyTitle}`}>{[1, 2, 3, 4, 5].map((rating) => <button key={rating} type="button" role="radio" aria-checked={feedback.rating === rating} aria-label={`${rating} sur 5`} onClick={() => onFeedbackChange({ ...feedback, rating })} className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${feedback.rating >= rating ? "text-homera-terracotta" : "text-muted-light hover:text-homera-terracotta"}`}><Star className={`h-5 w-5 ${feedback.rating >= rating ? "fill-current" : ""}`} aria-hidden="true" /></button>)}</div><label className="mt-3 block text-caption font-medium" htmlFor={`feedback-${visit.id}`}>Commentaire sur le bien et l’agent</label><textarea id={`feedback-${visit.id}`} rows={3} maxLength={500} value={feedback.comment} onChange={(event) => onFeedbackChange({ ...feedback, comment: event.target.value })} placeholder="Votre expérience, en quelques mots…" className={`${INPUT_CLASS} mt-1 resize-y py-3`} /><button type="button" onClick={onFeedbackSave} disabled={!feedback.rating} className={`${BUTTON_PRIMARY} mt-3 disabled:cursor-not-allowed disabled:opacity-45`}>Envoyer mon retour<ArrowRight className="h-4 w-4" aria-hidden="true" /></button></div>)}
     {visit.status === "terminee" && rentalListing && <div className="mt-4">{hasApplication ? <Link href="/client/demandes" className="inline-flex min-h-11 items-center gap-2 rounded-btn border border-success/25 bg-success/[0.05] px-4 text-note font-semibold text-success hover:bg-success/[0.1]"><ClipboardList className="h-4 w-4" aria-hidden="true" />Suivre ma demande<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link> : <Link href={`/client/demandes/nouvelle?bien=${visit.propertyId}&visite=${visit.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-btn border border-homera-terracotta/30 bg-homera-terracotta/[0.06] px-4 text-note font-semibold text-homera-terracotta hover:bg-homera-terracotta/[0.1]"><HeartHandshake className="h-4 w-4" aria-hidden="true" />Déposer une demande de location<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>}</div>}
     {visit.status === "terminee" && !rentalListing && <p className="mt-4 rounded-xl border border-border bg-background px-4 py-3 text-caption leading-relaxed text-muted">La candidature de location n’est ouverte qu’après la visite d’un bien proposé à la location.</p>}

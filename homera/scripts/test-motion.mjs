@@ -1903,6 +1903,15 @@ await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (pro
   assert.equal(allowedRent.allowed, true, 'paiement autorisé après signature du contrat');
   assert.match(allowedRent.contextualLabel, /Payer la location · 350[\s\u202f]000 FCFA/, 'bouton contextualisé avec montant');
 
+  // Conditionnement strict des frais de visite (§9) : uniquement sur visite confirmée
+  const unconfirmedVisit = { id: 'v-1', propertyId: 'p-1', propertyRef: 'HOM-CTN-000421', propertyTitle: 'Villa pilote', clientName: 'Awa Dossou', date: '2026-10-10', slot: '10:00 – 12:00', status: 'demande-envoyee', createdAt: '2026-10-07T10:00:00.000Z' };
+  const confirmedVisit = { ...unconfirmedVisit, status: 'confirmee' };
+  assert.equal(workflow.canClientPayVisit(unconfirmedVisit, []).allowed, false, 'aucun paiement de visite avant confirmation du créneau');
+  assert.equal(workflow.canClientPayVisit(unconfirmedVisit, []).reason, 'workflow-non-confirme');
+  const allowedVisitFee = workflow.canClientPayVisit(confirmedVisit, [], 5000);
+  assert.equal(allowedVisitFee.allowed, true, 'paiement des frais de visite autorisé après confirmation du créneau');
+  assert.match(allowedVisitFee.contextualLabel, /Payer les frais de visite · 5[\s\u202f]000 FCFA/, 'bouton contextualisé pour les frais de visite');
+
   // Ventilation économique : Brut Client -> Commission HOMERA -> Part Agent éventuelle -> Net Propriétaire
   const splitWithAgent = workflow.computeFinancialBreakdown('loyer', 350000, 'AG-HOM-0248');
   assert.equal(splitWithAgent.grossAmount, 350000);

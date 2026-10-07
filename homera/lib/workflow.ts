@@ -435,6 +435,47 @@ export function canClientPayContract(
   return { allowed: true, amount, contextualLabel };
 }
 
+/**
+ * Vérifie les 5 conditions obligatoires avant d'autoriser le paiement des frais de visite (§4 & §9) :
+ * 1. visite existante ; 2. montant déterminé ; 3. bien/bénéficiaire identifié ;
+ * 4. créneau confirmé par le représentant (status === "confirmee") ; 5. non déjà réglé.
+ * Les frais de visite restent strictement cantonnés au parcours de visite et ne deviennent jamais des frais de location.
+ */
+export function canClientPayVisit(
+  visit: VisitRecord | undefined,
+  transactions: readonly PaymentTransactionRecord[],
+  feeAmount = 5000,
+): { allowed: boolean; amount: number; contextualLabel: string; reason?: string } {
+  if (!visit) {
+    return { allowed: false, amount: 0, contextualLabel: "", reason: "visite-introuvable" };
+  }
+  const amount = Math.round(feeAmount);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return { allowed: false, amount: 0, contextualLabel: "", reason: "montant-indetermine" };
+  }
+  if (!visit.propertyRef) {
+    return { allowed: false, amount, contextualLabel: "", reason: "beneficiaire-indetermine" };
+  }
+  if (visit.status !== "confirmee") {
+    return { allowed: false, amount, contextualLabel: "", reason: "workflow-non-confirme" };
+  }
+  const alreadyPaid = transactions.some(
+    (tx) =>
+      tx.visitId === visit.id &&
+      tx.kind === "visite" &&
+      (tx.status === "confirme" || tx.status === "en-verification" || tx.status === "en-cours"),
+  );
+  if (alreadyPaid) {
+    return { allowed: false, amount, contextualLabel: "", reason: "deja-regle" };
+  }
+  const formatted = new Intl.NumberFormat("fr-FR").format(amount);
+  return {
+    allowed: true,
+    amount,
+    contextualLabel: `Payer les frais de visite · ${formatted} FCFA`,
+  };
+}
+
 export type ActorBalanceSummary = {
   pendingAmount: number;
   availableAmount: number;
