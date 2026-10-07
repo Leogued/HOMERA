@@ -106,4 +106,35 @@ Ce document fixe les règles permanentes que tout développeur ou agent frontend
    - **Navigation principale** : pages métier principales de l'espace actif et échanges (`Notifications`, `Messages`), sans duplication des liens de compte.
    - **Actions secondaires** : fiche compacte du compte connecté, `Profil`, `Paramètres`, `Aide & assistance`, `Retour au site` et `Se déconnecter`, intégrés dans le même flux défilant.
 
+---
+
+## 8. Modèles d'Interfaces Produit (`UI PATTERNS & PRODUCT INTERFACE MODELS`)
+
+1. **Choix du modèle selon le rôle, la fréquence et l'action (`Le modèle sert l'expérience`)** :
+   - **Dashboard overview** (`/client`) : vue synthétique centrée sur l'état du projet, les échéances à payer autorisées par le workflow, les prochaines visites et les favoris.
+   - **Dashboard opérationnel** (`/proprietaire`, `/agent`) : priorité aux dossiers à traiter, créneaux à confirmer, mandats actifs et opérations financières.
+   - **Dashboard hybride & Command center** (`/admin`, `/admin/[section]`) : indicateurs de supervision, file de contrôle documentaire et registres filtrables avec bascule responsive `Table` (desktop) $\leftrightarrow$ `Cartes` (mobile).
+2. **Modèles de listes et de fiches** :
+   - **Grid** réservée aux biens immobiliers visuels (`/explorer`, `/acheter`, `/louer`, `/sejour`).
+   - **Liste / Liste compacte** pour l'historique, les visites, les notifications et l'activité récente.
+   - **Table responsive** pour l'administration, la traçabilité financière et la comparaison structurée.
+   - **Fiche de bien (`/biens/[id]`)** structurée selon le parcours `découvrir → comprendre → vérifier → comparer → agir` avec panneau latéral sticky desktop et barre d'action sticky mobile (`lg:hidden`).
+
+---
+
+## 9. Modèle Économique, Paiements & Flux Financiers (`MODÈLE ÉCONOMIQUE, PAIEMENTS ET FLUX FINANCIERS`)
+
+1. **Règle fondamentale (`Zéro bouton financier hors workflow`)** :
+   - Ne jamais ajouter un bouton `Payer`, un bouton `Retirer` ou un simulateur libre sans opération économique réelle définie dans le workflow (`Qui paie ? Qui reçoit ? Pourquoi ? Combien ? À quel moment ? Selon quelle règle économique ? Disponible ou en attente ? Qui peut retirer ?`).
+   - Le bouton `Payer` doit toujours être contextualisé (`Payer la location · X FCFA`, `Payer le dépôt de garantie · X FCFA`, `Payer les frais de visite · 5 000 FCFA`, `Payer la réservation · X FCFA`) et conditionné par `canClientPayContract` (contrat `signe`) ou `canClientPayVisit` (visite `confirmee`).
+2. **Flux financier réel & séparation des canaux** :
+   - Toute transaction suit le flux **`CLIENT → HOMERA → Attribution (Commission HOMERA / Part Agent éventuelle / Net Propriétaire) → Disponibilité → Retrait`** (`computeFinancialBreakdown`).
+   - Séparation stricte entre `CLIENT_PAYMENT_PROVIDERS` (5 canaux client) et `PAYOUT_RECEPTION_PROVIDERS` (4 canaux de réception excluant la carte bancaire).
+3. **Confidentialité financière & Règle Agent (`computeActorBalances`)** :
+   - **Client** : voit uniquement ce qu'il doit payer et ses reçus.
+   - **Propriétaire** : voit ses revenus bruts, la commission HOMERA, ses montants en attente (jamais confondus avec du disponible) et son solde disponible au retrait.
+   - **Agent** : applique la règle **`autorisation sur un bien ≠ droit automatique à recevoir de l'argent`** ; ne voit et ne peut retirer que les rémunérations explicitement rattachées à son matricule et à une opération confirmée.
+   - **Admin / HOMERA** : supervise l'intégralité du flux financier et de la traçabilité anti-contournement.
+
+
 

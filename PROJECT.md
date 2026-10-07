@@ -58,7 +58,7 @@ HOMERA/
 │   ├── catalog/               # CatalogExplorer, CatalogFilters, PropertyCard, PropertyDetail, FavoritesView…
 │   ├── auth/                  # SignInForm, SignUpForm, RoleChoice, RoleUpgrade, AccountControl, CodeField…
 │   ├── client/                # ClientDashboard (vue d'ensemble de l'espace client)
-│   ├── workspace/             # WorkspaceShell, Primitives, ClientJourneys, OwnerWorkspace, AgentWorkspace, AdminWorkspace, PropertyWizard…
+│   ├── workspace/             # WorkspaceShell, Primitives, PaymentMethodsPanel, ClientJourneys, OwnerWorkspace, AgentWorkspace, AdminWorkspace, PropertyWizard…
 │   ├── site/                  # ServiceDetail, LegalDocument, LegalAlias
 │   ├── providers/             # ThemeProvider, AuthProvider, VisitorProvider, WorkflowProvider, SearchProvider
 │   └── ui/                    # Button, Visual, Reveal, Scene, ChapterRail, CustomCursor, TextRoll, CopyReference, QrCode
@@ -69,12 +69,12 @@ HOMERA/
 │   ├── properties.ts          # Moteur de recherche, filtres, facettes, tri, pagination, URL
 │   ├── nav.ts                 # Déclaration unique de la navigation publique et des routes
 │   ├── pages.ts               # Contenus éditoriaux des pages institutionnelles, légales et auth
-│   ├── auth.ts                # Règles pures d'authentification, rôles cumulables, validations, codes
+│   ├── auth.ts                # Règles pures d'authentification, rôles cumulables, permissions d'espaces, codes
 │   ├── accounts.ts            # Stockage local des comptes, hachage PBKDF2-SHA-256, sessions
 │   ├── demo-accounts.ts       # Comptes de démonstration pré-configurés (admin, user, agent, prop)
 │   ├── persistence.ts         # Favoris et recherches sauvegardées sans compte (homera.visiteur.v1)
-│   ├── workflow.ts            # État métier local (visites, candidatures, contrats, biens soumis, notifications, messages)
-│   ├── portal-data.ts         # Données de démonstration des espaces (mandats agents, dossiers admin, biens propriétaire)
+│   ├── workflow.ts            # État métier local, modèle économique (computeFinancialBreakdown, canClientPayContract, canClientPayVisit, computeActorBalances), moyens de paiement/retrait
+│   ├── portal-data.ts         # Données de démonstration des espaces (mandats agents, dossiers admin, biens propriétaire, transactions financières de référence)
 │   ├── qr.ts                  # Encodeur et décodeur QR ISO/IEC 18004 sans dépendance
 │   ├── motion.ts              # Hooks de mouvement, observers, sticky timelines, préférences
 │   ├── motion-frame.ts        # Ordonnanceur requestAnimationFrame mutualisé à la demande
