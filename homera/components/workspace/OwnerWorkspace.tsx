@@ -125,9 +125,10 @@ function OwnerRentalPipeline() {
   const { data } = useWorkflow();
   const stages: RentalStage[] = ["demande-envoyee", "etude", "acceptee", "refusee", "contrat", "signature", "preparation-cles", "recuperation", "active"];
   return <>
-    <WorkspaceHeading eyebrow="Après la visite" title="Locations & baux" description="Visualisez les candidatures, contrats et étapes qui suivent l’acceptation d’un dossier." />
+    <WorkspaceHeading eyebrow="Après la visite" title="Locations, baux & revenus" description="Visualisez les candidatures, contrats, encaissements loyers/cautions et retraits qui suivent l’acceptation d’un dossier." />
     <div className="grid gap-4 sm:grid-cols-3">{stages.map((stage) => <div key={stage} className="rounded-card border border-border bg-card p-4"><p className="text-caption font-semibold text-muted">{stageLabel(stage)}</p><p className="homera-num mt-2 font-serif text-display-xs">{data.applications.filter((application) => application.stage === stage).length}</p></div>)}</div>
     <WorkspacePanel title="Dossiers suivis" description="Le détail de chaque parcours reste consultable dans les demandes." icon={WalletCards} className="mt-6">{data.applications.length ? <ul className="divide-y divide-border">{data.applications.map((application) => <li key={application.id} className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"><div><p className="text-note font-semibold">{application.propertyTitle}</p><p className="mt-1 font-mono text-caption text-muted">{application.propertyRef} · {application.id}</p></div><div className="flex items-center gap-2"><StatusBadge status={application.stage} /><Link href="/proprietaire/demandes" aria-label={`Ouvrir la demande ${application.id}`} className="flex h-9 w-9 items-center justify-center rounded-full border border-border hover:border-homera-terracotta"><ChevronRight className="h-4 w-4" aria-hidden="true" /></Link></div></li>)}</ul> : <p className="text-note leading-relaxed text-muted">Aucun dossier actif. Une candidature apparaîtra après une visite terminée.</p>}</WorkspacePanel>
+    <div className="mt-8"><PaymentMethodsWorkspace contextRole="proprietaire" embedded /></div>
   </>;
 }
 

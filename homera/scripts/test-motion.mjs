@@ -1939,8 +1939,9 @@ await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (pro
   assert.equal(parsedWithPayments.transactions.length, 1, 'seules les transactions valides sont conservées');
 
   const paymentPanel = await readFile(new URL('../components/workspace/PaymentMethodsPanel.tsx', import.meta.url), 'utf8');
-  assert.ok(paymentPanel.includes('PAYMENT_PROVIDERS') && paymentPanel.includes('maskPaymentIdentifier') && paymentPanel.includes('canClientPayContract') && paymentPanel.includes('computeActorBalances'), 'PaymentMethodsPanel respecte le modèle économique et les flux financiers HOMERA');
-  assert.ok(ownerWorkspace.includes('PaymentMethodsWorkspace') && profileSettings.includes('PaymentMethodsWorkspace'), 'PaymentMethodsWorkspace est intégré dans OwnerWorkspace et ProfileSettings');
+  assert.ok(paymentPanel.includes('PAYMENT_PROVIDERS') && paymentPanel.includes('maskPaymentIdentifier') && paymentPanel.includes('canClientPayContract') && paymentPanel.includes('computeActorBalances') && paymentPanel.includes('DEMO_FINANCIAL_TRANSACTIONS'), 'PaymentMethodsPanel respecte le modèle économique et les flux financiers HOMERA');
+  assert.ok(ownerWorkspace.includes('PaymentMethodsWorkspace') && agentWorkspace.includes('PaymentMethodsWorkspace') && adminWorkspace.includes('PaymentMethodsWorkspace') && !profileSettings.includes('PaymentMethodsWorkspace'), 'PaymentMethodsWorkspace est intégré par rôle dans OwnerWorkspace, AgentWorkspace et AdminWorkspace sans doublon dans ProfileSettings');
+  assert.ok(propertyDetail.includes('Cadre économique HOMERA') && propertyDetail.includes('Loyer mensuel') && propertyDetail.includes('Total séjour') && propertyDetail.includes('Frais notariés'), 'PropertyDetail affiche le cadre économique HOMERA adapté au projet (louer, séjour, acheter)');
 });
 
 

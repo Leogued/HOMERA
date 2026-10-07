@@ -27,6 +27,7 @@ import {
   LAND_TITLE_LABELS,
   TYPE_LABELS,
   daysBetween,
+  formatFCFA,
   formatPropertyPrice,
   formatSurface,
   recencyLabel,
@@ -386,6 +387,78 @@ export function PropertyDetail({ property }: { property: Property }) {
                   <dd className="text-foreground">{INTENT_LABELS[property.intent]}</dd>{" "}
                 </div>{" "}
               </dl>{" "}
+            </div>{" "}
+            <div className="rounded-card border border-border bg-card p-6">
+              <h2 className="text-label uppercase text-muted">Cadre économique HOMERA</h2>
+              {property.intent === "louer" && (
+                <>
+                  <dl className="mt-4 space-y-2.5 text-note">
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-muted">Loyer mensuel</dt>
+                      <dd className="homera-num font-semibold text-foreground">{formatFCFA(property.price)}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-muted">Caution / garantie</dt>
+                      <dd className="homera-num font-semibold text-foreground">{formatFCFA(property.price)}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-border pt-2.5">
+                      <dt className="text-muted">Frais cachés client</dt>
+                      <dd className="homera-num font-semibold text-success">0 FCFA</dd>
+                    </div>
+                  </dl>
+                  <p className="mt-3 text-caption leading-relaxed text-muted">
+                    Aucun paiement de loyer ou de caution n’est demandé avant la visite terminée, l’acceptation du dossier et la signature du contrat de location.
+                  </p>
+                </>
+              )}
+              {property.intent === "sejour" && (
+                <>
+                  <dl className="mt-4 space-y-2.5 text-note">
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-muted">Prix par nuit</dt>
+                      <dd className="homera-num font-semibold text-foreground">{formatFCFA(property.price)}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-muted">Durée minimale</dt>
+                      <dd className="homera-num font-semibold text-foreground">{property.minNights ?? 2} nuits</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-muted">Frais de service HOMERA</dt>
+                      <dd className="text-caption font-semibold text-success">Inclus dans le tarif</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-border pt-2.5">
+                      <dt className="font-semibold text-foreground">Total séjour ({property.minNights ?? 2} nuits)</dt>
+                      <dd className="homera-num font-serif text-body-sm text-homera-terracotta">
+                        {formatFCFA(property.price * (property.minNights ?? 2))}
+                      </dd>
+                    </div>
+                  </dl>
+                  <p className="mt-3 text-caption leading-relaxed text-muted">
+                    Le paiement intervient uniquement au moment de la confirmation de la réservation.
+                  </p>
+                </>
+              )}
+              {property.intent === "acheter" && (
+                <>
+                  <dl className="mt-4 space-y-2.5 text-note">
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-muted">Prix affiché du bien</dt>
+                      <dd className="homera-num font-semibold text-foreground">{formatFCFA(property.price)}</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3">
+                      <dt className="text-muted">Commission HOMERA</dt>
+                      <dd className="text-caption font-semibold text-foreground">Selon mandat vérifié</dd>
+                    </div>
+                    <div className="flex items-center justify-between gap-3 border-t border-border pt-2.5">
+                      <dt className="text-muted">Frais notariés &amp; ANDF</dt>
+                      <dd className="text-caption font-semibold text-foreground">Séparés (étude notariale)</dd>
+                    </div>
+                  </dl>
+                  <p className="mt-3 text-caption leading-relaxed text-muted">
+                    HOMERA ne mélange jamais le prix du bien, la commission d’accompagnement et les frais notariés dans un montant unique.
+                  </p>
+                </>
+              )}
             </div>{" "}
             <div className="rounded-card border border-homera-terracotta/25 bg-homera-terracotta/[0.06] p-6">
               {" "}

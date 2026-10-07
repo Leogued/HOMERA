@@ -1,5 +1,5 @@
 import { PROPERTIES } from "@/lib/content";
-import type { ListingStatus, VerificationDecision } from "@/lib/workflow";
+import type { ListingStatus, PaymentTransactionRecord, VerificationDecision } from "@/lib/workflow";
 
 export type DemoOwnerListing = {
   id: string;
@@ -250,3 +250,67 @@ export const DEMO_VERIFICATION_CASES: VerificationCase[] = [
     initialDecision: "a-examiner",
   },
 ];
+
+/**
+ * Opérations financières de démonstration rattachées aux biens et mandats du pilote :
+ * illustrent le flux CLIENT -> HOMERA -> Attribution (Part HOMERA / Part Propriétaire / Part Agent)
+ * et la distinction entre somme confirmée (Disponible) et somme en rapprochement (En attente).
+ */
+export const DEMO_FINANCIAL_TRANSACTIONS: PaymentTransactionRecord[] = [
+  {
+    id: "demo-tx-421",
+    reference: "PAY-CTN-421001",
+    kind: "loyer",
+    label: "1er loyer contractuel · Villa 4 chambres & jardin tropical",
+    amount: 450_000,
+    homeraFee: 36_000,
+    ownerNetAmount: 405_000,
+    agentAmount: 9_000,
+    provider: "mtn-momo",
+    methodSummary: "MTN MoMo · +229 01 •• •• •• 56",
+    propertyId: villa.id,
+    propertyRef: villa.homeraId,
+    contractId: "contrat-demo-421",
+    agentId: DEMO_AGENT_ID,
+    status: "confirme",
+    fundsAvailability: "disponible",
+    createdAt: "2026-10-02T11:20:00.000Z",
+  },
+  {
+    id: "demo-tx-422",
+    reference: "PAY-CTN-422002",
+    kind: "caution",
+    label: "Dépôt de garantie (2 mois) · Appartement F3 Haie Vive",
+    amount: 560_000,
+    homeraFee: 0,
+    ownerNetAmount: 560_000,
+    agentAmount: 0,
+    provider: "virement-uemoa",
+    methodSummary: "BOA Bénin · BJ06 •••• •••• 9102",
+    propertyId: apartment.id,
+    propertyRef: apartment.homeraId,
+    contractId: "contrat-demo-422",
+    status: "en-verification",
+    fundsAvailability: "en-attente",
+    createdAt: "2026-10-05T15:40:00.000Z",
+  },
+  {
+    id: "demo-tx-319",
+    reference: "PAY-CTN-319003",
+    kind: "reservation",
+    label: "Séjour meublé (4 nuits) · Duplex contemporain Ganhi",
+    amount: 340_000,
+    homeraFee: 27_200,
+    ownerNetAmount: 312_800,
+    agentAmount: 0,
+    provider: "carte-bancaire",
+    methodSummary: "Visa / Mastercard · Carte •••• 4821",
+    propertyId: duplex.id,
+    propertyRef: duplex.homeraId,
+    agentId: DEMO_AGENT_ID,
+    status: "confirme",
+    fundsAvailability: "disponible",
+    createdAt: "2026-10-06T09:15:00.000Z",
+  },
+];
+

@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useWorkflow } from "@/components/providers/WorkflowProvider";
+import { DEMO_FINANCIAL_TRANSACTIONS } from "@/lib/portal-data";
 import {
   CLIENT_PAYMENT_PROVIDERS,
   PAYMENT_PROVIDERS,
@@ -122,10 +123,20 @@ export function PaymentMethodsWorkspace({
   const defaultMethod = savedMethods.find((entry) => entry.isDefault) ?? savedMethods[0];
   const effectiveMethod = defaultMethod;
 
+  const mergedTransactions: PaymentTransactionRecord[] =
+    contextRole === "client"
+      ? data.transactions
+      : [
+          ...data.transactions,
+          ...DEMO_FINANCIAL_TRANSACTIONS.filter(
+            (demoTx) => !data.transactions.some((tx) => tx.id === demoTx.id),
+          ),
+        ];
+
   // Balances for Propriétaire / Agent / Admin (never exposed to Client)
   const actorBalances =
     contextRole === "proprietaire" || contextRole === "agent" || contextRole === "admin"
-      ? computeActorBalances(data.transactions, data.withdrawals, contextRole, agentId)
+      ? computeActorBalances(mergedTransactions, data.withdrawals, contextRole, agentId)
       : null;
 
   // Client payable operations strictly derived from signed contracts in the workflow
@@ -171,9 +182,9 @@ export function PaymentMethodsWorkspace({
   });
 
   // Actor-specific transaction visibility (Section 13 & 15: Transparence & Confidentialité)
-  const visibleTransactions = data.transactions.filter((tx) => {
+  const visibleTransactions = mergedTransactions.filter((tx) => {
     if (contextRole === "agent") {
-      return Boolean(agentId) && tx.agentId === agentId && (tx.agentAmount ?? 0) > 0;
+      return Boolean(agentId) && tx.agentId === agentId;
     }
     if (contextRole === "proprietaire") {
       return tx.kind !== "visite" || (tx.ownerNetAmount ?? 0) > 0;

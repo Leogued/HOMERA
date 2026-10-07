@@ -264,9 +264,13 @@ await check("5. Cohérence fonctionnelle des espaces (Profil par rôle, Footer d
   assert.ok(
     paymentPanel.includes("PAYMENT_PROVIDERS") &&
       paymentPanel.includes("maskPaymentIdentifier") &&
+      paymentPanel.includes("DEMO_FINANCIAL_TRANSACTIONS") &&
       ownerWorkspace.includes("PaymentMethodsWorkspace") &&
-      profileSettings.includes("PaymentMethodsWorkspace"),
-    "PaymentMethodsPanel doit gérer les moyens de paiement Bénin/UEMOA et être intégré aux espaces",
+      agentWorkspace.includes("PaymentMethodsWorkspace") &&
+      adminWorkspace.includes("PaymentMethodsWorkspace") &&
+      !profileSettings.includes("PaymentMethodsWorkspace") &&
+      propertyDetail.includes("Cadre économique HOMERA"),
+    "PaymentMethodsPanel doit gérer les flux financiers HOMERA par rôle et PropertyDetail doit afficher le Cadre économique HOMERA",
   );
 });
 
