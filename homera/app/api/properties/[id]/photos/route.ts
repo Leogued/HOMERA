@@ -35,9 +35,23 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   if (typeof body.main === "string") {
     return fromService(setMainPhoto(getDb(), user, id, body.main));
   }
-  const order = toStringArray(body.order);
-  if (order.length === 0) return fail("Indiquez l’ordre des photos.");
-  return fromService(reorderPhotos(getDb(), user, id, order));
+  const requested = toStringArray(body.order);
+  if (requested.length === 0) return fail("Indiquez l’ordre des photos.");
+  // L’écran manipule des visuels, pas des identifiants internes : la
+  // traduction se fait ici, côté serveur.
+  const db = getDb();
+  const rows = db
+    .prepare<[string, string], { id: string }>("SELECT id FROM properties WHERE id = ? OR reference = ?")
+    .get(id, id);
+  if (!rows) return fail("Bien introuvable.", 404);
+  const known = db
+    .prepare<[string], { id: string; media_key: string }>("SELECT id, media_key FROM property_photos WHERE property_id = ?")
+    .all(rows.id);
+  const order = requested
+    .map((key) => known.find((photo) => photo.media_key === key)?.id ?? key)
+    .filter((photoId) => known.some((photo) => photo.id === photoId));
+  if (order.length === 0) return fail("Aucune photo ne correspond à l’ordre envoyé.");
+  return fromService(reorderPhotos(db, user, id, order));
 }
 
 export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {

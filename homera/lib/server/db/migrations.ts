@@ -476,10 +476,36 @@ CREATE TABLE IF NOT EXISTS schema_migrations (
 );
 `;
 
+/* ------------------------------------------------------------------
+   002 — CANDIDATURES : motifs et auteur de la décision
+   ------------------------------------------------------------------
+   La table `rental_applications` du socle ne retenait que la date de
+   décision. Une candidature refusée sans motif écrit est une décision
+   inexplicable pour le candidat comme pour l’administration : on lui
+   ajoute donc le motif (transmis au candidat) et l’auteur de la
+   décision (opposable en cas de contestation).
+
+   Migration additive : `ADD COLUMN` avec valeur par défaut, aucune
+   ligne existante n’est modifiée ni supprimée.
+   ------------------------------------------------------------------ */
+
+const M002 = `
+ALTER TABLE rental_applications ADD COLUMN decision_note TEXT NOT NULL DEFAULT '';
+ALTER TABLE rental_applications ADD COLUMN decided_by    TEXT REFERENCES users(id) ON DELETE SET NULL;
+ALTER TABLE rental_applications ADD COLUMN monthly_income INTEGER NOT NULL DEFAULT 0;
+CREATE INDEX IF NOT EXISTS idx_applications_client ON rental_applications(client_id, status);
+CREATE INDEX IF NOT EXISTS idx_applications_visit  ON rental_applications(visit_id);
+`;
+
 export const MIGRATIONS: Migration[] = [
   {
     id: "001",
     name: "socle-identite-biens-mandats-visites-journal",
     sql: M001,
+  },
+  {
+    id: "002",
+    name: "candidatures-motif-et-auteur",
+    sql: M002,
   },
 ];

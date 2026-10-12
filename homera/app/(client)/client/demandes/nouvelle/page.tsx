@@ -7,12 +7,10 @@ import { RentalRequestForm } from "@/components/workspace/ClientJourneys";
 export const metadata: Metadata = { title: "Demande de location — HOMERA", robots: { index: false, follow: false } };
 export default async function NewRentalRequestPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   const params = await searchParams;
-  const propertyValue = params.bien;
   const visitValue = params.visite;
-  const propertyId = Array.isArray(propertyValue) ? propertyValue[0] ?? "" : propertyValue ?? "";
   const visitId = Array.isArray(visitValue) ? visitValue[0] ?? "" : visitValue ?? "";
   const gate = await guardWorkspace("client", "/client/demandes/nouvelle");
   if (gate.status === "signin") redirect(signinHref(gate.returnTo));
   if (gate.status === "denied") return <WorkspaceRefusal role="client" />;
-  return <WorkspaceShell role="client" section="demandes"><RentalRequestForm initialPropertyId={propertyId} initialVisitId={visitId} /></WorkspaceShell>;
+  return <WorkspaceShell role="client" section="demandes"><RentalRequestForm initialVisitId={visitId} /></WorkspaceShell>;
 }

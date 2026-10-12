@@ -1,4 +1,4 @@
-# HOMERA — Socle serveur (LOT 2)
+# HOMERA — Socle serveur (LOTS 2 à 5)
 
 Ce document décrit **ce qui existe réellement** dans le dépôt. Il est la référence
 pour tout ce qui touche aux données, à l’authentification, aux permissions et à la
@@ -211,6 +211,7 @@ explicite (`ServiceResult`), jamais d’exception, jamais d’état inventé.
 | `verifications.ts` | dossier de vérification et ses 8 étapes |
 | `admin.ts` | indicateurs, comptes, signalements, journal |
 | `documents.ts` | pièces déclarées d’un bien |
+| `applications.ts` | candidatures de location : dépôt après visite effectuée, instruction motivée |
 
 **Journal** (`lib/server/audit.ts`) : `audit_log` est une table d’ajout pur — action,
 auteur, date, entité, détail, IP. Aucun service ne réécrit une ligne existante.
@@ -230,7 +231,7 @@ npm run test:backend   →  151 vérifications réussies, 0 échec
 node scripts/test-motion.mjs  →  67 tests, 67 pass, 0 fail
 npx tsc --noEmit       →  0 erreur
 npm run lint           →  0 problème
-npm run build          →  Compiled successfully · 140 pages générées
+npm run build          →  Compiled successfully · 104 routes générées
 ```
 
 Contrôles HTTP sur le serveur de production local (`npm start`), serveur réellement
@@ -251,17 +252,41 @@ démarré :
 | Redirection ouverte `?next=//evil.com` | écartée par `safeReturnTo` |
 | Référence de bien inconnue `/biens/inexistant` | `404` réel — le squelette de groupe qui renvoyait `200` a été retiré |
 
+### 8.1 Contrôles des LOTS 3 à 5 (même méthode, même jour)
+
+| Vérifié | Résultat |
+|---|---|
+| Dépôt d’un bien, photos, pièce justificative, soumission | brouillon → `soumis`, dossier de vérification ouvert à `a-examiner` |
+| `mediaKey` inconnu à l’ajout d’une photo | refusé — le schéma valide contre le manifeste `lib/media.generated.ts` |
+| Type de pièce inconnu | refusé — 10 natures reconnues par le service `documents.ts` |
+| Réordonnancement de la galerie | ordre réellement écrit (`media_key` → `id`) et relu |
+| Accès aux pièces d’un bien par un agent **non** mandaté | `403` — la fuite constatée a été corrigée dans la route |
+| Agent mandaté, propriétaire, administration | `200` sur les mêmes pièces |
+| Demande de visite → confirmation → « effectuée » | statuts réels, conflits de créneaux détectés par le serveur |
+| Candidature déposée sans visite effectuée | refusée |
+| Deux candidatures sur la même visite | la seconde est refusée |
+| Refus d’une candidature sans motif | refusé — le motif est transmis au candidat |
+| Candidat ou agent non mandaté qui tente d’instruire | refusé |
+| Mandat : acceptation par l’agent | le bien apparaît dans `/api/agent/properties`, le propriétaire est notifié |
+| Mandat : refus sans motif | refusé |
+| Vérification : les 8 étapes, une à une | chaque étape est horodatée, attribuée et journalisée |
+| Décision « accepter » | bien `publie` + `verifie`, présent dans le catalogue public, propriétaire notifié |
+| Suspension d’une annonce sans motif | refusée ; avec motif : retirée du catalogue public et notifiée |
+| Accès à `/api/admin/*` par un non-admin | `403` |
+
 ---
 
 ## 9. Ce qui reste à faire — et où
 
-Le LOT 2 ferme le socle. Les éléments suivants sont connus, assumés et **pas**
-présentés comme terminés :
+Les LOTS 3 (biens, photos, propriétaires, agents, autorisations), 4 (visites,
+demandes de location) et 5 (administration, vérification) sont livrés et branchés
+sur le serveur. Les éléments suivants sont connus, assumés et **pas** présentés
+comme terminés :
 
 | Sujet | État | Lot porteur |
 |---|---|---|
-| Interface des visites, demandes, contrats, notifications d’espace | tables et services prêts, l’interface lit encore le navigateur | LOT 4 |
-| Téléversement réel des photos et pièces | tables `property_photos` / `documents` prêtes, le parcours **déclare** les pièces sans les héberger | LOT 3 |
+| Contrats de location signés | table `contracts` prête, aucun écran ni service de signature | LOT 6/7 |
+| Téléversement réel des photos et pièces | tables `property_photos` / `documents` prêtes, le parcours **déclare** les pièces sans les héberger | LOT 8 |
 | Favoris unifiés | table `favorites` + `/api/favorites` prêts, deux vues côté interface | LOT 7 |
 | Messagerie interne | aucune table de fils de discussion ; la page existe et reste honnête | LOT 7 |
 | Paiements | aucun encaissement réel, aucune écriture serveur | hors périmètre pilote |

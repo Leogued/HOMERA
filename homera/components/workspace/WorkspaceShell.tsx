@@ -84,6 +84,7 @@ const NAV: Record<Exclude<WorkspaceRole, "any">, NavigationGroup[]> = {
       { id: "biens", label: "Biens autorisés", href: "/agent/biens", icon: House },
       { id: "visites", label: "Visites", href: "/agent/visites", icon: CalendarDays },
       { id: "clients", label: "Clients", href: "/agent/clients", icon: Users },
+      { id: "demandes", label: "Demandes", href: "/agent/demandes", icon: ClipboardList },
       { id: "documents", label: "Documents", href: "/agent/documents", icon: FileText },
       { id: "autorisations", label: "Autorisations", href: "/agent/autorisations", icon: FileBadge },
     ] },

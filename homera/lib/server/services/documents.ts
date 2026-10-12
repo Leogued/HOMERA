@@ -27,13 +27,27 @@ export type DocumentRow = {
   created_at: string;
 };
 
+/**
+ * Vocabulaire unique des pièces. `propriete` est conservé parce que des
+ * dossiers déjà en base l’utilisent : on ne perd pas une donnée écrite.
+ */
 export const DOCUMENT_KINDS: Record<string, string> = {
   propriete: "Pièce de propriété",
+  "titre-foncier": "Titre foncier",
+  acd: "ACD / convention",
   identite: "Pièce d’identité",
-  mandat: "Mandat",
+  "piece-identite": "Pièce d’identité",
+  mandat: "Mandat / procuration",
+  plan: "Plan ou croquis",
   "plan-localisation": "Plan de localisation",
   quittance: "Quittance",
+  autre: "Autre pièce",
 };
+
+/** Libellé lisible d’un type de pièce, quelle que soit son ancienneté. */
+export function documentKindLabel(kind: string): string {
+  return DOCUMENT_KINDS[kind] ?? kind;
+}
 
 export function listDocuments(db: Db, entityType: string, entityId: string): DocumentRow[] {
   return queryAll<DocumentRow>(

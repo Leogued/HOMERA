@@ -1,72 +1,56 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, ArrowRight, CalendarCheck2, CalendarDays, Check,
-  CheckCircle2, ChevronRight, ClipboardCheck, ClipboardList, Clock3, Download,
-  FileText, HeartHandshake, Home, MapPin, Star, XCircle,
+  CheckCircle2, ClipboardCheck, Clock3, Download,
+  FileText, Home, Loader2, MapPin,
 } from "lucide-react";
-import { useAuth } from "@/components/providers/AuthProvider";
 import { useWorkflow } from "@/components/providers/WorkflowProvider";
-import { useMounted } from "@/lib/motion";
 import { Visual } from "@/components/ui/Visual";
-import { PROPERTIES, type Property } from "@/lib/content";
-import { DEMO_AGENT_AUTHORIZATIONS } from "@/lib/portal-data";
-import { formatFCFA, formatPropertyPrice } from "@/lib/format";
 import {
   canClientPayContract,
-  canClientPayVisit,
   computeFinancialBreakdown,
   createLocalId,
-  eligibleRentalVisits,
   makeNotification,
   PAYMENT_PROVIDERS,
-  RENTAL_STAGES,
-  validateRentalRequest,
-  VISIT_STATUS_LABELS,
   type ContractRecord,
   type PaymentTransactionRecord,
-  type RentalRequestFailure,
-  type RentalStage,
-  type VisitRecord,
 } from "@/lib/workflow";
 import {
   BUTTON_PRIMARY, BUTTON_SECONDARY, DemoNotice, EmptyPanel, FormField,
   INPUT_CLASS, StatusBadge, WorkspaceHeading, WorkspacePanel,
 } from "@/components/workspace/Primitives";
 import { PaymentMethodsWorkspace } from "@/components/workspace/PaymentMethodsPanel";
+import { apiPost, messageOf } from "@/lib/api-client";
+import { useServerResource } from "@/lib/use-server-resource";
+import { formatDay, VisitsList, type ServerVisit } from "@/components/workspace/VisitsSections";
+import { ApplicationsList, RentalRequestForm as ServerRentalRequestForm } from "@/components/workspace/ApplicationSections";
 
 const VISIT_SLOTS = ["09:00 – 11:00", "11:00 – 13:00", "14:00 – 16:00", "16:00 – 18:00"];
 const VISIT_STEPS = ["Le bien", "Date & créneau", "Confirmation"];
 
 export function VisitScheduler({ initialPropertyId = "" }: { initialPropertyId?: string }) {
-  const { account } = useAuth();
-  const { updateData } = useWorkflow();
+  const properties = useServerResource<{ items: { id: string; title: string; reference: string; city: string; availabilityStatus: string }[] }>("/api/properties?disponible=1&tri=pertinence");
   const [propertyId, setPropertyId] = useState(initialPropertyId);
-  const mounted = useMounted();
   const [date, setDate] = useState("");
-  /* « Demain » dépend du fuseau du navigateur : la valeur n’est calculée qu’après
-     hydratation, sinon le HTML du serveur et celui du client divergeraient.
-     Tant que le visiteur n’a rien choisi, la date proposée reste celle de demain. */
-  const tomorrow = mounted ? tomorrowISO() : "";
-  const chosenDate = date || tomorrow;
   const [slot, setSlot] = useState("");
+  const [message, setMessage] = useState("");
   const [step, setStep] = useState(0);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-  const [createdVisit, setCreatedVisit] = useState<VisitRecord | null>(null);
-  const property = PROPERTIES.find((entry) => entry.id === propertyId);
+  const [created, setCreated] = useState<ServerVisit | null>(null);
+
+  const catalogue = properties.data?.items ?? [];
+  const property = catalogue.find((entry) => entry.id === propertyId) ?? null;
 
   const continueStep = () => {
     if (step === 0 && !property) {
       setError("Choisissez un bien avant de continuer.");
       return;
     }
-    if (step === 0 && property?.availabilityStatus === "indisponible") {
-      setError("Ce bien est actuellement indisponible à la visite. Choisissez un autre bien ou enregistrez-le en favori.");
-      return;
-    }
-    if (step === 1 && (!chosenDate || !slot)) {
+    if (step === 1 && (!date || !slot)) {
       setError("Choisissez une date et un créneau pour demander la visite.");
       return;
     }
@@ -74,41 +58,39 @@ export function VisitScheduler({ initialPropertyId = "" }: { initialPropertyId?:
     setStep((current) => Math.min(2, current + 1));
   };
 
-  const requestVisit = () => {
-    if (!property || !account) return;
-    const visit: VisitRecord = {
-      id: createLocalId("visite"),
+  const requestVisit = async () => {
+    if (!property || !date || !slot) return;
+    setBusy(true);
+    setError("");
+    const result = await apiPost<{ visit: ServerVisit }>("/api/visits", {
       propertyId: property.id,
-      propertyRef: property.homeraId,
-      propertyTitle: property.title,
-      clientName: `${account.prenom} ${account.nom}`.trim(),
-      date: chosenDate,
-      slot,
-      status: "demande-envoyee",
-      createdAt: new Date().toISOString(),
-    };
-    updateData((current) => ({
-      ...current,
-      visits: [visit, ...current.visits],
-      notifications: [makeNotification("visite", "Demande de visite envoyée", `${property.title} · ${formatDateOnly(chosenDate)} · ${slot}`, "/client/visites"), ...current.notifications],
-    }));
-    setCreatedVisit(visit);
+      date,
+      time: slot.slice(0, 5),
+      message,
+      durationMin: 45,
+    });
+    setBusy(false);
+    if (!result.ok) {
+      setError(messageOf(result));
+      return;
+    }
+    setCreated(result.data.visit);
   };
 
-  if (createdVisit) {
+  if (created) {
     return (
       <div className="mx-auto max-w-3xl">
         <div className="rounded-card border border-success/25 bg-card p-6 text-center shadow-[var(--shadow-card)] sm:p-10" role="status" aria-live="polite">
           <span className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success"><CheckCircle2 className="h-8 w-8" aria-hidden="true" /></span>
-          <p className="mt-5 text-caption font-semibold uppercase tracking-[0.18em] text-success">Étape enregistrée</p>
+          <p className="mt-5 text-caption font-semibold uppercase tracking-[0.18em] text-success">Demande enregistrée</p>
           <h1 className="mt-2 font-serif text-display-sm">Votre demande de visite est envoyée</h1>
-          <p className="mx-auto mt-3 max-w-xl text-body-sm leading-relaxed text-muted">Le rendez-vous apparaît dans votre espace avec le statut « Demande envoyée ». Dans ce prototype, il est conservé uniquement dans ce navigateur.</p>
+          <p className="mx-auto mt-3 max-w-xl text-body-sm leading-relaxed text-muted">Elle est enregistrée sur les serveurs HOMERA sous la référence {created.reference}. Le propriétaire ou l’agent mandaté doit confirmer le créneau : vous serez notifié de sa réponse, et le rendez-vous restera en attente d’ici là.</p>
           <div className="mx-auto mt-6 max-w-lg rounded-2xl border border-border bg-background p-4 text-left">
-            <p className="font-semibold">{createdVisit.propertyTitle}</p>
-            <p className="mt-1 text-note text-muted">{formatDateOnly(createdVisit.date)} · {createdVisit.slot}</p>
-            <p className="mt-2 font-mono text-caption text-muted">{createdVisit.propertyRef}</p>
+            <p className="font-semibold">{created.propertyTitle}</p>
+            <p className="mt-1 text-note text-muted">{formatDay(created.date)} · {created.time}</p>
+            <p className="mt-2 font-mono text-caption text-muted">{created.propertyReference} · {created.reference}</p>
           </div>
-          <div className="mt-7 flex flex-wrap justify-center gap-3"><Link href="/client/visites" className={BUTTON_PRIMARY}>Voir mes visites</Link><Link href={`/biens/${createdVisit.propertyId}`} className={BUTTON_SECONDARY}>Retour au bien</Link></div>
+          <div className="mt-7 flex flex-wrap justify-center gap-3"><Link href="/client/visites" className={BUTTON_PRIMARY}>Voir mes visites</Link><Link href={`/biens/${created.propertyId}`} className={BUTTON_SECONDARY}>Retour au bien</Link></div>
         </div>
       </div>
     );
@@ -116,330 +98,64 @@ export function VisitScheduler({ initialPropertyId = "" }: { initialPropertyId?:
 
   return (
     <div className="mx-auto max-w-5xl">
-      <WorkspaceHeading eyebrow="Parcours de visite" title="Demander une visite" description="Choisissez le bien, proposez une date et un créneau. Le rendez-vous restera en attente jusqu’à la réponse du représentant." actions={<Link href="/client/visites" className={BUTTON_SECONDARY}><ArrowLeft className="h-4 w-4" aria-hidden="true" />Mes visites</Link>} />
+      <WorkspaceHeading eyebrow="Parcours de visite" title="Demander une visite" description="Choisissez le bien, proposez une date et un créneau. Le rendez-vous restera en attente jusqu’à la réponse du propriétaire ou de l’agent mandaté." actions={<Link href="/client/visites" className={BUTTON_SECONDARY}><ArrowLeft className="h-4 w-4" aria-hidden="true" />Mes visites</Link>} />
       <ol aria-label="Étapes de la demande de visite" className="mb-8 grid grid-cols-3 gap-2 sm:gap-4">
         {VISIT_STEPS.map((label, index) => <li key={label} className={`flex items-center gap-2 border-b-2 pb-3 text-caption sm:gap-3 ${index <= step ? "border-homera-terracotta text-foreground" : "border-border text-muted"}`}><span className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-caption font-semibold ${index < step ? "bg-success text-white" : index === step ? "bg-homera-brown text-white" : "bg-surface-hover"}`}>{index < step ? <Check className="h-3.5 w-3.5" aria-hidden="true" /> : `0${index + 1}`}</span><span className="font-semibold">{label}</span></li>)}
       </ol>
       {error && <p role="alert" className="mb-4 rounded-xl border border-error/25 bg-error/[0.06] px-4 py-3 text-note text-error">{error}</p>}
-      {step === 0 && <WorkspacePanel title="Quel bien souhaitez-vous visiter ?" description="Vous pouvez partir d’une fiche précise ou choisir parmi les biens publiés." icon={Home}>
+      {properties.loading && <p className="mb-4 flex items-center gap-2 text-note text-muted" role="status"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />Chargement des biens disponibles…</p>}
+
+      {step === 0 && <WorkspacePanel title="Quel bien souhaitez-vous visiter ?" description="Seuls les biens publiés et disponibles peuvent recevoir une demande de visite." icon={Home}>
         <div className="grid gap-5 md:grid-cols-[1fr_1.15fr] md:items-start">
           <FormField label="Bien à visiter" name="visit-property" required>
             <select id="visit-property" value={propertyId} onChange={(event) => { setPropertyId(event.target.value); setError(""); }} className={INPUT_CLASS}>
               <option value="">Sélectionner un bien</option>
-              {PROPERTIES.map((entry) => <option key={entry.id} value={entry.id}>{entry.title} · {entry.city} · {entry.homeraId}</option>)}
+              {catalogue.map((entry) => <option key={entry.id} value={entry.id}>{entry.title} · {entry.city} · {entry.reference}</option>)}
             </select>
           </FormField>
-          {property ? <PropertyMiniCard property={property} /> : <div className="flex min-h-24 items-center justify-center rounded-2xl border border-dashed border-border px-4 text-center text-caption text-muted">La fiche du bien sélectionné s’affichera ici.</div>}
+          {property ? <PublicPropertyMiniCard property={property} /> : <div className="flex min-h-24 items-center justify-center rounded-2xl border border-dashed border-border px-4 text-center text-caption text-muted">La fiche du bien sélectionné s’affichera ici.</div>}
         </div>
       </WorkspacePanel>}
       {step === 1 && <WorkspacePanel title="Proposez votre disponibilité" description="La date choisie est une préférence, pas encore un rendez-vous confirmé." icon={CalendarDays}>
         <div className="grid gap-5 sm:grid-cols-2">
           <FormField label="Date souhaitée" name="visit-date" hint="Les créneaux sont proposés en heure locale du Bénin." required>
-            <input id="visit-date" type="date" min={tomorrow || undefined} value={chosenDate} onChange={(event) => setDate(event.target.value)} className={INPUT_CLASS} />
+            <input id="visit-date" type="date" min={new Date().toISOString().slice(0, 10)} value={date} onChange={(event) => setDate(event.target.value)} className={INPUT_CLASS} />
           </FormField>
           <FormField label="Créneau souhaité" name="visit-slot" required>
             <select id="visit-slot" value={slot} onChange={(event) => setSlot(event.target.value)} className={INPUT_CLASS}><option value="">Choisir un créneau</option>{VISIT_SLOTS.map((item) => <option key={item} value={item}>{item}</option>)}</select>
           </FormField>
         </div>
+        <label className="mt-5 block text-caption font-semibold" htmlFor="visit-message">Message (facultatif)
+          <textarea id="visit-message" rows={2} maxLength={1000} value={message} onChange={(event) => setMessage(event.target.value)} className={`${INPUT_CLASS} mt-1`} placeholder="Précisions utiles au rendez-vous." />
+        </label>
         <p className="mt-5 flex items-start gap-2 rounded-2xl bg-info/[0.06] p-4 text-caption leading-relaxed text-muted"><Clock3 className="mt-0.5 h-4 w-4 shrink-0 text-info" aria-hidden="true" />Le représentant confirmera ou proposera un autre créneau. N’effectuez aucun paiement avant la confirmation d’un rendez-vous par les canaux officiels HOMERA.</p>
       </WorkspacePanel>}
       {step === 2 && <WorkspacePanel title="Vérifiez votre demande" description="Prenez un instant pour vérifier que les informations sont exactes." icon={ClipboardCheck}>
-        {property ? <div className="grid gap-5 md:grid-cols-[220px_1fr]"><PropertyMiniCard property={property} large /><dl className="grid gap-3 sm:grid-cols-2"><SummaryItem label="Bien" value={property.title} /><SummaryItem label="Référence" value={property.homeraId} /><SummaryItem label="Date souhaitée" value={formatDateOnly(chosenDate)} /><SummaryItem label="Créneau" value={slot} /><SummaryItem label="État après envoi" value="Demande envoyée · en attente de réponse" /></dl></div> : <p className="text-note text-error">Le bien n’est plus disponible dans le catalogue. Revenez à l’étape précédente.</p>}
+        {property ? <div className="grid gap-5 md:grid-cols-[220px_1fr]"><PublicPropertyMiniCard property={property} large /><dl className="grid gap-3 sm:grid-cols-2"><SummaryItem label="Bien" value={property.title} /><SummaryItem label="Référence" value={property.reference} /><SummaryItem label="Date souhaitée" value={formatDay(date)} /><SummaryItem label="Créneau" value={slot} /><SummaryItem label="État après envoi" value="Demandée · en attente de réponse" /></dl></div> : <p className="text-note text-error">Le bien n’est plus disponible dans le catalogue. Revenez à l’étape précédente.</p>}
       </WorkspacePanel>}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <button type="button" onClick={() => { setError(""); setStep((current) => Math.max(0, current - 1)); }} disabled={step === 0} className="min-h-11 rounded-btn px-4 text-note font-semibold text-muted hover:bg-surface-hover disabled:cursor-not-allowed disabled:opacity-40"><ArrowLeft className="mr-2 inline h-4 w-4" aria-hidden="true" />Précédent</button>
-        {step < 2 ? <button type="button" onClick={continueStep} disabled={step === 2} className={BUTTON_PRIMARY}>Continuer<ArrowRight className="h-4 w-4" aria-hidden="true" /></button> : <button type="button" onClick={requestVisit} disabled={!property || !slot || !chosenDate} className={BUTTON_PRIMARY}>Envoyer ma demande<CalendarCheck2 className="h-4 w-4" aria-hidden="true" /></button>}
+        {step < 2 ? <button type="button" onClick={continueStep} disabled={step === 2} className={BUTTON_PRIMARY}>Continuer<ArrowRight className="h-4 w-4" aria-hidden="true" /></button> : <button type="button" onClick={() => void requestVisit()} disabled={!property || !slot || !date || busy} className={`${BUTTON_PRIMARY} disabled:opacity-60`}>{busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}Envoyer ma demande<CalendarCheck2 className="h-4 w-4" aria-hidden="true" /></button>}
       </div>
-      <div className="mt-8"><DemoNotice>Les demandes de visite de cette démo sont enregistrées sur cet appareil. Aucun agent ne reçoit une notification réelle tant que l’API HOMERA n’est pas connectée.</DemoNotice></div>
     </div>
   );
 }
 
 export function ClientVisits() {
-  const { data, updateData } = useWorkflow();
-  const visits = useMemo(() => [...data.visits].sort((a, b) => b.createdAt.localeCompare(a.createdAt)), [data.visits]);
-  const [feedback, setFeedback] = useState<Record<string, { rating: number; comment: string }>>({});
-  const cancelVisit = (visit: VisitRecord) => updateData((current) => ({
-    ...current,
-    visits: current.visits.map((entry) => entry.id === visit.id ? { ...entry, status: "annulee" } : entry),
-    notifications: [makeNotification("visite", "Visite annulée", `${visit.propertyTitle} · ${formatDateOnly(visit.date)}`, "/client/visites"), ...current.notifications],
-  }));
-  const saveFeedback = (visit: VisitRecord) => {
-    const entry = feedback[visit.id];
-    if (!entry?.rating) return;
-    updateData((current) => ({
-      ...current,
-      visits: current.visits.map((item) => item.id === visit.id ? { ...item, rating: entry.rating, comment: entry.comment.trim() } : item),
-      notifications: [makeNotification("visite", "Merci pour votre retour", `Votre avis sur ${visit.propertyTitle} a été enregistré localement.`, "/client/visites"), ...current.notifications],
-    }));
-  };
-
-  return <>
-    <WorkspaceHeading eyebrow="Votre agenda" title="Mes visites" description="Suivez vos demandes, les confirmations et les retours après visite." actions={<Link href="/client/visites/nouvelle" className={BUTTON_PRIMARY}><CalendarDays className="h-4 w-4" aria-hidden="true" />Demander une visite</Link>} />
-    {visits.length === 0 ? <EmptyPanel icon={CalendarDays} title="Aucune visite pour le moment" description="Partez d’une fiche de bien pour choisir une date et un créneau. Le statut de chaque demande restera visible ici." action={<Link href="/explorer" className={BUTTON_PRIMARY}>Explorer les biens<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} /> : <div className="space-y-4">{visits.map((visit) => <VisitCard key={visit.id} visit={visit} hasApplication={data.applications.some((application) => application.visitId === visit.id)} feedback={feedback[visit.id] ?? { rating: 0, comment: "" }} onFeedbackChange={(next) => setFeedback((current) => ({ ...current, [visit.id]: next }))} onFeedbackSave={() => saveFeedback(visit)} onCancel={() => cancelVisit(visit)} />)}</div>}
-    <div className="mt-8"><DemoNotice>Les étapes sont enregistrées dans votre espace de démonstration. Le propriétaire ou l’agent ne reçoit pas encore la demande sur un serveur.</DemoNotice></div>
-  </>;
+  return (
+    <>
+      <p className="mb-6 flex flex-wrap justify-end"><Link href="/client/visites/nouvelle" className={BUTTON_PRIMARY}><CalendarDays className="h-4 w-4" aria-hidden="true" />Demander une visite</Link></p>
+      <VisitsList viewpoint="client" title="Mes visites" description="Vos demandes, leurs confirmations et leurs reprogrammations, telles que le serveur HOMERA les a enregistrées." />
+    </>
+  );
 }
 
-function VisitCard({ visit, hasApplication, feedback, onFeedbackChange, onFeedbackSave, onCancel }: { visit: VisitRecord; hasApplication: boolean; feedback: { rating: number; comment: string }; onFeedbackChange: (next: { rating: number; comment: string }) => void; onFeedbackSave: () => void; onCancel: () => void }) {
-  const { data, updateData } = useWorkflow();
-  const canCancel = ["demande-envoyee", "en-attente", "confirmee"].includes(visit.status);
-  const property = PROPERTIES.find((item) => item.id === visit.propertyId);
-  const rentalListing = property?.intent === "louer";
-  const isStayListing = property?.intent === "sejour";
-  const minNights = property?.minNights ?? 2;
-  const [stayNights, setStayNights] = useState<number>(minNights);
-
-  const activeAgentAuth = DEMO_AGENT_AUTHORIZATIONS.find(
-    (auth) => auth.propertyId === visit.propertyId && auth.status === "active",
-  );
-  const visitPaymentCheck = canClientPayVisit(visit, data.transactions, 5000);
-  const existingVisitTx = data.transactions.find(
-    (tx) => tx.visitId === visit.id && (tx.kind === "visite" || tx.kind === "reservation"),
-  );
-  const clientMethods = data.paymentMethods.filter(
-    (m) => m.usage === "paiement" || m.usage === "mixte",
-  );
-  const defaultMethod = clientMethods.find((m) => m.isDefault) ?? clientMethods[0];
-
-  const handleConfirmedVisitPayment = (kind: "visite" | "reservation", amount: number) => {
-    const provider = defaultMethod?.provider ?? "mtn-momo";
-    const providerMeta = PAYMENT_PROVIDERS.find((p) => p.id === provider) ?? PAYMENT_PROVIDERS[0];
-    const methodSummary = defaultMethod
-      ? `${providerMeta.shortLabel} (${defaultMethod.maskedIdentifier})`
-      : `${providerMeta.shortLabel} (Mobile Money Bénin)`;
-    const split = computeFinancialBreakdown(kind, amount, activeAgentAuth?.agentId);
-    const reference = createLocalId("PAY-CTN").toUpperCase();
-    const label =
-      kind === "reservation"
-        ? `Réservation séjour (${stayNights} nuits) — ${visit.propertyTitle}`
-        : `Frais de visite confirmée (${formatDateOnly(visit.date)}) — ${visit.propertyTitle}`;
-    const tx: PaymentTransactionRecord = {
-      id: createLocalId("tx"),
-      reference,
-      kind,
-      label,
-      amount: split.grossAmount,
-      homeraFee: split.homeraFee,
-      ownerNetAmount: split.ownerNetAmount,
-      agentAmount: split.agentAmount,
-      provider,
-      methodSummary,
-      propertyId: visit.propertyId,
-      propertyRef: visit.propertyRef,
-      visitId: visit.id,
-      agentId: activeAgentAuth?.agentId,
-      status: provider === "virement-uemoa" ? "en-verification" : "confirme",
-      fundsAvailability: provider === "virement-uemoa" ? "en-attente" : "disponible",
-      createdAt: new Date().toISOString(),
-    };
-    updateData((current) => ({
-      ...current,
-      transactions: [tx, ...current.transactions],
-      notifications: [
-        makeNotification(
-          "visite",
-          kind === "reservation" ? "Réservation court séjour réglée" : "Frais de visite réglés",
-          `${label} · Réf. ${reference}`,
-          "/client/paiements",
-        ),
-        ...current.notifications,
-      ],
-    }));
-  };
-
-  return <WorkspacePanel title={visit.propertyTitle} description={`${formatDateOnly(visit.date)} · ${visit.slot} · ${visit.propertyRef}`} icon={CalendarDays} action={<StatusBadge status={visit.status} />}>
-    <div className="grid gap-5 md:grid-cols-[1fr_auto] md:items-center">
-      <div className="flex items-start gap-3"><span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-background text-homera-terracotta"><MapPin className="h-4 w-4" aria-hidden="true" /></span><div><p className="text-note font-semibold">{visit.status === "demande-envoyee" ? "Le représentant doit répondre" : visit.status === "confirmee" ? "Rendez-vous confirmé" : visit.status === "terminee" ? "Comment s’est passée la visite ?" : VISIT_STATUS_LABELS[visit.status]}</p><p className="mt-1 text-caption leading-relaxed text-muted">{visit.status === "demande-envoyee" ? "Votre créneau est une proposition. Il sera confirmé ou remplacé dans cet espace." : visit.status === "agent-indisponible" ? "Le créneau demandé ne peut pas être assuré. Choisissez-en un autre depuis la fiche du bien." : "Conservez la référence du bien pour vos échanges avec le représentant."}</p></div></div>
-      <div className="flex flex-wrap gap-2">{canCancel && <button type="button" onClick={onCancel} className="inline-flex min-h-10 items-center gap-2 rounded-btn border border-border px-3 text-caption font-semibold text-muted hover:border-error/50 hover:text-error"><XCircle className="h-4 w-4" aria-hidden="true" />Annuler</button>}<Link href={`/biens/${visit.propertyId}`} className="inline-flex min-h-10 items-center gap-2 rounded-btn border border-border px-3 text-caption font-semibold text-foreground hover:border-homera-terracotta hover:text-homera-terracotta">Voir le bien<ChevronRight className="h-4 w-4" aria-hidden="true" /></Link></div>
-    </div>
-    {visit.status === "confirmee" && (
-      <div className="mt-5 rounded-2xl border border-border bg-background p-4">
-        {existingVisitTx ? (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="flex items-center gap-2 text-note font-semibold text-success">
-                <CheckCircle2 className="h-4 w-4" aria-hidden="true" />
-                {existingVisitTx.kind === "reservation" ? "Réservation court séjour réglée" : "Frais de visite réglés"} · {formatFCFA(existingVisitTx.amount)}
-              </p>
-              <p className="mt-1 font-mono text-caption text-muted">
-                Réf. {existingVisitTx.reference} · {existingVisitTx.methodSummary} · Bien {visit.propertyRef}
-              </p>
-            </div>
-            <Link href="/client/paiements" className={BUTTON_SECONDARY}>
-              Consulter le reçu
-            </Link>
-          </div>
-        ) : isStayListing && property ? (
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="text-note font-semibold text-foreground">Confirmation de court séjour (§8)</p>
-                <p className="mt-0.5 text-caption text-muted">
-                  Tarif nuitée : {formatFCFA(property.price)} · Frais de service HOMERA inclus · Montant total affiché avant paiement.
-                </p>
-              </div>
-              <div className="flex items-center gap-1.5" role="group" aria-label="Durée du séjour">
-                {[minNights, 4, 7, 14]
-                  .filter((value, index, array) => array.indexOf(value) === index && value >= minNights)
-                  .map((nights) => (
-                    <button
-                      key={nights}
-                      type="button"
-                      aria-pressed={stayNights === nights}
-                      onClick={() => setStayNights(nights)}
-                      className={`min-h-9 rounded-full border px-3 text-caption font-semibold transition-colors ${
-                        stayNights === nights
-                          ? "border-homera-terracotta bg-homera-terracotta text-white"
-                          : "border-border bg-card text-muted hover:text-foreground"
-                      }`}
-                    >
-                      {nights} nuits
-                    </button>
-                  ))}
-              </div>
-            </div>
-            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-3">
-              <p className="text-caption text-muted">
-                Total pour <strong className="text-foreground">{stayNights} nuits</strong> :{" "}
-                <strong className="homera-num text-foreground">{formatFCFA(property.price * stayNights)}</strong>
-              </p>
-              <button
-                type="button"
-                onClick={() => handleConfirmedVisitPayment("reservation", property.price * stayNights)}
-                className={BUTTON_PRIMARY}
-              >
-                Payer la réservation · {formatFCFA(property.price * stayNights)}
-                <ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </button>
-            </div>
-          </div>
-        ) : visitPaymentCheck.allowed ? (
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-note font-semibold text-foreground">Frais d’organisation de visite confirmée (§9)</p>
-              <p className="mt-0.5 text-caption text-muted">
-                Rattachés uniquement à la visite {visit.id} ({formatDateOnly(visit.date)}) sur {visit.propertyRef}
-                {activeAgentAuth ? ` avec ${activeAgentAuth.agentName}` : ""}. Ne constituent jamais une avance sur loyer.
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => handleConfirmedVisitPayment("visite", visitPaymentCheck.amount)}
-              className={BUTTON_SECONDARY}
-            >
-              {visitPaymentCheck.contextualLabel}
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
-            </button>
-          </div>
-        ) : null}
-      </div>
-    )}
-    {visit.status === "terminee" && (visit.rating ? <div className="mt-5 rounded-2xl border border-success/20 bg-success/[0.05] p-4"><p className="flex items-center gap-2 text-note font-semibold"><CheckCircle2 className="h-4 w-4 text-success" aria-hidden="true" />Votre retour est enregistré · {visit.rating}/5</p>{visit.comment && <p className="mt-2 text-note text-muted">« {visit.comment} »</p>}</div> : <div className="mt-5 rounded-2xl border border-border bg-background p-4"><p className="text-note font-semibold">Votre avis nous aide</p><div className="mt-3 flex flex-wrap items-center gap-1" role="radiogroup" aria-label={`Votre note pour la visite de ${visit.propertyTitle}`}>{[1, 2, 3, 4, 5].map((rating) => <button key={rating} type="button" role="radio" aria-checked={feedback.rating === rating} aria-label={`${rating} sur 5`} onClick={() => onFeedbackChange({ ...feedback, rating })} className={`flex h-10 w-10 items-center justify-center rounded-full transition-colors ${feedback.rating >= rating ? "text-homera-terracotta" : "text-muted-light hover:text-homera-terracotta"}`}><Star className={`h-5 w-5 ${feedback.rating >= rating ? "fill-current" : ""}`} aria-hidden="true" /></button>)}</div><label className="mt-3 block text-caption font-medium" htmlFor={`feedback-${visit.id}`}>Commentaire sur le bien et l’agent</label><textarea id={`feedback-${visit.id}`} rows={3} maxLength={500} value={feedback.comment} onChange={(event) => onFeedbackChange({ ...feedback, comment: event.target.value })} placeholder="Votre expérience, en quelques mots…" className={`${INPUT_CLASS} mt-1 resize-y py-3`} /><button type="button" onClick={onFeedbackSave} disabled={!feedback.rating} className={`${BUTTON_PRIMARY} mt-3 disabled:cursor-not-allowed disabled:opacity-45`}>Envoyer mon retour<ArrowRight className="h-4 w-4" aria-hidden="true" /></button></div>)}
-    {visit.status === "terminee" && rentalListing && <div className="mt-4">{hasApplication ? <Link href="/client/demandes" className="inline-flex min-h-11 items-center gap-2 rounded-btn border border-success/25 bg-success/[0.05] px-4 text-note font-semibold text-success hover:bg-success/[0.1]"><ClipboardList className="h-4 w-4" aria-hidden="true" />Suivre ma demande<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link> : <Link href={`/client/demandes/nouvelle?bien=${visit.propertyId}&visite=${visit.id}`} className="inline-flex min-h-11 items-center gap-2 rounded-btn border border-homera-terracotta/30 bg-homera-terracotta/[0.06] px-4 text-note font-semibold text-homera-terracotta hover:bg-homera-terracotta/[0.1]"><HeartHandshake className="h-4 w-4" aria-hidden="true" />Déposer une demande de location<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>}</div>}
-    {visit.status === "terminee" && !rentalListing && <p className="mt-4 rounded-xl border border-border bg-background px-4 py-3 text-caption leading-relaxed text-muted">La candidature de location n’est ouverte qu’après la visite d’un bien proposé à la location.</p>}
-  </WorkspacePanel>;
-}
-
-export function RentalRequestForm({ initialPropertyId = "", initialVisitId = "" }: { initialPropertyId?: string; initialVisitId?: string }) {
-  const { data, updateData } = useWorkflow();
-  const [propertyId, setPropertyId] = useState(initialPropertyId);
-  const [visitId, setVisitId] = useState(initialVisitId);
-  const [income, setIncome] = useState("");
-  const [message, setMessage] = useState("");
-  const [error, setError] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const eligibleVisits = eligibleRentalVisits(data).filter((visit) => PROPERTIES.find((property) => property.id === visit.propertyId)?.intent === "louer");
-  const linkedVisit = data.visits.find((entry) => entry.id === visitId);
-  const selectedApplication = data.applications.find((entry) => entry.visitId === visitId);
-  // Le bien vient toujours de la visite enregistrée, jamais d’un paramètre d’URL modifiable.
-  const effectivePropertyId = visitId ? linkedVisit?.propertyId ?? "" : propertyId;
-  const property = PROPERTIES.find((entry) => entry.id === effectivePropertyId);
-  const eligibleVisit = eligibleVisits.find((entry) => entry.id === visitId);
-
-  const submit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const validation = validateRentalRequest(data, visitId, property?.id, property?.intent);
-    if (!validation.ok) {
-      setError(rentalRequestError(validation.reason));
-      return;
-    }
-    if (!property) {
-      setError("La fiche du bien lié à cette visite n’est plus disponible.");
-      return;
-    }
-    if (!income.trim()) {
-      setError("Indiquez votre revenu mensuel net afin de préparer votre dossier.");
-      return;
-    }
-
-    const applicationId = createLocalId("demande");
-    const submittedAt = new Date().toISOString();
-    let rejected: RentalRequestFailure | null = null;
-    updateData((current) => {
-      const currentValidation = validateRentalRequest(current, visitId, property.id, property.intent);
-      if (!currentValidation.ok) {
-        rejected = currentValidation.reason;
-        return current;
-      }
-      return {
-        ...current,
-        applications: [{ id: applicationId, propertyId: property.id, propertyRef: property.homeraId, propertyTitle: property.title, visitId: currentValidation.visit.id, stage: "demande-envoyee", monthlyIncome: income.trim(), message: message.trim(), submittedAt }, ...current.applications],
-        notifications: [makeNotification("demande", "Demande de location envoyée", `Votre dossier pour ${property.title} est prêt pour étude.`, "/client/demandes"), ...current.notifications],
-      };
-    });
-    if (rejected) {
-      setError(rentalRequestError(rejected));
-      return;
-    }
-    setSubmitted(true);
-  };
-
-  if (submitted) return <div className="mx-auto max-w-3xl rounded-card border border-success/25 bg-card p-7 text-center shadow-[var(--shadow-card)] sm:p-10" role="status" aria-live="polite"><CheckCircle2 className="mx-auto h-12 w-12 text-success" aria-hidden="true" /><p className="mt-4 text-caption font-semibold uppercase tracking-[0.16em] text-success">Dossier créé</p><h1 className="mt-2 font-serif text-display-sm">Votre demande est en étude</h1><p className="mx-auto mt-3 max-w-xl text-body-sm leading-relaxed text-muted">Votre dossier apparaît maintenant dans « Mes demandes ». Le statut et chaque étape y seront visibles.</p><Link href="/client/demandes" className={`${BUTTON_PRIMARY} mt-6`}>Suivre ma demande<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link></div>;
-
-  if (selectedApplication) return <div className="mx-auto max-w-4xl"><WorkspaceHeading eyebrow="Après la visite" title="Demande de location" description="Une candidature ne peut être déposée qu’une fois pour chaque visite terminée." actions={<Link href="/client/visites" className={BUTTON_SECONDARY}><ArrowLeft className="h-4 w-4" aria-hidden="true" />Mes visites</Link>} /><EmptyPanel icon={ClipboardList} title="Une demande existe déjà pour cette visite" description={`Le dossier ${selectedApplication.id} est déjà enregistré pour ce bien. Retrouvez son statut et les prochaines étapes dans votre espace demandes.`} action={<Link href="/client/demandes" className={BUTTON_PRIMARY}>Suivre ma demande<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} /></div>;
-
-  return <div className="mx-auto max-w-4xl"><WorkspaceHeading eyebrow="Après la visite" title="Demande de location" description="Préparez votre candidature à la location. Seules les visites marquées comme terminées peuvent ouvrir un dossier." actions={<Link href="/client/visites" className={BUTTON_SECONDARY}><ArrowLeft className="h-4 w-4" aria-hidden="true" />Mes visites</Link>} />
-    {!eligibleVisits.length && !linkedVisit ? <EmptyPanel icon={ClipboardList} title="Aucune visite terminée" description="Une demande de location est possible après la visite du logement. Demandez une visite puis suivez son statut dans votre agenda." action={<Link href="/client/visites" className={BUTTON_PRIMARY}>Voir mes visites<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} /> : <form onSubmit={submit} className="space-y-5"><WorkspacePanel title="Le logement visité" description="Rattachez votre candidature à une visite terminée." icon={Home}>
-      <div className="grid gap-5 sm:grid-cols-2"><FormField label="Visite terminée" name="application-visit" required><select id="application-visit" value={eligibleVisit ? visitId : ""} onChange={(event) => { const next = event.target.value; setVisitId(next); const match = eligibleVisits.find((entry) => entry.id === next); if (match) setPropertyId(match.propertyId); else if (!next) setPropertyId(""); setError(""); }} className={INPUT_CLASS}><option value="">Choisir une visite</option>{eligibleVisits.map((entry) => <option key={entry.id} value={entry.id}>{entry.propertyTitle} · {formatDateOnly(entry.date)}</option>)}</select></FormField><FormField label="Référence du bien" name="application-property"><input id="application-property" value={property?.homeraId ?? "Sélectionnez une visite"} readOnly className={`${INPUT_CLASS} opacity-75`} /></FormField></div>
-      {visitId && !eligibleVisit && linkedVisit && <p role="status" className="mt-4 rounded-xl border border-warning/25 bg-warning/[0.06] px-4 py-3 text-caption leading-relaxed text-muted">Cette visite ne peut plus ouvrir une candidature. Choisissez une visite terminée disponible dans la liste.</p>}
-    </WorkspacePanel>
-    <WorkspacePanel title="Votre dossier" description="Ces informations restent dans le navigateur pour le prototype." icon={FileText}>
-      <div className="grid gap-5 sm:grid-cols-2"><FormField label="Revenu mensuel net (FCFA)" name="income" required><input id="income" type="text" inputMode="numeric" value={income} onChange={(event) => setIncome(event.target.value.replace(/[^\d\s]/g, ""))} placeholder="Ex. 450 000" className={INPUT_CLASS} /></FormField><FormField label="Pièces à préparer" name="application-documents" hint="Identité, justificatifs de revenus et références. L’envoi sécurisé de pièces sera connecté ultérieurement."><input id="application-documents" value="À fournir après étude" readOnly className={`${INPUT_CLASS} opacity-75`} /></FormField></div>
-      <label htmlFor="application-message" className="mt-5 block text-note font-semibold">Un mot pour le propriétaire <span className="font-normal text-muted">(facultatif)</span></label><textarea id="application-message" rows={4} maxLength={800} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Présentez brièvement votre projet et votre date d’entrée souhaitée…" className={`${INPUT_CLASS} mt-1 resize-y py-3`} />
-    </WorkspacePanel>
-    {error && <p role="alert" className="rounded-xl border border-error/25 bg-error/[0.06] px-4 py-3 text-note text-error">{error}</p>}
-    <div className="flex flex-wrap items-center justify-between gap-3"><p className="max-w-xl text-caption leading-relaxed text-muted">En envoyant ce formulaire, vous enregistrez une candidature de démonstration. Elle n’est pas transmise au propriétaire.</p><button type="submit" disabled={!eligibleVisit || !property} className={`${BUTTON_PRIMARY} disabled:cursor-not-allowed disabled:opacity-45`}>Envoyer ma demande<ArrowRight className="h-4 w-4" aria-hidden="true" /></button></div>
-    </form>}
-  </div>;
+export function RentalRequestForm({ initialVisitId = "" }: { initialVisitId?: string }) {
+  return <ServerRentalRequestForm initialVisitId={initialVisitId} />;
 }
 
 export function ClientApplications() {
-  const { data } = useWorkflow();
-  const applications = [...data.applications].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt));
-  const completedVisits = eligibleRentalVisits(data).filter((visit) => PROPERTIES.find((property) => property.id === visit.propertyId)?.intent === "louer");
-  return <>
-    <WorkspaceHeading eyebrow="Votre dossier locatif" title="Mes demandes" description="Du dépôt de candidature à la récupération des clés, chaque changement de statut est regroupé ici." actions={<Link href="/client/visites" className={BUTTON_SECONDARY}><CalendarDays className="h-4 w-4" aria-hidden="true" />Mes visites</Link>} />
-    {completedVisits.length > 0 && <WorkspacePanel title="Une visite terminée ? Déposez votre dossier" description="Les candidatures ne sont ouvertes qu’après une visite terminée." icon={HeartHandshake} className="mb-5"><div className="flex flex-wrap gap-2">{completedVisits.map((visit) => <Link key={visit.id} href={`/client/demandes/nouvelle?bien=${visit.propertyId}&visite=${visit.id}`} className={BUTTON_PRIMARY}>{visit.propertyTitle}<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>)}</div></WorkspacePanel>}
-    {applications.length === 0 ? <EmptyPanel icon={ClipboardList} title="Aucun dossier de location" description="Après une visite terminée, vous pourrez déposer votre demande et suivre son étude, son acceptation ou son refus." action={<Link href="/client/visites" className={BUTTON_PRIMARY}>Voir mes visites<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} /> : <div className="space-y-5">{applications.map((application) => <RentalApplicationCard key={application.id} application={application} />)}</div>}
-  </>;
-}
-
-function RentalApplicationCard({ application }: { application: { id: string; propertyId: string; propertyRef: string; propertyTitle: string; stage: RentalStage; submittedAt: string } }) {
-  const contract = useWorkflow().data.contracts.find((entry) => entry.applicationId === application.id);
-  const rejected = application.stage === "refusee";
-  const reachedIndex = RENTAL_STAGES.findIndex((entry) => entry.id === application.stage);
-  return <WorkspacePanel title={application.propertyTitle} description={`Dossier ${application.id} · ${application.propertyRef} · envoyé le ${formatDateTime(application.submittedAt)}`} icon={ClipboardList} action={<StatusBadge status={application.stage} />}>
-    <ol className="grid gap-2 sm:grid-cols-3 lg:grid-cols-5" aria-label="Étapes de la demande de location">{RENTAL_STAGES.map((stage) => {
-      const visible = !rejected ? stage.id !== "refusee" : stage.id !== "acceptee";
-      if (!visible) return null;
-      const effectiveIndex = RENTAL_STAGES.filter((entry) => !((!rejected && entry.id === "refusee") || (rejected && entry.id === "acceptee"))).findIndex((entry) => entry.id === stage.id);
-      const active = stage.id === application.stage;
-      const done = !rejected && effectiveIndex <= reachedIndex;
-      return <li key={stage.id} className={`rounded-xl border p-3 ${active ? "border-homera-terracotta/35 bg-homera-terracotta/[0.06]" : done ? "border-success/20 bg-success/[0.04]" : "border-border bg-background/50"}`}><p className="flex items-center gap-2 text-caption font-semibold"><span className={`flex h-5 w-5 items-center justify-center rounded-full ${active ? "bg-homera-terracotta text-white" : done ? "bg-success text-white" : "bg-surface-hover text-muted"}`}>{done && !active ? <Check className="h-3 w-3" aria-hidden="true" /> : <span className="sr-only">{active ? "Étape actuelle" : "À venir"}</span>}</span>{stage.label}</p><p className="mt-2 text-caption leading-relaxed text-muted">{stage.description}</p></li>;
-    })}</ol>
-    {contract && <div className="mt-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background p-4"><div className="flex items-start gap-3"><FileText className="mt-0.5 h-4 w-4 shrink-0 text-homera-terracotta" aria-hidden="true" /><div><p className="text-note font-semibold">Contrat de location</p><p className="mt-1 text-caption text-muted">Statut : <StatusBadge status={contract.status} /></p></div></div><Link href={`/client/contrats/${contract.id}`} className={BUTTON_SECONDARY}>Consulter le contrat<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link></div>}
-  </WorkspacePanel>;
+  return <ApplicationsList viewpoint="client" title="Mes demandes" description="Du dépôt de votre dossier à la décision du propriétaire, chaque changement de statut est enregistré ici et notifié." />;
 }
 
 export function ClientContracts() {
@@ -540,42 +256,18 @@ export function ClientContractReader({ contractId }: { contractId: string }) {
   </div>;
 }
 
-function PropertyMiniCard({ property, large = false }: { property: Property; large?: boolean }) {
+function PublicPropertyMiniCard({ property, large = false }: { property: { id: string; title: string; reference: string; city: string; district?: string; media?: string; alt?: string; price?: number | null; intent?: string }; large?: boolean }) {
   return <div className={`overflow-hidden rounded-2xl border border-border bg-card ${large ? "" : "grid grid-cols-[88px_1fr]"}`}>
-    <div className={`relative ${large ? "aspect-[4/3]" : "h-full min-h-[94px]"}`}><Visual mediaKey={property.media} alt={property.alt} sizes={large ? "220px" : "100px"} veil="none" quality={68} className="absolute inset-0 h-full w-full" /></div>
-    <div className="min-w-0 p-3"><p className="line-clamp-2 text-note font-semibold">{property.title}</p><p className="mt-1 flex items-center gap-1 text-caption text-muted"><MapPin className="h-3 w-3 shrink-0 text-homera-terracotta" aria-hidden="true" />{property.district}, {property.city}</p><p className="mt-1 font-mono text-micro text-muted">{property.homeraId}</p>{large && <p className="mt-2 text-caption text-foreground">{formatPropertyPrice(property)}</p>}</div>
+    <div className={`relative ${large ? "aspect-[4/3]" : "h-full min-h-[94px]"}`}>{property.media && <Visual mediaKey={property.media} alt={property.alt ?? property.title} sizes={large ? "220px" : "100px"} veil="none" quality={68} className="absolute inset-0 h-full w-full" />}</div>
+    <div className="min-w-0 p-3"><p className="line-clamp-2 text-note font-semibold">{property.title}</p><p className="mt-1 flex items-center gap-1 text-caption text-muted"><MapPin className="h-3 w-3 shrink-0 text-homera-terracotta" aria-hidden="true" />{[property.district, property.city].filter(Boolean).join(", ")}</p><p className="mt-1 font-mono text-micro text-muted">{property.reference}</p></div>
   </div>;
 }
+
 
 function SummaryItem({ label, value }: { label: string; value: string }) {
   return <div className="rounded-xl border border-border bg-background/60 p-3"><dt className="text-micro font-semibold uppercase tracking-[0.13em] text-muted">{label}</dt><dd className="mt-1 text-note font-medium text-foreground">{value}</dd></div>;
 }
 
-function formatDateOnly(value: string): string {
-  const [year, month, day] = value.split("-").map(Number);
-  const date = new Date(Date.UTC(year, (month ?? 1) - 1, day ?? 1));
-  return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" }).format(date);
-}
-function formatDateTime(value: string): string {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat("fr-FR", { day: "numeric", month: "short", year: "numeric" }).format(date);
-}
-function rentalRequestError(reason: RentalRequestFailure): string {
-  switch (reason) {
-    case "visite-introuvable": return "Choisissez une visite de votre espace avant de déposer une demande.";
-    case "demande-existante": return "Une demande est déjà liée à cette visite. Retrouvez-la dans « Mes demandes ».";
-    case "visite-non-terminee": return "Une visite terminée est nécessaire avant de déposer une demande.";
-    case "bien-introuvable": return "La fiche du bien lié à cette visite n’est plus disponible.";
-    case "bien-incoherent": return "Le bien choisi ne correspond pas à la référence enregistrée pour cette visite.";
-    case "bien-non-louable": return "Cette visite ne concerne pas un bien proposé à la location.";
-  }
-}
-function tomorrowISO(): string {
-  const date = new Date();
-  date.setDate(date.getDate() + 1);
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-}
 function formatMoney(value: number): string {
   return new Intl.NumberFormat("fr-FR").format(value);
 }

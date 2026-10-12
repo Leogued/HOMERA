@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { INTENT_LABELS, TYPE_LABELS, formatFCFA } from "@/lib/format";
-import { listProperties, loadProperty } from "@/lib/server/services/properties";
+import { loadProperty } from "@/lib/server/services/properties";
 import { getDb } from "@/lib/server/db/client";
-import { PropertyDetail } from "@/components/catalog/PropertyDetail"; function listPublishedIds(): string[] {
-  return listProperties(getDb()).map((property) => property.id);
-}
-
+import { PropertyDetail } from "@/components/catalog/PropertyDetail";
 /* ==================================================================
    /biens/<identifiant> — LA FICHE PUBLIQUE D’UN BIEN
    ------------------------------------------------------------------

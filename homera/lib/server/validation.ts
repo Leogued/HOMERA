@@ -6,6 +6,7 @@ import {
   type PropertyIntent,
   type PropertyType,
 } from "../content";
+import { MEDIA } from "../media.generated";
 
 /* ==================================================================
    HOMERA — VALIDATION DES ENTRÉES SERVEUR
@@ -73,6 +74,15 @@ export const visitRequestSchema = z.object({
   durationMin: z.coerce.number().int().min(15).max(240).optional().default(45),
 });
 
+export const applicationDraftSchema = z.object({
+  visitId: z.string().trim().min(1, "Rattachez votre dossier à une visite effectuée."),
+  message: z.string().trim().max(1000).optional().default(""),
+  monthlyIncome: z.coerce.number().int().min(0).max(100_000_000).optional().default(0),
+});
+export const applicationDecisionSchema = z.object({
+  action: z.enum(["accepter", "refuser", "etudier", "annuler"]),
+  reason: z.string().trim().max(500).optional().default(""),
+});
 export const visitDecisionSchema = z.object({
   action: z.enum(["confirmer", "refuser", "annuler", "reprogrammer", "effectuer", "absence"]),
   date: z.string().trim().regex(/^\d{4}-\d{2}-\d{2}$/, "Indiquez une date au format AAAA-MM-JJ.").optional(),
@@ -127,8 +137,15 @@ export const slotSchema = z.object({
   note: z.string().trim().max(300).optional().default(""),
 });
 
+/* Un visuel qui n’existe pas afficherait une image cassée : la clé est
+   donc vérifiée contre la médiathèque réellement construite. */
 export const photoSchema = z.object({
-  mediaKey: z.string().trim().min(1).max(200),
+  mediaKey: z
+    .string()
+    .trim()
+    .min(1, "Choisissez un visuel.")
+    .max(200)
+    .refine((key) => Object.prototype.hasOwnProperty.call(MEDIA, key), "Ce visuel n’existe pas dans la médiathèque HOMERA."),
   alt: z.string().trim().max(300).optional().default(""),
 });
 

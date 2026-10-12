@@ -72,6 +72,16 @@ Légende : **B** = bloquant (empêche une mise en production honnête), **I** = 
 
 ---
 
+## 2.4 Correctifs de sécurité apportés pendant les LOTS 3 à 5
+
+| # | Constat | Correction |
+|---|---|---|
+| **S1** | Un agent non mandaté — ou n’importe quel client — pouvait lister les pièces justificatives d’un bien d’un tiers en devinant son identifiant (`GET /api/properties/[id]/documents` ne vérifiait rien). | La route exige désormais le propriétaire, l’agent mandaté **actif** ou l’administration ; sinon `403`. Vérifié par requête HTTP pour les quatre profils. |
+| **S2** | Le type de pièce accepté par le serveur ne couvrait pas le vocabulaire de l’assistant : les déclarations étaient rejetées sans que rien ne l’indique. | `documents.ts` reconnaît dix natures ; l’assistant et le serveur partagent le même vocabulaire. |
+| **S3** | Le réordonnancement de la galerie n’écrivait rien : l’écran envoyait des clés de visuels, le service attendait des identifiants. | La route traduit les clés en identifiants avant l’écriture. |
+
+---
+
 ## 3. Décisions structurantes prises à l’issue de l’audit
 
 1. **Un seul backend, pas deux.** Supabase n’est ni configuré ni prévu dans le dépôt. L’environnement
@@ -95,9 +105,9 @@ Légende : **B** = bloquant (empêche une mise en production honnête), **I** = 
 |---|---|---|
 | LOT 1 | Audit, architecture, inventaire | ✅ Terminé (ce document) |
 | LOT 2 | Modèle de données, authentification serveur, permissions, sécurité | ✅ Terminé — socle décrit et mesuré dans [`BACKEND.md`](./BACKEND.md) (§8 : preuves exécutées) |
-| LOT 3 | Biens, photos, publication, propriétaires, agents, autorisations | ⏳ À venir |
-| LOT 4 | Disponibilités, visites, annulations, demandes de location, notifications | ⏳ Partiel (tables et services créés en LOT 2, interface à brancher) |
-| LOT 5 | Outils de contrôle administratif et workflow de vérification | ⏳ Partiel (tables et API d’aperçu créées en LOT 2) |
+| LOT 3 | Biens, photos, publication, propriétaires, agents, autorisations | ✅ Terminé — espaces propriétaire et agent branchés sur le serveur ; fuite d’accès aux pièces corrigée |
+| LOT 4 | Disponibilités, visites, annulations, demandes de location, notifications | ✅ Terminé — visites et candidatures écrites en base, motifs obligatoires, notifications réelles |
+| LOT 5 | Outils de contrôle administratif et workflow de vérification | ✅ Terminé — indicateurs réels, 8 étapes de vérification, décisions motivées, journal |
 | LOT 6 | Refonte des fiches de biens et d’Explorer | ⏳ Partiel (les pages publiques lisent déjà la base ; filtres et pagination encore côté client) |
 | LOT 7 | Navigation, espaces, messagerie, responsive, design system | ⏳ À venir |
 | LOT 8 | Tests complets, performances, documentation finale | ⏳ À venir |

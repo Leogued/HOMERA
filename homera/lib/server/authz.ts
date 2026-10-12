@@ -170,6 +170,26 @@ export function canEditProperty(
   return authorization.scope.includes("gestion") || authorization.scope.includes("annonce");
 }
 
+/**
+ * Droits de LECTURE des pièces d’un dossier : propriétaire, administration,
+ * ou agent mandaté actif sur ce bien.
+ *
+ * Les pièces justificatives d’un bien (titre foncier, identité, mandat) ne
+ * sont pas publiques : un agent non mandaté, un autre propriétaire ou un
+ * simple visiteur ne doit jamais pouvoir les lister en devinant un
+ * identifiant. C’est cette fonction — et non l’écran — qui en décide.
+ */
+export function canReadPropertyDossier(
+  user: UserContext,
+  property: PropertyOwnership,
+  authorization: { status: string; agent_id: string | null; scope: string[] } | null,
+): boolean {
+  if (isStaff(user)) return true;
+  if (isPropertyOwner(user, property)) return true;
+  if (!authorization || authorization.agent_id !== user.id) return false;
+  return authorization.status === "active";
+}
+
 /** Droits de visite terrain : agent mandaté actif pour ce bien précis. */
 export function canHandleVisits(
   user: UserContext,

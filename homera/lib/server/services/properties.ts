@@ -290,6 +290,87 @@ export function propertiesOfOwner(db: Db, ownerId: string): Property[] {
   return rows.map((row) => toProperty(row, photosOf(db, row.id), featuresOf(db, row.id)));
 }
 
+/* ------------------------------------------------------------------
+   VUE PROPRIÉTAIRE / AGENT
+   ------------------------------------------------------------------
+   L’écran d’un espace a besoin de plus que la fiche publique : le statut
+   de publication réel, l’état du contrôle et le nombre de pièces
+   fournies. Ces champs viennent de la base, ils ne sont jamais déduits.
+   ------------------------------------------------------------------ */
+
+export type PropertyWorkspaceView = Property & {
+  publicationStatus: PublicationStatus;
+  verification: string;
+  availability: string;
+  photos: number;
+  documents: number;
+  updatedAt: string;
+  /** Mandat actif, le cas échéant (vue agent). */
+  mandate?: { reference: string; status: string; scope: string[]; expiresAt: string } | null;
+};
+
+export type PublicationStatus =
+  | "brouillon"
+  | "soumis"
+  | "en-verification"
+  | "publie"
+  | "suspendu"
+  | "loue"
+  | "vendu"
+  | "archive";
+
+function workspaceViews(db: Db, rows: PropertyRow[]): PropertyWorkspaceView[] {
+  const count = db.prepare<[string], { total: number }>(
+    "SELECT COUNT(*) AS total FROM property_photos WHERE property_id = ?",
+  );
+  const docs = db.prepare<[string], { total: number }>(
+    "SELECT COUNT(*) AS total FROM documents WHERE entity_type = 'bien' AND entity_id = ?",
+  );
+  return rows.map((row) => {
+    const property = toProperty(row, photosOf(db, row.id), featuresOf(db, row.id));
+    return {
+      ...property,
+      publicationStatus: row.publication_status as PublicationStatus,
+      verification: row.verification_status,
+      availability: row.availability,
+      photos: count.get(row.id)?.total ?? 0,
+      documents: docs.get(row.id)?.total ?? 0,
+      updatedAt: row.updated_at,
+    };
+  });
+}
+
+/** Dossiers du propriétaire, tous statuts confondus : un brouillon doit rester visible. */
+export function ownerWorkspaceProperties(db: Db, ownerId: string): PropertyWorkspaceView[] {
+  const rows = queryAll<PropertyRow>(
+    `${PROPERTY_COLUMNS} WHERE owner_id = ? ORDER BY updated_at DESC`,
+    [ownerId],
+  );
+  return workspaceViews(db, rows);
+}
+
+/** Biens réellement couverts par un mandat actif, avec la portée du mandat. */
+export function agentWorkspaceProperties(db: Db, agentId: string): PropertyWorkspaceView[] {
+  const rows = queryAll<PropertyRow & { aut_reference: string | null; aut_status: string | null; aut_scope: string | null; aut_expires: string | null }>(
+    `${PROPERTY_COLUMNS.replace(" FROM properties", ", a.reference AS aut_reference, a.status AS aut_status, a.scope AS aut_scope, a.expires_at AS aut_expires FROM properties")}
+     JOIN authorizations a ON a.property_id = properties.id
+     WHERE a.agent_id = ? AND a.status = 'active' AND a.expires_at >= ?
+     ORDER BY properties.updated_at DESC`,
+    [agentId, nowIso().slice(0, 10)],
+  );
+  return rows.map((row) => ({
+    ...workspaceViews(db, [row])[0],
+    mandate: row.aut_reference
+      ? {
+          reference: row.aut_reference,
+          status: row.aut_status ?? "",
+          scope: (row.aut_scope ?? "").split(",").filter(Boolean),
+          expiresAt: row.aut_expires ?? "",
+        }
+      : null,
+  }));
+}
+
 /** Biens confiés à un agent : uniquement les mandats actifs, expirés exclus. */
 export function propertiesOfAgent(db: Db, agentId: string): Property[] {
   const rows = queryAll<PropertyRow>(
@@ -681,6 +762,135 @@ export function removePhoto(db: Db, actor: UserContext, propertyId: string, phot
 /* ------------------------------------------------------------------
    DISPONIBILITÉ
    ------------------------------------------------------------------ */
+
+/* ==================================================================
+   VUE ADMINISTRATIVE DU CATALOGUE
+   ------------------------------------------------------------------
+   L’administration doit pouvoir répondre à trois questions simples :
+   combien de biens, dans quel état de publication, et à qui
+   appartiennent-ils. Rien de plus, rien de moins : les pièces du
+   dossier ne remontent pas ici, elles se lisent dossier par dossier.
+   ================================================================== */
+
+export type AdminPropertyView = {
+  id: string;
+  reference: string;
+  title: string;
+  type: string;
+  intent: string;
+  city: string;
+  district: string;
+  price: number;
+  publicationStatus: string;
+  verificationStatus: string;
+  availabilityStatus: string;
+  ownerId: string | null;
+  ownerName: string;
+  ownerEmail: string;
+  agentName: string | null;
+  photos: number;
+  documents: number;
+  createdAt: string;
+  updatedAt: string;
+  ageDays: number;
+};
+
+export function adminProperties(db: Db, filters: { q?: string; publication?: string } = {}): AdminPropertyView[] {
+  const params: string[] = [];
+  const where: string[] = [];
+  const q = (filters.q ?? "").trim();
+  if (q) {
+    where.push("(p.title LIKE ? OR p.reference LIKE ? OR p.city LIKE ? OR p.district LIKE ?)");
+    const like = `%${q}%`;
+    params.push(like, like, like, like);
+  }
+  if (filters.publication) {
+    where.push("p.publication_status = ?");
+    params.push(filters.publication);
+  }
+  const rows = queryAll<PropertyRow & { owner_prenom: string; owner_nom: string; owner_email: string }>(
+    `${PROPERTY_COLUMNS.replace(" FROM properties", ", p.owner_id AS ownerId, u.prenom AS owner_prenom, u.nom AS owner_nom, u.email AS owner_email FROM properties p JOIN users u ON u.id = p.owner_id")} ${where.length ? `WHERE ${where.join(" AND ")}` : ""} ORDER BY p.updated_at DESC`.replace("SELECT *", "SELECT p.*"),
+    params,
+  );
+  return rows.map((row) => {
+    const photos = queryOne<{ c: number }>("SELECT COUNT(*) AS c FROM property_photos WHERE property_id = ?", [row.id])?.c ?? 0;
+    const documents = queryOne<{ c: number }>("SELECT COUNT(*) AS c FROM documents WHERE entity_type = 'bien' AND entity_id = ?", [row.id])?.c ?? 0;
+    const agent = queryOne<{ agent_id: string; prenom: string; nom: string }>(
+      `SELECT a.agent_id, u.prenom, u.nom FROM authorizations a JOIN users u ON u.id = a.agent_id
+        WHERE a.property_id = ? AND a.status = 'active' ORDER BY a.updated_at DESC LIMIT 1`,
+      [row.id],
+    );
+    return {
+      id: row.id,
+      reference: row.reference,
+      title: row.title,
+      type: row.type,
+      intent: row.intent,
+      city: row.city,
+      district: row.district,
+      price: row.price,
+      publicationStatus: row.publication_status,
+      verificationStatus: row.verification_status,
+      availabilityStatus: row.availability,
+      ownerId: row.owner_id,
+      ownerName: `${row.owner_prenom ?? ""} ${row.owner_nom ?? ""}`.trim(),
+      ownerEmail: row.owner_email ?? "",
+      agentName: agent ? `${agent.prenom} ${agent.nom}`.trim() : null,
+      photos,
+      documents,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+      ageDays: Math.max(0, Math.floor((Date.now() - new Date(row.created_at).getTime()) / 86_400_000)),
+    };
+  });
+}
+
+/**
+ * Changement de statut de publication par l’administration : suspendre
+ * une annonce qui ment, la remettre en ligne, ou l’archiver. Le motif
+ * est obligatoire pour toute mesure défavorable — il est notifié au
+ * propriétaire et conservé au journal.
+ */
+export function setPublicationStatus(
+  db: Db,
+  actor: UserContext,
+  propertyId: string,
+  input: { status: "publie" | "suspendu" | "archive" | "soumis"; reason?: string },
+  meta: { ip?: string } = {},
+): ServiceResult<{ property: AdminPropertyView }> {
+  const row = queryOne<PropertyRow>(`${PROPERTY_COLUMNS} WHERE id = ? OR reference = ?`, [propertyId, propertyId]);
+  if (!row) return { ok: false, message: "Bien introuvable." };
+  const reason = (input.reason ?? "").trim();
+  if ((input.status === "suspendu" || input.status === "archive") && !reason) {
+    return { ok: false, message: "Une mesure défavorable doit être motivée.", fields: { reason: "Motif obligatoire." } };
+  }
+  const at = nowIso();
+  db.transaction(() => {
+    db.prepare("UPDATE properties SET publication_status = ?, updated_at = ? WHERE id = ?").run(input.status, at, row.id);
+    writeAudit(db, {
+      actorId: actor.id,
+      actorLabel: actor.email,
+      action: `bien.publication.${input.status}`,
+      entityType: "bien",
+      entityId: row.id,
+      detail: { depuis: row.publication_status, motif: reason },
+      ip: meta.ip ?? "",
+    });
+    notify(db, {
+      userIds: [row.owner_id],
+      type: "publication",
+      title:
+        input.status === "publie" ? "Annonce remise en ligne" : input.status === "soumis" ? "Dossier renvoyé en instruction" : "Annonce retirée du catalogue",
+      body: `${row.reference} · ${reason || "Décision de l’administration HOMERA."}`,
+      link: "/proprietaire/biens",
+      entityType: "bien",
+      entityId: row.id,
+    });
+  })();
+  const property = adminProperties(db).find((entry) => entry.id === row.id);
+  if (!property) return { ok: false, message: "Le bien n’a pas pu être relu après enregistrement." };
+  return { ok: true, data: { property } };
+}
 
 export function setAvailability(
   db: Db,

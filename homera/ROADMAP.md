@@ -63,12 +63,44 @@ Référence technique : [`BACKEND.md`](./BACKEND.md). Aucune information n'est d
 
 | Lot | Contenu | État |
 |---|---|---|
-| LOT 3 | Biens, photos, publication, propriétaires, agents, autorisations | À venir |
-| LOT 4 | Disponibilités, visites, annulations, demandes de location, notifications | Tables et services prêts, **interface à brancher** |
-| LOT 5 | Outils de contrôle administratif et workflow de vérification | Tables et API d'aperçu prêtes, écrans à construire |
+| LOT 3 | Biens, photos, publication, propriétaires, agents, autorisations | **Livré** |
+| LOT 4 | Disponibilités, visites, annulations, demandes de location, notifications | **Livré** |
+| LOT 5 | Outils de contrôle administratif et workflow de vérification | **Livré** |
 | LOT 6 | Refonte des fiches de biens et d'Explorer | Pages déjà alimentées par la base ; filtres et pagination à passer côté serveur |
 | LOT 7 | Navigation, espaces, messagerie, responsive, design system | À venir |
 | LOT 8 | Tests complets, performances, documentation finale | À venir |
+
+---
+
+## Jalon 7 — LOT 3 : biens, photos, mandats (Livré & Vérifié)
+
+Référence technique : [`BACKEND.md`](./BACKEND.md) §8.1.
+
+- [x] Assistant de dépôt 11 étapes (`PropertyWizard`) écrit en base : brouillon, photos, pièces, soumission.
+- [x] Galerie réordonnable : l'ordre est traduit côté serveur (`media_key` → identifiant) puis relu.
+- [x] Dix natures de pièces justificatives reconnues par `documents.ts` ; vocabulaire unique côté serveur.
+- [x] Validation des visuels contre le manifeste `lib/media.generated.ts` : un visuel inconnu est refusé.
+- [x] Espace propriétaire branché sur `/api/owner/properties` (dashboard, biens, agents).
+- [x] Espace agent branché sur `/api/agent/properties` et `/api/authorizations` : accepter, refuser ou contester un mandat, motif obligatoire pour refuser ou contester.
+- [x] **Fuite corrigée** : les pièces d'un bien ne sont plus lisibles par un agent non mandaté (`403`).
+
+## Jalon 8 — LOT 4 : visites et candidatures (Livré & Vérifié)
+
+- [x] Demandes de visite écrites en base, avec détection des conflits de créneaux côté serveur.
+- [x] Cycle de vie complet : demandée → confirmée → reprogrammée → effectuée, ou refusée / annulée / absence constatée.
+- [x] Chaque mouvement exigeant un motif (refus, annulation, reprogrammation, absence) est refusé sans motif.
+- [x] Candidatures de location (`/api/applications`) : une seule par visite, jamais sans visite effectuée, jamais sur un bien qui n'est pas à louer.
+- [x] Instruction par le propriétaire, l'agent mandaté « location » ou l'administration ; refus motivé obligatoire.
+- [x] Notifications réelles à chaque transition, pour chaque acteur concerné.
+
+## Jalon 9 — LOT 5 : administration et vérification (Livré & Vérifié)
+
+- [x] Dashboard administratif sur `/api/admin/overview` : plus aucun indicateur fictif.
+- [x] File de vérification branchée sur `/api/admin/verifications` avec les **8 étapes** réelles, commentaire interne, demande de pièces.
+- [x] Décisions « accepter / refuser / suspendre / pièces manquantes / réexaminer » : le bien passe `publie` + `verifie`, le propriétaire est notifié.
+- [x] Comptes (`/api/admin/users`) : suspension et réactivation motivées ; rôle d'administration réservé au super-administrateur.
+- [x] Catalogue administratif (`/api/admin/properties`) : remettre en ligne, suspendre, archiver ou renvoyer en instruction, avec motif obligatoire pour toute mesure défavorable.
+- [x] Statistiques : uniquement ce que la base sait compter. Aucun revenu, commission ou retrait n'est affiché plutôt que d'être simulé.
 
 ### 6.3 Hors périmètre pilote, à décider avant production
 

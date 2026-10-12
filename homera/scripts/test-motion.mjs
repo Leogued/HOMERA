@@ -1490,7 +1490,11 @@ await test('HOMERA : chaque lien interne ouvre une route réelle, jamais une anc
   assert.ok(!dashboard.includes('window.location.hash'), 'le tableau de bord ne lit plus le fragment d’URL');
 
   // Les alertes d’un espace renvoient vers les pages de ce même espace.
-  const owner = await readFile(join(root, 'components/workspace/OwnerWorkspace.tsx'), 'utf8');
+  // Le tableau de bord propriétaire vit dans OwnerServerSections : on sonde
+  // les deux modules, l’exigence (des alertes qui restent dans l’espace) est
+  // la même quel que soit le fichier qui les rend.
+  const owner = (await readFile(join(root, 'components/workspace/OwnerWorkspace.tsx'), 'utf8'))
+    + (await readFile(join(root, 'components/workspace/OwnerServerSections.tsx'), 'utf8'));
   const agent = await readFile(join(root, 'components/workspace/AgentWorkspace.tsx'), 'utf8');
   assert.ok(owner.includes('"/proprietaire/demandes"') && owner.includes('"/proprietaire/visites"'), 'alertes propriétaire dans son espace');
   assert.ok(!owner.includes('"/client/demandes"') && !owner.includes('"/client/visites"'), 'aucune alerte propriétaire vers l’espace client');
@@ -1858,7 +1862,12 @@ await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (pro
   assert.ok(ownerWorkspace.includes('/contact?sujet=gestion'), 'OwnerSubscription oriente les formules sur devis vers /contact?sujet=gestion');
 
   const adminWorkspace = await readFile(new URL('../components/workspace/AdminWorkspace.tsx', import.meta.url), 'utf8');
-  assert.ok(adminWorkspace.includes('data.visits.map') && adminWorkspace.includes('data.applications.map'), 'AdminRecords reflète les visites et demandes locales du workflow');
+  const adminSections = await readFile(new URL('../components/workspace/AdminServerSections.tsx', import.meta.url), 'utf8');
+  for (const href of ['/api/admin/visits', '/api/admin/users', '/api/admin/verifications', '/api/admin/properties', '/api/admin/reports']) {
+    assert.ok(adminSections.includes(href), `section d’administration non branchée sur ${href}`);
+  }
+  assert.ok(!adminSections.includes('Volumes fictifs') && !adminSections.includes('Démonstration'), 'aucun indicateur administratif présenté comme fictif');
+  assert.ok(adminWorkspace.includes('AdminVisitsTable') && adminWorkspace.includes('AdminPropertiesTable'), 'l’espace admin expose visites et biens du serveur');
 
   const agentWorkspace = await readFile(new URL('../components/workspace/AgentWorkspace.tsx', import.meta.url), 'utf8');
   assert.ok(agentWorkspace.includes('describeProfile("agent", account.profile)'), 'AgentProfile affiche les champs détaillés du profil agent');
@@ -1971,7 +1980,12 @@ await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (pro
 
   const paymentPanel = await readFile(new URL('../components/workspace/PaymentMethodsPanel.tsx', import.meta.url), 'utf8');
   assert.ok(paymentPanel.includes('PAYMENT_PROVIDERS') && paymentPanel.includes('maskPaymentIdentifier') && paymentPanel.includes('canClientPayContract') && paymentPanel.includes('computeActorBalances') && paymentPanel.includes('DEMO_FINANCIAL_TRANSACTIONS'), 'PaymentMethodsPanel respecte le modèle économique et les flux financiers HOMERA');
-  assert.ok(ownerWorkspace.includes('PaymentMethodsWorkspace') && agentWorkspace.includes('PaymentMethodsWorkspace') && adminWorkspace.includes('PaymentMethodsWorkspace') && !profileSettings.includes('PaymentMethodsWorkspace'), 'PaymentMethodsWorkspace est intégré par rôle dans OwnerWorkspace, AgentWorkspace et AdminWorkspace sans doublon dans ProfileSettings');
+  // Les moyens d’encaissement concernent qui reçoit de l’argent : propriétaire
+  // et agent. L’administration n’a pas de compte de reversement, et surtout
+  // HOMERA n’a pas encore de module de facturation : plutôt que d’afficher des
+  // soldes simulés, l’écran statistiques le dit explicitement.
+  assert.ok(ownerWorkspace.includes('PaymentMethodsWorkspace') && agentWorkspace.includes('PaymentMethodsWorkspace') && !profileSettings.includes('PaymentMethodsWorkspace'), 'PaymentMethodsWorkspace est intégré par rôle chez les bénéficiaires, sans doublon dans ProfileSettings');
+  assert.ok(adminSections.includes('aucun revenu, commission ou retrait n’est affiché'), 'les statistiques admin n’affichent aucun flux financier simulé');
   assert.ok(propertyDetail.includes('Cadre économique HOMERA') && propertyDetail.includes('Loyer mensuel') && propertyDetail.includes('Total séjour') && propertyDetail.includes('Frais notariés'), 'PropertyDetail affiche le cadre économique HOMERA adapté au projet (louer, séjour, acheter)');
 });
 
