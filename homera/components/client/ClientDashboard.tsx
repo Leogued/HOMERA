@@ -225,7 +225,7 @@ function ClientDashboardContent() {
           <div className="mt-5 flex items-start gap-3 rounded-2xl border border-info/20 bg-info/[0.06] px-4 py-3.5 text-note leading-relaxed text-foreground">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-info" aria-hidden="true" />
             <p>
-              <span className="font-semibold">Mode pilote local.</span> Vos favoris et recherches restent dans ce navigateur. Les visites, demandes, locations, messages et alertes automatiques seront reliés à l’API avant d’être présentés comme actifs.
+              <span className="font-semibold">État réel du pilote.</span> Votre compte, vos rôles et vos notifications viennent du serveur HOMERA. Les favoris et les recherches restent, eux, sur cet appareil. Les visites, demandes, locations et messages encore affichés depuis ce navigateur seront reliés au serveur avant d’être présentés comme actifs.
             </p>
           </div>
 
@@ -567,7 +567,7 @@ function ClientDashboardContent() {
               icon={UserRound}
               eyebrow="Identité et projet"
               title="Mon profil"
-              description="Les informations enregistrées pour ce compte dans ce navigateur."
+              description="Les informations détenues par HOMERA sur ce compte."
               action={{ href: "/client/profil", label: "Modifier mon profil", external: true }}
               className="xl:col-span-7"
             >
@@ -646,7 +646,7 @@ function ClientDashboardContent() {
                 <div className="rounded-2xl border border-border bg-background/60 p-4">
                   <p className="text-note font-semibold text-foreground">Données et confidentialité</p>
                   <p className="mt-1 text-caption leading-relaxed text-muted">
-                    Comptes, favoris et recherches sont conservés dans ce navigateur, sans synchronisation serveur.
+                    Le compte et ses rôles sont tenus par le serveur HOMERA. Les favoris et les recherches restent sur cet appareil, sans synchronisation.
                   </p>
                   <Link
                     href="/legal"

@@ -1,0 +1,19 @@
+# Systèmes
+.DS_Store
+Thumbs.db
+*.swp
+
+# Journaux et paquets d’erreurs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Environnements locaux — jamais versionnés
+.env
+.env.*
+
+# Le dépôt racine ne porte que la gouvernance et l’application :
+# les dépendances, les artefacts de build et la base du pilote sont
+# déjà ignorés par homera/.gitignore.

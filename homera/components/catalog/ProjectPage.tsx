@@ -6,10 +6,19 @@ import { PER_PAGE, isPristine, parseCatalogQuery, searchCatalog } from "@/lib/pr
 import { categoryQuery, projectQuery, type PublicProjectPage } from "@/lib/nav";
 import { searchParamsToQuery, type NextSearchParams } from "@/lib/search-params";
 import { CatalogExplorer } from "@/components/catalog/CatalogExplorer";
+import { listProperties } from "@/lib/server/services/properties";
+import { getDb } from "@/lib/server/db/client";
 import { PageHero } from "@/components/catalog/PageHero";
 import { Reveal } from "@/components/ui/Reveal";
 import { Visual } from "@/components/ui/Visual";
-/* ================================================================== HOMERA — PAGE DE PROJET (Acheter · Louer · Séjour) ------------------------------------------------------------------ Une page de projet n’est pas un simple filtre : elle explique ce que le visiteur vient chercher, montre les catégories réellement disponibles (avec leur nombre de biens), puis affiche le catalogue complet du projet, filtrable sur place. ================================================================== */ export async function ProjectPageView({
+/* ==================================================================
+   HOMERA — PAGE DE PROJET (Acheter · Louer · Séjour)
+   ------------------------------------------------------------------
+   Une page de projet n’est pas un simple filtre : elle explique ce que le visiteur vient
+   chercher, montre les catégories réellement disponibles (avec leur nombre de biens), puis
+   affiche le catalogue complet du projet, filtrable sur place.
+   ================================================================== */
+export async function ProjectPageView({
   project,
   searchParams,
 }: {
@@ -18,7 +27,8 @@ import { Visual } from "@/components/ui/Visual";
 }) {
   const query = parseCatalogQuery(searchParamsToQuery(searchParams));
   const initialQuery = { ...projectQuery(project.slug), ...query, intent: project.slug };
-  const results = searchCatalog(initialQuery);
+  const catalogue = listProperties(getDb());
+  const results = searchCatalog(initialQuery, catalogue);
   const prices = results.map((property) => property.price);
   const cities = new Set(results.map((property) => property.city));
   const initialVisible = Math.min(4, Math.max(1, query.page)) * PER_PAGE;
@@ -174,6 +184,7 @@ import { Visual } from "@/components/ui/Visual";
             basePath={`/${project.slug}`}
             initialQuery={initialQuery}
             initialVisible={initialVisible}
+            source={catalogue}
             locked={["intent"]}
             emptyHint={`Aucun bien ne correspond à ces critères dans la rubrique ${project.navLabel}. Élargissez la recherche, ou consultez l’explorateur complet.`}
           />{" "}

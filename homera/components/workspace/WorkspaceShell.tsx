@@ -151,7 +151,7 @@ export function WorkspaceShell({
     ? role
     : preferredRole(account?.roles ?? []);
   const activeWorkspaceId: WorkspaceModeId = role === "any"
-    ? (account?.profile.demoRole === "admin" ? "admin" : preferredRole(account?.roles ?? []))
+    ? (account?.admin ? "admin" : preferredRole(account?.roles ?? []))
     : role;
   const navGroups = NAV[activeWorkspaceId];
   const currentHref = pathname || "/";
@@ -194,11 +194,11 @@ export function WorkspaceShell({
 
   if (!authReady || !workflowReady) return <WorkspaceLoading />;
   if (!account) return <AccessState mode="signin" role={role} pathname={currentHref} />;
-  if (role !== "any" && !hasWorkspaceAccess(account.roles, role, account.profile)) {
+  if (role !== "any" && !hasWorkspaceAccess(account.roles, role, { admin: account.admin })) {
     return <AccessState mode="unauthorized" role={role} pathname={currentHref} />;
   }
 
-  const workspaces = accessibleWorkspaces(account.roles, account.profile);
+  const workspaces = accessibleWorkspaces(account.roles, { admin: account.admin, superAdmin: account.superAdmin });
   const canSwitchWorkspaces = workspaces.length > 1;
   const secondaryProfileHref = profileHref(activeRoleForProfile);
   const secondarySettingsHref = settingsHref(activeWorkspaceId);

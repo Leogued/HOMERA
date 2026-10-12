@@ -8,11 +8,14 @@
     "start": "next start",
     "lint": "eslint",
     "images": "node scripts/build-images.mjs",
-    "test": "node scripts/test-motion.mjs",
+    "test": "node scripts/test-motion.mjs && npm run test:backend",
     "quality:gate": "node scripts/quality-gate.mjs",
-    "audit:home": "node scripts/audit-home.mjs"
+    "audit:home": "node scripts/audit-home.mjs",
+    "test:backend": "node --experimental-strip-types --no-warnings --import ./scripts/ts-alias-register.mjs scripts/test-backend.mts",
+    "db:reset": "node --experimental-strip-types --no-warnings --import ./scripts/ts-alias-register.mjs scripts/db-reset.mts"
   },
   "dependencies": {
+    "better-sqlite3": "^13.0.3",
     "lucide-react": "^1.47.0",
     "next": "16.3.5",
     "next-themes": "^0.4.6",
@@ -21,6 +24,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^9.6.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

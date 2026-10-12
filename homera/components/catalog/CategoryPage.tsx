@@ -6,8 +6,16 @@ import { PER_PAGE, buildCatalogParams, isPristine, parseCatalogQuery, searchCata
 import { categoryQuery, type PublicCategory, type PublicProjectPage } from "@/lib/nav";
 import { searchParamsToQuery, type NextSearchParams } from "@/lib/search-params";
 import { CatalogExplorer } from "@/components/catalog/CatalogExplorer";
+import { listProperties } from "@/lib/server/services/properties";
+import { getDb } from "@/lib/server/db/client";
 import { PageHero } from "@/components/catalog/PageHero";
-/* ================================================================== HOMERA — PAGE D’UNE CATÉGORIE ------------------------------------------------------------------ « Acheter › Terrains », « Louer › Studios », « Séjour › À la nuitée » : une page de résultats déjà cadrée, mais qui reste filtrable (commune, budget, surface, équipements) et partageable. ================================================================== */ export async function CategoryPageView({
+/* ==================================================================
+   HOMERA — PAGE D’UNE CATÉGORIE
+   ------------------------------------------------------------------
+   « Acheter › Terrains », « Louer › Studios », « Séjour › À la nuitée » : une page de résultats
+   déjà cadrée, mais qui reste filtrable (commune, budget, surface, équipements) et partageable.
+   ================================================================== */
+export async function CategoryPageView({
   project,
   category,
   searchParams,
@@ -24,7 +32,8 @@ import { PageHero } from "@/components/catalog/PageHero";
     types: category.filter.types ?? [],
     stayNights: category.filter.stayNights ?? null,
   };
-  const results = searchCatalog(initialQuery);
+  const catalogue = listProperties(getDb());
+  const results = searchCatalog(initialQuery, catalogue);
   const cheapest = results.reduce(
     (lowest, property) => (lowest === null || property.price < lowest ? property.price : lowest),
     null as number | null,
@@ -96,6 +105,7 @@ import { PageHero } from "@/components/catalog/PageHero";
           basePath={`/${project.slug}/${category.slug}`}
           initialQuery={initialQuery}
           initialVisible={initialVisible}
+          source={catalogue}
           locked={category.filter.stayNights ? ["intent", "types", "stayNights"] : ["intent", "types"]}
           emptyHint={`Aucun bien ne correspond à ces critères dans « ${category.label} ». Élargissez la commune ou le budget, ou consultez la page ${project.navLabel}.`}
         />{" "}

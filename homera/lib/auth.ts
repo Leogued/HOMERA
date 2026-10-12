@@ -290,12 +290,21 @@ export type AccessibleWorkspace = {
  * - Agent : uniquement `agent` (`/agent`) et `client` (`/client`).
  * - Admin (`profile.demoRole === "admin"`) : `admin`, `agent`, `proprietaire` et `client`.
  */
+export type WorkspaceAccessOptions = { admin?: boolean; superAdmin?: boolean } | Record<string, string>;
+
+/**
+ * Vérifie l’accès à un espace. L’administration n’est plus déduite d’un
+ * champ de profil modifiable côté client : elle vient du serveur
+ * (`{ admin: true }`) ou, pour compatibilité, d’un profil « demoRole ».
+ */
 export function hasWorkspaceAccess(
   roles: readonly AccountRole[],
   target: WorkspaceModeId,
-  profile: Record<string, string> = {},
+  options: WorkspaceAccessOptions = {},
 ): boolean {
-  const isAdmin = profile.demoRole === "admin";
+  const isAdmin = "admin" in options || "superAdmin" in options
+    ? Boolean((options as { admin?: boolean; superAdmin?: boolean }).admin || (options as { superAdmin?: boolean }).superAdmin)
+    : (options as Record<string, string>).demoRole === "admin";
   if (isAdmin) return true;
   if (target === "admin") return false;
   if (roles.includes("proprietaire")) {
@@ -316,10 +325,10 @@ export function hasWorkspaceAccess(
  */
 export function accessibleWorkspaces(
   roles: readonly AccountRole[],
-  profile: Record<string, string> = {},
+  options: WorkspaceAccessOptions = {},
 ): AccessibleWorkspace[] {
   const spaces: AccessibleWorkspace[] = [];
-  if (hasWorkspaceAccess(roles, "admin", profile)) {
+  if (hasWorkspaceAccess(roles, "admin", options)) {
     spaces.push({
       id: "admin",
       label: "Administration",
@@ -328,7 +337,7 @@ export function accessibleWorkspaces(
       description: "Vérifications, modération et supervision pilote",
     });
   }
-  if (hasWorkspaceAccess(roles, "agent", profile)) {
+  if (hasWorkspaceAccess(roles, "agent", options)) {
     spaces.push({
       id: "agent",
       label: "Espace agent",
@@ -337,7 +346,7 @@ export function accessibleWorkspaces(
       description: "Autorisations QR, visites terrain et clients",
     });
   }
-  if (hasWorkspaceAccess(roles, "proprietaire", profile)) {
+  if (hasWorkspaceAccess(roles, "proprietaire", options)) {
     spaces.push({
       id: "proprietaire",
       label: "Espace propriétaire",
@@ -346,7 +355,7 @@ export function accessibleWorkspaces(
       description: "Biens publiés, demandes, visites et contrats",
     });
   }
-  if (hasWorkspaceAccess(roles, "client", profile)) {
+  if (hasWorkspaceAccess(roles, "client", options)) {
     spaces.push({
       id: "client",
       label: "Espace client",

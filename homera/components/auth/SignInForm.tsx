@@ -17,9 +17,8 @@ import { validateSignIn } from "@/lib/auth";
    HOMERA — CONNEXION
    ------------------------------------------------------------------
    Deux champs, un seul envoi, et des messages qui disent exactement ce
-   qui s’est passé. Quand l’adresse est inconnue dans ce navigateur, la
-   réponse le dit — dans un pilote sans serveur, prétendre à un « identi-
-   fiants incorrects » générique serait seulement plus obscur.
+   qui s’est passé : le serveur vérifie l’adresse et le mot de passe, puis
+   indique l’espace à ouvrir. Aucune décision d’accès n’est prise ici.
    ================================================================== */
 
 export const SIGNIN_FORM_ID = "connexion";
@@ -76,8 +75,10 @@ export function SignInForm({ notice, redirectTo }: { notice?: AuthNotice | null;
       router.push(redirectTo ? `/verification-email?next=${encodeURIComponent(redirectTo)}` : "/verification-email");
       return;
     }
-    if (redirectTo) router.replace(redirectTo);
-    // Sans destination, le contexte prévient l’écran : le panneau « connecté » prend la suite.
+    // Destination : l’adresse demandée si elle existe, sinon l’espace que le
+    // serveur a décidé pour ces rôles — jamais une page d’accueil par défaut.
+    const destination = redirectTo ?? outcome.data.landing;
+    if (destination) router.replace(destination);
   };
 
   return (
@@ -173,8 +174,8 @@ export function SignInForm({ notice, redirectTo }: { notice?: AuthNotice | null;
                 Rester connecté sur cet appareil
               </label>
               <p className="mt-1 text-caption leading-relaxed text-muted">
-                Décochez pour une connexion qui s’efface à la fermeture de l’onglet. Dans les deux cas, la session
-                ne quitte pas ce navigateur.
+                Décochez pour une session qui s’efface à la fermeture du navigateur. Dans les deux cas, la session
+                est vérifiée par le serveur à chaque page protégée.
               </p>
             </div>
           </div>

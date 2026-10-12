@@ -94,8 +94,8 @@ export function ForgotPasswordForm() {
         {issued && (
           <div className="space-y-5">
             <StatusNote tone="success" title="Réinitialisation prête">
-              Le lien et le code ci-dessous sont actifs {RESET_TTL_MINUTES} minutes. Ils ne concernent que le compte{" "}
-              {maskEmail(email)} et ne quittent pas ce navigateur.
+              Le lien et le code ci-dessous sont actifs {RESET_TTL_MINUTES} minutes et ne valent que pour le compte{" "}
+              {maskEmail(email)}. Faute d’envoi d’e-mail par le pilote, ils sont affichés ici.
             </StatusNote>
 
             <PilotCode

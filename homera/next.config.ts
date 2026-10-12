@@ -1,6 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Le pilote serveur SQLite est un module natif : il reste hors du bundler.
+  serverExternalPackages: ["better-sqlite3"],
+
   // Dev uniquement : origines autorisées à charger le JS du serveur de dev (HMR, hydratation).
   // Sans ça, la page s'affiche mais rien n'est cliquable (menu hamburger, bouton thème...).
   allowedDevOrigins: [

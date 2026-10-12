@@ -1,15 +1,31 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { PROPERTIES } from "@/lib/content";
 import { INTENT_LABELS, TYPE_LABELS, formatFCFA } from "@/lib/format";
-import { PropertyDetail } from "@/components/catalog/PropertyDetail"; /* ================================================================== /biens/<identifiant> — LA FICHE PUBLIQUE D’UN BIEN ------------------------------------------------------------------ Toutes les fiches du catalogue de démonstration sont générées au build : le visiteur, le moteur de recherche et le partage de lien obtiennent la même page. Un identifiant inconnu rend un vrai 404. ================================================================== */ /* Le catalogue est connu à la construction : une référence qui n’y figure pas ne déclenche pas de rendu, elle est rejetée au niveau du routage — la page 404 est alors rendue par le serveur, pas par le navigateur. */
-export const dynamicParams = false;
-export function generateStaticParams() {
-  return PROPERTIES.map((property) => ({ id: property.id }));
+import { listProperties, loadProperty } from "@/lib/server/services/properties";
+import { getDb } from "@/lib/server/db/client";
+import { PropertyDetail } from "@/components/catalog/PropertyDetail"; function listPublishedIds(): string[] {
+  return listProperties(getDb()).map((property) => property.id);
 }
+
+/* ==================================================================
+   /biens/<identifiant> — LA FICHE PUBLIQUE D’UN BIEN
+   ------------------------------------------------------------------
+   La fiche est lue dans la base au moment de la requête : un bien
+   publié, suspendu ou loué apparaît tel que le serveur le connaît,
+   sans attendre un redéploiement. Les fiches connues à la construction
+   sont pré-rendues pour le partage et l’indexation ; les autres sont
+   rendues à la demande (`dynamicParams`), et une référence inconnue
+   rend un vrai 404 décidé par le serveur.
+   ================================================================== */
+
+/* Rendu à la demande : un bien publié, suspendu ou loué apparaît tel que
+   la base le connaît, sans délai de revalidation ni redéploiement. Une
+   référence inconnue rend un vrai 404 (statut HTTP compris). */
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
   const { id } = await params;
-  const property = PROPERTIES.find((entry) => entry.id === id);
+  const property = loadProperty(getDb(), id);
   if (!property) return { title: "Bien introuvable — HOMERA" };
   const place = `${property.district}, ${property.city}`;
   const price = `${formatFCFA(property.price)}${property.pricePeriod ? ` ${property.pricePeriod}` : ""}`;
@@ -26,7 +42,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 export default async function BienPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const property = PROPERTIES.find((entry) => entry.id === id);
+  const property = loadProperty(getDb(), id);
   if (!property) notFound();
   return <PropertyDetail property={property} />;
 }

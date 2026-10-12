@@ -56,7 +56,7 @@ export function VerifyEmailForm({ redirectTo }: { redirectTo?: string | null }) 
     return (
       <AuthPanel
         title="Confirmer votre adresse"
-        intro="Cette étape concerne le compte connecté dans ce navigateur."
+        intro="Cette étape concerne le compte de la session ouverte sur cet appareil."
       >
         <div className="space-y-6">
           <StatusNote tone="info" title="Aucun compte connecté">

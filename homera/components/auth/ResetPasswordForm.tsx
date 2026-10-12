@@ -62,7 +62,7 @@ export function ResetPasswordForm({ token }: { token?: string }) {
         <div className="space-y-6">
           <StatusNote tone="success" title="Tout est en ordre">
             Vous pouvez vous connecter dès maintenant avec ce mot de passe. Les favoris et les recherches
-            enregistrées dans ce navigateur n’ont pas bougé.
+            enregistrées sur cet appareil n’ont pas bougé. Les autres sessions ouvertes ont été fermées.
           </StatusNote>
           <AuthLink href="/connexion?etat=reinitialise">Aller à la connexion</AuthLink>
           <PilotNote />
@@ -140,8 +140,8 @@ export function ResetPasswordForm({ token }: { token?: string }) {
         />
 
         <PilotNote>
-          Le nouveau mot de passe remplace l’ancien dans ce navigateur : l’empreinte est recalculée, l’ancienne
-          n’est conservée nulle part. Aucun e-mail de confirmation n’est envoyé.
+          Le nouveau mot de passe remplace l’ancien côté serveur : seule une empreinte scrypt salée est conservée,
+          l’ancienne n’est gardée nulle part. Aucun e-mail de confirmation n’est envoyé par le pilote.
         </PilotNote>
       </form>
     </AuthPanel>

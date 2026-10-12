@@ -5,7 +5,15 @@ import { FEATURE_LABELS, INTENT_LABELS, LAND_TITLE_LABELS, TYPE_LABELS } from "@
 import type { LandTitle, PropertyFeature, PropertyIntent, PropertyType } from "@/lib/content";
 import type { CatalogFacets, CatalogQuery } from "@/lib/properties";
 import { TextRoll } from "@/components/ui/TextRoll";
-/* ================================================================== HOMERA — FILTRES DE L’EXPLORATEUR ------------------------------------------------------------------ Tous les critères vivent dans la requête (`CatalogQuery`) : cocher une case met à jour la liste ET l’adresse, donc une recherche se partage et se retrouve telle quelle au retour. Chaque compteur vient des facettes : il est calculé sans le filtre qu’il représente, sinon il afficherait toujours zéro. ================================================================== */ const BEDROOM_STEPS =
+/* ==================================================================
+   HOMERA — FILTRES DE L’EXPLORATEUR
+   ------------------------------------------------------------------
+   Tous les critères vivent dans la requête (`CatalogQuery`) : cocher une case met à jour la
+   liste ET l’adresse, donc une recherche se partage et se retrouve telle quelle au retour.
+   Chaque compteur vient des facettes : il est calculé sans le filtre qu’il représente, sinon il
+   afficherait toujours zéro.
+   ================================================================== */
+const BEDROOM_STEPS =
   [1, 2, 3, 4, 5];
 const STAY_STEPS: { value: number; label: string }[] = [
   { value: 1, label: "1 nuit" },
@@ -276,6 +284,22 @@ export function CatalogFilters({
           </p>{" "}
         </fieldset>
       )}{" "}
+      {/* ---------------- Meublé ---------------- */}{" "}
+      <fieldset>
+        {" "}
+        <legend className="mb-3 text-note font-semibold text-foreground">Logement meublé</legend>{" "}
+        <CheckLine
+          checked={query.furnishedOnly}
+          disabled={facets.furnished === 0 && !query.furnishedOnly}
+          onChange={() => onChange({ furnishedOnly: !query.furnishedOnly })}
+          label="Meublé uniquement"
+          count={facets.furnished}
+        />{" "}
+        <p className="mt-2 text-caption text-muted">
+          {" "}
+          Ne montre que les logements dont le mobilier est déclaré sur la fiche.{" "}
+        </p>{" "}
+      </fieldset>{" "}
       {/* ---------------- Équipements ---------------- */}{" "}
       {facets.features.length > 0 && (
         <fieldset>

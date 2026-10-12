@@ -154,7 +154,7 @@ export function AccountControl({ tone = "light" }: { tone?: Tone }) {
           ) : null}
 
           <nav aria-label="Compte" className="py-1.5">
-            {accessibleWorkspaces(account.roles, account.profile).map((space) => (
+            {accessibleWorkspaces(account.roles, { admin: account.admin, superAdmin: account.superAdmin }).map((space) => (
               <Link
                 key={space.id}
                 href={space.href}
@@ -274,7 +274,7 @@ export function AccountMobileLinks({
       </p>
       <ul className="mt-3 space-y-1">
         {[
-          ...accessibleWorkspaces(account.roles, account.profile).map((space) => ({
+          ...accessibleWorkspaces(account.roles, { admin: account.admin, superAdmin: account.superAdmin }).map((space) => ({
             href: space.href,
             label: space.label,
           })),

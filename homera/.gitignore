@@ -39,3 +39,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# base locale du pilote (générée au premier démarrage, jamais versionnée)
+/data

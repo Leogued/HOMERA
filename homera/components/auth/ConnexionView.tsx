@@ -215,7 +215,7 @@ export function SignedInPanel({ notice, redirectTo }: { notice?: AuthNotice | nu
               <dd className="mt-1 text-note text-foreground">{memberSince}</dd>
             </div>
             <div>
-              <dt className="text-caption uppercase tracking-[0.14em] text-muted">Conservé dans ce navigateur</dt>
+              <dt className="text-caption uppercase tracking-[0.14em] text-muted">Comptes de démonstration</dt>
               <dd className="mt-1 text-note text-foreground">
                 {accountsCount} compte{accountsCount > 1 ? "s" : ""}
               </dd>
@@ -277,7 +277,7 @@ export function SignedInPanel({ notice, redirectTo }: { notice?: AuthNotice | nu
         <AuthBenefits
           items={[
             `Vos rôles : ${rolesLabel(account.roles)} — et tout ce que le socle client apporte`,
-            "Vos favoris et vos recherches enregistrées, conservés dans ce navigateur",
+            "Vos favoris et vos recherches enregistrées, conservés sur cet appareil",
             "La confirmation de votre adresse, avec un code qui expire réellement",
           ]}
         />

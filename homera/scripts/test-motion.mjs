@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { readdir, readFile, stat } from 'node:fs/promises';
 import { join, relative } from 'node:path';
 import { test } from 'node:test';
@@ -429,6 +430,17 @@ await test('HOMERA : filtres du catalogue — projet, lieu, budget, équipements
     assert.ok(stays.every((property) => (property.minNights ?? 1) <= nights));
   }
   assert.ok(searchCatalog(parseCatalogQuery('intention=sejour&nuits=1')).length < searchCatalog(parseCatalogQuery('intention=sejour&nuits=14')).length);
+
+  // Filtre « logement meublé » : critère principal, compté et partageable.
+  const furnished = searchCatalog(parseCatalogQuery('meuble=1'));
+  assert.ok(furnished.length >= 1, 'le filtre meublé ramène au moins un bien');
+  assert.ok(furnished.every((property) => (property.features ?? []).includes('meuble')), 'aucun bien non meublé dans le résultat');
+  assert.ok(furnished.length < searchCatalog(EMPTY_QUERY).length, 'le filtre meublé restreint réellement le catalogue');
+  assert.equal(searchCatalog(parseCatalogQuery('meuble=0')).length, searchCatalog(EMPTY_QUERY).length, 'meuble=0 ne filtre pas');
+  assert.match(buildCatalogParams(parseCatalogQuery('meuble=1')).toString(), /meuble=1/, 'le filtre meublé se retrouve dans l’adresse partagée');
+  assert.equal(activeFilterCount(EMPTY_QUERY), 0, 'aucun filtre actif sur une requête vierge');
+  assert.ok(activeFilterCount(parseCatalogQuery('meuble=1')) >= 1, 'le filtre meublé est compté parmi les filtres actifs');
+  assert.ok(!isPristine(parseCatalogQuery('meuble=1')), 'une requête « meublé » n’est plus vierge');
 
   // Recherche texte : accents ignorés, référence reconnue.
   assert.ok(searchCatalog(parseCatalogQuery('q=fidjrosse')).length >= 3);
@@ -1731,6 +1743,8 @@ await test('HOMERA : le SVG du QR trace exactement la matrice vérifiée', async
 await test('HOMERA : cadre de gouvernance markdown complet et synchronisé', async () => {
   const governanceFiles = [
     'AGENTS.md',
+    'AUDIT.md',
+    'BACKEND.md',
     'PROJECT.md',
     'VISION.md',
     'DESIGN_SYSTEM.md',
@@ -1867,10 +1881,18 @@ await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (pro
   assert.ok(hero.includes('preload="metadata"') && hero.includes('poster="/images/page-cotonou.jpg"'), 'Hero optimise la vidéo pour mobile avec preload metadata et poster');
 
   const authProvider = await readFile(new URL('../components/providers/AuthProvider.tsx', import.meta.url), 'utf8');
-  assert.ok(authProvider.includes('ACCOUNTS_STORAGE_KEY') && authProvider.includes('SESSION_STORAGE_KEY'), 'AuthProvider filtre strictement les événements storage');
+  // Le compte vit côté serveur : le contexte lit /api/auth/session et ne
+  // reconstruit aucune décision d’accès depuis le stockage du navigateur.
+  assert.ok(authProvider.includes('"/api/auth/session"') && authProvider.includes('/api/auth/signout'), 'AuthProvider s’appuie sur l’API de session HOMERA');
+  assert.ok(!authProvider.includes('localStorage'), 'AuthProvider ne conserve plus le compte dans le navigateur');
+  assert.ok(authProvider.includes('cache: "no-store"'), 'AuthProvider relit toujours l’état réel du serveur');
 
-  const siteLoading = await readFile(new URL('../app/(site)/loading.tsx', import.meta.url), 'utf8');
-  assert.ok(siteLoading.includes('homera-skeleton'), 'app/(site)/loading.tsx fournit un squelette de transition immédiat');
+  // Le squelette est posé sur /explorer seul : sur tout le groupe (site) il
+  // forcerait l’envoi du statut 200 avant le rendu, et un `notFound()`
+  // afficherait alors une page d’erreur… en 200.
+  const siteLoading = await readFile(new URL('../app/(site)/explorer/loading.tsx', import.meta.url), 'utf8');
+  assert.ok(siteLoading.includes('homera-skeleton'), '/explorer fournit un squelette de transition immédiat');
+  assert.ok(!existsSync(new URL('../app/(site)/loading.tsx', import.meta.url)), 'aucun squelette de groupe ne masque le statut 404');
 
   // Switch d’espace basé sur les permissions réelles et navigation unifiée défilante
   assert.deepEqual(auth.accessibleWorkspaces(['client'], {}).map((entry) => entry.id), ['client'], 'un client simple ne voit que l’espace client');

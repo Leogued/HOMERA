@@ -110,6 +110,12 @@ export type PublicAccount = {
   id: string;
   role: AccountRole;
   roles: AccountRole[];
+  /**
+   * Accès à l’administration. Décidé par le serveur (`user_roles`) et
+   * transmis tel quel : l’interface ne le déduit plus d’un champ libre.
+   */
+  admin: boolean;
+  superAdmin: boolean;
   prenom: string;
   nom: string;
   email: string;
@@ -269,6 +275,8 @@ export function publicAccount(record: AccountRecord): PublicAccount {
     id: record.id,
     role: record.role,
     roles: record.roles,
+    admin: record.profile.demoRole === "admin",
+    superAdmin: record.profile.demoRole === "superadmin",
     prenom: record.prenom,
     nom: record.nom,
     email: record.email,

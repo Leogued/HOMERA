@@ -178,8 +178,8 @@ export function SignUpForm({ initialRole, redirectTo }: { initialRole: AccountRo
       <form onSubmit={onSubmit} noValidate className="space-y-8">
         {account && (
           <StatusNote tone="info" title={`Vous êtes connecté avec ${account.email}`}>
-            Créer un nouveau compte <em>remplacera</em> cette session dans ce navigateur : les favoris et les
-            recherches enregistrées restent, eux, inchangés.
+            Créer un nouveau compte ouvre une nouvelle session sur cet appareil et <em>remplace</em> la session
+            en cours. Les favoris et les recherches enregistrées, eux, ne sont pas touchés.
           </StatusNote>
         )}
 

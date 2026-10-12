@@ -62,9 +62,10 @@ export function PilotNote({ children }: { children?: ReactNode }) {
           <span className="font-semibold text-foreground">Système pilote.</span>{" "}
           {children ?? (
             <>
-              Les comptes du pilote sont conservés dans ce navigateur — aucun serveur ne les reçoit, et aucun
-              e-mail n’est envoyé. Le mot de passe n’y est jamais stocké en clair : une empreinte PBKDF2-SHA-256
-              est calculée localement.
+              Les comptes, les rôles et les sessions sont tenus par le serveur HOMERA, en base ; le mot de passe
+              n’est jamais stocké en clair, seulement sous forme d’empreinte scrypt salée. Le pilote n’envoie pas
+              encore d’e-mail transactionnel : les codes de confirmation et de réinitialisation sont donc affichés
+              à l’écran au lieu d’être expédiés.
             </>
           )}
         </span>

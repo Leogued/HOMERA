@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { ArrowRight, Compass, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
-import { DEMO_DATA, PROPERTIES } from "@/lib/content";
+import { DEMO_DATA, PROPERTIES, type Property } from "@/lib/content";
 import { countLabel } from "@/lib/format";
 import {
   EMPTY_QUERY,
@@ -23,7 +23,20 @@ import { CommuneMapExplorer } from "@/components/catalog/CommuneMapExplorer";
 import { AssetPlaceholder } from "@/components/catalog/AssetPlaceholder";
 import { SaveSearchButton } from "@/components/catalog/SaveSearchButton";
 import { TextRoll } from "@/components/ui/TextRoll";
-/* ================================================================== HOMERA — EXPLORATEUR ------------------------------------------------------------------ La page de résultats du site : recherche, filtres, tri, grille de cartes, affichage progressif (scroll infini + bouton), adresse partageable. Principes tenus : • la page serveur rend déjà un premier écran de résultats — le visiteur sans JavaScript voit les biens, pas un squelette ; • chaque changement réécrit l’adresse (`replaceState`), donc une recherche se copie, se partage et se retrouve au retour ; • le tri et les filtres recalculent la même liste que le serveur : une seule source (`lib/properties`), aucun écart d’affichage. ================================================================== */ type Locked =
+/* ==================================================================
+   HOMERA — EXPLORATEUR
+   ------------------------------------------------------------------
+   La page de résultats du site : recherche, filtres, tri, grille de
+   cartes, affichage progressif (scroll infini + bouton), adresse
+   partageable. Principes tenus :
+   • la page serveur rend déjà un premier écran de résultats — le visiteur
+     sans JavaScript voit les biens, pas un squelette ;
+   • chaque changement réécrit l’adresse (`replaceState`), donc une
+     recherche se copie, se partage et se retrouve au retour ;
+   • le tri et les filtres recalculent la même liste que le serveur : une
+     seule source (`lib/properties`), aucun écart d’affichage.
+   ================================================================== */
+type Locked =
   "intent" | "types" | "stayNights";
 export function CatalogExplorer({
   basePath = "/explorer",
@@ -31,12 +44,18 @@ export function CatalogExplorer({
   initialVisible = PER_PAGE,
   locked = [],
   emptyHint,
+  source,
 }: {
   basePath?: string;
   initialQuery: CatalogQuery;
   initialVisible?: number;
   locked?: Locked[];
   emptyHint?: string;
+  /**
+   * Catalogue à filtrer. Fourni par le serveur (base HOMERA) quand la page
+   * l’a chargé ; à défaut, le catalogue de référence est utilisé.
+   */
+  source?: Property[];
 }) {
   const [query, setQuery] = useState<CatalogQuery>(initialQuery);
   const [visible, setVisible] = useState(Math.max(PER_PAGE, initialVisible));
@@ -53,9 +72,10 @@ export function CatalogExplorer({
     rootMargin: "0px 0px 240px 0px",
     once: false,
   });
-  const results = useMemo(() => searchCatalog(query), [query]); // Les compteurs se calculent sur le catalogue complet : chaque facette
+  const catalogue = source ?? PROPERTIES;
+  const results = useMemo(() => searchCatalog(query, catalogue), [query, catalogue]); // Les compteurs se calculent sur le catalogue complet : chaque facette
   // ignore son propre filtre, sinon elle afficherait toujours zéro.
-  const facetData = useMemo(() => buildFacets(PROPERTIES, { ...query, page: 1 }), [query]);
+  const facetData = useMemo(() => buildFacets(catalogue, { ...query, page: 1 }), [query, catalogue]);
   const shown = results.slice(0, visible);
   const remaining = Math.max(0, results.length - shown.length);
   const filterCount = activeFilterCount(query);

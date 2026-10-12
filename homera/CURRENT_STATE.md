@@ -1,8 +1,24 @@
 # CURRENT_STATE — État Actuel & Journal d'Audit HOMERA
 
-> **Dernière mise à jour** : 2026-10-06
-> **Branche active** : `arena/a6134f99-homera`
+> **Dernière mise à jour** : 2026-10-06 (journal frontend)
+> **Branche active** : `arena/87b15d6d-homera`
 > **Statut global** : `QUALITY_GATE.md` 100 % validé (Fonctionnel, Design System, UX, Accessibilité/Technique, Custom Design & Creative Quality)
+
+> ### ⚠️ Champ de ce document
+>
+> Ce journal décrit l'état de l'**interface** telle qu'elle était avant le socle serveur.
+> Depuis le LOT 2, il n'est plus la référence pour trois sujets :
+>
+> | Sujet | Document de référence |
+> |---|---|
+> | Données, authentification, permissions, sécurité | [`BACKEND.md`](./BACKEND.md) |
+> | Constat d'audit et suivi par lot | [`AUDIT.md`](./AUDIT.md) |
+> | Feuille de route et jalons | [`ROADMAP.md`](./ROADMAP.md) |
+>
+> Certaines routes citées plus bas n'existent plus ou ont changé
+> (`/aide`, `/inscription/[role]`, `/reinitialiser-mot-de-passe`, `/biens/[slug]`).
+> Seules les sections 3 et suivantes, qui relatent des corrections frontend,
+> restent d'actualité.
 
 ---
 

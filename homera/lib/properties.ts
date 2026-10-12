@@ -80,6 +80,8 @@ export type CatalogQuery = {
   availableOnly: boolean;
   /** Masque les dossiers qui ne sont pas vérifiés HOMERA. */
   verifiedOnly: boolean;
+  /** Logements meublés uniquement : critère principal, relié aux données du bien. */
+  furnishedOnly: boolean;
   sort: SortId;
   page: number;
 };
@@ -102,6 +104,7 @@ export const EMPTY_QUERY: CatalogQuery = {
   recentOnly: false,
   availableOnly: false,
   verifiedOnly: false,
+  furnishedOnly: false,
   sort: "pertinence",
   page: 1,
 };
@@ -156,6 +159,7 @@ export function parseCatalogQuery(input: URLSearchParams | string): CatalogQuery
     recentOnly: params.get("nouveautes") === "1",
     availableOnly: params.get("disponible") === "1",
     verifiedOnly: params.get("verifie") === "1",
+    furnishedOnly: params.get("meuble") === "1",
     sort: sort || "pertinence",
     page: page ?? 1,
   };
@@ -180,6 +184,7 @@ export function buildCatalogParams(query: CatalogQuery): URLSearchParams {
   if (query.recentOnly) params.set("nouveautes", "1");
   if (query.availableOnly) params.set("disponible", "1");
   if (query.verifiedOnly) params.set("verifie", "1");
+  if (query.furnishedOnly) params.set("meuble", "1");
   if (query.sort !== "pertinence") params.set("tri", query.sort);
   if (query.page > 1) params.set("page", String(query.page));
   return params;
@@ -210,7 +215,8 @@ export function isPristine(query: CatalogQuery): boolean {
     query.stayNights === null &&
     !query.recentOnly &&
     !query.availableOnly &&
-    !query.verifiedOnly
+    !query.verifiedOnly &&
+    !query.furnishedOnly
   );
 }
 
@@ -230,6 +236,7 @@ export function activeFilterCount(query: CatalogQuery): number {
     (query.roomsMin !== null ? 1 : 0) +
     (query.surfaceMin !== null ? 1 : 0) +
     (query.surfaceMax !== null ? 1 : 0) +
+    (query.furnishedOnly ? 1 : 0) +
     (query.stayNights !== null ? 1 : 0) +
     (query.recentOnly ? 1 : 0) +
     (query.availableOnly ? 1 : 0) +
@@ -336,6 +343,8 @@ export function matchesQuery(property: Property, query: CatalogQuery): boolean {
   if (query.recentOnly && property.publishedAt < RECENT_FROM) return false;
   if (query.availableOnly && availabilityStatus(property) !== "disponible") return false;
   if (query.verifiedOnly && verificationStatus(property) !== "verifie") return false;
+  // « Meublé » est un critère principal : il lit la caractéristique déclarée du bien.
+  if (query.furnishedOnly && !(property.features ?? []).includes("meuble")) return false;
 
   if (query.q) {
     const haystack = normalize(
@@ -450,6 +459,8 @@ export type CatalogFacets = {
   allIntents: number;
   available: number;
   verified: number;
+  /** Logements meublés dans le périmètre courant. */
+  furnished: number;
 };
 
 export function facets(source: Property[], query: CatalogQuery): CatalogFacets {
@@ -459,6 +470,7 @@ export function facets(source: Property[], query: CatalogQuery): CatalogFacets {
   const withoutFeature = searchCatalog({ ...query, features: [] }, source);
   const withoutAvailability = searchCatalog({ ...query, availableOnly: false }, source);
   const withoutVerification = searchCatalog({ ...query, verifiedOnly: false }, source);
+  const withoutFurnished = searchCatalog({ ...query, furnishedOnly: false }, source);
   const intentAndType = searchCatalog({ ...query, intent: "", types: [], features: [] }, source);
 
   const typeValues = query.intent ? TYPES_BY_INTENT[query.intent] : (Object.keys(TYPE_LABELS) as PropertyType[]);
@@ -478,11 +490,17 @@ export function facets(source: Property[], query: CatalogQuery): CatalogFacets {
     types: countValues(withoutType, typeValues, (entry) => [entry.type]),
     cities: countValues(withoutPlace, cities, (entry) => [entry.city]),
     districts: countValues(withoutPlace, districts, (entry) => [entry.district]),
-    features: countValues(withoutFeature, FEATURE_ORDER.filter((feature) => presentFeatures.has(feature)), (entry) => entry.features ?? []),
+    // « meuble » a son propre filtre principal : on ne le répète pas dans les équipements.
+    features: countValues(
+      withoutFeature,
+      FEATURE_ORDER.filter((feature) => feature !== "meuble" && presentFeatures.has(feature)),
+      (entry) => entry.features ?? [],
+    ),
     total: searchCatalog(query, source).length,
     allIntents: withoutIntent.length,
     available: withoutAvailability.filter((entry) => availabilityStatus(entry) === "disponible").length,
     verified: withoutVerification.filter((entry) => verificationStatus(entry) === "verifie").length,
+    furnished: withoutFurnished.filter((entry) => (entry.features ?? []).includes("meuble")).length,
   };
 }
 
