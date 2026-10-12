@@ -7,6 +7,7 @@ import {
   type PropertyType,
 } from "../content";
 import { MEDIA } from "../media.generated";
+import { REPORT_REASON_VALUES } from "../reports";
 
 /* ==================================================================
    HOMERA — VALIDATION DES ENTRÉES SERVEUR
@@ -151,8 +152,12 @@ export const photoSchema = z.object({
 
 export const reportSchema = z.object({
   propertyId: z.string().trim().min(1),
-  reason: z.string().trim().min(3, "Précisez le motif du signalement.").max(120),
-  detail: z.string().trim().max(1500).optional().default(""),
+  reason: z.enum(REPORT_REASON_VALUES, { message: "Choisissez l’un des motifs proposés." }),
+  detail: z
+    .string()
+    .trim()
+    .min(10, "Décrivez le problème en au moins 10 caractères : sans contexte, le signalement est inexploitable.")
+    .max(1500),
 });
 
 /** Transforme une erreur Zod en messages par champ prêts à afficher. */

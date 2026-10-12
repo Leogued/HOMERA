@@ -69,6 +69,7 @@ export type CatalogQuery = {
   priceMin: number | null;
   priceMax: number | null;
   bedroomsMin: number | null;
+  bathroomsMin: number | null;
   roomsMin: number | null;
   surfaceMin: number | null;
   surfaceMax: number | null;
@@ -97,6 +98,7 @@ export const EMPTY_QUERY: CatalogQuery = {
   priceMin: null,
   priceMax: null,
   bedroomsMin: null,
+  bathroomsMin: null,
   roomsMin: null,
   surfaceMin: null,
   surfaceMax: null,
@@ -152,6 +154,7 @@ export function parseCatalogQuery(input: URLSearchParams | string): CatalogQuery
     priceMin: integer(params, "prix-min"),
     priceMax: integer(params, "prix-max"),
     bedroomsMin: integer(params, "chambres"),
+    bathroomsMin: integer(params, "sdb"),
     roomsMin: integer(params, "pieces"),
     surfaceMin: integer(params, "surface-min"),
     surfaceMax: integer(params, "surface-max"),
@@ -177,6 +180,7 @@ export function buildCatalogParams(query: CatalogQuery): URLSearchParams {
   if (query.priceMin !== null) params.set("prix-min", String(query.priceMin));
   if (query.priceMax !== null) params.set("prix-max", String(query.priceMax));
   if (query.bedroomsMin !== null) params.set("chambres", String(query.bedroomsMin));
+  if (query.bathroomsMin !== null) params.set("sdb", String(query.bathroomsMin));
   if (query.roomsMin !== null) params.set("pieces", String(query.roomsMin));
   if (query.surfaceMin !== null) params.set("surface-min", String(query.surfaceMin));
   if (query.surfaceMax !== null) params.set("surface-max", String(query.surfaceMax));
@@ -233,6 +237,7 @@ export function activeFilterCount(query: CatalogQuery): number {
     (query.priceMin !== null ? 1 : 0) +
     (query.priceMax !== null ? 1 : 0) +
     (query.bedroomsMin !== null ? 1 : 0) +
+    (query.bathroomsMin !== null ? 1 : 0) +
     (query.roomsMin !== null ? 1 : 0) +
     (query.surfaceMin !== null ? 1 : 0) +
     (query.surfaceMax !== null ? 1 : 0) +
@@ -331,6 +336,7 @@ export function matchesQuery(property: Property, query: CatalogQuery): boolean {
   if (query.priceMin !== null && property.price < query.priceMin) return false;
   if (query.priceMax !== null && property.price > query.priceMax) return false;
   if (query.bedroomsMin !== null && property.bedrooms < query.bedroomsMin) return false;
+  if (query.bathroomsMin !== null && (property.bathrooms ?? 0) < query.bathroomsMin) return false;
   if (query.roomsMin !== null && (property.rooms ?? property.bedrooms) < query.roomsMin) return false;
   if (query.surfaceMin !== null && property.surface < query.surfaceMin) return false;
   if (query.surfaceMax !== null && property.surface > query.surfaceMax) return false;
@@ -453,6 +459,7 @@ export type CatalogFacets = {
   cities: FacetCount[];
   districts: FacetCount[];
   features: FacetCount<PropertyFeature>[];
+  landTitles: FacetCount<LandTitle>[];
   /** Nombre de résultats pour la requête complète. */
   total: number;
   /** Nombre de biens visibles une fois le projet ignoré. */
@@ -468,6 +475,7 @@ export function facets(source: Property[], query: CatalogQuery): CatalogFacets {
   const withoutType = searchCatalog({ ...query, types: [] }, source);
   const withoutPlace = searchCatalog({ ...query, cities: [], districts: [] }, source);
   const withoutFeature = searchCatalog({ ...query, features: [] }, source);
+  const withoutTitle = searchCatalog({ ...query, landTitles: [] }, source);
   const withoutAvailability = searchCatalog({ ...query, availableOnly: false }, source);
   const withoutVerification = searchCatalog({ ...query, verifiedOnly: false }, source);
   const withoutFurnished = searchCatalog({ ...query, furnishedOnly: false }, source);
@@ -491,6 +499,7 @@ export function facets(source: Property[], query: CatalogQuery): CatalogFacets {
     cities: countValues(withoutPlace, cities, (entry) => [entry.city]),
     districts: countValues(withoutPlace, districts, (entry) => [entry.district]),
     // « meuble » a son propre filtre principal : on ne le répète pas dans les équipements.
+    landTitles: countValues(withoutTitle, LAND_TITLES, (entry) => (entry.landTitle ? [entry.landTitle] : [])),
     features: countValues(
       withoutFeature,
       FEATURE_ORDER.filter((feature) => feature !== "meuble" && presentFeatures.has(feature)),
@@ -520,6 +529,58 @@ export function priceBounds(items: Property[]): { min: number; max: number } {
    ------------------------------------------------------------------ */
 
 /** « à louer · appartements · Cotonou · 3 chambres minimum ». */
+/**
+ * Traduction de la requête d’écran en filtres serveur.
+ *
+ * Un seul point de conversion : si l’écran gagne un critère, le serveur
+ * le recevra ici, et nulle part ailleurs.
+ */
+export function queryToCatalogFilters(query: CatalogQuery): {
+  intent: CatalogQuery["intent"];
+  types: CatalogQuery["types"];
+  cities: string[];
+  districts: string[];
+  features: CatalogQuery["features"];
+  landTitles: CatalogQuery["landTitles"];
+  q: string;
+  priceMin: number | null;
+  priceMax: number | null;
+  bedroomsMin: number | null;
+  bathroomsMin: number | null;
+  roomsMin: number | null;
+  surfaceMin: number | null;
+  surfaceMax: number | null;
+  stayNights: number | null;
+  recentOnly: boolean;
+  availableOnly: boolean;
+  verifiedOnly: boolean;
+  furnishedOnly: boolean;
+  sort: CatalogQuery["sort"];
+} {
+  return {
+    intent: query.intent,
+    types: query.types,
+    cities: query.cities,
+    districts: query.districts,
+    features: query.features,
+    landTitles: query.landTitles,
+    q: query.q,
+    priceMin: query.priceMin,
+    priceMax: query.priceMax,
+    bedroomsMin: query.bedroomsMin,
+    bathroomsMin: query.bathroomsMin,
+    roomsMin: query.roomsMin,
+    surfaceMin: query.surfaceMin,
+    surfaceMax: query.surfaceMax,
+    stayNights: query.stayNights,
+    recentOnly: query.recentOnly,
+    availableOnly: query.availableOnly,
+    verifiedOnly: query.verifiedOnly,
+    furnishedOnly: query.furnishedOnly,
+    sort: query.sort,
+  };
+}
+
 export function summaryLabel(query: CatalogQuery): string {
   const plural = (count: number) => (count > 1 ? "s" : "");
   const parts: string[] = [];

@@ -1887,7 +1887,10 @@ await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (pro
   assert.ok(catalogExplorer.includes('onTermChange') && catalogExplorer.includes('priority={index < 3}'), 'CatalogExplorer filtre au fil de la frappe et précharge les 3 premières cartes');
 
   const hero = await readFile(new URL('../components/home/Hero.tsx', import.meta.url), 'utf8');
-  assert.ok(hero.includes('preload="metadata"') && hero.includes('poster="/images/page-cotonou.jpg"'), 'Hero optimise la vidéo pour mobile avec preload metadata et poster');
+  // La vidéo d’ouverture de 4,45 Mo a été retirée du chemin critique : le héros
+  // affiche désormais le visuel qui en était l’affiche, servi en image optimisée.
+  assert.ok(!hero.includes('<video') && !hero.includes('background_video.mp4'), 'Le héros ne télécharge plus de vidéo en lecture automatique');
+  assert.ok(hero.includes('mediaKey="page-cotonou"') && hero.includes('priority'), 'Le héros affiche une image optimisée et prioritaire');
 
   const authProvider = await readFile(new URL('../components/providers/AuthProvider.tsx', import.meta.url), 'utf8');
   // Le compte vit côté serveur : le contexte lit /api/auth/session et ne

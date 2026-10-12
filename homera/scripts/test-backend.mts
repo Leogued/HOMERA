@@ -29,6 +29,8 @@ const admin = await import("../lib/server/services/admin");
 const documents = await import("../lib/server/services/documents");
 const auditModule = await import("../lib/server/audit");
 const notificationsModule = await import("../lib/server/notifications");
+const validationModule = await import("../lib/server/validation");
+const reportReasonsModule = await import("../lib/reports");
 const passwordModule = await import("../lib/server/security/password");
 const sessionModule = await import("../lib/server/security/session");
 
@@ -518,10 +520,42 @@ check("le délai moyen de traitement est calculé", overview.verification.delaiM
 const usersList = admin.listUsers(db, { role: "agent" });
 check("la liste des agents est filtrée par rôle", usersList.every((entry) => entry.roles.includes("agent")));
 
-const report = admin.createReport(db, client, { propertyId, reason: "Prix incohérent", detail: "Annonce suspecte." });
+const report = admin.createReport(db, client, {
+  propertyId,
+  reason: reportReasonsModule.REPORT_REASONS[0].value,
+  detail: "Annonce suspecte : le prix annoncé ne correspond pas à l’appel téléphonique.",
+});
 check("un signalement est enregistré", report.ok);
 check("le signalement apparaît dans l’administration", admin.listReports(db, "ouvert").length >= 1);
 check("l’administration est notifiée du signalement", notificationsModule.listNotifications(db, adminUser.id).some((entry) => entry.type === "signalement"));
+
+const reportOnGhost = admin.createReport(db, client, {
+  propertyId: "bien-qui-nexiste-pas",
+  reason: "autre",
+  detail: "Signalement sur un bien retiré du catalogue.",
+});
+check("un signalement sur un bien inexistant est refusé", !reportOnGhost.ok && reportOnGhost.code === "introuvable");
+
+const forgedReason = validationModule.parseInput(validationModule.reportSchema, {
+  propertyId,
+  reason: "raison-inventee-de-toutes-pieces",
+  detail: "Détail suffisamment long pour passer la longueur minimale.",
+});
+check("un motif de signalement hors liste est refusé côté serveur", !forgedReason.ok);
+
+const shortDetail = validationModule.parseInput(validationModule.reportSchema, {
+  propertyId,
+  reason: "autre",
+  detail: "court",
+});
+check("un signalement sans explication exploitable est refusé", !shortDetail.ok);
+
+const validReport = validationModule.parseInput(validationModule.reportSchema, {
+  propertyId,
+  reason: "autre",
+  detail: "Détail conforme : au moins dix caractères.",
+});
+check("un signalement complet est accepté par la validation serveur", validReport.ok);
 
 const auditEntries = auditModule.listAudit(db, { entityType: "mandat" });
 check("les actions sur mandats sont journalisées", auditEntries.length >= 2, `${auditEntries.length} entrées`);

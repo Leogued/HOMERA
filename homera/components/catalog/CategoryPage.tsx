@@ -2,11 +2,12 @@ import Link from "next/link";
 import { ArrowRight, CheckCircle2, ShieldCheck } from "lucide-react";
 import { getCategoryVerificationNote } from "@/lib/editorial-guides";
 import { countLabel, formatFCFA } from "@/lib/format";
-import { PER_PAGE, buildCatalogParams, isPristine, parseCatalogQuery, searchCatalog } from "@/lib/properties";
+import { PER_PAGE, buildCatalogParams, isPristine, parseCatalogQuery, queryToCatalogFilters } from "@/lib/properties";
 import { categoryQuery, type PublicCategory, type PublicProjectPage } from "@/lib/nav";
 import { searchParamsToQuery, type NextSearchParams } from "@/lib/search-params";
 import { CatalogExplorer } from "@/components/catalog/CatalogExplorer";
-import { listProperties } from "@/lib/server/services/properties";
+import { catalogFacets, catalogPriceBounds, searchProperties } from "@/lib/server/services/properties";
+import { getDb as getCatalogDb } from "@/lib/server/db/client";
 import { getDb } from "@/lib/server/db/client";
 import { PageHero } from "@/components/catalog/PageHero";
 /* ==================================================================
@@ -32,14 +33,17 @@ export async function CategoryPageView({
     types: category.filter.types ?? [],
     stayNights: category.filter.stayNights ?? null,
   };
-  const catalogue = listProperties(getDb());
-  const results = searchCatalog(initialQuery, catalogue);
-  const cheapest = results.reduce(
+  const db = getDb();
+  const filters = queryToCatalogFilters(initialQuery);
+  const firstPage = searchProperties(db, filters, { page: 1, perPage: Math.min(4, Math.max(1, parsed.page)) * PER_PAGE });
+  const facets = catalogFacets(db, filters);
+  const priceBounds = catalogPriceBounds(db, filters);
+  const cheapest = firstPage.items.reduce(
     (lowest, property) => (lowest === null || property.price < lowest ? property.price : lowest),
     null as number | null,
   );
-  const cities = new Set(results.map((property) => property.city));
-  const initialVisible = Math.min(4, Math.max(1, parsed.page)) * PER_PAGE; // Les filtres de la recherche en cours suivent d’une catégorie à l’autre
+  const cities = new Set(facets.cities.map((entry) => entry.value));
+  const results = { length: firstPage.total }; // Les filtres de la recherche en cours suivent d’une catégorie à l’autre
   // (hors projet, type et durée, qui appartiennent à la page d’arrivée).
   const carried = buildCatalogParams({ ...parsed, intent: "", types: [], stayNights: null, page: 1 }).toString();
   const carry = carried ? `?${carried}` : "";
@@ -104,8 +108,9 @@ export async function CategoryPageView({
         <CatalogExplorer
           basePath={`/${project.slug}/${category.slug}`}
           initialQuery={initialQuery}
-          initialVisible={initialVisible}
-          source={catalogue}
+          initialPage={firstPage}
+          initialFacets={facets}
+          initialPriceBounds={priceBounds}
           locked={category.filter.stayNights ? ["intent", "types", "stayNights"] : ["intent", "types"]}
           emptyHint={`Aucun bien ne correspond à ces critères dans « ${category.label} ». Élargissez la commune ou le budget, ou consultez la page ${project.navLabel}.`}
         />{" "}
@@ -121,7 +126,7 @@ export async function CategoryPageView({
             {project.categories
               .filter((entry) => entry.slug !== category.slug)
               .map((entry) => {
-                const entryResults = searchCatalog(categoryQuery(entry.filter));
+                const entryResults = searchProperties(getCatalogDb(), queryToCatalogFilters(categoryQuery(entry.filter)), { page: 1, perPage: 1 });
                 return (
                   <li key={entry.slug}>
                     {" "}
@@ -131,7 +136,7 @@ export async function CategoryPageView({
                     >
                       {" "}
                       {entry.label}{" "}
-                      <span className="homera-num text-caption text-muted">{countLabel(entryResults.length)}</span>{" "}
+                      <span className="homera-num text-caption text-muted">{countLabel(entryResults.total)}</span>{" "}
                     </Link>{" "}
                   </li>
                 );

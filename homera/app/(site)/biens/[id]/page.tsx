@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { INTENT_LABELS, TYPE_LABELS, formatFCFA } from "@/lib/format";
-import { loadProperty } from "@/lib/server/services/properties";
+import {
+  availabilityWindows, currentUnavailability, frenchDate, loadProperty, publicOwnerProfile, similarProperties,
+} from "@/lib/server/services/properties";
 import { getDb } from "@/lib/server/db/client";
 import { PropertyDetail } from "@/components/catalog/PropertyDetail";
 /* ==================================================================
@@ -39,7 +41,35 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
 }
 export default async function BienPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const property = loadProperty(getDb(), id);
+  const db = getDb();
+  const property = loadProperty(db, id);
   if (!property) notFound();
-  return <PropertyDetail property={property} />;
+
+  /* Tout ce que la fiche affiche au-delà du bien lui-même est lu en base :
+     les biens comparables, les périodes d’indisponibilité déclarées et le
+     profil public du propriétaire. Rien n’est déduit d’un fichier figé. */
+  const similar = similarProperties(db, property, 3);
+  const windows = availabilityWindows(db, property.id);
+  const blocked = currentUnavailability(db, property.id);
+  const ownerId = db
+    .prepare<[string], { owner_id: string | null }>("SELECT owner_id FROM properties WHERE id = ?")
+    .get(property.id)?.owner_id ?? null;
+  const owner = publicOwnerProfile(db, ownerId);
+
+  return (
+    <PropertyDetail
+      property={property}
+      similar={similar}
+      availability={{
+        status: blocked.unavailable ? "indisponible" : (property.availabilityStatus ?? "disponible"),
+        windows,
+        note: blocked.unavailable
+          ? blocked.until
+            ? `Indisponible jusqu’au ${frenchDate(blocked.until)}${blocked.reason ? ` · ${blocked.reason}` : ""}.`
+            : "Le propriétaire n’a pas précisé de date de retour."
+          : "",
+      }}
+      owner={owner}
+    />
+  );
 }

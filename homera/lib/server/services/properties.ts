@@ -137,6 +137,9 @@ export function toProperty(row: PropertyRow, photos: PhotoRow[], features: Prope
     publishedAt: (row.published_at ?? row.created_at).slice(0, 10),
     media: main?.media_key ?? "",
     alt: main?.alt ?? row.title,
+    gallery: photos.length
+      ? photos.map((photo) => ({ mediaKey: photo.media_key, alt: photo.alt || row.title }))
+      : undefined,
     coordinates: row.latitude !== null && row.longitude !== null ? { lat: row.latitude, lng: row.longitude } : undefined,
   };
 }
@@ -158,6 +161,7 @@ export type CatalogFilters = {
   priceMin?: number | null;
   priceMax?: number | null;
   bedroomsMin?: number | null;
+  bathroomsMin?: number | null;
   roomsMin?: number | null;
   surfaceMin?: number | null;
   surfaceMax?: number | null;
@@ -177,53 +181,71 @@ function inClause(values: string[], column: string, params: unknown[]): string {
   return `${column} IN (${placeholders})`;
 }
 
-/** Liste les biens publiés, filtrés en SQL (mêmes règles que `matchesQuery`). */
-export function listProperties(db: Db, filters: CatalogFilters = {}, options: { onlyPublished?: boolean } = {}): Property[] {
+/**
+ * Construction de la clause WHERE du catalogue.
+ *
+ * `skip` permet de calculer une facette : on retire alors la dimension
+ * que l’on est en train de compter, sinon chaque case afficherait zéro
+ * dès qu’elle est cochée.
+ */
+type Skip = "intent" | "types" | "cities" | "districts" | "features" | "landTitles" | "available" | "verified" | "furnished";
+
+function catalogWhere(
+  db: Db,
+  filters: CatalogFilters,
+  options: { onlyPublished?: boolean; skip?: Skip[]; alias?: string } = {},
+): { sql: string; params: unknown[] } {
   const clauses: string[] = [];
   const params: unknown[] = [];
+  const skip = new Set(options.skip ?? []);
+  const t = options.alias ? `${options.alias}.` : "";
   if (options.onlyPublished !== false) {
-    clauses.push("publication_status = 'publie'");
+    clauses.push(`${t}publication_status = 'publie'`);
   } else {
-    clauses.push("publication_status <> 'archive'");
+    clauses.push(`${t}publication_status <> 'archive'`);
   }
 
-  if (filters.intent) {
-    clauses.push("intent = ?");
+  if (filters.intent && !skip.has("intent")) {
+    clauses.push(`${t}intent = ?`);
     params.push(filters.intent);
   }
-  if (filters.types?.length) clauses.push(inClause([...filters.types], "type", params));
-  if (filters.cities?.length) clauses.push(inClause([...filters.cities], "city", params));
-  if (filters.districts?.length) clauses.push(inClause([...filters.districts], "district", params));
-  if (filters.landTitles?.length) clauses.push(inClause([...filters.landTitles], "land_title", params));
+  if (filters.types?.length && !skip.has("types")) clauses.push(inClause([...filters.types], `${t}type`, params));
+  if (filters.cities?.length && !skip.has("cities")) clauses.push(inClause([...filters.cities], `${t}city`, params));
+  if (filters.districts?.length && !skip.has("districts")) clauses.push(inClause([...filters.districts], `${t}district`, params));
+  if (filters.landTitles?.length && !skip.has("landTitles")) clauses.push(inClause([...filters.landTitles], `${t}land_title`, params));
   if (filters.priceMin !== null && filters.priceMin !== undefined) {
-    clauses.push("price >= ?");
+    clauses.push(`${t}price >= ?`);
     params.push(filters.priceMin);
   }
   if (filters.priceMax !== null && filters.priceMax !== undefined) {
-    clauses.push("price <= ?");
+    clauses.push(`${t}price <= ?`);
     params.push(filters.priceMax);
   }
   if (filters.bedroomsMin !== null && filters.bedroomsMin !== undefined) {
-    clauses.push("bedrooms >= ?");
+    clauses.push(`${t}bedrooms >= ?`);
     params.push(filters.bedroomsMin);
   }
+  if (filters.bathroomsMin !== null && filters.bathroomsMin !== undefined) {
+    clauses.push(`${t}bathrooms >= ?`);
+    params.push(filters.bathroomsMin);
+  }
   if (filters.roomsMin !== null && filters.roomsMin !== undefined) {
-    clauses.push("COALESCE(rooms, bedrooms) >= ?");
+    clauses.push(`COALESCE(${t}rooms, ${t}bedrooms) >= ?`);
     params.push(filters.roomsMin);
   }
   if (filters.surfaceMin !== null && filters.surfaceMin !== undefined) {
-    clauses.push("surface >= ?");
+    clauses.push(`${t}surface >= ?`);
     params.push(filters.surfaceMin);
   }
   if (filters.surfaceMax !== null && filters.surfaceMax !== undefined) {
-    clauses.push("surface <= ?");
+    clauses.push(`${t}surface <= ?`);
     params.push(filters.surfaceMax);
   }
-  if (filters.availableOnly) clauses.push("availability = 'disponible'");
-  if (filters.verifiedOnly) clauses.push("verification_status = 'verifie'");
-  if (filters.furnishedOnly) clauses.push("furnished = 1");
+  if (filters.availableOnly && !skip.has("available")) clauses.push(`${t}availability = 'disponible'`);
+  if (filters.verifiedOnly && !skip.has("verified")) clauses.push(`${t}verification_status = 'verifie'`);
+  if (filters.furnishedOnly && !skip.has("furnished")) clauses.push(`${t}furnished = 1`);
   if (filters.stayNights !== null && filters.stayNights !== undefined) {
-    clauses.push("(intent <> 'sejour' OR COALESCE(min_nights, 1) <= ?)");
+    clauses.push(`(${t}intent <> 'sejour' OR COALESCE(${t}min_nights, 1) <= ?)`);
     params.push(filters.stayNights);
   }
   if (filters.recentOnly) {
@@ -232,34 +254,44 @@ export function listProperties(db: Db, filters: CatalogFilters = {}, options: { 
     );
     if (latest?.value) {
       const threshold = new Date(new Date(latest.value).getTime() - RECENT_DAYS * 86_400_000).toISOString();
-      clauses.push("COALESCE(published_at, created_at) >= ?");
+      clauses.push(`COALESCE(${t}published_at, ${t}created_at) >= ?`);
       params.push(threshold);
     }
   }
-  if (filters.features?.length) {
+  if (filters.features?.length && !skip.has("features")) {
     for (const feature of filters.features) {
       clauses.push(
-        "EXISTS (SELECT 1 FROM property_features pf WHERE pf.property_id = properties.id AND pf.feature = ?)",
+        `EXISTS (SELECT 1 FROM property_features pf WHERE pf.property_id = ${t}id AND pf.feature = ?)`,
       );
       params.push(feature);
     }
   }
   if (filters.q) {
     clauses.push(
-      "(lower(title) LIKE ? OR lower(district) LIKE ? OR lower(city) LIKE ? OR lower(description) LIKE ? OR lower(reference) LIKE ?)",
+      `(lower(${t}title) LIKE ? OR lower(${t}district) LIKE ? OR lower(${t}city) LIKE ? OR lower(${t}description) LIKE ? OR lower(${t}reference) LIKE ?)`,
     );
     const needle = `%${filters.q.toLowerCase()}%`;
     params.push(needle, needle, needle, needle, needle);
   }
 
-  const where = clauses.length ? `WHERE ${clauses.join(" AND ")}` : "";
-  let order = "ORDER BY COALESCE(verified_on, '1970-01-01') DESC, COALESCE(published_at, created_at) DESC, title ASC";
-  if (filters.sort === "recent") order = "ORDER BY COALESCE(published_at, created_at) DESC, title ASC";
-  if (filters.sort === "prix-asc") order = "ORDER BY price ASC, title ASC";
-  if (filters.sort === "prix-desc") order = "ORDER BY price DESC, title ASC";
-  if (filters.sort === "surface-desc") order = "ORDER BY surface DESC, title ASC";
+  return {
+    sql: clauses.length ? `WHERE ${clauses.join(" AND ")}` : "",
+    params,
+  };
+}
 
-  const rows = queryAll<PropertyRow>(`${PROPERTY_COLUMNS} ${where} ${order}`, params);
+function catalogOrder(sort: CatalogFilters["sort"]): string {
+  if (sort === "recent") return "ORDER BY COALESCE(published_at, created_at) DESC, title ASC";
+  if (sort === "prix-asc") return "ORDER BY price ASC, title ASC";
+  if (sort === "prix-desc") return "ORDER BY price DESC, title ASC";
+  if (sort === "surface-desc") return "ORDER BY surface DESC, title ASC";
+  return "ORDER BY COALESCE(verified_on, '1970-01-01') DESC, COALESCE(published_at, created_at) DESC, title ASC";
+}
+
+/** Liste les biens publiés, filtrés en SQL (mêmes règles que `matchesQuery`). */
+export function listProperties(db: Db, filters: CatalogFilters = {}, options: { onlyPublished?: boolean } = {}): Property[] {
+  const { sql: where, params } = catalogWhere(db, filters, options);
+  const rows = queryAll<PropertyRow>(`${PROPERTY_COLUMNS} ${where} ${catalogOrder(filters.sort)}`, params);
   const photoRows = queryAll<PhotoRow>(
     "SELECT * FROM property_photos ORDER BY property_id, position ASC, created_at ASC",
   );
@@ -279,6 +311,189 @@ export function listProperties(db: Db, filters: CatalogFilters = {}, options: { 
     featuresByProperty.set(entry.property_id, list);
   }
   return rows.map((row) => toProperty(row, photosByProperty.get(row.id) ?? [], featuresByProperty.get(row.id) ?? []));
+}
+
+export type CatalogPage = {
+  items: Property[];
+  total: number;
+  page: number;
+  pages: number;
+  perPage: number;
+};
+
+/**
+ * Recherche paginée, entièrement calculée en base.
+ *
+ * Le client n’a plus à charger tout le catalogue pour en afficher une
+ * page : il reçoit la page demandée, le nombre total de résultats et le
+ * nombre de pages. Une rechercher reste donc valable quand le catalogue
+ * passera de trente-six biens à trente mille.
+ */
+export function searchProperties(
+  db: Db,
+  filters: CatalogFilters,
+  paging: { page?: number; perPage?: number } = {},
+  options: { onlyPublished?: boolean } = {},
+): CatalogPage {
+  const perPage = Math.min(48, Math.max(1, Math.round(paging.perPage ?? 9)));
+  const { sql: where, params } = catalogWhere(db, filters, options);
+  const total = queryOne<{ total: number }>(`SELECT COUNT(*) AS total FROM properties ${where}`, params)?.total ?? 0;
+  const pages = Math.max(1, Math.ceil(total / perPage));
+  const page = Math.min(Math.max(1, Math.round(paging.page ?? 1)), pages);
+  const offset = (page - 1) * perPage;
+
+  const rows = queryAll<PropertyRow>(
+    `${PROPERTY_COLUMNS} ${where} ${catalogOrder(filters.sort)} LIMIT ? OFFSET ?`,
+    [...params, perPage, offset],
+  );
+  const items = rows.map((row) => toProperty(row, photosOf(db, row.id), featuresOf(db, row.id)));
+  return { items, total, page, pages, perPage };
+}
+
+export type FacetCount = { value: string; count: number };
+
+/**
+ * Compteurs de facettes, calculés en SQL.
+ *
+ * Chaque compteur retire sa propre dimension : la case « Cotonou »
+ * affiche combien de biens on obtiendrait en la cochant, pas le nombre
+ * de résultats déjà filtrés par Cotonou.
+ */
+export function catalogFacets(db: Db, filters: CatalogFilters, options: { onlyPublished?: boolean } = {}): ServerFacets {
+  const countBy = (column: string, skip: Skip[], extra?: Skip[]) => {
+    const { sql: where, params } = catalogWhere(db, filters, { ...options, skip: [...skip, ...(extra ?? [])] });
+    return queryAll<{ value: string; count: number }>(
+      `SELECT ${column} AS value, COUNT(*) AS count FROM properties ${where} GROUP BY ${column} ORDER BY count DESC, value ASC`,
+      params,
+    ).filter((row) => Boolean(row.value));
+  };
+  const countAll = (skip: Skip[], clause = "") => {
+    const { sql: where, params } = catalogWhere(db, filters, { ...options, skip });
+    const extra = clause ? ` AND ${clause}` : "";
+    return (
+      queryOne<{ total: number }>(`SELECT COUNT(*) AS total FROM properties ${where}${extra}`, params)?.total ?? 0
+    );
+  };
+
+  // Les équipements se comptent un par un : un bien en cumule plusieurs.
+  const { sql: featureWhere, params: featureParams } = catalogWhere(db, filters, { ...options, skip: ["features"], alias: "p" });
+  const featureCounts = queryAll<{ value: string; count: number }>(
+    `SELECT pf.feature AS value, COUNT(DISTINCT pf.property_id) AS count
+       FROM property_features pf
+       JOIN properties p ON p.id = pf.property_id
+      ${featureWhere}
+      GROUP BY pf.feature
+      ORDER BY count DESC, value ASC`,
+    featureParams,
+  );
+
+  return {
+    intents: countBy("intent", ["intent"]) as ServerFacets["intents"],
+    types: countBy("type", ["types"]) as ServerFacets["types"],
+    cities: countBy("city", ["cities", "districts"]),
+    districts: countBy("district", ["districts"]),
+    landTitles: countBy("land_title", ["landTitles"]) as ServerFacets["landTitles"],
+    features: featureCounts as ServerFacets["features"],
+    total: countAll([]),
+    allIntents: countAll(["intent"]),
+    available: countAll(["available"], "availability = 'disponible'"),
+    verified: countAll(["verified"], "verification_status = 'verifie'"),
+    furnished: countAll(["furnished"], "furnished = 1"),
+  };
+}
+
+export type ServerFacets = {
+  intents: { value: PropertyIntent; count: number }[];
+  types: { value: PropertyType; count: number }[];
+  cities: { value: string; count: number }[];
+  districts: { value: string; count: number }[];
+  landTitles: { value: LandTitle; count: number }[];
+  features: { value: PropertyFeature; count: number }[];
+  total: number;
+  allIntents: number;
+  available: number;
+  verified: number;
+  furnished: number;
+};
+
+/** Bornes de prix du périmètre courant, arrondies au pas de 10 000 FCFA. */
+export function catalogPriceBounds(db: Db, filters: CatalogFilters, options: { onlyPublished?: boolean } = {}): { min: number; max: number } {
+  const { sql: where, params } = catalogWhere(db, filters, options);
+  const row = queryOne<{ min: number | null; max: number | null }>(
+    `SELECT MIN(price) AS min, MAX(price) AS max FROM properties ${where}`,
+    params,
+  );
+  const step = 10_000;
+  const min = Math.floor((row?.min ?? 0) / step) * step;
+  const max = Math.ceil((row?.max ?? 0) / step) * step;
+  return { min, max };
+}
+
+/**
+ * Biens comparables : même intention, même ville si possible, même
+ * gamme de prix à ±40 %. Un bien suspendu ou archivé n’est jamais
+ * proposé : on ne recommande pas une annonce retirée.
+ */
+export function similarProperties(db: Db, property: Property, limit = 3): Property[] {
+  const rows = queryAll<PropertyRow>(
+    `${PROPERTY_COLUMNS}
+      WHERE publication_status = 'publie'
+        AND id <> ?
+        AND intent = ?
+        AND price BETWEEN ? AND ?
+      ORDER BY (city = ?) DESC, (district = ?) DESC,
+               (verification_status = 'verifie') DESC,
+               ABS(price - ?) ASC
+      LIMIT ?`,
+    [
+      property.id,
+      property.intent,
+      Math.round(property.price * 0.6),
+      Math.round(property.price * 1.4),
+      property.city,
+      property.district,
+      property.price,
+      limit,
+    ],
+  );
+  if (rows.length) return rows.map((row) => toProperty(row, photosOf(db, row.id), featuresOf(db, row.id)));
+  // Repli : même intention, sans contrainte de prix.
+  const fallback = queryAll<PropertyRow>(
+    `${PROPERTY_COLUMNS} WHERE publication_status = 'publie' AND id <> ? AND intent = ? ORDER BY (verification_status = 'verifie') DESC, COALESCE(published_at, created_at) DESC LIMIT ?`,
+    [property.id, property.intent, limit],
+  );
+  return fallback.map((row) => toProperty(row, photosOf(db, row.id), featuresOf(db, row.id)));
+}
+
+/** Profil public du propriétaire : ce qu’un visiteur a le droit de savoir, rien de plus. */
+export type PublicOwnerProfile = {
+  id: string;
+  name: string;
+  memberSince: string;
+  publishedProperties: number;
+  verifiedProperties: number;
+  emailVerified: boolean;
+};
+
+export function publicOwnerProfile(db: Db, ownerId: string | null): PublicOwnerProfile | null {
+  if (!ownerId) return null;
+  const user = queryOne<{ id: string; prenom: string; nom: string; created_at: string; email_verified: number }>(
+    "SELECT id, prenom, nom, created_at, email_verified FROM users WHERE id = ?",
+    [ownerId],
+  );
+  if (!user) return null;
+  const counts = queryOne<{ published: number; verified: number }>(
+    "SELECT COUNT(*) AS published, SUM(CASE WHEN verification_status = 'verifie' THEN 1 ELSE 0 END) AS verified FROM properties WHERE owner_id = ? AND publication_status = 'publie'",
+    [ownerId],
+  );
+  return {
+    id: user.id,
+    name: `${user.prenom} ${user.nom}`.trim() || "Propriétaire HOMERA",
+    memberSince: user.created_at,
+    publishedProperties: counts?.published ?? 0,
+    verifiedProperties: counts?.verified ?? 0,
+    emailVerified: user.email_verified === 1,
+  };
 }
 
 /** Biens d’un propriétaire (tous statuts) — espace propriétaire. */

@@ -285,6 +285,8 @@ export function createReport(
   input: { propertyId: string; reason: string; detail?: string },
   meta: { ip?: string } = {},
 ): ServiceResult<{ id: string }> {
+  const exists = queryOne<{ id: string }>("SELECT id FROM properties WHERE id = ?", [input.propertyId]);
+  if (!exists) return { ok: false, message: "Ce bien n’existe pas ou a été retiré.", code: "introuvable" };
   const id = newId("SIG");
   db.transaction(() => {
     db.prepare(
@@ -326,6 +328,37 @@ export function listReports(db: Db, status?: string) {
     status: string;
     created_at: string;
   }>(`SELECT * FROM property_reports ${where} ORDER BY created_at DESC`, status ? [status] : []);
+}
+
+/**
+ * Clore ou rejeter un signalement.
+ *
+ * Le signalement reste en base : on ne supprime jamais une alerte, on
+ * la résout. Le statut et l’auteur de la décision sont tracés.
+ */
+export function setReportStatus(
+  db: Db,
+  actor: UserContext,
+  reportId: string,
+  status: "en-cours" | "clos" | "rejete",
+  meta: { ip?: string } = {},
+): ServiceResult<{ id: string }> {
+  const row = queryOne<{ id: string; property_id: string; status: string }>("SELECT * FROM property_reports WHERE id = ?", [reportId]);
+  if (!row) return { ok: false, message: "Signalement introuvable." };
+  if (row.status === status) return { ok: false, message: "Ce signalement est déjà dans cet état." };
+  db.transaction(() => {
+    db.prepare("UPDATE property_reports SET status = ? WHERE id = ?").run(status, reportId);
+    writeAudit(db, {
+      actorId: actor.id,
+      actorLabel: actor.email,
+      action: `signalement.${status}`,
+      entityType: "signalement",
+      entityId: reportId,
+      detail: { depuis: row.status, bien: row.property_id },
+      ip: meta.ip ?? "",
+    });
+  })();
+  return { ok: true, data: { id: reportId } };
 }
 
 export function recentAudit(db: Db, limit = 40): AuditEntry[] {

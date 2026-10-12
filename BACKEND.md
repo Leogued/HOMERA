@@ -227,7 +227,7 @@ sur 24 heures (type + titre + entité), compteur de non-lues servi par
 Commandes lancées dans `homera/` le 12 octobre 2026, résultats non retouchés :
 
 ```
-npm run test:backend   →  151 vérifications réussies, 0 échec
+npm run test:backend   →  155 vérifications réussies, 0 échec
 node scripts/test-motion.mjs  →  67 tests, 67 pass, 0 fail
 npx tsc --noEmit       →  0 erreur
 npm run lint           →  0 problème
@@ -274,6 +274,27 @@ démarré :
 | Suspension d’une annonce sans motif | refusée ; avec motif : retirée du catalogue public et notifiée |
 | Accès à `/api/admin/*` par un non-admin | `403` |
 
+### 8.2 Contrôles du LOT 6 (explorateur serveur, fiche de bien, signalements)
+
+| Vérifié | Résultat |
+|---|---|
+| `GET /api/properties?page=1&par-page=3` puis `page=2` | 36 biens, 12 pages, 3 items par écran, références **différentes** d’une page à l’autre ⇒ pagination SQL réelle |
+| `?ville=Cotonou&facettes=1` | 21 biens **et** la facette « villes » liste toujours Cotonou 21 / Abomey-Calavi 7 : chaque facette s’ignore elle-même |
+| Nouveaux filtres serveur | `sdb=2` → 23 · `chambres=4` → 6 · `surface-min=150` → 17 · `prix-min=100000&prix-max=400000` → 11 · `meuble=1` → 11 |
+| Tris serveur | `prix-asc` → 32 000 / 38 000 / 42 000 · `prix-desc` → 185 000 000 / 145 000 000 / 78 000 000 · `surface-desc` → tri décroissant confirmé |
+| Pages HTML sans JavaScript | `/explorer`, `/explorer?meuble=1&tri=prix-asc`, `/louer`, `/louer/appartements`, `/acheter`, `/sejour` → `200` avec le contenu rendu |
+| Fiche `/biens/villa-fidjrosse` | galerie, disponibilité déclarée, interlocuteur vérifié, signalement et biens comparables **rendus côté serveur** |
+| Biens comparables | 3 biens de la même intention servis par `similarProperties()` — plus aucun calcul depuis le fichier figé |
+| Galerie à 3 visuels (vérifié après insertion temporaire de 2 photos) | miniatures, « Visuel précédent / suivant », compteur ; base remise à zéro ensuite |
+| Signalement : motif hors liste | `400` — « Choisissez l’un des motifs proposés. » |
+| Signalement : détail de 3 caractères | `400` — explications insuffisantes |
+| Signalement : corps vide | `400` avec un message par champ |
+| Signalement : bien inexistant | `404` — « Ce bien n’existe pas ou a été retiré. » (c’était un `500` : contrainte de clé étrangère violée) |
+| Signalement valide | `201`, présent dans `/api/admin/reports`, libellé lisible dans l’espace admin |
+| Traitement du signalement par un non-admin | `403` — « Accès réservé à l’administration. » |
+| Agent mandaté (portée « location ») sur un dossier | `canDecide = true`, « étudier » puis « accepter » → dossier `acceptee`, motif conservé, candidat notifié |
+| Agent mandaté (portée « visite ») | confirme puis constate la visite ; le client peut alors déposer son dossier |
+| Second dépôt sur un créneau déjà réservé | `409` — « Ce créneau vient d’être réservé. » (incrément atomique) |
 ---
 
 ## 9. Ce qui reste à faire — et où
@@ -285,14 +306,14 @@ comme terminés :
 
 | Sujet | État | Lot porteur |
 |---|---|---|
-| Contrats de location signés | table `contracts` prête, aucun écran ni service de signature | LOT 6/7 |
+| Contrats de location signés | table `contracts` prête, aucun écran ni service de signature | LOT 7 |
 | Téléversement réel des photos et pièces | tables `property_photos` / `documents` prêtes, le parcours **déclare** les pièces sans les héberger | LOT 8 |
 | Favoris unifiés | table `favorites` + `/api/favorites` prêts, deux vues côté interface | LOT 7 |
 | Messagerie interne | aucune table de fils de discussion ; la page existe et reste honnête | LOT 7 |
 | Paiements | aucun encaissement réel, aucune écriture serveur | hors périmètre pilote |
-| Pagination et facettes calculées en base | `/api/properties` existe, l’explorateur filtre encore côté client | LOT 6 |
+| Pagination et facettes calculées en base | ✅ fait au LOT 6 — filtres, tri, facettes et pagination servis par SQL ; le premier écran est rendu côté serveur | — |
 | Envoi d’e-mails transactionnels | absent, remplacé par l’affichage du code | à décider |
-| Fiches pré-rendues | `/biens/[id]` est rendu à la demande (`force-dynamic`) : toujours à jour, jamais de cache périmé. Le prérrendu reviendra avec la pagination serveur. | LOT 6/8 |
+| Galerie multi-photos | la fiche affiche tous les visuels du bien dans l’ordre déclaré ; l’amorçage ne fournit qu’une photo par bien, faute de téléversement réel | LOT 8 |
 
 ### 9.1 Risques ouverts
 

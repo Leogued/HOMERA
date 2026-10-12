@@ -56,7 +56,7 @@ export function CommuneMapExplorer({
   onChange,
 }: {
   query: CatalogQuery;
-  facets: CatalogFacets;
+  facets: CatalogFacets | null;
   onChange: (patch: Partial<CatalogQuery>) => void;
 }) {
   const activeCity = query.cities.length === 1 ? query.cities[0] : null;
@@ -213,7 +213,7 @@ export function CommuneMapExplorer({
             </text>
             {COMMUNES.map((commune) => {
               const selected = query.cities.includes(commune.name);
-              const count = facets.cities.find((entry) => entry.value === commune.name)?.count ?? 0;
+              const count = facets?.cities.find((entry) => entry.value === commune.name)?.count ?? 0;
               return (
                 <g
                   key={commune.name}
@@ -265,7 +265,7 @@ export function CommuneMapExplorer({
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2" role="group" aria-label="Filtrer par commune">
             {COMMUNES.map((commune) => {
               const selected = query.cities.includes(commune.name);
-              const count = facets.cities.find((entry) => entry.value === commune.name)?.count ?? 0;
+              const count = facets?.cities.find((entry) => entry.value === commune.name)?.count ?? 0;
               return (
                 <button
                   key={commune.name}

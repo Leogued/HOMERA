@@ -16,6 +16,7 @@ import {
 } from "@/components/workspace/Primitives";
 import { AdminInfoCell } from "@/components/workspace/AdminCells";
 import { formatDate } from "@/components/workspace/AdminCells";
+import { reportReasonLabel } from "@/lib/reports";
 
 /* ==================================================================
    HOMERA — ESPACE D’ADMINISTRATION (branché sur le serveur)
@@ -581,7 +582,7 @@ export function AdminReportsTable() {
   const act = async (id: string, status: string) => {
     setBusy(id);
     setError(null);
-    const result = await apiPost<{ ok: boolean }>(`/api/admin/reports/${id}`, { status });
+    const result = await apiPost<{ id: string }>(`/api/admin/reports/${id}`, { status });
     setBusy("");
     if (!result.ok) {
       setError(messageOf(result));
@@ -601,7 +602,7 @@ export function AdminReportsTable() {
       {list.length === 0 ? <EmptyPanel icon={Flag} title="Aucun signalement" description="Aucune annonce n’a été signalée." /> : (
         <div className="space-y-4">
           {list.map((report) => (
-            <WorkspacePanel key={report.id} title={report.reason} description={`Bien ${report.property_id} · signalé le ${formatDate(report.created_at)}`} icon={Flag}
+            <WorkspacePanel key={report.id} title={reportReasonLabel(report.reason)} description={`Bien ${report.property_id} · signalé le ${formatDate(report.created_at)}`} icon={Flag}
               action={<Pill label={report.status} tone={report.status === "clos" ? "border-success/30 bg-success/[0.06] text-success" : report.status === "rejete" ? "border-border bg-background text-muted" : "border-warning/30 bg-warning/[0.07] text-warning"} />}>
               <p className="text-caption leading-relaxed text-muted">{report.detail || "Aucun détail fourni."}</p>
               <div className="mt-4 flex flex-wrap gap-2">

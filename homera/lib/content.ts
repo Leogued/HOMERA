@@ -339,6 +339,13 @@ export type Property = {
   alt: string;
   /** Réservé à la future vue carte — aucune carte n’est dessinée aujourd’hui. */
   coordinates?: { lat: number; lng: number };
+  /**
+   * Galerie ordonnée, telle que le propriétaire l’a déposée.
+   * Renseignée par le serveur (`property_photos`) ; les fiches du
+   * catalogue de référence n’en ont pas, elles n’affichent alors que
+   * leur visuel principal.
+   */
+  gallery?: { mediaKey: string; alt: string }[];
 };
 
 export const PROPERTIES: Property[] = [

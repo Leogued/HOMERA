@@ -3,9 +3,9 @@ import Link from "next/link";
 import { CatalogExplorer } from "@/components/catalog/CatalogExplorer";
 import { PageHero } from "@/components/catalog/PageHero";
 import { PROJECT_PAGES } from "@/lib/nav";
-import { PER_PAGE, parseCatalogQuery, searchCatalog } from "@/lib/properties";
+import { PER_PAGE, parseCatalogQuery, queryToCatalogFilters } from "@/lib/properties";
 import { searchParamsToQuery } from "@/lib/search-params";
-import { listProperties } from "@/lib/server/services/properties";
+import { catalogFacets, catalogPriceBounds, searchProperties } from "@/lib/server/services/properties";
 import { getDb } from "@/lib/server/db/client";
 /* ==================================================================
    /explorer — LA RECHERCHE PUBLIQUE
@@ -27,12 +27,16 @@ export default async function ExplorerPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const query = parseCatalogQuery(searchParamsToQuery(await searchParams));
-  // Source de vérité : la base HOMERA, pas un fichier du dépôt.
-  const catalogue = listProperties(getDb());
-  const results = searchCatalog(query, catalogue);
-  const cities = new Set(results.map((property) => property.city));
-  // ?page=2 est le repli sans JavaScript : on affiche alors deux écrans.
-  const initialVisible = Math.min(4, Math.max(1, query.page)) * PER_PAGE;
+  // Source de vérité : la base HOMERA. Filtrage, tri et pagination sont
+  // calculés en SQL — le navigateur ne télécharge que la page affichée.
+  const db = getDb();
+  const filters = queryToCatalogFilters(query);
+  // ?page=2 est le repli sans JavaScript : on rend alors deux écrans d’un coup.
+  const firstPage = searchProperties(db, filters, { page: 1, perPage: Math.min(4, Math.max(1, query.page)) * PER_PAGE });
+  const facets = catalogFacets(db, filters);
+  const priceBounds = catalogPriceBounds(db, filters);
+  const results = { length: firstPage.total };
+  const cities = new Set(facets.cities.map((entry) => entry.value));
   return (
     <>
       {" "}
@@ -64,7 +68,7 @@ export default async function ExplorerPage({
       />{" "}
       <div className="mx-auto max-w-7xl px-4 pb-24 pt-10 sm:px-6 lg:px-8">
         {" "}
-        <CatalogExplorer initialQuery={query} initialVisible={initialVisible} source={catalogue} />{" "}
+        <CatalogExplorer initialQuery={query} initialPage={firstPage} initialFacets={facets} initialPriceBounds={priceBounds} />{" "}
       </div>{" "}
     </>
   );

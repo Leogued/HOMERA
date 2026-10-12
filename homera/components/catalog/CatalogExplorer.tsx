@@ -1,141 +1,97 @@
 "use client";
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Compass, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
-import { DEMO_DATA, PROPERTIES, type Property } from "@/lib/content";
 import { countLabel } from "@/lib/format";
 import {
-  EMPTY_QUERY,
-  PER_PAGE,
-  SORTS,
-  activeFilterCount,
-  catalogHref,
-  facets as buildFacets,
-  isPristine,
-  searchCatalog,
-  summaryLabel,
+  EMPTY_QUERY, PER_PAGE, SORTS, activeFilterCount, isPristine, summaryLabel,
   type CatalogQuery,
 } from "@/lib/properties";
 import { useInView } from "@/lib/motion";
+import { useCatalog } from "@/lib/use-catalog";
 import { PropertyCard } from "@/components/catalog/PropertyCard";
-import { CatalogFilters } from "@/components/catalog/CatalogFilters";
+import { CatalogFilters, type HiddenFilter } from "@/components/catalog/CatalogFilters";
 import { CommuneMapExplorer } from "@/components/catalog/CommuneMapExplorer";
 import { AssetPlaceholder } from "@/components/catalog/AssetPlaceholder";
 import { SaveSearchButton } from "@/components/catalog/SaveSearchButton";
 import { TextRoll } from "@/components/ui/TextRoll";
+import type { Property } from "@/lib/content";
 /* ==================================================================
    HOMERA — EXPLORATEUR
    ------------------------------------------------------------------
-   La page de résultats du site : recherche, filtres, tri, grille de
-   cartes, affichage progressif (scroll infini + bouton), adresse
-   partageable. Principes tenus :
-   • la page serveur rend déjà un premier écran de résultats — le visiteur
-     sans JavaScript voit les biens, pas un squelette ;
-   • chaque changement réécrit l’adresse (`replaceState`), donc une
-     recherche se copie, se partage et se retrouve au retour ;
-   • le tri et les filtres recalculent la même liste que le serveur : une
-     seule source (`lib/properties`), aucun écart d’affichage.
+   La recherche, le tri, les compteurs et la pagination sont calculés
+   par la base : le navigateur ne télécharge que les pages affichées.
+   Le serveur rend malgré tout un premier écran complet, donc la page
+   reste consultable sans JavaScript et indexable.
+
+   L’adresse demeure la source de vérité : chaque critère y est écrit,
+   une recherche se copie, se partage et se retrouve intacte au retour.
    ================================================================== */
-type Locked =
-  "intent" | "types" | "stayNights";
+
 export function CatalogExplorer({
   basePath = "/explorer",
   initialQuery,
-  initialVisible = PER_PAGE,
+  initialPage,
+  initialFacets,
+  initialPriceBounds,
   locked = [],
   emptyHint,
-  source,
 }: {
   basePath?: string;
   initialQuery: CatalogQuery;
-  initialVisible?: number;
-  locked?: Locked[];
+  /** Premier écran rendu par le serveur : visible sans JavaScript. */
+  initialPage?: { items: Property[]; total: number; page: number; pages: number; perPage: number };
+  initialFacets?: import("@/lib/use-catalog").CatalogFacets | null;
+  initialPriceBounds?: { min: number; max: number } | null;
+  locked?: HiddenFilter[];
   emptyHint?: string;
-  /**
-   * Catalogue à filtrer. Fourni par le serveur (base HOMERA) quand la page
-   * l’a chargé ; à défaut, le catalogue de référence est utilisé.
-   */
-  source?: Property[];
 }) {
-  const [query, setQuery] = useState<CatalogQuery>(initialQuery);
-  const [visible, setVisible] = useState(Math.max(PER_PAGE, initialVisible));
+  const catalog = useCatalog({ basePath, initialQuery, initialPage, initialFacets, initialPriceBounds, perPage: PER_PAGE });
+  const { query, facets, priceBounds, items, total, pages, page, loading, loadingMore, error, patch, reset, loadMore } = catalog;
+
+  const results = items as Property[];
   const [filtersOpen, setFiltersOpen] = useState(false);
-  const [mapOpen, setMapOpen] = useState(
-    initialQuery.cities.length > 0 || initialQuery.districts.length > 0,
-  );
-  const [term, setTerm] = useState(initialQuery.q); // Les mises à jour de liste passent par une transition : pendant le
-  // calcul, l’écran reste réactif et quelques squelettes annoncent la suite.
-  const [pending, startTransition] = useTransition();
+  const [mapOpen, setMapOpen] = useState(initialQuery.cities.length > 0 || initialQuery.districts.length > 0);
+  const [term, setTerm] = useState(initialQuery.q);
   const dialogRef = useRef<HTMLDialogElement | null>(null);
   const { ref: sentinelRef, inView: sentinelInView } = useInView<HTMLDivElement>({
     threshold: 0.01,
     rootMargin: "0px 0px 240px 0px",
     once: false,
   });
-  const catalogue = source ?? PROPERTIES;
-  const results = useMemo(() => searchCatalog(query, catalogue), [query, catalogue]); // Les compteurs se calculent sur le catalogue complet : chaque facette
-  // ignore son propre filtre, sinon elle afficherait toujours zéro.
-  const facetData = useMemo(() => buildFacets(catalogue, { ...query, page: 1 }), [query, catalogue]);
-  const shown = results.slice(0, visible);
-  const remaining = Math.max(0, results.length - shown.length);
+
+  const remaining = Math.max(0, total - results.length);
   const filterCount = activeFilterCount(query);
-  /* --- L’adresse suit l’état, sans recharger ni repasser par le serveur --- */ const syncUrl = useCallback(
-    (next: CatalogQuery) => {
-      if (typeof window === "undefined") return;
-      window.history.replaceState(null, "", catalogHref(next, basePath));
-    },
-    [basePath],
-  );
-  const update = useCallback(
-    (patch: Partial<CatalogQuery>) => {
-      startTransition(() => {
-        setQuery((current) => {
-          const next = { ...current, ...patch, page: 1 };
-          syncUrl(next);
-          return next;
-        });
-        setVisible(PER_PAGE);
-      });
-    },
-    [syncUrl],
-  );
-  const reset = useCallback(() => {
-    startTransition(() => {
-      const next: CatalogQuery = { ...EMPTY_QUERY, intent: locked.includes("intent") ? initialQuery.intent : "" };
-      setQuery(next);
-      setTerm("");
-      setVisible(PER_PAGE);
-      syncUrl(next);
-    });
-  }, [initialQuery.intent, locked, syncUrl]);
-  const showMore = useCallback(() => {
-    startTransition(() => {
-      setQuery((current) => {
-        const next = { ...current, page: Math.min(4, current.page + 1) };
-        window.history.replaceState(null, "", catalogHref(next, basePath));
-        return next;
-      });
-      setVisible((current) => current + PER_PAGE);
-    });
-  }, [basePath]);
+
+  const resetFilters = useCallback(() => {
+    reset();
+    setTerm("");
+    // Une page projet ou catégorie garde son intention : elle ne se dédit pas.
+    if (locked.includes("intent") && initialQuery.intent) patch({ intent: initialQuery.intent });
+  }, [initialQuery.intent, locked, patch, reset]);
+
   useEffect(() => {
-    if (sentinelInView && remaining > 0) showMore(); // Un seul chargement par entrée dans le champ : le défilement suivant relance.
-  }, [sentinelInView, remaining, showMore]);
-  /* --- Tiroir de filtres (mobile) : dialogue natif, focus piégé, Échap --- */ useEffect(() => {
+    if (sentinelInView && remaining > 0 && !loading && !loadingMore) loadMore();
+  }, [sentinelInView, remaining, loading, loadingMore, loadMore]);
+
+  /* Tiroir de filtres (mobile) : dialogue natif, focus piégé, Échap offert par le navigateur. */
+  useEffect(() => {
     const dialog = dialogRef.current;
     if (!dialog) return;
     if (filtersOpen && !dialog.open) dialog.showModal();
     if (!filtersOpen && dialog.open) dialog.close();
   }, [filtersOpen]);
+
   const onTermChange = (nextValue: string) => {
     setTerm(nextValue);
-    update({ q: nextValue.trim() });
+    patch({ q: nextValue.trim() });
   };
   const submitTerm = (event: React.FormEvent) => {
     event.preventDefault();
-    update({ q: term.trim() });
+    patch({ q: term.trim() });
   };
-  const removeChip = (chip: Partial<CatalogQuery>) => update(chip);
+  const removeChip = (chip: Partial<CatalogQuery>) => patch(chip);
+
   return (
     <div className="homera-explorer">
       {" "}
@@ -204,7 +160,7 @@ export function CatalogExplorer({
               <span className="shrink-0">Trier</span>{" "}
               <select
                 value={query.sort}
-                onChange={(event) => update({ sort: event.target.value as CatalogQuery["sort"] })}
+                onChange={(event) => patch({ sort: event.target.value as CatalogQuery["sort"] })}
                 className="h-11 rounded-input border border-border bg-card px-2.5 text-body-sm font-medium text-foreground outline-none transition-colors focus:border-homera-terracotta/60"
               >
                 {" "}
@@ -235,7 +191,7 @@ export function CatalogExplorer({
       </div>{" "}
       {mapOpen && (
         <div id="homera-commune-map">
-          <CommuneMapExplorer query={query} facets={facetData} onChange={update} />
+          <CommuneMapExplorer query={query} facets={facets} onChange={patch} />
         </div>
       )}{" "}
       <div className="mt-8 grid grid-cols-1 gap-10 lg:grid-cols-[19rem_1fr]">
@@ -245,7 +201,15 @@ export function CatalogExplorer({
           {" "}
           <div className="sticky top-24 max-h-[calc(100svh-8rem)] overflow-y-auto pr-2 homera-noscrollbar">
             {" "}
-            <CatalogFilters query={query} facets={facetData} onChange={update} onReset={reset} hidden={locked} />{" "}
+            <CatalogFilters
+              query={query}
+              facets={facets}
+              priceBounds={priceBounds}
+              onChange={patch}
+              onReset={resetFilters}
+              hidden={locked}
+              intentLocked={locked.includes("intent")}
+            />{" "}
           </div>{" "}
         </aside>{" "}
         {/* ---------------- Résultats ---------------- */}{" "}
@@ -255,13 +219,13 @@ export function CatalogExplorer({
             {" "}
             <p role="status" aria-live="polite" className="text-body-sm text-foreground">
               {" "}
-              <span className="homera-num font-semibold">{countLabel(results.length)}</span>{" "}
+              <span className="homera-num font-semibold">{countLabel(total)}</span>{" "}
               {!isPristine(query) && <span className="text-muted"> · {summaryLabel(query)}</span>}{" "}
             </p>{" "}
             <p className="text-caption text-muted">
               {" "}
-              {shown.length < results.length
-                ? `${shown.length} affichés sur ${results.length}`
+              {remaining > 0
+                ? `${results.length} affichés sur ${total}`
                 : `Tous les résultats affichés`}{" "}
             </p>{" "}
           </div>{" "}
@@ -344,7 +308,7 @@ export function CatalogExplorer({
                 {" "}
                 <button
                   type="button"
-                  onClick={reset}
+                  onClick={resetFilters}
                   className="homera-underline inline-flex min-h-9 items-center gap-1.5 text-caption font-medium homera-accent-ink"
                 >
                   {" "}
@@ -374,7 +338,7 @@ export function CatalogExplorer({
                 {" "}
                 <button
                   type="button"
-                  onClick={reset}
+                  onClick={resetFilters}
                   className="homera-press inline-flex h-11 items-center gap-2 rounded-btn homera-cta px-5 text-note font-medium text-white "
                 >
                   {" "}
@@ -394,16 +358,16 @@ export function CatalogExplorer({
               {" "}
               <ul
                 className="mt-6 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3"
-                aria-busy={pending && remaining > 0}
+                aria-busy={loadingMore}
               >
                 {" "}
-                {shown.map((property, index) => (
+                {results.map((property, index) => (
                   <li key={property.id} className="h-full">
                     {" "}
                     <PropertyCard property={property} layout="grid" priority={index < 3} />{" "}
                   </li>
                 ))}{" "}
-                {pending && remaining > 0
+                {loadingMore
                   ? Array.from({ length: Math.min(PER_PAGE, remaining) }, (_, index) => (
                       <li key={`squelette-${index}`} className="h-full">
                         {" "}
@@ -420,14 +384,14 @@ export function CatalogExplorer({
                     {" "}
                     <button
                       type="button"
-                      onClick={showMore}
+                      onClick={() => loadMore()}
                       className="homera-press inline-flex h-12 items-center gap-2 rounded-btn border border-border bg-card px-6 text-body-sm font-medium text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
                     >
                       {" "}
                       Afficher {Math.min(remaining, PER_PAGE)} bien{Math.min(remaining, PER_PAGE) > 1 ? "s" : ""} de
                       plus{" "}
                       <span className="homera-num text-caption text-muted">
-                        ({shown.length}/{results.length})
+                        ({results.length}/{total})
                       </span>{" "}
                     </button>{" "}
                     <p className="text-caption text-muted"> Les biens suivants se chargent aussi en défilant. </p>{" "}
@@ -443,10 +407,14 @@ export function CatalogExplorer({
               </div>{" "}
             </>
           )}{" "}
-          {DEMO_DATA && (
-            <p className="mt-10 text-center text-micro leading-relaxed text-muted">
-              {" "}
-              Sélection de démonstration du système pilote HOMERA · biens et visuels illustratifs, non commercialisés.{" "}
+          <p className="mt-10 text-center text-micro leading-relaxed text-muted">
+            {" "}
+            Catalogue servi par la base HOMERA : les biens affichés sont ceux dont le dossier a été vérifié et publié.
+            {pages > 1 && ` Page ${page} sur ${pages}.`}{" "}
+          </p>
+          {error && (
+            <p role="alert" className="mt-6 rounded-xl border border-error/25 bg-error/[0.05] px-4 py-3 text-note text-error">
+              {error}
             </p>
           )}{" "}
         </section>{" "}
@@ -478,7 +446,15 @@ export function CatalogExplorer({
           </div>{" "}
           <div className="homera-noscrollbar flex-1 overflow-y-auto px-5 py-5">
             {" "}
-            <CatalogFilters query={query} facets={facetData} onChange={update} onReset={reset} hidden={locked} />{" "}
+            <CatalogFilters
+              query={query}
+              facets={facets}
+              priceBounds={priceBounds}
+              onChange={patch}
+              onReset={resetFilters}
+              hidden={locked}
+              intentLocked={locked.includes("intent")}
+            />{" "}
           </div>{" "}
           <div className="border-t border-border px-5 py-4">
             {" "}

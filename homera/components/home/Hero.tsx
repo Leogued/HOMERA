@@ -1,15 +1,20 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowDown, Pause, Play } from "lucide-react";
+import { useCallback, useState } from "react";
+import { ArrowDown } from "lucide-react";
 import { SearchModule } from "@/components/home/SearchModule";
 import { useSearch } from "@/components/providers/SearchProvider";
+import { Visual } from "@/components/ui/Visual";
 import { cssVars, useMotionPreferences, usePointerMotion, useSceneMotion } from "@/lib/motion";
 import { phase } from "@/lib/motion-math";
-import { CHAPTERS } from "@/lib/content"; /* Cadrage, vidéo, titre et recherche d'origine conservés. Trois couches indépendantes : la vidéo dérive à peine, le titre se retire, la recherche reste présente plus longtemps. Aucun scroll détourné. */
+import { CHAPTERS } from "@/lib/content"; /* Cadrage, titre et recherche d'origine conservés. Trois couches indépendantes :
+   le visuel dérive à peine, le titre se retire, la recherche reste présente plus
+   longtemps. Aucun scroll détourné.
+
+   La vidéo d'ouverture (4,45 Mo, lecture automatique) est remplacée par le
+   visuel qui en était l'affiche : même image à l'arrêt, plus de 4 Mo économisés,
+   plus de décodage en tâche de fond. */
 export function Hero() {
   const [entered] = useState(true);
-  const [userPaused, setUserPaused] = useState(false);
-  const videoRef = useRef<HTMLVideoElement | null>(null);
   const { reduced, compact } = useMotionPreferences();
   const { isSearching } = useSearch();
   const update = useCallback(
@@ -30,35 +35,6 @@ export function Hero() {
   );
   const sectionRef = useSceneMotion<HTMLElement>(update, { enabled: !reduced, mode: "exit", response: 75 });
   const pointerRef = usePointerMotion<HTMLDivElement>({ strength: 5, enabled: !reduced, sourceRef: sectionRef });
-  // Une vidéo hors champ ou un onglet masqué ne doit pas consommer de décodage.
-  useEffect(() => {
-    const video = videoRef.current;
-    const section = sectionRef.current;
-    if (!video || !section) return;
-    let visible = section.getBoundingClientRect().bottom > 0;
-    const sync = () => {
-      if (reduced || userPaused || !visible || document.hidden || section.closest("[inert]")) video.pause();
-      else void video.play().catch(() => {});
-    };
-    const observer =
-      typeof IntersectionObserver !== "undefined"
-        ? new IntersectionObserver(([entry]) => {
-            visible = entry.isIntersecting;
-            sync();
-          })
-        : null;
-    observer?.observe(section);
-    const page = section.closest("main");
-    const overlay = typeof MutationObserver !== "undefined" ? new MutationObserver(sync) : null;
-    if (page) overlay?.observe(page, { attributes: true, attributeFilter: ["inert"] });
-    document.addEventListener("visibilitychange", sync);
-    sync();
-    return () => {
-      observer?.disconnect();
-      overlay?.disconnect();
-      document.removeEventListener("visibilitychange", sync);
-    };
-  }, [reduced, userPaused, sectionRef]);
   const reveal = (delay: number, blur = 0) =>
     cssVars({ "--reveal-delay": `${delay}ms`, "--reveal-blur": `${blur}px` });
   return (
@@ -71,19 +47,16 @@ export function Hero() {
       {" "}
       <div aria-hidden="true" className="homera-hero-video absolute inset-0">
         {" "}
-        <video
-          ref={videoRef}
-          className="absolute inset-0 h-full w-full object-cover"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          poster="/images/page-cotonou.jpg"
-        >
-          {" "}
-          <source src="/video/background_video.mp4" type="video/mp4" />{" "}
-        </video>{" "}
+        <Visual
+          mediaKey="page-cotonou"
+          alt=""
+          sizes="100vw"
+          quality={72}
+          priority
+          veil="none"
+          className="absolute inset-0 h-full w-full"
+          imageClassName="object-cover"
+        />{" "}
       </div>{" "}
       <div aria-hidden="true" className="homera-hero-veil absolute inset-0" />{" "}
       <div
@@ -152,28 +125,6 @@ export function Hero() {
           <ArrowDown className="h-3 w-3 -mt-1" aria-hidden="true" />{" "}
         </div>{" "}
       </div>{" "}
-      <button
-        type="button"
-        onClick={() => setUserPaused((value) => !value)}
-        disabled={reduced}
-        aria-pressed={userPaused || reduced}
-        aria-label={
-          reduced
-            ? "Vidéo arrêtée : mouvement réduit"
-            : userPaused
-              ? "Relancer la vidéo de fond"
-              : "Mettre la vidéo de fond en pause"
-        }
-        className="homera-press absolute bottom-4 left-4 z-20 flex min-h-10 items-center gap-2 rounded-full border border-white/20 bg-black/30 px-3 text-micro font-medium text-white/85 backdrop-blur-sm sm:left-6"
-      >
-        {" "}
-        {userPaused || reduced ? (
-          <Play className="h-3 w-3" aria-hidden="true" />
-        ) : (
-          <Pause className="h-3 w-3" aria-hidden="true" />
-        )}{" "}
-        {reduced ? "Mouvement réduit" : userPaused ? "Relancer" : "Pause vidéo"}{" "}
-      </button>{" "}
     </section>
   );
 }

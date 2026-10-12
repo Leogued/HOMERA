@@ -80,6 +80,16 @@ Légende : **B** = bloquant (empêche une mise en production honnête), **I** = 
 | **S2** | Le type de pièce accepté par le serveur ne couvrait pas le vocabulaire de l’assistant : les déclarations étaient rejetées sans que rien ne l’indique. | `documents.ts` reconnaît dix natures ; l’assistant et le serveur partagent le même vocabulaire. |
 | **S3** | Le réordonnancement de la galerie n’écrivait rien : l’écran envoyait des clés de visuels, le service attendait des identifiants. | La route traduit les clés en identifiants avant l’écriture. |
 
+### 2.5 Correctifs apportés pendant le LOT 6
+
+| # | Constat | Correction |
+|---|---|---|
+| **B1** | `explorer/page.tsx` transmettait les 36 biens au navigateur et filtrait avec `searchCatalog()` côté client : tri, pagination et facettes n’existaient que dans le navigateur. | Le premier écran est rendu par le serveur (`searchProperties` + `catalogFacets` + `catalogPriceBounds`) ; les écrans suivants sont demandés à `/api/properties`. Même migration pour les pages de projet et de catégorie. |
+| **B2** | Deux types `CatalogFacets` incompatibles coexistaient (celui du serveur et celui du client). | Un seul type, déclaré dans `lib/properties.ts` et ré-exporté ; les facettes du serveur sont typées par le domaine. |
+| **B3** | La fiche d’un bien calculait ses « biens comparables » depuis le fichier figé, avec `searchCatalog`. | `similarProperties()` lit la base ; `/biens/[id]` passe le résultat à la fiche. |
+| **B4** | Le signalement acceptait n’importe quel motif et n’importe quelle longueur d’explication : une requête forgée à la main passait. | `reportSchema` exige l’un des 7 motifs de `lib/reports.ts` et au moins 10 caractères d’explication. Ces motifs sont désormais partagés par le formulaire public, la validation serveur et l’affichage admin. |
+| **B5** | Signaler un bien inexistant provoquait une erreur `500` (contrainte de clé étrangère violée) au lieu d’un `404`. | `createReport()` vérifie l’existence du bien et renvoie `introuvable` → `404`. |
+
 ---
 
 ## 3. Décisions structurantes prises à l’issue de l’audit
@@ -108,7 +118,7 @@ Légende : **B** = bloquant (empêche une mise en production honnête), **I** = 
 | LOT 3 | Biens, photos, publication, propriétaires, agents, autorisations | ✅ Terminé — espaces propriétaire et agent branchés sur le serveur ; fuite d’accès aux pièces corrigée |
 | LOT 4 | Disponibilités, visites, annulations, demandes de location, notifications | ✅ Terminé — visites et candidatures écrites en base, motifs obligatoires, notifications réelles |
 | LOT 5 | Outils de contrôle administratif et workflow de vérification | ✅ Terminé — indicateurs réels, 8 étapes de vérification, décisions motivées, journal |
-| LOT 6 | Refonte des fiches de biens et d’Explorer | ⏳ Partiel (les pages publiques lisent déjà la base ; filtres et pagination encore côté client) |
+| LOT 6 | Refonte des fiches de biens et d’Explorer | ✅ Terminé — filters, tri, facettes et pagination servis par SQL ; fiche enrichie (galerie, disponibilité, interlocuteur, signalement, biens comparables) |
 | LOT 7 | Navigation, espaces, messagerie, responsive, design system | ⏳ À venir |
 | LOT 8 | Tests complets, performances, documentation finale | ⏳ À venir |
 

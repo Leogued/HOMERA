@@ -32,18 +32,34 @@ import {
   formatSurface,
   recencyLabel,
 } from "@/lib/format";
-import { LATEST_PUBLISHED_AT, searchCatalog, EMPTY_QUERY } from "@/lib/properties";
+import { LATEST_PUBLISHED_AT } from "@/lib/properties";
+import {
+  PropertyAvailability, PropertyGallery, ReportListing, VerifiedOwnerCard,
+  type AvailabilityWindow, type VerifiedOwner,
+} from "@/components/catalog/PropertySidePanels";
 import { CopyReference } from "@/components/ui/CopyReference";
 import { FavoriteButton } from "@/components/catalog/FavoriteButton";
 import { Reveal } from "@/components/ui/Reveal";
-import { Visual } from "@/components/ui/Visual";
 import { Breadcrumbs } from "@/components/catalog/PageHero";
 import { PropertyCard } from "@/components/catalog/PropertyCard";
 /* ================================================================== HOMERA — FICHE D’UN BIEN ------------------------------------------------------------------ Ce qu’un visiteur doit pouvoir lire sans compte : ce qu’est le bien, ce qu’il coûte, où il se trouve, et — surtout — ce qui a été contrôlé, par qui et quand. Aucune promesse juridique : la fiche décrit un dossier, elle ne le garantit pas. ================================================================== */ const PROJECT_HREF: Record<
   Property["intent"],
   string
 > = { acheter: "/acheter", louer: "/louer", sejour: "/sejour" };
-export function PropertyDetail({ property }: { property: Property }) {
+export function PropertyDetail({
+  property,
+  similar = [],
+  availability = { status: property.availabilityStatus ?? "disponible", windows: [], note: "" },
+  owner = null,
+}: {
+  property: Property;
+  /** Biens comparables calculés par le serveur (même intention, gamme de prix voisine). */
+  similar?: Property[];
+  /** Périodes réellement déclarées par le propriétaire. */
+  availability?: { status: string; windows: AvailabilityWindow[]; note?: string };
+  /** Profil public du propriétaire : ce qu’un visiteur a le droit de savoir. */
+  owner?: VerifiedOwner | null;
+}) {
   const facts = [
     { label: "Type de bien", value: TYPE_LABELS[property.type], icon: Building2 },
     {
@@ -70,9 +86,6 @@ export function PropertyDetail({ property }: { property: Property }) {
     { label: "Ville", value: property.city, icon: MapPin },
     ...(property.availabilityStatus === "indisponible" ? [{ label: "Disponibilité", value: "Indisponible", icon: CalendarCheck }] : []),
   ];
-  const similar = searchCatalog({ ...EMPTY_QUERY, intent: property.intent, types: [property.type] })
-    .filter((entry) => entry.id !== property.id)
-    .slice(0, 3);
   const fresh = daysBetween(property.publishedAt, LATEST_PUBLISHED_AT);
   const editorialParagraphs = buildPropertyEditorialSynthesis(property);
   const neighborhood = getNeighborhoodContext(property.city, property.district);
@@ -168,15 +181,12 @@ export function PropertyDetail({ property }: { property: Property }) {
           </div>{" "}
           <Reveal y={0} blur={0} clip clipRadius={24} duration={900} immediate>
             {" "}
-            <Visual
-              mediaKey={property.media}
-              alt={property.alt}
+            <PropertyGallery
+              gallery={property.gallery ?? []}
+              title={property.title}
+              fallbackKey={property.media}
+              fallbackAlt={property.alt}
               sizes="(min-width: 1024px) 44vw, 92vw"
-              veil="none"
-              quality={74}
-              priority
-              className="aspect-[16/10] w-full rounded-media"
-              imageClassName="homera-property-image"
             />{" "}
           </Reveal>{" "}
         </header>{" "}
@@ -496,6 +506,11 @@ export function PropertyDetail({ property }: { property: Property }) {
                 constituent pas une offre commerciale.{" "}
               </p>
             )}{" "}
+            <PropertyAvailability status={availability.status} windows={availability.windows} note={availability.note} />
+            <VerifiedOwnerCard owner={owner} verifiedOn={property.verifiedOn} />
+            <div className="mt-6">
+              <ReportListing propertyId={property.id} reference={property.homeraId} />
+            </div>{" "}
           </aside>{" "}
         </div>{" "}
         {/* ---------------- Biens comparables ---------------- */}{" "}

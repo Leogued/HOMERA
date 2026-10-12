@@ -1,6 +1,6 @@
 import { getDb } from "@/lib/server/db/client";
 import { currentUser } from "@/lib/server/auth/current";
-import { createProperty, listProperties } from "@/lib/server/services/properties";
+import { catalogFacets, catalogPriceBounds, createProperty, searchProperties } from "@/lib/server/services/properties";
 import { parseInput, propertyDraftSchema } from "@/lib/server/validation";
 import { clientIp, fail, fromService, ok, readJson, toBoolean, toNumber, toStringArray } from "@/lib/server/http";
 import type { CatalogFilters } from "@/lib/server/services/properties";
@@ -13,6 +13,7 @@ export async function GET(request: Request) {
   const url = new URL(request.url);
   const params = url.searchParams;
   const filters: CatalogFilters = {
+    bathroomsMin: toNumber(params.get("sdb")),
     intent: (params.get("intention") ?? "") as PropertyIntent | "",
     types: toStringArray(params.get("type")) as PropertyType[],
     cities: toStringArray(params.get("ville")),
@@ -33,8 +34,17 @@ export async function GET(request: Request) {
     furnishedOnly: toBoolean(params.get("meuble")),
     sort: (params.get("tri") ?? "pertinence") as CatalogFilters["sort"],
   };
-  const items = listProperties(getDb(), filters);
-  return ok({ items, total: items.length });
+  const db = getDb();
+  const page = Math.max(1, Math.round(toNumber(params.get("page")) ?? 1));
+  const perPage = Math.min(48, Math.max(1, Math.round(toNumber(params.get("par-page")) ?? 9)));
+  const result = searchProperties(db, filters, { page, perPage });
+  const payload: Record<string, unknown> = { ...result };
+  // Les facettes sont un supplément : on ne les calcule que si l’écran les demande.
+  if (params.get("facettes") === "1") {
+    payload.facets = catalogFacets(db, filters);
+    payload.priceBounds = catalogPriceBounds(db, filters);
+  }
+  return ok(payload);
 }
 
 /** Dépôt d’un bien : le brouillon appartient au propriétaire connecté. */

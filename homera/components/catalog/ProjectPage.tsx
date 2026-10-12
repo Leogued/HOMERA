@@ -2,11 +2,11 @@ import Link from "next/link";
 import { ArrowRight, Check, ChevronDown, ShieldCheck } from "lucide-react";
 import { PROJECT_DECISION_GUIDES } from "@/lib/editorial-guides";
 import { countLabel, formatFCFA } from "@/lib/format";
-import { PER_PAGE, isPristine, parseCatalogQuery, searchCatalog } from "@/lib/properties";
+import { PER_PAGE, isPristine, parseCatalogQuery, queryToCatalogFilters } from "@/lib/properties";
 import { categoryQuery, projectQuery, type PublicProjectPage } from "@/lib/nav";
 import { searchParamsToQuery, type NextSearchParams } from "@/lib/search-params";
 import { CatalogExplorer } from "@/components/catalog/CatalogExplorer";
-import { listProperties } from "@/lib/server/services/properties";
+import { catalogFacets, catalogPriceBounds, searchProperties } from "@/lib/server/services/properties";
 import { getDb } from "@/lib/server/db/client";
 import { PageHero } from "@/components/catalog/PageHero";
 import { Reveal } from "@/components/ui/Reveal";
@@ -27,11 +27,14 @@ export async function ProjectPageView({
 }) {
   const query = parseCatalogQuery(searchParamsToQuery(searchParams));
   const initialQuery = { ...projectQuery(project.slug), ...query, intent: project.slug };
-  const catalogue = listProperties(getDb());
-  const results = searchCatalog(initialQuery, catalogue);
-  const prices = results.map((property) => property.price);
-  const cities = new Set(results.map((property) => property.city));
-  const initialVisible = Math.min(4, Math.max(1, query.page)) * PER_PAGE;
+  const db = getDb();
+  const filters = queryToCatalogFilters(initialQuery);
+  const firstPage = searchProperties(db, filters, { page: 1, perPage: Math.min(4, Math.max(1, query.page)) * PER_PAGE });
+  const facets = catalogFacets(db, filters);
+  const priceBounds = catalogPriceBounds(db, filters);
+  const prices = firstPage.items.map((property) => property.price);
+  const cities = new Set(facets.cities.map((entry) => entry.value));
+  const results = { length: firstPage.total };
   const decisionGuide = PROJECT_DECISION_GUIDES[project.slug];
   return (
     <>
@@ -84,11 +87,8 @@ export async function ProjectPageView({
         <ul className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
           {" "}
           {project.categories.map((category, index) => {
-            const categoryResults = searchCatalog(categoryQuery(category.filter));
-            const cheapest = categoryResults.reduce(
-              (lowest, property) => (lowest === null || property.price < lowest ? property.price : lowest),
-              null as number | null,
-            );
+            const categoryResults = searchProperties(db, queryToCatalogFilters(categoryQuery(category.filter)), { page: 1, perPage: 1 });
+            const cheapest = categoryResults.total ? catalogPriceBounds(db, queryToCatalogFilters(categoryQuery(category.filter))).min : null;
             return (
               <Reveal key={category.slug} as="li" y={18} delay={index * 70} className="h-full">
                 {" "}
@@ -104,7 +104,7 @@ export async function ProjectPageView({
                   <p className="mt-2 flex-1 text-note leading-relaxed text-muted">{category.intro}</p>{" "}
                   <span className="homera-num mt-4 flex items-center justify-between border-t border-border pt-4 text-caption text-muted">
                     {" "}
-                    {countLabel(categoryResults.length)}{" "}
+                    {countLabel(categoryResults.total)}{" "}
                     {cheapest !== null && <span>dès {formatFCFA(cheapest)}</span>}{" "}
                   </span>{" "}
                 </Link>{" "}
@@ -183,8 +183,9 @@ export async function ProjectPageView({
           <CatalogExplorer
             basePath={`/${project.slug}`}
             initialQuery={initialQuery}
-            initialVisible={initialVisible}
-            source={catalogue}
+            initialPage={firstPage}
+            initialFacets={facets}
+            initialPriceBounds={priceBounds}
             locked={["intent"]}
             emptyHint={`Aucun bien ne correspond à ces critères dans la rubrique ${project.navLabel}. Élargissez la recherche, ou consultez l’explorateur complet.`}
           />{" "}

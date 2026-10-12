@@ -66,7 +66,7 @@ Référence technique : [`BACKEND.md`](./BACKEND.md). Aucune information n'est d
 | LOT 3 | Biens, photos, publication, propriétaires, agents, autorisations | **Livré** |
 | LOT 4 | Disponibilités, visites, annulations, demandes de location, notifications | **Livré** |
 | LOT 5 | Outils de contrôle administratif et workflow de vérification | **Livré** |
-| LOT 6 | Refonte des fiches de biens et d'Explorer | Pages déjà alimentées par la base ; filtres et pagination à passer côté serveur |
+| LOT 6 | Refonte des fiches de biens et d'Explorer | ✅ Livré — exploration servie par la base (filtres, tri, facettes, pagination) ; fiche : galerie, disponibilité, interlocuteur vérifié, signalement, biens comparables |
 | LOT 7 | Navigation, espaces, messagerie, responsive, design system | À venir |
 | LOT 8 | Tests complets, performances, documentation finale | À venir |
 

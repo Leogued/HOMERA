@@ -1,24 +1,30 @@
 # CURRENT_STATE — État Actuel & Journal d'Audit HOMERA
 
-> **Dernière mise à jour** : 2026-10-06 (journal frontend)
+> **Dernière mise à jour** : 2026-10-12 (fin du LOT 6)
 > **Branche active** : `arena/87b15d6d-homera`
 > **Statut global** : `QUALITY_GATE.md` 100 % validé (Fonctionnel, Design System, UX, Accessibilité/Technique, Custom Design & Creative Quality)
 
-> ### ⚠️ Champ de ce document
+> ### 🟢 Ce qui change au 12 octobre 2026 (LOT 6)
 >
-> Ce journal décrit l'état de l'**interface** telle qu'elle était avant le socle serveur.
-> Depuis le LOT 2, il n'est plus la référence pour trois sujets :
+> Ce document reste le **journal historique de l'interface** ; il ne décrit plus
+> l'état courant. Depuis le LOT 6 :
 >
-> | Sujet | Document de référence |
-> |---|---|
-> | Données, authentification, permissions, sécurité | [`BACKEND.md`](./BACKEND.md) |
-> | Constat d'audit et suivi par lot | [`AUDIT.md`](./AUDIT.md) |
-> | Feuille de route et jalons | [`ROADMAP.md`](./ROADMAP.md) |
+> | Sujet | État | Référence |
+> |---|---|---|
+> | Explorer : filtres, tri, facettes, pagination | servis par SQL, premier écran rendu côté serveur | [`BACKEND.md`](./BACKEND.md) §8.2 |
+> | Fiche de bien | galerie dans l'ordre déclaré, disponibilités réelles, interlocuteur vérifié, signalement écrit en base, biens comparables calculés par le serveur | [`AUDIT.md`](./AUDIT.md) §2.5 |
+> | Vidéo d'ouverture de l'accueil (4,45 Mo) | retirée : le héros affiche une image optimisée | `components/home/Hero.tsx` |
+> | Données, authentification, permissions, sécurité | inchangé, socle serveur | [`BACKEND.md`](./BACKEND.md) |
 >
-> Certaines routes citées plus bas n'existent plus ou ont changé
-> (`/aide`, `/inscription/[role]`, `/reinitialiser-mot-de-passe`, `/biens/[slug]`).
-> Seules les sections 3 et suivantes, qui relatent des corrections frontend,
-> restent d'actualité.
+> Les sections 1 et 2 ci-dessous décrivent l'interface **avant** le socle serveur :
+> certaines routes citées n'existent plus (`/aide`, `/inscription/[role]`,
+> `/reinitialiser-mot-de-passe`, `/biens/[slug]`). Seules les sections 3 et
+> suivantes, qui relatent des corrections frontend, restent d'actualité.
+
+> **Références permanentes** : [`BACKEND.md`](./BACKEND.md) pour les données,
+> l'authentification, les permissions et la sécurité · [`AUDIT.md`](./AUDIT.md)
+> pour le constat d'audit et le suivi par lot · [`ROADMAP.md`](./ROADMAP.md)
+> pour la feuille de route.
 
 ---
 

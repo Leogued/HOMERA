@@ -89,8 +89,8 @@ if (fromFile) {
   for (let index = 0; index < 7; index++) assert.ok(ids.includes(`protocol-step-${index}`), `Étape manquante : ${index}`);
   for (const id of ['localisation', 'statut', 'proprietaire', 'verification', 'agent', 'date']) assert.ok(ids.includes(`dossier-field-${id}`), `Donnée manquante : ${id}`);
   for (const id of ['gestion', 'maintenance', 'demenagement', 'travaux']) assert.ok(ids.includes(`services-${id}`), `Service manquant : ${id}`);
-  assert.ok(html.includes('/video/background_video.mp4'), 'La vidéo d’origine est conservée');
-  assert.ok(html.includes('Pause vidéo'), 'Contrôle de la vidéo accessible');
+  assert.ok(!html.includes('/video/background_video.mp4'), 'La vidéo de 4,45 Mo n’est plus téléchargée par la page d’accueil');
+  assert.ok(html.includes('/_next/image') && html.includes('page-cotonou'), 'Le héros affiche une image optimisée');
   assert.ok(html.includes('démonstration'), 'Les données de démo doivent être signalées');
   console.log('Audit statique de production terminé (pas de test navigateur).');
   process.exit(0);
@@ -193,7 +193,7 @@ for (const id of ['acheter', 'louer', 'sejour', 'services']) assert.ok(home.ids.
 for (let index = 0; index < 7; index++) assert.ok(home.ids.includes(`protocol-step-${index}`), `Étape manquante : ${index}`);
 for (const id of ['localisation', 'statut', 'proprietaire', 'verification', 'agent', 'date']) assert.ok(home.ids.includes(`dossier-field-${id}`), `Donnée manquante : ${id}`);
 for (const id of ['gestion', 'maintenance', 'demenagement', 'travaux']) assert.ok(home.ids.includes(`services-${id}`), `Service manquant : ${id}`);
-assert.ok(home.html.includes('/video/background_video.mp4'), 'La vidéo d’origine est conservée');
+assert.ok(!home.html.includes('/video/background_video.mp4'), 'La page d’accueil ne charge plus la vidéo de 4,45 Mo');
 
 /* --- Catalogue : les pages de projet mènent à de vrais biens ------ */
 const catalogue = [...pages.keys()].filter((path) => /^\/(acheter|louer|sejour)(\/[a-z-]+)?$/.test(path.split('?')[0]));

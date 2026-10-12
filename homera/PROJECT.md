@@ -85,8 +85,9 @@ HOMERA/
 │
 ├── public/
 │   ├── fonts/                 # Polices WOFF2/TTF auto-hébergées + licences
-│   ├── images/                # 23 visuels JPEG optimisés + dérivés AVIF/WebP via next/image
-│   └── video/                 # Vidéo d'ouverture du Hero (background_video.mp4)
+│   └── images/                # 23 visuels JPEG optimisés + dérivés AVIF/WebP via next/image
+│                              # (dossier public/video retiré au LOT 6 : la vidéo d'ouverture de
+│                              # 4,45 Mo est remplacée par une image optimisée dans le Hero)
 │
 └── scripts/
     ├── test-motion.mjs        # Suite complète de tests automatisés (TAP)
