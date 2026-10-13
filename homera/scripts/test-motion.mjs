@@ -270,6 +270,7 @@ await test('HOMERA : la sélection affiche tout, sans boutons de filtre', async 
   const featured = await readFile(new URL('../components/home/FeaturedProperties.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(featured, /PROPERTY_FILTERS/, 'plus de boutons Tous/Villas/… dans la sélection');
   assert.doesNotMatch(featured, /Filtrer par type de bien/);
+  assert.doesNotMatch(featured, /Réinitialiser la sélection/, 'bouton redondant retiré du bloc final');
   assert.doesNotMatch(featured, /setActiveFilter/, 'plus d’état de filtre rapide');
   assert.ok(featured.includes('isSearching ? appliedResults : visibleProperties'), 'la recherche du hero filtre toujours la sélection');
   const provider = await readFile(new URL('../components/providers/SearchProvider.tsx', import.meta.url), 'utf8');

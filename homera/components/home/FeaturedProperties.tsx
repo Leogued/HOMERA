@@ -347,18 +347,6 @@ import { useSearch } from "@/components/providers/SearchProvider";
                       : "Explorer tout le catalogue"}{" "}
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />{" "}
                   </Link>{" "}
-                  <Button
-                    variant="outline"
-                    size="lg"
-                    onClick={() => {
-                      resetCriteria();
-                      goTo(0);
-                    }}
-                    className="homera-press gap-2"
-                  >
-                    {" "}
-                    Réinitialiser la sélection{" "}
-                  </Button>{" "}
                 </div>{" "}
                 <p className="text-caption text-muted">
                   {" "}
