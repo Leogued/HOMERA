@@ -337,6 +337,29 @@ await check("6. Photos téléversées : contrôle serveur, stockage hors code, d
   assert.ok(!wizard.includes("téléversement depuis votre appareil n’est pas encore ouvert"), "l’assistant n’annonce plus une limite qui n’existe plus");
 });
 
+await check("7. Installation reproductible sans compilation ni erreur cryptique", async () => {
+  /* better-sqlite3 v13 embarque ses binaires : npm ne doit pas tenter de
+     le recompiler (binding.gyp sans script install => node-gyp par
+     défaut, échec sans chaîne de compilation). */
+  const npmrc = await readFile(path.join(appRoot, ".npmrc"), "utf8");
+  assert.ok(npmrc.includes("ignore-scripts=true"), ".npmrc neutralise les scripts d’installation des dépendances");
+
+  /* … et comme ignore-scripts neutralise aussi les crochets pre/post, le
+     garde est enchaîné explicitement dans dev et build, jamais en predev. */
+  const pkg = JSON.parse(await readFile(path.join(appRoot, "package.json"), "utf8"));
+  for (const script of ["dev", "build"]) {
+    assert.ok(
+      String(pkg.scripts[script] ?? "").startsWith("node scripts/check-deps.mjs && "),
+      `« ${script} » commence par le garde d’installation`,
+    );
+  }
+  assert.ok(!("predev" in pkg.scripts) && !("prebuild" in pkg.scripts), "aucun crochet predev/prebuild (inopérant avec ignore-scripts)");
+
+  const guard = await readFile(path.join(appRoot, "scripts/check-deps.mjs"), "utf8");
+  assert.ok(guard.includes('require("better-sqlite3")'), "le garde charge le module, pas seulement son chemin");
+  assert.ok(guard.includes("node_modules et package-lock.json"), "le garde donne la marche de réparation");
+});
+
 const failed = checks.filter((c) => !c.ok);
 if (failed.length > 0) {
   console.error(`\n${failed.length} contrôle(s) du QUALITY_GATE ont échoué.`);

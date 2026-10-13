@@ -20,11 +20,12 @@ se lancent depuis ce dossier.
 npm install
 ```
 
-`better-sqlite3` est un module natif : des binaires précompilés existent pour Node 20
-et 22 sur Windows, macOS et Linux. Si l’installation échoue chez vous, installez les
-outils de compilation de votre système (« Desktop development with C++ » sous Windows,
-`xcode-select --install` sous macOS, `build-essential` sous Linux) puis relancez
-`npm install`.
+L’installation prend une dizaine de secondes et ne compile rien : la base embarquée
+(`better-sqlite3`) est livrée avec ses binaires précompilés pour Windows, macOS et
+Linux, et le fichier `.npmrc` du projet empêche npm de tenter une compilation
+inutile. **Aucun outil de compilation n’est requis** (pas de Python, pas de
+« Desktop development with C++ », pas de `build-essential`). Attendez simplement
+la fin (« added … packages », sans ligne `ERR`).
 
 ### 3. Lancement
 
@@ -99,7 +100,9 @@ Un second propriétaire semé existe : `sofia@homera.demo` / `sofia`.
 | Symptôme | Cause et correction |
 |---|---|
 | `EADDRINUSE : le port 3000 est déjà utilisé` | un serveur tourne déjà : fermez-le, ou lancez `npm run dev -- -p 3001`. |
-| `npm install` échoue sur `better-sqlite3` | voir §2 : outils de compilation, puis `npm install` à nouveau. |
+| `Module not found: Can't resolve 'better-sqlite3'` | l’installation est incomplète : `npm install` a été oublié, interrompu ou lancé ailleurs que dans `homera/`. Supprimez `node_modules` et `package-lock.json`, relancez `npm install` jusqu’au bout, puis `npm run dev`. |
+| `npm install` affiche des lignes `ERR` | supprimez `node_modules` et `package-lock.json`, vérifiez que vous êtes bien dans `homera/` (le dossier qui contient `package.json`), puis relancez `npm install`. Aucun outil de compilation n’est nécessaire. |
+| `[HOMERA] La base embarquée…` au lancement | c’est le garde du projet qui parle : suivez la marche à suivre affichée, elle répare 100 % des installations incomplètes. |
 | Écrans vides ou données incohérentes après des essais | `npm run db:reset` puis relancez le serveur : la base est recréée proprement. |
 | Je ne reçois pas l’e-mail de vérification | normal, HOMERA n’envoie pas encore d’e-mail : **le code s’affiche à l’écran**. |
 | Je ne peux pas payer en ligne | normal : aucun encaissement n’existe. `/client/paiements` n’affiche que le dû écrit par un contrat signé. |
