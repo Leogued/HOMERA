@@ -1174,28 +1174,6 @@ a {
   );
 }
 
-/* Rail de chapitres : visible uniquement quand la marge latérale
-   existe réellement, pour ne jamais passer sous le texte. */
-.homera-chapter-rail {
-  display: none;
-}
-
-@media (min-width: 1500px) {
-  .homera-chapter-rail {
-    display: block;
-  }
-}
-
-/* Libellés du rail : à partir de la largeur où ils tiennent. */
-.homera-rail-label {
-  display: none;
-}
-
-@media (min-width: 1700px) {
-  .homera-rail-label {
-    display: inline;
-  }
-}
 
 /* Filet de séparation entre deux scènes de même teinte */
 .scene-edge {
@@ -1403,10 +1381,6 @@ a {
 .homera-protocol { padding-block: var(--space-section-scene) calc(var(--space-section-scene) + 1rem); background: var(--homera-brown); }
 .homera-protocol-copy-list { display: grid; gap: 2rem; }
 .homera-protocol-copy { border-bottom: 1px solid rgba(250,246,239,.15); padding-bottom: 2rem; }
-.homera-protocol-number { border-color: rgba(250,246,239,.3); color: var(--homera-cream-dark); background: transparent; }
-.homera-protocol-number[data-current="true"] { border-color: var(--homera-amber); background: color-mix(in oklab, var(--homera-amber) 13%, transparent); color: var(--homera-paper); }
-.homera-protocol-number[data-past="true"] { border-color: color-mix(in oklab, var(--homera-amber) 50%, transparent); color: var(--homera-amber); }
-.homera-protocol-line { display: none; }
 .homera-protocol-paper { transform: translate(6px, 6px) rotate(1.4deg); transition: transform 700ms var(--homera-ease); }
 .homera-protocol-record { box-shadow: 0 40px 75px -45px rgba(20,12,8,.8); }
 .homera-protocol-record img { transform: scale(1.01); }
@@ -1469,9 +1443,6 @@ a {
     pointer-events: auto;
     transition: opacity 420ms var(--homera-ease) 70ms, transform 550ms var(--homera-ease), filter 420ms, visibility 0s;
   }
-  .homera-protocol-line { display: block; position: absolute; left: 21px; top: 1.375rem; bottom: 1.375rem; width: 1px; background: rgba(250,246,239,.2); }
-  .homera-protocol-line > span { display: block; width: 100%; height: 100%; transform: scaleY(var(--protocol-progress, 0)); transform-origin: top; background: var(--homera-amber); }
-  .homera-protocol-number { background: var(--homera-brown); }
 }
 
 /* SERVICES : la catégorie prend du volume, la scène conserve sa hauteur. */

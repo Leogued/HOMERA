@@ -18,7 +18,7 @@ import {
 import { DEMO_DATA, DOSSIER, VERIFICATION_STEPS, type VerificationStep } from "@/lib/content";
 import { SceneHeader } from "@/components/ui/Scene";
 import { Visual } from "@/components/ui/Visual";
-import { scrollToStory, useMotionPreferences, useRovingFocus, useSceneMotion, useStoryCapable } from "@/lib/motion";
+import { scrollToStory, useMotionPreferences, useSceneMotion, useStoryCapable } from "@/lib/motion";
 import { storyIndex, storyPosition } from "@/lib/motion-math";
 const ICONS: Record<VerificationStep["icon"], LucideIcon> = {
   file: FileCheck,
@@ -36,14 +36,12 @@ export function VerificationProtocol() {
   const activeRef = useRef(0);
   const update = useCallback((element: HTMLDivElement, progress: number) => {
     const next = storyIndex(progress, VERIFICATION_STEPS.length);
-    element.style.setProperty("--protocol-progress", progress.toFixed(4));
     if (activeRef.current !== next) {
       activeRef.current = next;
       setActive(next);
     }
   }, []);
   const trackRef = useSceneMotion<HTMLDivElement>(update, { enabled: story, mode: "sticky", response: 65 });
-  const { containerRef, handleKeyDown } = useRovingFocus<HTMLElement>();
   const goTo = (index: number) => {
     const next = Math.max(0, Math.min(VERIFICATION_STEPS.length - 1, index));
     if (story) scrollToStory(trackRef.current, storyPosition(next, VERIFICATION_STEPS.length), reduced);
@@ -62,8 +60,7 @@ export function VerificationProtocol() {
       <div className="relative z-[1] mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {" "}
         <SceneHeader
-          index="06"
-          eyebrow="Transparence & rigueur"
+                    eyebrow="Transparence & rigueur"
           tone="dark"
           title={
             <span id="protocole-titre">
@@ -79,47 +76,13 @@ export function VerificationProtocol() {
           {" "}
           <div data-story-sticky className="homera-story-sticky flex flex-col justify-center">
             {" "}
-            <div className="homera-protocol-layout grid items-center gap-8 lg:grid-cols-[6rem_1.1fr_1fr] lg:gap-12">
+            <div className="homera-protocol-layout grid items-center gap-8 lg:grid-cols-[1.1fr_1fr] lg:gap-12">
               {" "}
-              <nav
-                ref={containerRef}
-                aria-label="Étapes du protocole HOMERA"
-                onKeyDown={handleKeyDown}
-                className="homera-protocol-nav relative"
-              >
-                {" "}
-                <span aria-hidden="true" className="homera-protocol-line">
-                  <span />
-                </span>{" "}
-                <ol className="relative grid grid-cols-7 gap-1 lg:flex lg:flex-col lg:gap-3">
-                  {" "}
-                  {VERIFICATION_STEPS.map((step, index) => (
-                    <li key={step.num}>
-                      {" "}
-                      <button
-                        type="button"
-                        data-roving-item
-                        onClick={() => goTo(index)}
-                        aria-label={`${step.num} — ${step.title}`}
-                        aria-controls={`protocol-step-${index}`}
-                        aria-current={story && active === index ? "step" : undefined}
-                        className="homera-press homera-protocol-number mx-auto flex h-11 w-full max-w-11 lg:mx-0 items-center justify-center rounded-full border text-note font-medium"
-                        data-current={story && active === index}
-                        data-past={story && index < active}
-                      >
-                        {" "}
-                        <span className="homera-num">{step.num}</span>{" "}
-                      </button>{" "}
-                    </li>
-                  ))}{" "}
-                </ol>{" "}
-              </nav>{" "}
               <div className="min-w-0">
                 {" "}
                 <ol className="homera-protocol-copy-list">
                   {" "}
                   {VERIFICATION_STEPS.map((step, index) => {
-                    const Icon = ICONS[step.icon];
                     return (
                       <li
                         key={step.num}
@@ -130,10 +93,6 @@ export function VerificationProtocol() {
                         className="homera-protocol-copy scroll-mt-32"
                       >
                         {" "}
-                        <span className="mb-5 inline-flex items-center gap-3 text-caption font-semibold uppercase tracking-[.2em] text-homera-amber">
-                          {" "}
-                          <Icon className="h-4 w-4" aria-hidden="true" /> Mouvement {step.num}{" "}
-                        </span>{" "}
                         <h3 className="max-w-lg font-serif text-display-fluid text-homera-paper">{step.title}</h3>{" "}
                         <p className="mt-6 max-w-md text-body-sm leading-[1.8] text-homera-cream-dark">
                           {step.narrative}
@@ -166,9 +125,6 @@ export function VerificationProtocol() {
                     >
                       <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </button>{" "}
-                    <span className="homera-num ml-2 text-caption tracking-[.16em] text-homera-cream-dark">
-                      {VERIFICATION_STEPS[active].num} / 07
-                    </span>{" "}
                   </div>
                 )}{" "}
               </div>{" "}
@@ -287,9 +243,8 @@ function ProtocolVisual({ stage }: { stage: number }) {
               <p className="homera-num mt-1 font-mono text-caption">HOM-A-0214</p>
             </div>{" "}
           </div>{" "}
-          <div className="mt-5 flex min-h-7 items-center justify-between gap-3 text-micro">
+          <div className="mt-5 flex min-h-7 items-center justify-end gap-3 text-micro">
             {" "}
-            <span className="homera-num text-homera-paper-muted">Mouvement {step.num} / 07</span>{" "}
             <span
               className="homera-protocol-stamp inline-flex items-center gap-1.5 rounded-full border border-homera-terracotta/45 bg-homera-terracotta/8 px-2.5 py-1 font-semibold text-homera-brown"
               data-show={stage >= 4}

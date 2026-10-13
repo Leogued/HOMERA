@@ -231,16 +231,34 @@ await test('HOMERA : prix immobiles, police d’interface et absence de souris c
   assert.match(css, /@layer base\s*\{\s*button, input, textarea, select \{ font: inherit;/);
   assert.match(css, /@media \(prefers-reduced-motion: reduce\)[\s\S]*animation: none !important/);
 });
-await test('HOMERA : les sept commandes du protocole tiennent sur un mobile de 320 px', async () => {
+await test('HOMERA : le protocole se navigue aux flèches, sans pastilles numérotées', async () => {
   const source = await readFile(new URL('../components/home/VerificationProtocol.tsx', import.meta.url), 'utf8');
-  assert.ok(source.includes('grid-cols-7'));
-  assert.ok(source.includes('w-full max-w-11'));
-  for (const viewport of [320, 360, 390, 768]) {
-    const padding = viewport < 640 ? 32 : 48;
-    const width = Math.min(44, (viewport - padding - 6 * 4) / 7);
-    assert.ok(width >= 24);
-    assert.ok(width * 7 + 6 * 4 <= viewport - padding);
+  /* Décision validée : les 7 pastilles « 01 »–« 07 » et le compteur ont été
+     retirés ; seules les flèches précédent/suivant naviguent. */
+  assert.doesNotMatch(source, /homera-protocol-nav/);
+  assert.doesNotMatch(source, /grid-cols-7/);
+  assert.doesNotMatch(source, /Mouvement/);
+  assert.doesNotMatch(source, /\/ 07/);
+  assert.ok(source.includes('aria-label="Étape précédente"'));
+  assert.ok(source.includes('aria-label="Étape suivante"'));
+  assert.ok(source.includes('h-10 w-10'), 'cibles tactiles de 40 px minimum');
+  assert.ok(source.includes('lg:grid-cols-[1.1fr_1fr]'), 'plus de colonne vide pour la navigation retirée');
+});
+await test('HOMERA : l’accueil n’affiche aucun numéro de chapitre', async () => {
+  const home = (name) => readFile(new URL(`../components/home/${name}`, import.meta.url), 'utf8');
+  const hero = await home('Hero.tsx');
+  assert.doesNotMatch(hero, /CHAPTERS\[0\]/, 'plus de « 01 — Immersion » dans le hero');
+  const scene = await readFile(new URL('../components/ui/Scene.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(scene, /\{index\}/, 'SceneHeader ne rend plus de numéro');
+  assert.ok(scene.includes('{eyebrow}'), 'le sur-titre reste affiché');
+  for (const name of ['StatsSection.tsx', 'ExplorerSection.tsx', 'FeaturedProperties.tsx', 'PropertyDossier.tsx',
+    'VerificationProtocol.tsx', 'ServicesSection.tsx', 'EditorialSection.tsx', 'TrustVisionSection.tsx']) {
+    assert.doesNotMatch(await home(name), /index="0\d"/, `${name} ne numérote plus sa scène`);
   }
+  const page = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(page, /<ChapterRail/, 'le rail des 9 intitulés a quitté la page');
+  assert.ok(page.includes('<ReadingProgress />'), 'la barre de progression reste');
+  assert.ok(page.includes('<BackToTop />'), 'le retour en haut reste');
 });
 const floating = await import(await moduleUrl('lib/floating.ts', { '@/lib/motion-math': await moduleUrl('lib/motion-math.ts') }));
 await test('HOMERA : dropdowns dans le viewport, y compris paysage et clavier mobile', () => {

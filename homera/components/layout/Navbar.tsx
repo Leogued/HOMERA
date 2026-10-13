@@ -90,7 +90,7 @@ export function Navbar() {
     const previousOverflow = document.body.style.overflow;
     const previousFocus = document.activeElement as HTMLElement | null;
     document.body.style.overflow = "hidden";
-    const page = [...document.querySelectorAll<HTMLElement>("main, footer, .homera-chapter-rail")];
+    const page = [...document.querySelectorAll<HTMLElement>("main, footer")];
     const previousInert = page.map((element) => element.inert);
     page.forEach((element) => {
       element.inert = true;

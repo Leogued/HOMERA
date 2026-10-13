@@ -13,7 +13,7 @@ import { Footer } from "@/components/layout/Footer";
 import { SearchProvider } from "@/components/providers/SearchProvider";
 import { listProperties } from "@/lib/server/services/properties";
 import { getDb } from "@/lib/server/db/client";
-import { BackToTop, ChapterRail, ReadingProgress } from "@/components/ui/ChapterRail";
+import { BackToTop, ReadingProgress } from "@/components/ui/ChapterRail";
 import { CustomCursor } from "@/components/ui/CustomCursor";
 /* ==================================================================
    HOMERA — PAGE D’ACCUEIL
@@ -30,8 +30,7 @@ import { CustomCursor } from "@/components/ui/CustomCursor";
    08 Magazine .......... l’univers éditorial
    09 Manifeste ......... convictions puis projection finale
 
-   Le fil est continu : chaque section fond dans la suivante, et le rail
-   de chapitres rappelle où l’on se trouve dans le voyage.
+   Le fil est continu : chaque section fond dans la suivante.
    ================================================================== */
 export default function Home() {
   // Les biens affichés viennent de la base HOMERA : publier un bien suffit
@@ -42,7 +41,7 @@ export default function Home() {
       {" "}
       <div className="relative flex min-h-screen flex-col justify-between bg-background text-foreground transition-colors duration-300">
         {" "}
-        {/* Repères de lecture (desktop) */} <ReadingProgress /> <ChapterRail /> <BackToTop /> <CustomCursor />{" "}
+        {/* Repères de lecture (desktop) */} <ReadingProgress /> <BackToTop /> <CustomCursor />{" "}
         {/* En-tête — toujours transparent */} <Navbar /> {/* Scènes */}{" "}
         <main className="flex-1">
           {" "}

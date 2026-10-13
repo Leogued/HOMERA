@@ -1,8 +1,7 @@
 "use client";
 import type { ReactNode } from "react";
 import { Reveal } from "@/components/ui/Reveal";
-/* ================================================================== HOMERA — SCÈNES ------------------------------------------------------------------ Briques communes à toutes les sections : en-tête de scène numéroté (le fil conducteur du voyage) et fondus entre deux scènes pour éviter l’enchaînement « section blanche / section blanche ». ================================================================== */ export function SceneHeader({
-  index,
+/* ================================================================== HOMERA — SCÈNES ------------------------------------------------------------------ Briques communes à toutes les sections : en-tête de scène (sur-titre, titre, introduction) et fondus entre deux scènes pour éviter l’enchaînement « section blanche / section blanche ». ================================================================== */ export function SceneHeader({
   eyebrow,
   title,
   intro,
@@ -11,7 +10,6 @@ import { Reveal } from "@/components/ui/Reveal";
   className = "",
   actions,
 }: {
-  index: string;
   eyebrow: string;
   title: ReactNode;
   intro?: ReactNode;
@@ -22,7 +20,6 @@ import { Reveal } from "@/components/ui/Reveal";
 }) {
   const isCenter = align === "center";
   const muted = tone === "dark" ? "text-homera-cream-dark/80" : "text-muted";
-  const accent = tone === "dark" ? "text-homera-amber" : "homera-accent-ink";
   return (
     <header className={`${isCenter ? "mx-auto max-w-3xl text-center" : "text-left"} ${className}`}>
       {" "}
@@ -34,11 +31,6 @@ import { Reveal } from "@/components/ui/Reveal";
         style={{ justifyContent: isCenter ? "center" : "flex-start" }}
       >
         {" "}
-        <span className={`homera-num text-caption font-semibold tracking-[0.3em] ${accent}`}> {index} </span>{" "}
-        <span
-          aria-hidden="true"
-          className={`h-px w-10 ${tone === "dark" ? "bg-white/25" : "bg-homera-terracotta/40"}`}
-        />{" "}
         <span className={`text-micro font-semibold uppercase tracking-[0.24em] ${muted}`}> {eyebrow} </span>{" "}
       </Reveal>{" "}
       <Reveal

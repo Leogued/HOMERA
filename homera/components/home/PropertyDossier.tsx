@@ -61,8 +61,7 @@ export function PropertyDossier() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {" "}
         <SceneHeader
-          index="05"
-          eyebrow="Le bien HOMERA"
+                    eyebrow="Le bien HOMERA"
           align="center"
           title={<span id="bien-homera-titre">Chaque bien possède une identité.</span>}
           intro="Chez HOMERA, un bien n’est pas seulement une annonce. Une référence unique relie le lieu à son dossier."

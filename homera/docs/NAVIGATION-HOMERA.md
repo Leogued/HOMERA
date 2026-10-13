@@ -35,7 +35,7 @@ d’entrée y mène.
 Ces liens restent des ancres : le contenu appartient à la page courante.
 
 - Accueil : recherche → `#biens`, intentions → `#biens`, dossier → `#protocole`,
-  protocole → `#services`, projection finale → `#biens` / `#protocole`, rail de chapitres.
+  protocole → `#services`, projection finale → `#biens` / `#protocole`.
 - `/a-propos`, `/legal`, `/services` : sommaires internes de la page.
 - `/a-propos#protocole` depuis le pied de page et les favoris : ancre inter-pages dont
   la cible est vérifiée par l’audit.

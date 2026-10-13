@@ -40,8 +40,7 @@ export function ExplorerSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {" "}
         <SceneHeader
-          index="03"
-          eyebrow="Explorer par intention"
+                    eyebrow="Explorer par intention"
           title={
             <span id="explorer-titre">
               Une vision fluide de vos ambitions{" "}

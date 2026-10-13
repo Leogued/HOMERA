@@ -25,8 +25,7 @@ export function StatsSection() {
           <div className="lg:pt-4">
             {" "}
             <SceneHeader
-              index="02"
-              eyebrow="Repères"
+                            eyebrow="Repères"
               title={<span id="chiffres-titre">HOMERA en quelques chiffres</span>}
               intro="Une dynamique au service de la sécurité immobilière et de la lisibilité du marché béninois."
             />{" "}

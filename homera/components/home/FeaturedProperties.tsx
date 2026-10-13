@@ -167,8 +167,7 @@ import { useSearch } from "@/components/providers/SearchProvider";
         <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
           {" "}
           <SceneHeader
-            index="04"
-            eyebrow="Sélection certifiée"
+                        eyebrow="Sélection certifiée"
             title={<span id="biens-titre">Des biens qui méritent d’être vus</span>}
             intro="Chaque bien possède son identifiant unique HOMERA et sa fiche de vérification d’identité et de mandat."
             className="max-w-2xl"

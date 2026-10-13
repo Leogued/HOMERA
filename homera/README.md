@@ -147,13 +147,13 @@ mouvement et sa transition vers la suivante :
 | 03 | Intentions | `components/home/ExplorerSection.tsx` | Quatre portes expansibles, survol / clavier / toucher |
 | 04 | Sélection | `components/home/FeaturedProperties.tsx` | Galerie photographique en profondeur, filtres et aperçu natif de chaque bien |
 | 05 | Identité | `components/home/PropertyDossier.tsx` | Identifiant sticky, puis six informations reliées progressivement |
-| 06 | Vérification | `components/home/VerificationProtocol.tsx` | Récit sticky : étapes à gauche, narration au centre, dossier à droite |
+| 06 | Vérification | `components/home/VerificationProtocol.tsx` | Récit sticky : narration au centre, dossier à droite, navigation par flèches |
 | 07 | Écosystème | `components/home/ServicesSection.tsx` | Sommaire expansible, images à la demande, scène de hauteur stable |
 | 08 | Magazine | `components/home/EditorialSection.tsx` | Univers éditorial : rubriques en bandeau, sujets en couverture |
 | 09 | Manifeste | `components/home/TrustVisionSection.tsx` | Convictions, piliers, projection finale en parallax |
 
 Le passage d’une scène à l’autre est continu : fondus de teinte (`scene-bg-*`),
-filets discrets (`scene-edge`), fondu du hero vers la scène suivante, rail de chapitres
+filets discrets (`scene-edge`), fondu du hero vers la scène suivante
 et barre de progression de lecture (desktop).
 
 ## Où modifier quoi
