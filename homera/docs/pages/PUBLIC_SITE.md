@@ -8,7 +8,7 @@
   2. `#chiffres` (`StatsSection.tsx`) : Compteurs animés à l'entrée dans le viewport, avec mention explicite des données de démonstration.
   3. Transition éditoriale (`IdentityStatement.tsx`) : Phrase manifeste liée au scroll.
   4. `#explorer` (`ExplorerSection.tsx`) : Quatre portes d'intention expansibles (*Acheter*, *Louer*, *Séjourner*, *Investir*).
-  5. `#biens` (`FeaturedProperties.tsx`) : Galerie photographique horizontale avec filtres rapides et modale d'aperçu (`PropertyPreview.tsx`).
+  5. `#biens` (`FeaturedProperties.tsx`) : Galerie photographique horizontale et modale d'aperçu (`PropertyPreview.tsx`).
   6. `#bien-homera` (`PropertyDossier.tsx`) : Récit sticky autour de la référence `HOM-CTN-000421` et ses 6 données reliées.
   7. `#protocole` (`VerificationProtocol.tsx`) : Récit sticky en 7 étapes illustrant le contrôle documentaire HOMERA.
   8. `#services` (`ServicesSection.tsx`) : Sommaire interactif des 4 services (*Gestion*, *Maintenance*, *Déménagement*, *Travaux*).

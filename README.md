@@ -145,7 +145,7 @@ mouvement et sa transition vers la suivante :
 | 01 | Immersion | `components/home/Hero.tsx` | Vidéo d’origine conservée, contenu en couches qui se dissipent au défilement, recherche toujours lisible |
 | 02 | Repères | `components/home/StatsSection.tsx` | Compteurs déclenchés à l’entrée en scène (données de démonstration) |
 | 03 | Intentions | `components/home/ExplorerSection.tsx` | Quatre portes expansibles, survol / clavier / toucher |
-| 04 | Sélection | `components/home/FeaturedProperties.tsx` | Galerie photographique en profondeur, filtres et aperçu natif de chaque bien |
+| 04 | Sélection | `components/home/FeaturedProperties.tsx` | Galerie photographique en profondeur et aperçu natif de chaque bien |
 | 05 | Identité | `components/home/PropertyDossier.tsx` | Identifiant sticky, puis six informations reliées progressivement |
 | 06 | Vérification | `components/home/VerificationProtocol.tsx` | Récit sticky : narration au centre, dossier à droite, navigation par flèches |
 | 07 | Écosystème | `components/home/ServicesSection.tsx` | Sommaire expansible, images à la demande, scène de hauteur stable |

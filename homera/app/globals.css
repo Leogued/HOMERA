@@ -1580,7 +1580,6 @@ a {
 .homera-cta-night:hover { background-color: var(--action-night-hover); }
 .homera-accent-button { background-color: var(--homera-terracotta-dark); color: #fff; }
 .homera-accent-button:hover { background-color: color-mix(in srgb, var(--homera-terracotta-dark) 92%, var(--homera-brown)); }
-.dark .homera-property-filter[aria-pressed="true"] { background-color: var(--homera-terracotta-dark); }
 .homera-media img.homera-final-photo { transform: none; }
 .homera-nav-entry { opacity: 0; transform: translateY(4px); transition: opacity 180ms var(--homera-ease), transform 240ms var(--homera-ease); }
 .homera-nav-panel[data-open="true"] .homera-nav-entry { opacity: 1; transform: none; transition-delay: var(--nav-stagger, 0ms); }

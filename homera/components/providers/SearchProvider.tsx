@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { EMPTY_CRITERIA, hasCriteria, matchesCriteria, type SearchCriteria } from "@/lib/format";
-import { PROPERTIES, type Property, type PropertyFilterId } from "@/lib/content";
+import { PROPERTIES, type Property } from "@/lib/content";
 /* ==================================================================
    HOMERA — ÉTAT PARTAGÉ DU PARCOURS
    ------------------------------------------------------------------
@@ -9,8 +9,6 @@ import { PROPERTIES, type Property, type PropertyFilterId } from "@/lib/content"
    état : choisir « Louer » puis appuyer sur Rechercher filtre réellement
    les biens présentés plus bas, sans rechargement.
    ================================================================== */
-type ActiveFilter =
-  PropertyFilterId;
 type SearchContextValue = {
   criteria: SearchCriteria;
   /** Critères réellement validés : les libellés correspondent aux résultats. */ appliedCriteria: SearchCriteria;
@@ -23,8 +21,6 @@ type SearchContextValue = {
   /** Nombre de résultats pour les critères en cours d’édition. */ results: Property[];
   /** Résultats validés (après soumission) — ce que la page affiche. */ appliedResults: Property[];
   /** true dès qu’une recherche soumise est active. */ isSearching: boolean;
-  activeFilter: ActiveFilter;
-  setActiveFilter: (filter: ActiveFilter) => void;
   /** Sélection affichée dans la grille des biens. */ visibleProperties: Property[];
 };
 const SearchContext = createContext<SearchContextValue | null>(null);
@@ -37,14 +33,12 @@ export function SearchProvider({ children, source }: { children: ReactNode; sour
   const catalogue = source ?? PROPERTIES;
   const [criteria, setCriteria] = useState<SearchCriteria>(EMPTY_CRITERIA);
   const [applied, setApplied] = useState<SearchCriteria>(EMPTY_CRITERIA);
-  const [activeFilter, setActiveFilter] = useState<ActiveFilter>("tous");
   const setCriterion = useCallback((field: keyof SearchCriteria, value: string) => {
     setCriteria((current) => ({ ...current, [field]: value }));
   }, []);
   const resetCriteria = useCallback(() => {
     setCriteria(EMPTY_CRITERIA);
     setApplied(EMPTY_CRITERIA);
-    setActiveFilter("tous");
   }, []);
   const submitSearch = useCallback(() => {
     setApplied(criteria);
@@ -59,11 +53,12 @@ export function SearchProvider({ children, source }: { children: ReactNode; sour
     () => (hasCriteria(applied) ? catalogue.filter((property) => matchesCriteria(property, applied)) : catalogue),
     [applied, catalogue],
   );
+  /* Sans filtre rapide, la sélection montre tout le catalogue ; seule une
+     recherche soumise la restreint. */
   const visibleProperties = useMemo(() => {
     if (hasCriteria(applied)) return appliedResults;
-    if (activeFilter === "tous") return catalogue;
-    return catalogue.filter((property) => property.type === activeFilter);
-  }, [applied, appliedResults, activeFilter, catalogue]);
+    return catalogue;
+  }, [applied, appliedResults, catalogue]);
   const value = useMemo<SearchContextValue>(
     () => ({
       criteria,
@@ -75,8 +70,6 @@ export function SearchProvider({ children, source }: { children: ReactNode; sour
       results,
       appliedResults,
       isSearching: hasCriteria(applied),
-      activeFilter,
-      setActiveFilter,
       visibleProperties,
     }),
     [
@@ -88,7 +81,6 @@ export function SearchProvider({ children, source }: { children: ReactNode; sour
       results,
       appliedResults,
       applied,
-      activeFilter,
       visibleProperties,
     ],
   );

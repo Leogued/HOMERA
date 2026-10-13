@@ -1149,19 +1149,6 @@ export const PROPERTIES: Property[] = [
   },
 ];
 
-/** Identifiant de filtre : « tous » ou un type de bien précis. */
-export type PropertyFilterId = PropertyType | "tous";
-
-/** Filtres rapides de la sélection : synchronisés avec le module de recherche. */
-export const PROPERTY_FILTERS: { id: PropertyFilterId; label: string }[] = [
-  { id: "tous", label: "Tous" },
-  { id: "villa", label: "Villas" },
-  { id: "appartement", label: "Appartements" },
-  { id: "studio", label: "Studios" },
-  { id: "terrain", label: "Terrains" },
-  { id: "local", label: "Locaux" },
-];
-
 /* ------------------------------------------------------------------
    LE BIEN HOMERA — anatomie d’un identifiant
    ------------------------------------------------------------------ */

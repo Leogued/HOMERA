@@ -266,6 +266,17 @@ await test('HOMERA : l’accueil n’affiche ni numéro ni sur-titre de chapitre
   assert.ok(page.includes('<ReadingProgress />'), 'la barre de progression reste');
   assert.ok(page.includes('<BackToTop />'), 'le retour en haut reste');
 });
+await test('HOMERA : la sélection affiche tout, sans boutons de filtre', async () => {
+  const featured = await readFile(new URL('../components/home/FeaturedProperties.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(featured, /PROPERTY_FILTERS/, 'plus de boutons Tous/Villas/… dans la sélection');
+  assert.doesNotMatch(featured, /Filtrer par type de bien/);
+  assert.doesNotMatch(featured, /setActiveFilter/, 'plus d’état de filtre rapide');
+  assert.ok(featured.includes('isSearching ? appliedResults : visibleProperties'), 'la recherche du hero filtre toujours la sélection');
+  const provider = await readFile(new URL('../components/providers/SearchProvider.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(provider, /activeFilter/, 'état de filtre rapide supprimé du parcours partagé');
+  const content = await readFile(new URL('../lib/content.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(content, /PROPERTY_FILTERS/, 'liste des libellés supprimée');
+});
 const floating = await import(await moduleUrl('lib/floating.ts', { '@/lib/motion-math': await moduleUrl('lib/motion-math.ts') }));
 await test('HOMERA : dropdowns dans le viewport, y compris paysage et clavier mobile', () => {
   for (const width of [320, 390, 768, 1440]) for (const height of [200, 320, 700]) for (const top of [15, height / 2, height - 55]) {

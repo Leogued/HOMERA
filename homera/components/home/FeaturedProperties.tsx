@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Eye, RotateCcw } from "lucide-react";
-import { DEMO_DATA, PROPERTY_FILTERS, type Property } from "@/lib/content";
+import { DEMO_DATA, type Property } from "@/lib/content";
 import { countLabel, INTENT_LABELS, TYPE_LABELS } from "@/lib/format";
 import { SceneHeader } from "@/components/ui/Scene";
 import { Reveal } from "@/components/ui/Reveal";
@@ -19,8 +19,6 @@ import { useSearch } from "@/components/providers/SearchProvider";
     appliedResults,
     isSearching,
     appliedCriteria,
-    activeFilter,
-    setActiveFilter,
     resetCriteria,
   } = useSearch();
   const { reduced, compact, coarse } = useMotionPreferences();
@@ -164,44 +162,11 @@ import { useSearch } from "@/components/providers/SearchProvider";
       {" "}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {" "}
-        <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
-          {" "}
-          <SceneHeader
-            title={<span id="biens-titre">Des biens qui méritent d’être vus</span>}
-            intro="Chaque bien possède son identifiant unique HOMERA et sa fiche de vérification d’identité et de mandat."
-            className="max-w-2xl"
-          />{" "}
-          {/* Filtres rapides — synchronisés avec la recherche du hero */}{" "}
-          <Reveal delay={120} y={16} className="shrink-0">
-            {" "}
-            <div
-              role="group"
-              aria-label="Filtrer par type de bien"
-              className="homera-noscrollbar flex items-center gap-2 overflow-x-auto pb-1 lg:justify-end"
-            >
-              {" "}
-              {PROPERTY_FILTERS.map((filter) => {
-                const active = !isSearching && activeFilter === filter.id;
-                return (
-                  <button
-                    key={filter.id}
-                    type="button"
-                    onClick={() => {
-                      // Choisir un type efface la recherche en cours : le filtre redevient lisible.
-                      if (isSearching) resetCriteria();
-                      setActiveFilter(filter.id);
-                    }}
-                    aria-pressed={active}
-                    className={`homera-press whitespace-nowrap rounded-full px-4 py-2 text-note font-medium homera-property-filter tracking-[0.01em] transition-colors duration-300 ${active ? "homera-cta text-white shadow-sm " : "border border-border bg-card text-muted hover:text-foreground"}`}
-                  >
-                    {" "}
-                    {filter.label}{" "}
-                  </button>
-                );
-              })}{" "}
-            </div>{" "}
-          </Reveal>{" "}
-        </div>{" "}
+        <SceneHeader
+          title={<span id="biens-titre">Des biens qui méritent d’être vus</span>}
+          intro="Chaque bien possède son identifiant unique HOMERA et sa fiche de vérification d’identité et de mandat."
+          className="max-w-2xl"
+        />{" "}
         {/* Recherche active : ce qui a été demandé, et comment l’élargir */}{" "}
         {isSearching && (
           <Reveal y={12} duration={520} className="mt-8">
@@ -387,7 +352,6 @@ import { useSearch } from "@/components/providers/SearchProvider";
                     size="lg"
                     onClick={() => {
                       resetCriteria();
-                      setActiveFilter("tous");
                       goTo(0);
                     }}
                     className="homera-press gap-2"
