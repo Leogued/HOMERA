@@ -314,6 +314,27 @@ démarré :
 | Annulation d’un contrat signé | refusée — « passez par une résiliation » |
 | Contrôle public d’un mandat (`/verification-agent`) | actif / expiré / non confirmé selon le registre serveur |
 | Historique public d’un bien (`/historique/<référence>`) | chronologie construite depuis `audit_log`, liste blanche d’actions opposables |
+
+### 8.4 Les douze scénarios du cahier des charges (`npm run test:scenarios`)
+
+Serveur démarré, base amorcée, vrais comptes : 12 scénarios, 12 réussites,
+0 échec, et le même résultat à la deuxième et à la troisième exécution
+(les scénarios sont réécrits pour rester valables sur une base déjà utilisée).
+
+| # | Scénario | Ce que le serveur répond |
+|---|---|---|
+| 1 | Connexion des quatre rôles | atterrissage `/client`, `/proprietaire`, `/agent`, `/admin` ; habilitation d’administration lue côté serveur ; espace interdit refusé |
+| 2 | Mandat : le propriétaire demande, l’agent accepte | le bien entre dans `/api/agent/properties` avec la bonne portée, l’événement est dans le journal d’audit |
+| 3 | Agent sans mandat | `403` sur les pièces d’un bien non couvert, `200` sur celles du bien mandaté |
+| 4 | Visite : demande, conflit, confirmation, reprogrammation, annulation | créneau déjà réservé refusé ; refus sans motif refusé ; annulation motivée acceptée ; client notifié |
+| 5 | Candidature → contrat → signature | candidature impossible avant visite effectuée, contrat impossible avant acceptation, signature refusée à l’administration et avec un nom trop court, contrat signé non annulable |
+| 6 | Explorateur | `meuble=1` restreint et chaque bien déclare l’équipement ; `departement=` filtre et restreint les communes ; pagination sans doublon |
+| 7 | Favoris et fiche | ajout et retrait réellement écrits ; la fiche expose un retour valide sans JavaScript |
+| 8 | Messagerie | conversation ouverte sur un bien, message vide refusé, bien inexistant refusé |
+| 9 | Contrôle public d’un mandat | actif / expiré / inconnu, jamais de réponse inventée |
+| 10 | Historique public | étapes réelles du journal, `404` sur une référence inconnue |
+| 11 | Paiements | aucune route d’encaissement (`404`/`405`), aucun état de paiement sur les contrats |
+| 12 | Contexte de recherche | recherche filtrée servie et partageable, résultat vide rend une liste vide |
 | Agent mandaté (portée « location ») sur un dossier | `canDecide = true`, « étudier » puis « accepter » → dossier `acceptee`, motif conservé, candidat notifié |
 | Agent mandaté (portée « visite ») | confirme puis constate la visite ; le client peut alors déposer son dossier |
 | Second dépôt sur un créneau déjà réservé | `409` — « Ce créneau vient d’être réservé. » (incrément atomique) |
@@ -348,6 +369,14 @@ comme terminés :
    opaques, anti-force brute, journal) est solide mais n’a pas été revu par un tiers.
 4. **Pas de chiffrement au repos** des pièces justificatives — le stockage n’est pas
    encore ouvert.
+5. **Tests de bout en bout dans un vrai navigateur : bloqués dans cet
+   environnement.** Playwright exige de télécharger un binaire Chromium depuis
+   `cdn.playwright.dev`, injoignable ici (`SSL_ERROR_SYSCALL`), alors que
+   `registry.npmjs.org` répond normalement. Les parcours sont donc vérifiés par
+   `npm run test:scenarios`, qui joue les mêmes scénarios sur un serveur réel
+   avec de vrais comptes, sans navigateur. Le jour où le binaire est
+   disponible, `npm run test:scenarios` reste la référence métier et un
+   pilotage navigateur viendrait s’y ajouter, pas s’y substituer.
 
 ---
 
@@ -355,8 +384,9 @@ comme terminés :
 
 ```bash
 cd homera
-npm run test:backend         # scénarios métier sur la base (196 vérifications)
-node scripts/audit-home.mjs  # audit HTTP : liens, contenu, poids servi, CSS compilé
+npm run test:backend         # scénarios métier sur la base (199 vérifications)
+npm run test:scenarios       # les 12 scénarios, serveur démarré
+npm run audit:home           # audit HTTP : liens, contenu, poids servi, CSS compilé
 npm test               # test-motion.mjs puis test:backend
 npm run lint           # ESLint
 npx tsc --noEmit       # types

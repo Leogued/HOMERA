@@ -5,7 +5,7 @@
 
 ---
 
-## Commandes de validation obligatoires (6 / 6 vertes)
+## Commandes de validation obligatoires (8 / 8 vertes)
 
 Chaque modification doit passer cette séquence complète dans `homera/` :
 
@@ -15,8 +15,19 @@ npm run lint              # 2. ESLint strict (0 erreur, 0 warning)
 npx tsc --noEmit          # 3. TypeScript strict (0 erreur de typage)
 npm run quality:gate      # 4. Vérificateur statique du Quality Gate (0 violation)
 npm run build             # 5. Build de production Next.js (100 % des routes générées)
-npm run audit:home        # 6. Audit HTTP/DOM complet des routes publiques (0 lien/ancre/ARIA cassé)
+npm run audit:home        # 6. Audit HTTP/DOM des routes publiques, poids servi compris
+npm run test:backend      # 7. Règles métier sur la base (199 vérifications)
+npm run test:scenarios    # 8. Les 12 scénarios du cahier des charges, sur un serveur démarré
 ```
+
+`test:scenarios` a besoin d’un serveur réellement démarré (`npm start`) et
+d’une base amorcée (`npm run db:reset`). Il joue les douze parcours avec de
+vrais comptes : mandat agent, visites et conflits de créneaux, candidature,
+contrat et signature, filtrage du catalogue, favoris, messagerie, contrôle
+public d’un mandat, historique d’un bien, absence de paiement simulé et
+conservation du contexte de recherche. Une étape qui « réussit alors qu’elle
+devrait échouer » y est un échec : c’est la seule façon de prouver qu’une
+interdiction est réellement appliquée par le serveur.
 
 ---
 

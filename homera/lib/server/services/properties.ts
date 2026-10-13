@@ -693,6 +693,25 @@ export function ownerWorkspaceProperties(db: Db, ownerId: string): PropertyWorks
   return workspaceViews(db, rows);
 }
 
+/**
+ * Portée d’un mandat telle qu’elle est enregistrée : un tableau JSON.
+ * L’ancien format (liste séparée par des virgules) reste lisible, mais on
+ * ne découpe plus un JSON à la virgule — cela produisait des libellés
+ * comme `[\"visite\"` et une portée fausse dans l’espace agent.
+ */
+function parseScope(raw: string | null): string[] {
+  if (!raw) return [];
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (Array.isArray(parsed)) {
+      return parsed.filter((value): value is string => typeof value === "string").map((value) => value.trim()).filter(Boolean);
+    }
+  } catch {
+    /* ancien format : on retombe sur la liste séparée par des virgules */
+  }
+  return raw.split(",").map((value) => value.trim().replace(/^\[|\]$|"/g, "")).filter(Boolean);
+}
+
 /** Biens réellement couverts par un mandat actif, avec la portée du mandat. */
 export function agentWorkspaceProperties(db: Db, agentId: string): PropertyWorkspaceView[] {
   const rows = queryAll<PropertyRow & { aut_reference: string | null; aut_status: string | null; aut_scope: string | null; aut_expires: string | null }>(
@@ -708,7 +727,7 @@ export function agentWorkspaceProperties(db: Db, agentId: string): PropertyWorks
       ? {
           reference: row.aut_reference,
           status: row.aut_status ?? "",
-          scope: (row.aut_scope ?? "").split(",").filter(Boolean),
+          scope: parseScope(row.aut_scope),
           expiresAt: row.aut_expires ?? "",
         }
       : null,

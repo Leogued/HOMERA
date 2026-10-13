@@ -102,6 +102,7 @@ Légende : **B** = bloquant (empêche une mise en production honnête), **I** = 
 | **B11** | Un agent mandaté ne voyait pas les contrats des biens de son mandat, alors qu’il peut les rédiger. | `listContracts()` ajoute les biens couverts par un mandat actif, et rien de plus. |
 | **B12** | Le panneau « critères complémentaires » de l’explorateur n’existait que déplié : son `aria-controls` pointait vers un identifiant absent. | Le panneau reste monté avec `hidden`, l’identifiant existe toujours. |
 | **B13** | La vidéo d’accueil (4,45 Mo) restait attendue par l’audit. | L’audit vérifie au contraire qu’elle n’est plus téléchargée ni référencée. |
+| **B14** | L’espace agent relisait la portée d’un mandat en découpant le JSON à la virgule : la portée affichée devenait `[\"visite\"` / `"location"]`, donc fausse. | `parseScope()` lit le tableau JSON enregistré, avec repli sur l’ancien format ; trois assertions serveur le vérifient. |
 
 ---
 
@@ -133,7 +134,7 @@ Légende : **B** = bloquant (empêche une mise en production honnête), **I** = 
 | LOT 5 | Outils de contrôle administratif et workflow de vérification | ✅ Terminé — indicateurs réels, 8 étapes de vérification, décisions motivées, journal |
 | LOT 6 | Refonte des fiches de biens et d’Explorer | ✅ Terminé — filters, tri, facettes et pagination servis par SQL ; fiche enrichie (galerie, disponibilité, interlocuteur, signalement, biens comparables) |
 | LOT 7 | Navigation, espaces, messagerie, responsive, design system | ✅ Terminé — messagerie persistée, contrats réels, bascule d’espace, feuille de filtres mobile, aucune simulation financière |
-| LOT 8 | Tests complets, performances, documentation finale | ⏳ En cours — 196 assertions serveur, 67 assertions mouvement, audit HTTP avec budgets de poids |
+| LOT 8 | Tests complets, performances, documentation finale | ⏳ En cours — 12 scénarios sur serveur réel, 199 assertions serveur, budgets de poids, documentation à jour |
 
 > Les statuts de ce tableau sont mis à jour à la fin de chaque lot. Les preuves
 > (commandes exécutées et résultats) sont consignées dans `BACKEND.md` §8, une seule

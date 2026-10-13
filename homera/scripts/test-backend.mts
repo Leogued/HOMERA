@@ -685,6 +685,19 @@ check(
     .every((entry) => entry.clientId === agentId || entry.ownerId === agentId || testAgentMandates.has(entry.propertyId)),
 );
 
+/* La portée d’un mandat est relue telle qu’elle a été enregistrée : un
+   tableau JSON, jamais une découpe à la virgule. */
+const agentWorkspace = properties.agentWorkspaceProperties(db, "HOM-DEMO-AGENT");
+check("l’espace agent liste les biens mandatés", agentWorkspace.length > 0);
+check(
+  "la portée du mandat est relue sans artefact de format",
+  agentWorkspace.every((entry) => entry.mandate?.scope.every((value) => !value.includes("[") && !value.includes('"'))),
+);
+check(
+  "un mandat « visite + location » annonce bien les deux actions",
+  agentWorkspace.some((entry) => entry.mandate?.scope.includes("visite") && entry.mandate?.scope.includes("location")),
+);
+
 const auditEntries = auditModule.listAudit(db, { entityType: "mandat" });
 check("les actions sur mandats sont journalisées", auditEntries.length >= 2, `${auditEntries.length} entrées`);
 check("le journal porte un auteur et une date", auditEntries.every((entry) => entry.created_at.length > 10));

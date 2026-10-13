@@ -68,7 +68,7 @@ Référence technique : [`BACKEND.md`](./BACKEND.md). Aucune information n'est d
 | LOT 5 | Outils de contrôle administratif et workflow de vérification | **Livré** |
 | LOT 6 | Refonte des fiches de biens et d'Explorer | ✅ Livré — exploration servie par la base (filtres, tri, facettes, pagination) ; fiche : galerie, disponibilité, interlocuteur vérifié, signalement, biens comparables |
 | LOT 7 | Navigation, espaces, messagerie, responsive, design system | ✅ Livré — voir jalon 10 |
-| LOT 8 | Tests complets, performances, documentation finale | En cours — garde-fous de poids, 196 assertions serveur, 67 assertions mouvement, audit HTTP |
+| LOT 8 | Tests complets, performances, documentation finale | En cours — 12 scénarios sur serveur réel, 199 assertions serveur, garde-fous de poids, documentation à jour |
 
 ---
 
@@ -115,6 +115,14 @@ Référence technique : [`BACKEND.md`](./BACKEND.md) §8.3.
 - [x] Comptes (`/api/admin/users`) : suspension et réactivation motivées ; rôle d'administration réservé au super-administrateur.
 - [x] Catalogue administratif (`/api/admin/properties`) : remettre en ligne, suspendre, archiver ou renvoyer en instruction, avec motif obligatoire pour toute mesure défavorable.
 - [x] Statistiques : uniquement ce que la base sait compter. Aucun revenu, commission ou retrait n'est affiché plutôt que d'être simulé.
+
+## Jalon 11 — LOT 8 : tests, performances, documentation (en cours)
+
+- [x] **Les douze scénarios du cahier des charges joués sur un serveur réel** (`scripts/test-scenarios.mjs`, `npm run test:scenarios`) : mandat agent, visites et conflits, candidature, contrat, filtrage, favoris, messagerie, contrôle de mandat, historique, absence de paiement simulé, contexte de recherche. 12 réussites, 0 échec, rejouable à l'identique.
+- [x] **Garde-fous de performance** dans `scripts/audit-home.mjs` : poids servi (accueil, explorateur, fiche) et taille des paquets JS mesurés à chaque audit.
+- [x] **Documentation synchronisée** : `BACKEND.md` (scénarios, blocages), `AUDIT.md` (constats corrigés), `QUALITY_GATE.md` (8 commandes), `ROADMAP.md` et `CURRENT_STATE.md`.
+- [ ] **Tests de bout en bout dans un navigateur** : bloqués — Playwright télécharge son Chromium depuis `cdn.playwright.dev`, injoignable depuis cet environnement (`registry.npmjs.org` répond, pas le CDN). Le besoin est couvert sans navigateur par les scénarios HTTP.
+- [ ] **Téléversement réel des photos et des pièces** : les tables existent, le parcours déclare sans héberger.
 
 ### 6.3 Hors périmètre pilote, à décider avant production
 

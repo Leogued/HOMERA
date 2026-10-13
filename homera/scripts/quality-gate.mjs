@@ -215,8 +215,21 @@ await check("5. Cohérence fonctionnelle des espaces (Profil par rôle, Footer d
   assert.ok(!ownerWorkspace.includes("Continuer vers le paiement · bientôt disponible"), "OwnerSubscription ne doit plus contenir de bouton placeholder mort");
   assert.ok(ownerWorkspace.includes("/contact?sujet=gestion"), "OwnerSubscription doit orienter les formules sur devis vers /contact?sujet=gestion");
 
+  /* L’administration ne lit plus le workflow du navigateur : ses visites et
+     ses candidatures viennent du serveur, seul endroit qui connaît tous les
+     dossiers. La règle d’origine (reflet du stockage local) est donc
+     remplacée par son contraire mesurable. */
   const adminWorkspace = await readFile(path.join(appRoot, "components/workspace/AdminWorkspace.tsx"), "utf8");
-  assert.ok(adminWorkspace.includes("data.visits.map") && adminWorkspace.includes("data.applications.map"), "AdminRecords doit refléter les visites et demandes locales du workflow");
+  const adminServerSections = await readFile(path.join(appRoot, "components/workspace/AdminServerSections.tsx"), "utf8");
+  assert.ok(
+    adminWorkspace.includes("AdminVisitsTable") && adminWorkspace.includes("ServerApplicationsList"),
+    "les vues admin « visites » et « demandes » sont servies par le serveur",
+  );
+  assert.ok(adminServerSections.includes("/api/admin/visits"), "les visites de l’administration viennent de /api/admin/visits");
+  assert.ok(
+    !adminWorkspace.includes("data.visits.map") && !adminWorkspace.includes("data.applications.map"),
+    "l’administration ne lit plus le workflow local du navigateur",
+  );
 
   const agentWorkspace = await readFile(path.join(appRoot, "components/workspace/AgentWorkspace.tsx"), "utf8");
   assert.ok(agentWorkspace.includes('describeProfile("agent", account.profile)'), "AgentProfile doit afficher les champs détaillés du profil agent");
@@ -236,13 +249,26 @@ await check("5. Cohérence fonctionnelle des espaces (Profil par rôle, Footer d
   assert.ok(catalogExplorer.includes("onTermChange") && catalogExplorer.includes("priority={index < 3}"), "CatalogExplorer doit filtrer en temps réel et précharger les 3 premières cartes (priority)");
 
   const hero = await readFile(path.join(appRoot, "components/home/Hero.tsx"), "utf8");
-  assert.ok(hero.includes('preload="metadata"') && hero.includes('poster="/images/page-cotonou.jpg"'), "Hero doit utiliser preload=metadata et poster pour la rapidité mobile");
+  /* La vidéo d’ouverture (4,45 Mo) a été retirée : le héros affiche une image
+     optimisée chargée en priorité, et plus aucun fichier vidéo n’est référencé. */
+  assert.ok(hero.includes('mediaKey="page-cotonou"') && hero.includes("priority"), "Hero charge une image optimisée en priorité");
+  assert.ok(!hero.includes(".mp4") && !hero.includes("<video"), "Hero ne charge plus aucune vidéo");
 
+  /* Le compte n’existe plus dans le navigateur : AuthProvider relit la session
+     à chaque montage, sans cache et sans stockage local. */
   const authProvider = await readFile(path.join(appRoot, "components/providers/AuthProvider.tsx"), "utf8");
-  assert.ok(authProvider.includes("ACCOUNTS_STORAGE_KEY") && authProvider.includes("SESSION_STORAGE_KEY"), "AuthProvider doit filtrer strictement ses clés localStorage");
+  assert.ok(authProvider.includes("/api/auth/session") && authProvider.includes('cache: "no-store"'), "AuthProvider relit la session réelle du serveur");
+  assert.ok(!authProvider.includes("localStorage.setItem"), "AuthProvider n’écrit plus de compte dans le navigateur");
 
-  const siteLoading = await readFile(path.join(appRoot, "app/(site)/loading.tsx"), "utf8");
-  assert.ok(siteLoading.includes("homera-skeleton"), "app/(site)/loading.tsx doit fournir un état de chargement immédiat et stable");
+  /* Le squelette est propre à /explorer : posé sur tout le groupe (site), il
+     forçait l’envoi du statut 200 et transformait un 404 en page d’erreur… en
+     200. On vérifie donc son absence autant que sa présence ailleurs. */
+  const explorerLoading = await readFile(path.join(appRoot, "app/(site)/explorer/loading.tsx"), "utf8");
+  assert.ok(explorerLoading.includes("homera-skeleton"), "app/(site)/explorer/loading.tsx fournit un état de chargement immédiat et stable");
+  assert.ok(
+    !existsSync(path.join(appRoot, "app/(site)/loading.tsx")),
+    "aucun squelette de groupe ne doit masquer le statut 404",
+  );
 
   const workspaceShell = await readFile(path.join(appRoot, "components/workspace/WorkspaceShell.tsx"), "utf8");
   assert.ok(
@@ -260,17 +286,21 @@ await check("5. Cohérence fonctionnelle des espaces (Profil par rôle, Footer d
     "ClientDashboard (/client) doit utiliser le système de navigation commun WorkspaceShell sans <aside> dupliqué",
   );
 
+  /* Paiements : HOMERA n’encaisse rien en ligne. Le panneau montre ce qu’un
+     contrat signé prévoit, annonce l’absence d’encaissement et ne contient
+     aucune simulation (ni solde, ni retrait, ni bouton de règlement). */
   const paymentPanel = await readFile(path.join(appRoot, "components/workspace/PaymentMethodsPanel.tsx"), "utf8");
+  for (const forbidden of ["maskPaymentIdentifier", "DEMO_FINANCIAL_TRANSACTIONS", "computeActorBalances", "handlePayDueContractItem", "handleRequestWithdrawal"]) {
+    assert.ok(!paymentPanel.includes(forbidden), `PaymentMethodsPanel ne simule plus rien (${forbidden} absent)`);
+  }
   assert.ok(
-    paymentPanel.includes("PAYMENT_PROVIDERS") &&
-      paymentPanel.includes("maskPaymentIdentifier") &&
-      paymentPanel.includes("DEMO_FINANCIAL_TRANSACTIONS") &&
+    paymentPanel.includes("/api/contracts") &&
+      paymentPanel.includes("Aucun paiement, encaissement ou retrait n’est possible") &&
       ownerWorkspace.includes("PaymentMethodsWorkspace") &&
       agentWorkspace.includes("PaymentMethodsWorkspace") &&
-      adminWorkspace.includes("PaymentMethodsWorkspace") &&
       !profileSettings.includes("PaymentMethodsWorkspace") &&
       propertyDetail.includes("Cadre économique HOMERA"),
-    "PaymentMethodsPanel doit gérer les flux financiers HOMERA par rôle et PropertyDetail doit afficher le Cadre économique HOMERA",
+    "PaymentMethodsPanel affiche le dû contractuel par rôle et PropertyDetail le cadre économique HOMERA",
   );
 });
 
