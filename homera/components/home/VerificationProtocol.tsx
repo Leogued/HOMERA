@@ -60,7 +60,6 @@ export function VerificationProtocol() {
       <div className="relative z-[1] mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {" "}
         <SceneHeader
-                    eyebrow="Transparence & rigueur"
           tone="dark"
           title={
             <span id="protocole-titre">

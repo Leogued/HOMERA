@@ -23,7 +23,6 @@ import { useInView, useMotionPreferences } from "@/lib/motion";
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {" "}
         <SceneHeader
-                    eyebrow="Le magazine"
           title={<span id="magazine-titre">{EDITORIAL.title}</span>}
           intro={EDITORIAL.intro}
         />{" "}

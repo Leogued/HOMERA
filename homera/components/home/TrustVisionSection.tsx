@@ -36,7 +36,6 @@ export function TrustVisionSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {" "}
         <SceneHeader
-                    eyebrow="Manifeste"
           align="center"
           title={<span id="manifeste-titre">Restaurer la confiance dans la pierre béninoise</span>}
           intro="HOMERA ne cherche pas seulement à afficher des annonces : l’objectif est de créer une véritable infrastructure numérique autour du bien immobilier."

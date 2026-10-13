@@ -1,8 +1,7 @@
 "use client";
 import type { ReactNode } from "react";
 import { Reveal } from "@/components/ui/Reveal";
-/* ================================================================== HOMERA — SCÈNES ------------------------------------------------------------------ Briques communes à toutes les sections : en-tête de scène (sur-titre, titre, introduction) et fondus entre deux scènes pour éviter l’enchaînement « section blanche / section blanche ». ================================================================== */ export function SceneHeader({
-  eyebrow,
+/* ================================================================== HOMERA — SCÈNES ------------------------------------------------------------------ Briques communes à toutes les sections : en-tête de scène (titre, introduction) et fondus entre deux scènes pour éviter l’enchaînement « section blanche / section blanche ». ================================================================== */ export function SceneHeader({
   title,
   intro,
   align = "left",
@@ -10,7 +9,6 @@ import { Reveal } from "@/components/ui/Reveal";
   className = "",
   actions,
 }: {
-  eyebrow: string;
   title: ReactNode;
   intro?: ReactNode;
   align?: "left" | "center";
@@ -23,16 +21,6 @@ import { Reveal } from "@/components/ui/Reveal";
   return (
     <header className={`${isCenter ? "mx-auto max-w-3xl text-center" : "text-left"} ${className}`}>
       {" "}
-      <Reveal
-        y={14}
-        blur={3}
-        duration={640}
-        className="flex items-center gap-3"
-        style={{ justifyContent: isCenter ? "center" : "flex-start" }}
-      >
-        {" "}
-        <span className={`text-micro font-semibold uppercase tracking-[0.24em] ${muted}`}> {eyebrow} </span>{" "}
-      </Reveal>{" "}
       <Reveal
         delay={90}
         y={26}

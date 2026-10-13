@@ -27,9 +27,6 @@ export function IdentityStatement() {
         <span aria-hidden="true" className="homera-statement-thread mx-auto mb-10 block h-20 w-px bg-white/15">
           <span />
         </span>{" "}
-        <p className="mb-6 text-micro font-semibold uppercase tracking-[.3em] text-homera-amber">
-          Un lieu. Une identité. Une confiance.
-        </p>{" "}
         <h2 id="homera-statement-title" className="font-serif text-display-2xl">
           {" "}
           <span className="sr-only">{LINES.join(" ")}</span>{" "}

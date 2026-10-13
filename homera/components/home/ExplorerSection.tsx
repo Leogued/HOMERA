@@ -40,7 +40,6 @@ export function ExplorerSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {" "}
         <SceneHeader
-                    eyebrow="Explorer par intention"
           title={
             <span id="explorer-titre">
               Une vision fluide de vos ambitions{" "}
@@ -179,12 +178,8 @@ export function ExplorerSection() {
             );
           })}{" "}
         </div>{" "}
-        <div className="mt-6 flex items-center justify-between gap-4">
+        <div className="mt-6 flex items-center justify-end gap-4">
           {" "}
-          <p className="text-caption text-muted">
-            <span className="homera-num homera-accent-ink mr-3">{INTENTS[activeIndex].index} / 04</span>Une porte vers
-            votre projet.
-          </p>{" "}
           <div className="flex gap-2">
             {" "}
             <button

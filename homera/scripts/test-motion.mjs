@@ -244,17 +244,23 @@ await test('HOMERA : le protocole se navigue aux flèches, sans pastilles numér
   assert.ok(source.includes('h-10 w-10'), 'cibles tactiles de 40 px minimum');
   assert.ok(source.includes('lg:grid-cols-[1.1fr_1fr]'), 'plus de colonne vide pour la navigation retirée');
 });
-await test('HOMERA : l’accueil n’affiche aucun numéro de chapitre', async () => {
+await test('HOMERA : l’accueil n’affiche ni numéro ni sur-titre de chapitre', async () => {
   const home = (name) => readFile(new URL(`../components/home/${name}`, import.meta.url), 'utf8');
   const hero = await home('Hero.tsx');
   assert.doesNotMatch(hero, /CHAPTERS\[0\]/, 'plus de « 01 — Immersion » dans le hero');
   const scene = await readFile(new URL('../components/ui/Scene.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(scene, /\{index\}/, 'SceneHeader ne rend plus de numéro');
-  assert.ok(scene.includes('{eyebrow}'), 'le sur-titre reste affiché');
+  assert.doesNotMatch(scene, /eyebrow/, 'SceneHeader ne rend plus de sur-titre');
   for (const name of ['StatsSection.tsx', 'ExplorerSection.tsx', 'FeaturedProperties.tsx', 'PropertyDossier.tsx',
     'VerificationProtocol.tsx', 'ServicesSection.tsx', 'EditorialSection.tsx', 'TrustVisionSection.tsx']) {
     assert.doesNotMatch(await home(name), /index="0\d"/, `${name} ne numérote plus sa scène`);
+    assert.doesNotMatch(await home(name), /eyebrow="/, `${name} n’a plus de sur-titre`);
   }
+  const statement = await home('IdentityStatement.tsx');
+  assert.doesNotMatch(statement, /Un lieu\. Une identité/, 'la phrase d’accroche a quitté IdentityStatement');
+  const explorer = await home('ExplorerSection.tsx');
+  assert.doesNotMatch(explorer, /Une porte vers/, 'l’indicateur « X / 04 » a quitté ExplorerSection');
+  assert.ok(explorer.includes('justify-end'), 'les flèches restent recalées à droite');
   const page = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(page, /<ChapterRail/, 'le rail des 9 intitulés a quitté la page');
   assert.ok(page.includes('<ReadingProgress />'), 'la barre de progression reste');

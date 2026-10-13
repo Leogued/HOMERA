@@ -62,7 +62,6 @@ export function ServicesSection() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {" "}
         <SceneHeader
-                    eyebrow="Écosystème complémentaire"
           title={<span id="services-titre">Services sur-mesure pour votre habitat</span>}
           intro="Trouver un bien n’est que la première étape. HOMERA accompagne ensuite la gestion, l’entretien, le déménagement et la valorisation de votre patrimoine."
         />{" "}
