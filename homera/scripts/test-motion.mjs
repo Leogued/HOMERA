@@ -296,6 +296,14 @@ await test('HOMERA : dossier sans note ni mention, projection finale centrée', 
   assert.ok(trust.includes('mx-auto w-full max-w-2xl text-center'), 'le bloc final est centré');
   assert.ok(trust.includes('mt-7 flex flex-wrap items-center justify-center gap-3'), 'les deux boutons restent centrés');
 });
+await test('HOMERA : la légende du carrousel est incrustée sur la photo', async () => {
+  const card = await readFile(new URL('../components/catalog/PropertyCard.tsx', import.meta.url), 'utf8');
+  assert.ok(card.includes('homera-property-caption pointer-events-none absolute inset-x-0 bottom-0'), 'légende ancrée au bas, clics traversants');
+  assert.ok(card.includes('rounded-b-media bg-gradient-to-t from-[rgba(20,12,8'), 'fondu dégradé raccordé à la photo');
+  assert.ok(card.includes('line-clamp-2'), 'titre borné à deux lignes');
+  assert.doesNotMatch(card, /homera-property-explore/, 'pastille redondante supprimée');
+  assert.doesNotMatch(css, /\.homera-property-explore/, 'CSS de la pastille supprimé');
+});
 const floating = await import(await moduleUrl('lib/floating.ts', { '@/lib/motion-math': await moduleUrl('lib/motion-math.ts') }));
 await test('HOMERA : dropdowns dans le viewport, y compris paysage et clavier mobile', () => {
   for (const width of [320, 390, 768, 1440]) for (const height of [200, 320, 700]) for (const top of [15, height / 2, height - 55]) {

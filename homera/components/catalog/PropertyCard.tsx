@@ -2,7 +2,7 @@
 import Link from "next/link";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Bath, Bed, CalendarCheck, Eye, MapPin, Maximize, ShieldCheck } from "lucide-react";
+import { ArrowRight, Bath, Bed, CalendarCheck, MapPin, Maximize, ShieldCheck } from "lucide-react";
 import type { Property } from "@/lib/content";
 import { FEATURE_LABELS, INTENT_LABELS, TYPE_LABELS, formatPropertyPrice, formatSurface } from "@/lib/format";
 import { Reveal } from "@/components/ui/Reveal";
@@ -19,7 +19,8 @@ import { TextRoll } from "@/components/ui/TextRoll";
                    lien couvre toute la surface, le clavier s’arrête
                    une fois dessus, Entrée ou Espace ouvre la fiche ;
    • « gallery » — carrousel de l’accueil : la photo ouvre l’aperçu
-                   natif, avec la profondeur propre à la galerie.
+                   natif, avec la profondeur propre à la galerie ; la
+                   légende est incrustée sur le bas de la photo.
 
    Contrat d’accessibilité tenu dans les deux cas :
    • un seul arrêt de tabulation pour consulter le bien ;
@@ -98,6 +99,41 @@ export function PropertyCard(props: {
     </p>
   );
 
+  /* Légende incrustée (galerie) : mêmes contenus que la grille, teintes
+     claires pour rester lisibles sur le fondu sombre. */
+  const captionLocation = (
+    <p className="flex items-center gap-1.5 text-caption text-homera-cream/90">
+      <MapPin className="h-3.5 w-3.5 text-homera-amber" aria-hidden="true" />
+      {property.district}, {property.city}
+    </p>
+  );
+
+  const captionSpecs = (
+    <ul className="flex flex-wrap gap-x-4 gap-y-1 text-note text-homera-cream/85">
+      {property.bedrooms > 0 && (
+        <li className="homera-num inline-flex items-center gap-2">
+          <Bed className="h-4 w-4" aria-hidden="true" />
+          {property.bedrooms} ch.
+        </li>
+      )}
+      {property.bathrooms > 0 && (
+        <li className="homera-num inline-flex items-center gap-2">
+          <Bath className="h-4 w-4" aria-hidden="true" />
+          {property.bathrooms} sdb.
+        </li>
+      )}
+      <li className="homera-num inline-flex items-center gap-2">
+        <Maximize className="h-4 w-4" aria-hidden="true" />
+        {formatSurface(property.surface)}
+      </li>
+      {property.rooms ? <li className="homera-num inline-flex items-center gap-2">{property.rooms} pièces</li> : null}
+    </ul>
+  );
+
+  const captionPrice = (
+    <p className="homera-num shrink-0 text-body font-semibold text-white">{formatPropertyPrice(property)}</p>
+  );
+
   const price = (
     <p className="homera-num shrink-0 text-body font-semibold text-foreground">{formatPropertyPrice(property)}</p>
   );
@@ -135,7 +171,7 @@ export function PropertyCard(props: {
               veil="none"
               quality={72}
               priority={props.priority}
-              className="aspect-[16/10] w-full"
+              className="aspect-square w-full sm:aspect-[16/10]"
               imageClassName="homera-property-image"
             />
           </Reveal>
@@ -154,49 +190,44 @@ export function PropertyCard(props: {
           >
             <span className="sr-only">Voir le bien</span>
           </button>
-          <div className="absolute right-4 top-1/2 z-[4] -translate-y-1/2 sm:right-5">
-            <FavoriteButton propertyId={property.id} title={property.title} />
-          </div>
-          <div className="pointer-events-none absolute inset-x-5 bottom-5 z-[4] flex items-center justify-between gap-3 sm:inset-x-7 sm:bottom-7">
-            <span className="homera-num font-mono text-caption tracking-[.06em] text-homera-amber">
-              {property.homeraId}
-            </span>
-            <span className="homera-property-explore inline-flex items-center gap-2 rounded-full border border-white/35 bg-homera-paper/95 px-4 py-2 text-caption font-semibold text-homera-brown">
-              <Eye className="h-3.5 w-3.5" aria-hidden="true" />
-              Voir le bien
-            </span>
-          </div>
         </div>
 
-        <div className="homera-property-caption mt-5 px-1 sm:px-2">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-            <div className="min-w-0">
-              <div className="mb-2">{location}</div>
-              <h3 className="homera-property-title max-w-lg font-serif text-display-xs leading-snug text-foreground sm:text-display-sm">
-                {property.title}
-              </h3>
-            </div>
-            {price}
+        {/* Légende incrustée : ancrée au bas de la carte, hors du bloc photo
+            transformé en 3D — les prix restent immobiles. Les clics traversent
+            vers le bouton de la photo, sauf le lien et le favori. */}
+        <div className="homera-property-caption pointer-events-none absolute inset-x-0 bottom-0 z-[2] rounded-b-media bg-gradient-to-t from-[rgba(20,12,8,.92)] via-[rgba(20,12,8,.55)] to-transparent px-5 pb-4 pt-8 text-white sm:px-6 lg:px-7 lg:pb-6 lg:pt-16">
+          <div className="flex items-center justify-between gap-3">
+            <span className="homera-num font-mono text-micro tracking-[.08em] text-homera-amber">
+              {property.homeraId}
+            </span>
+            <span className="pointer-events-auto">
+              <FavoriteButton propertyId={property.id} title={property.title} />
+            </span>
           </div>
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
-            {specs}
-            {/* Même action que la photo : affordance souris, sans second arrêt clavier. */}
-            <button
-              type="button"
-              onClick={props.onOpen}
-              tabIndex={-1}
-              aria-hidden="true"
-              data-cursor="property"
-              className="homera-underline inline-flex min-h-10 items-center gap-2 homera-accent-ink text-note font-medium"
-            >
-              <TextRoll>Voir le bien</TextRoll>
-              <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-            </button>
+          <div className="mt-1.5">{captionLocation}</div>
+          <h3 className="homera-property-title mt-1 line-clamp-2 font-serif text-display-xs leading-snug lg:text-display-sm">
+            {property.title}
+          </h3>
+          <div className="mt-2 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+            {captionPrice}
+            {captionSpecs}
           </div>
-          <p className="homera-property-secondary mt-2 flex min-h-5 items-center gap-2 text-caption text-muted">
-            <CalendarCheck className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />
+          <p className="homera-property-secondary mt-1.5 flex items-center gap-2 text-micro text-homera-cream/75">
+            <CalendarCheck className="h-3.5 w-3.5 shrink-0 text-homera-amber" aria-hidden="true" />
             Vérifié le {property.verifiedOn} · Mandat valide
           </p>
+          {/* Même action que la photo : affordance souris, sans second arrêt clavier. */}
+          <button
+            type="button"
+            onClick={props.onOpen}
+            tabIndex={-1}
+            aria-hidden="true"
+            data-cursor="property"
+            className="homera-underline pointer-events-auto mt-1 inline-flex min-h-8 items-center gap-2 text-note font-medium text-white"
+          >
+            <TextRoll>Voir le bien</TextRoll>
+            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+          </button>
         </div>
       </article>
     );

@@ -1335,7 +1335,6 @@ a {
 .homera-property-title { transition: transform 350ms var(--homera-ease); }
 .homera-property-object:is(:hover, :focus-within) .homera-property-title { transform: translateY(-2px); }
 .homera-property-secondary { opacity: 1; }
-.homera-property-explore { transition: opacity 280ms, transform var(--duration-base) var(--homera-ease); }
 .homera-gallery-marker span { width: 5px; height: 5px; border-radius: 100%; background: var(--muted); transition: width 280ms var(--homera-ease), background-color 280ms; }
 .homera-gallery-marker[aria-pressed="true"] span { width: 20px; border-radius: 3px; background: var(--homera-terracotta); }
 @media (min-width: 640px) {
@@ -1348,8 +1347,6 @@ a {
   .homera-property-object[data-active="false"] .homera-property-secondary { opacity: 0; transform: translateY(5px); }
   .homera-property-secondary { transition: opacity 320ms, transform 420ms var(--homera-ease); }
   .homera-property-object:is(:hover, :focus-within) .homera-property-secondary { opacity: 1; transform: none; }
-  .homera-property-object[data-active="false"] .homera-property-explore { opacity: 0; transform: translateY(5px); }
-  .homera-property-object:is(:hover, :focus-within) .homera-property-explore { opacity: 1; transform: none; }
 }
 
 /* Aperçu : native dialog, sans portail ni librairie de modale. */
@@ -1532,7 +1529,7 @@ a {
   .homera-property-photo, .homera-property-title { transform: none !important; }
   .homera-roll-echo { visibility: hidden; }
   .homera-scroll-word, .homera-property-secondary, .homera-final-content { opacity: 1 !important; filter: none !important; }
-  .homera-property-secondary, .homera-property-explore { transform: none !important; opacity: 1 !important; }
+  .homera-property-secondary { transform: none !important; opacity: 1 !important; }
 }
 
 /* JS indisponible : les récits et les portes se lisent sans animation. */
