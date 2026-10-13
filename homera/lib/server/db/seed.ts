@@ -270,7 +270,66 @@ function seedProperties(db: Db): void {
         "UPDATE verification_steps SET status = 'non-applicable', comment = 'Aucune visite de contrôle réalisée : vérification documentaire uniquement.', actor_id = 'HOM-DEMO-ADMIN', updated_at = ? WHERE verification_id = ? AND step_key = 'sur-place'",
       ).run(verifiedOn ?? CREATED_AT, verification.id);
     }
+    traceProperty(db, property.id, owner, property.publishedAt, verifiedOn);
   });
+}
+
+/**
+ * Journal d’amorçage d’un bien : les mêmes entrées que celles qu’écrit le
+ * serveur en production, datées par les colonnes du bien lui-même. La page
+ * « historique » publique ne lit que ce journal : sans ces entrées, un bien
+ * n’aurait aucune trace à montrer.
+ */
+function traceProperty(
+  db: Db,
+  propertyId: string,
+  ownerId: string,
+  publishedAt: string,
+  verifiedOn: string | null,
+): void {
+  const insert = db.prepare(
+    `INSERT INTO audit_log (id, actor_id, actor_label, action, entity_type, entity_id, detail, ip, created_at)
+     VALUES (?, ?, ?, ?, 'bien', ?, ?, '', ?)`,
+  );
+  const ownerLabel = ownerId === "HOM-DEMO-PROP" ? "prop@homera.demo" : "owner2@homera.demo";
+  /* Les dates d’amorçage arrivent parfois en `YYYY-MM-DD` : le journal est
+     normalisé en ISO complet pour rester triable avec les écritures
+     produites par le serveur. */
+  const asIso = (value: string) => {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toISOString();
+  };
+  const created = isoAfter(asIso(publishedAt), -2);
+  insert.run(newId("LOG"), ownerId, ownerLabel, "bien.cree", propertyId, JSON.stringify({}), created);
+  insert.run(newId("LOG"), ownerId, ownerLabel, "bien.soumis", propertyId, JSON.stringify({}), isoAfter(created, 1));
+  if (verifiedOn) {
+    insert.run(
+      newId("LOG"),
+      "HOM-DEMO-ADMIN",
+      "admin@homera.demo",
+      "verification.valide",
+      propertyId,
+      JSON.stringify({ kind: "documentaire" }),
+      asIso(verifiedOn),
+    );
+  }
+  insert.run(
+    newId("LOG"),
+    "HOM-DEMO-ADMIN",
+    "admin@homera.demo",
+    "bien.publication.publie",
+    propertyId,
+    JSON.stringify({}),
+    asIso(publishedAt),
+  );
+}
+
+/** Décale une date ISO de `days` jours : les dates d’amorçage sont relatives. */
+function isoAfter(iso: string, days: number): string {
+  const base = new Date(iso);
+  if (Number.isNaN(base.getTime())) return iso;
+  base.setUTCDate(base.getUTCDate() + days);
+  return base.toISOString();
 }
 
 /** Mandats de démonstration : l’agent ne voit que ce qui est réellement actif. */

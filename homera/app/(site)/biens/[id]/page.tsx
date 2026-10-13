@@ -5,6 +5,7 @@ import {
   availabilityWindows, currentUnavailability, frenchDate, loadProperty, publicOwnerProfile, similarProperties,
 } from "@/lib/server/services/properties";
 import { getDb } from "@/lib/server/db/client";
+import { publicMandate } from "@/lib/server/services/authorizations";
 import { PropertyDetail } from "@/components/catalog/PropertyDetail";
 /* ==================================================================
    /biens/<identifiant> — LA FICHE PUBLIQUE D’UN BIEN
@@ -56,6 +57,9 @@ export default async function BienPage({ params }: { params: Promise<{ id: strin
     .prepare<[string], { owner_id: string | null }>("SELECT owner_id FROM properties WHERE id = ?")
     .get(property.id)?.owner_id ?? null;
   const owner = publicOwnerProfile(db, ownerId);
+  /* Agent mandaté affiché sur la fiche : le mandat réellement opposable,
+     jamais une liste d’exemple. */
+  const mandate = publicMandate(db, property.id);
 
   return (
     <PropertyDetail
@@ -71,6 +75,7 @@ export default async function BienPage({ params }: { params: Promise<{ id: strin
           : "",
       }}
       owner={owner}
+      mandate={mandate}
     />
   );
 }

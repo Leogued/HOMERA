@@ -1,3 +1,4 @@
+import { listAudit } from "@/lib/server/audit";
 import type { Db } from "../db/client";
 import { newId, nowIso, queryAll, queryOne } from "../db/client";
 import type {
@@ -148,6 +149,121 @@ export function loadProperty(db: Db, id: string): Property | null {
   const row = queryOne<PropertyRow>(`${PROPERTY_COLUMNS} WHERE id = ? OR reference = ?`, [id, id]);
   if (!row) return null;
   return toProperty(row, photosOf(db, row.id), featuresOf(db, row.id));
+}
+
+/**
+ * Chronologie publique d’un bien : uniquement des événements réellement
+ * écrits dans le journal d’audit, traduits en langage lisible. Rien n’est
+ * illustré, aucune date n’est inventée : sans entrée, l’étape n’existe pas.
+ */
+const PUBLIC_PROPERTY_EVENTS: Record<string, string> = {
+  "bien.cree": "Dossier créé",
+  "bien.soumis": "Dossier soumis à la vérification",
+  "bien.modifie": "Fiche mise à jour",
+  "bien.disponibilite": "Disponibilité déclarée par le propriétaire",
+  "bien.publication.publie": "Publication dans le catalogue public",
+  "bien.publication.suspendu": "Annonce suspendue",
+  "bien.publication.loue": "Bien marqué comme loué",
+  "bien.publication.vendu": "Bien marqué comme vendu",
+  "bien.publication.archive": "Dossier archivé",
+  "bien.modification.refusee": "Modification refusée par l’administration",
+  "verification.etape": "Étape de vérification renseignée",
+  "verification.pieces.demandees": "Pièces complémentaires demandées",
+  "verification.valide": "Vérification documentaire validée",
+  "verification.refuse": "Vérification refusée",
+  "verification.suspendu": "Vérification suspendue",
+};
+
+const PUBLICATION_LABELS: Record<string, string> = {
+  brouillon: "brouillon",
+  soumis: "dossier soumis",
+  "en-verification": "vérification en cours",
+  publie: "publié",
+  suspendu: "suspendu",
+  loue: "loué",
+  vendu: "vendu",
+  archive: "archivé",
+};
+
+export type PublicHistoryEvent = {
+  title: string;
+  date: string;
+  detail: string;
+  status: "done" | "current";
+};
+
+export function publicPropertyHistory(
+  db: Db,
+  reference: string,
+): {
+  reference: string;
+  title: string;
+  place: string;
+  propertyId: string;
+  verifiedOn: string | null;
+  publishedAt: string | null;
+  events: PublicHistoryEvent[];
+} | null {
+  const row = queryOne<PropertyRow>(`${PROPERTY_COLUMNS} WHERE reference = ? OR id = ?`, [reference, reference]);
+  if (!row) return null;
+
+  /* Ordre : la date, puis le rang logique de l’action — deux écritures
+     du même jour doivent tout de même se lire dans le bon sens. */
+  const RANK: Record<string, number> = {
+    "bien.cree": 0,
+    "bien.soumis": 1,
+    "verification.pieces.demandees": 2,
+    "verification.etape": 3,
+    "verification.valide": 4,
+    "verification.refuse": 4,
+    "verification.suspendu": 4,
+    "bien.publication.publie": 5,
+    "bien.publication.suspendu": 6,
+    "bien.publication.loue": 6,
+    "bien.publication.vendu": 6,
+    "bien.publication.archive": 6,
+    "bien.modifie": 7,
+    "bien.disponibilite": 7,
+    "bien.modification.refusee": 7,
+  };
+  const entries = listAudit(db, { entityType: "bien", entityId: row.id, limit: 100 })
+    .filter((entry) => PUBLIC_PROPERTY_EVENTS[entry.action])
+    .sort((a, b) => {
+      const byDate = a.created_at.localeCompare(b.created_at);
+      if (byDate !== 0) return byDate;
+      return (RANK[a.action] ?? 9) - (RANK[b.action] ?? 9);
+    });
+
+  const events: PublicHistoryEvent[] = entries.map((entry) => ({
+    title: PUBLIC_PROPERTY_EVENTS[entry.action],
+    date: frenchDate(entry.created_at) || entry.created_at.slice(0, 10),
+    detail:
+      entry.action === "verification.etape" || entry.action === "verification.pieces.demandees"
+        ? "Étape du contrôle documentaire. Le détail du dossier reste réservé au propriétaire et à l’administration."
+        : entry.action.startsWith("verification.")
+          ? "Décision du contrôle documentaire HOMERA."
+          : "Événement enregistré dans le journal HOMERA.",
+    status: "done",
+  }));
+
+  events.push({
+    title: "État actuel du dossier",
+    date: frenchDate(row.updated_at) || frenchDate(row.created_at),
+    detail: `Le bien est « ${PUBLICATION_LABELS[row.publication_status] ?? row.publication_status} »${
+      row.verified_on ? `, vérifié le ${frenchDate(row.verified_on)}` : ", sans vérification documentaire à ce jour"
+    }.`,
+    status: "current",
+  });
+
+  return {
+    reference: row.reference,
+    title: row.title,
+    place: [row.district, row.commune || row.city].filter(Boolean).join(", ") || row.city,
+    propertyId: row.id,
+    verifiedOn: row.verified_on,
+    publishedAt: row.published_at,
+    events,
+  };
 }
 
 export type CatalogFilters = {

@@ -225,11 +225,27 @@ export function createContractFromApplication(
    ------------------------------------------------------------------ */
 
 export function listContracts(db: Db, actor: UserContext): ContractView[] {
+  /* Un agent mandaté suit les contrats des biens qu’il gère : son mandat
+     est la seule source du droit de lecture, jamais le fait de connaître
+     l’identifiant du contrat. */
+  const mandatedProperties = db
+    .prepare<[string], { property_id: string }>(
+      "SELECT property_id FROM authorizations WHERE agent_id = ? AND status = 'active'",
+    )
+    .all(actor.id)
+    .map((row) => row.property_id);
+
   const rows = isAdminRole(actor.roles)
     ? queryAll<ContractRow>("SELECT * FROM contracts ORDER BY created_at DESC")
     : queryAll<ContractRow>(
-        "SELECT * FROM contracts WHERE client_id = ? OR owner_id = ? ORDER BY created_at DESC",
-        [actor.id, actor.id],
+        `SELECT * FROM contracts
+         WHERE client_id = ? OR owner_id = ?${
+           mandatedProperties.length
+             ? ` OR property_id IN (${mandatedProperties.map(() => "?").join(", ")})`
+             : ""
+         }
+         ORDER BY created_at DESC`,
+        [actor.id, actor.id, ...mandatedProperties],
       );
   return rows.map((row) => toView(db, row, actor));
 }

@@ -86,10 +86,13 @@ export function CatalogFilters({
      quartier. Le département est le premier niveau ; en le choisissant,
      les communes et quartiers proposés se resserrent d’eux-mêmes, car
      les facettes sont recalculées par le serveur avec ce filtre. */
+  const locationsUrl = query.department
+    ? `/api/locations?departement=${encodeURIComponent(query.department)}`
+    : "/api/locations";
   const locations = useServerResource<{
     departments: { value: string; count: number }[];
     communes: { value: string; count: number }[];
-  }>("/api/locations");
+  }>(locationsUrl);
   const departmentList = locations.data?.departments ?? [];
   const communeList = locations.data?.communes ?? [];
 

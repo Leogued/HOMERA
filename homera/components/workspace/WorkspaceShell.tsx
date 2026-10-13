@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useServerResource } from "@/lib/use-server-resource";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -14,7 +15,6 @@ import { useVisitor } from "@/components/providers/VisitorProvider";
 import { useWorkflow } from "@/components/providers/WorkflowProvider";
 import { accessibleWorkspaces, hasWorkspaceAccess, initials, type WorkspaceModeId } from "@/lib/auth";
 import type { AccountRole } from "@/lib/auth";
-import { DEMO_VERIFICATION_CASES } from "@/lib/portal-data";
 import type { AppNotification } from "@/lib/workflow";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY, DemoNotice } from "@/components/workspace/Primitives";
 
@@ -142,11 +142,15 @@ export function WorkspaceShell({
   const offline = !useSyncExternalStore(subscribeToNetwork, getOnlineStatus, () => true);
   const unread = data.notifications.filter((entry) => !entry.read).length;
   const favoriteCount = visitor.ready ? visitor.favorites.length : 0;
-  const openVerificationCount = DEMO_VERIFICATION_CASES.filter((entry) =>
-    ["a-examiner", "modification-demandee"].includes(data.verificationDecisions[entry.id] ?? entry.initialDecision),
-  ).length + data.listings.filter((entry) =>
-    ["en-verification", "modification-demandee"].includes(data.listingStatusOverrides[entry.id] ?? entry.status),
-  ).length;
+  /* Badge « vérifications » : le nombre vient du serveur, et seulement pour
+     l’administration (l’endpoint y est réservé). Aucun dossier d’exemple. */
+  const verifications = useServerResource<{ cases: { id: string; status: string }[] }>(
+    account?.admin || account?.superAdmin ? "/api/admin/verifications" : null,
+  );
+  const openVerificationCount =
+    verifications.data?.cases.filter((entry) =>
+      ["a-examiner", "incomplet", "en-cours", "a-reexaminer"].includes(entry.status),
+    ).length ?? 0;
   const title = sectionTitle(role, section);
   const activeRoleForProfile = role === "client" || role === "proprietaire" || role === "agent"
     ? role

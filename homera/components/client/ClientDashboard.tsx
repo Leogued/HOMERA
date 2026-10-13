@@ -37,7 +37,7 @@ import { CAPABILITIES, describeProfile, initials, maskPhone, roleDefinition, rol
 import type { PublicAccount } from "@/lib/accounts";
 import { countLabel, formatFCFA } from "@/lib/format";
 import { parseCatalogQuery } from "@/lib/properties";
-import { canClientPayContract, canClientPayVisit } from "@/lib/workflow";
+import { useServerResource } from "@/lib/use-server-resource";
 import { StatusBadge } from "@/components/workspace/Primitives";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import type { SavedSearch } from "@/lib/persistence";
@@ -127,24 +127,29 @@ function ClientDashboardContent() {
   const recentVisits = useMemo(() => [...workflow.data.visits].sort((a, b) => `${a.date} ${a.slot}`.localeCompare(`${b.date} ${b.slot}`)).slice(0, 3), [workflow.data.visits]);
   const recentApplications = useMemo(() => [...workflow.data.applications].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)).slice(0, 3), [workflow.data.applications]);
   const activeRentals = workflow.data.applications.filter((application) => application.stage === "active");
-  const payableContracts = workflow.data.contracts
+  /* Sommes réellement dues : celles qu’un contrat signé écrit. Rien n’est
+     réclamé pour une visite, et aucun historique de paiement local n’est
+     affiché puisqu’HOMERA n’encaisse rien depuis cette page. */
+  const serverContracts = useServerResource<{
+    contracts: {
+      id: string;
+      reference: string;
+      propertyTitle: string;
+      propertyReference: string;
+      status: string;
+      rent: number;
+      deposit: number;
+      duration: string;
+    }[];
+  }>("/api/contracts");
+  const payableWorkflowItems = (serverContracts.data?.contracts ?? [])
     .filter((contract) => contract.status === "signe")
-    .flatMap((contract) => {
-      const rentCheck = canClientPayContract(contract, workflow.data.transactions, "loyer");
-      return rentCheck.allowed
-        ? [{ id: `${contract.id}-loyer`, label: rentCheck.contextualLabel, title: contract.propertyTitle, href: `/client/contrats/${contract.id}` }]
-        : [];
-    });
-  const payableVisits = workflow.data.visits
-    .filter((visit) => visit.status === "confirmee")
-    .flatMap((visit) => {
-      const visitCheck = canClientPayVisit(visit, workflow.data.transactions, 5000);
-      return visitCheck.allowed
-        ? [{ id: `${visit.id}-visite`, label: visitCheck.contextualLabel, title: visit.propertyTitle, href: "/client/visites" }]
-        : [];
-    });
-  const payableWorkflowItems = [...payableContracts, ...payableVisits];
-  const recentTransactions = workflow.data.transactions.slice(0, 3);
+    .map((contract) => ({
+      id: `${contract.id}-loyer`,
+      label: `${contract.reference} · loyer ${formatFCFA(contract.rent)} + caution ${formatFCFA(contract.deposit)}`,
+      title: contract.propertyTitle,
+      href: `/client/contrats/${contract.id}`,
+    }));
   const recentMessages = useMemo(() => [...workflow.data.messages].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 3), [workflow.data.messages]);
   const unreadWorkflowNotifications = useMemo(
     () => (workflow.ready ? workflow.data.notifications.filter((entry) => !entry.read) : []),
@@ -449,18 +454,17 @@ function ClientDashboardContent() {
               icon={House}
               eyebrow="Mon logement"
               title="Location active & paiements"
-              description="Contrat, échéances autorisées par le workflow, reçus et moyens de paiement."
-              action={{ href: "/client/paiements", label: "Paiements & reçus" }}
-              badge={<AvailabilityBadge>Prototype local</AvailabilityBadge>}
+              description="Contrat signé, montants prévus et marche à suivre pour le règlement."
+              action={{ href: "/client/paiements", label: "Paiements" }}
               className="xl:col-span-6"
             >
-              {!workflow.ready ? (
+              {!workflow.ready || serverContracts.loading ? (
                 <PanelLoading label="Lecture de vos contrats…" />
-              ) : activeRentals.length === 0 && payableWorkflowItems.length === 0 && recentTransactions.length === 0 ? (
+              ) : activeRentals.length === 0 && payableWorkflowItems.length === 0 ? (
                 <EmptyState
                   icon={Building2}
                   title="Aucune location active ni échéance due"
-                  description="Aucun paiement n’est demandé avant la confirmation d’un rendez-vous ou la signature d’un contrat."
+                  description="Aucun paiement n’est demandé avant la signature d’un contrat. Une visite ne coûte rien."
                   action={{ href: "/client/contrats", label: "Mes contrats" }}
                 />
               ) : (
@@ -491,23 +495,6 @@ function ClientDashboardContent() {
                         </span>
                       </span>
                       <StatusBadge status={application.stage} />
-                    </Link>
-                  ))}
-                  {recentTransactions.map((tx) => (
-                    <Link
-                      key={tx.id}
-                      href="/client/paiements"
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/35"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate text-note font-semibold text-foreground">{tx.label}</span>
-                        <span className="mt-0.5 block font-mono text-caption text-muted">
-                          {tx.reference} · {tx.methodSummary}
-                        </span>
-                      </span>
-                      <span className="homera-num text-caption font-semibold text-foreground">
-                        {formatFCFA(tx.amount)}
-                      </span>
                     </Link>
                   ))}
                 </div>

@@ -245,6 +245,102 @@ export function activeAuthorizationFor(
   return { status: row.status, agent_id: row.agent_id, scope };
 }
 
+/**
+ * Mandat opposable affichable sur une fiche publique : actif, non expiré,
+ * et limité à ce qu’un visiteur a le droit de savoir (nom de l’agent,
+ * matricule, nature du mandat, échéance). Aucune donnée privée.
+ */
+export function publicMandate(
+  db: Db,
+  propertyId: string,
+): { agentId: string; agentName: string; matricule: string | null; mandateType: string; expiresAt: string } | null {
+  expireAuthorizations(db);
+  const row = queryOne<{ agent_id: string | null; mandate_type: string; expires_at: string }>(
+    "SELECT agent_id, mandate_type, expires_at FROM authorizations WHERE property_id = ? AND status = 'active' AND expires_at >= ? ORDER BY created_at DESC",
+    [propertyId, nowIso()],
+  );
+  if (!row?.agent_id) return null;
+  const agent = queryOne<{ prenom: string; nom: string }>("SELECT prenom, nom FROM users WHERE id = ?", [row.agent_id]);
+  if (!agent) return null;
+  const matricule = queryOne<{ matricule: string }>("SELECT matricule FROM agents WHERE user_id = ?", [row.agent_id]);
+  return {
+    agentId: row.agent_id,
+    agentName: `${agent.prenom} ${agent.nom}`.trim() || "Agent HOMERA",
+    matricule: matricule?.matricule ?? null,
+    mandateType: row.mandate_type,
+    expiresAt: row.expires_at,
+  };
+}
+
+/**
+ * Contrôle public d’un mandat : on ne répond que si le visiteur connaît
+ * déjà les deux éléments du couple (matricule de l’agent + référence du
+ * bien). La réponse ne contient alors que ce qu’un badge laisse voir :
+ * l’existence du mandat, sa validité du jour, sa nature et son échéance.
+ */
+export function publicMandateCheck(
+  db: Db,
+  query: { agentRef: string; propertyRef: string },
+): {
+  active: boolean;
+  status: AuthorizationStatus;
+  agentName: string;
+  matricule: string;
+  propertyId: string;
+  propertyTitle: string;
+  propertyReference: string;
+  propertyCity: string;
+  mandateType: string;
+  scope: string[];
+  startsAt: string;
+  expiresAt: string;
+} | null {
+  const agentRef = query.agentRef.trim().toUpperCase();
+  const propertyRef = query.propertyRef.trim().toUpperCase();
+  if (!agentRef || !propertyRef) return null;
+  expireAuthorizations(db);
+
+  const agent = queryOne<{ user_id: string; matricule: string }>(
+    "SELECT user_id, matricule FROM agents WHERE UPPER(matricule) = ?",
+    [agentRef],
+  );
+  if (!agent) return null;
+  const property = queryOne<{ id: string; reference: string; title: string; city: string }>(
+    "SELECT id, reference, title, city FROM properties WHERE UPPER(reference) = ?",
+    [propertyRef],
+  );
+  if (!property) return null;
+
+  const row = queryOne<AuthorizationRow>(
+    "SELECT * FROM authorizations WHERE property_id = ? AND agent_id = ? ORDER BY created_at DESC",
+    [property.id, agent.user_id],
+  );
+  if (!row) return null;
+
+  const user = queryOne<{ prenom: string; nom: string }>("SELECT prenom, nom FROM users WHERE id = ?", [agent.user_id]);
+  let scope: string[] = [];
+  try {
+    const parsed = JSON.parse(row.scope) as unknown;
+    if (Array.isArray(parsed)) scope = parsed.filter((value): value is string => typeof value === "string");
+  } catch {
+    scope = [];
+  }
+  return {
+    active: row.status === "active" && new Date(row.expires_at).getTime() >= Date.now(),
+    status: row.status,
+    agentName: user ? `${user.prenom} ${user.nom}`.trim() || "Agent HOMERA" : "Agent HOMERA",
+    matricule: agent.matricule,
+    propertyId: property.id,
+    propertyTitle: property.title,
+    propertyReference: property.reference,
+    propertyCity: property.city,
+    mandateType: row.mandate_type,
+    scope,
+    startsAt: row.starts_at,
+    expiresAt: row.expires_at,
+  };
+}
+
 /** Passe les mandats dépassés au statut « expiré » et prévient les acteurs. */
 export function expireAuthorizations(db: Db): number {
   const rows = queryAll<AuthorizationRow>(

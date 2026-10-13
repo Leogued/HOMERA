@@ -20,7 +20,6 @@ import {
   getNeighborhoodContext,
   getPropertyCommitmentGuide,
 } from "@/lib/editorial-guides";
-import { DEMO_AGENT_AUTHORIZATIONS } from "@/lib/portal-data";
 import {
   INTENT_LABELS,
   LAND_TITLE_LABELS,
@@ -52,6 +51,7 @@ export function PropertyDetail({
   similar = [],
   availability = { status: property.availabilityStatus ?? "disponible", windows: [], note: "" },
   owner = null,
+  mandate = null,
 }: {
   property: Property;
   /** Biens comparables calculés par le serveur (même intention, gamme de prix voisine). */
@@ -60,6 +60,8 @@ export function PropertyDetail({
   availability?: { status: string; windows: AvailabilityWindow[]; note?: string };
   /** Profil public du propriétaire : ce qu’un visiteur a le droit de savoir. */
   owner?: VerifiedOwner | null;
+  /** Mandat d’agent réellement opposable sur ce bien, ou `null`. */
+  mandate?: { agentId: string; agentName: string; matricule: string | null; mandateType: string; expiresAt: string } | null;
 }) {
   const facts = [
     { label: "Type de bien", value: TYPE_LABELS[property.type], icon: Building2 },
@@ -359,11 +361,11 @@ export function PropertyDetail({
                 <Link href={`/historique/${property.homeraId}`} className="homera-underline inline-flex min-h-9 items-center gap-1.5 text-caption font-semibold homera-accent-ink">
                   Consulter l’historique du bien <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                 </Link>
-                {DEMO_AGENT_AUTHORIZATIONS.filter((authorization) => authorization.propertyId === property.id && authorization.status === "active").map((authorization) => (
-                  <Link key={authorization.agentId} href={`/verification-agent?agent=${authorization.agentId}&bien=${authorization.propertyRef}`} className="homera-underline inline-flex min-h-9 items-center gap-1.5 text-caption font-semibold homera-accent-ink">
+                {mandate ? (
+                  <Link href={`/verification-agent?agent=${mandate.agentId}&bien=${property.homeraId}`} className="homera-underline inline-flex min-h-9 items-center gap-1.5 text-caption font-semibold homera-accent-ink">
                     Vérifier l’agent autorisé <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
                   </Link>
-                ))}
+                ) : null}
               </div>
             </section>{" "}
           </div>{" "}

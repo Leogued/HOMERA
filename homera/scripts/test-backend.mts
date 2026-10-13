@@ -621,6 +621,62 @@ check("une seconde signature est refusée", !contracts.signContract(db, client, 
 check("un contrat signé ne s’annule plus", !contracts.cancelContract(db, owner, contractId, "Changement d’avis.").ok);
 check("le locataire est notifié du contrat", notificationsModule.listNotifications(db, client.id).some((entry) => entry.type === "contrat"));
 
+/* --- Mandat public, historique public et lecture agent -------------- */
+const activeMandate = authorizations.listAuthorizations(db, { agentId: "HOM-DEMO-AGENT", status: ["active"] });
+const mandatedProperty = activeMandate[0]?.propertyId ?? "";
+const publicMandateOn = properties.publicPropertyHistory(db, activeMandate[0]?.propertyReference ?? "");
+check("un bien référencé possède un historique public", Boolean(publicMandateOn && publicMandateOn.events.length > 0));
+check(
+  "l’historique public ne contient que des étapes réelles",
+  (publicMandateOn?.events ?? []).every((entry) => entry.date.length > 0 && entry.title.length > 0),
+);
+check("une référence inconnue n’a pas d’historique", properties.publicPropertyHistory(db, "HOM-INCONNU-000") === null);
+
+const agentMatricule = "AG-HOM-0248";
+const validCouple = authorizations.publicMandateCheck(db, {
+  agentRef: agentMatricule,
+  propertyRef: activeMandate[0]?.propertyReference ?? "",
+});
+check("le contrôle public confirme un mandat actif", validCouple?.active === true);
+check("le contrôle public n’expose pas de données privées", validCouple !== null && !Object.keys(validCouple).includes("note"));
+check(
+  "un matricule inconnu n’est pas confirmé",
+  authorizations.publicMandateCheck(db, { agentRef: "AG-HOM-9999", propertyRef: activeMandate[0]?.propertyReference ?? "" }) === null,
+);
+const expiredCouple = authorizations.listAuthorizations(db, { agentId: "HOM-DEMO-AGENT", status: ["expiree"] })[0];
+check(
+  "un mandat expiré n’est pas déclaré actif",
+  expiredCouple
+    ? authorizations.publicMandateCheck(db, {
+        agentRef: agentMatricule,
+        propertyRef: expiredCouple.propertyReference,
+      })?.active === false
+    : true,
+);
+check("le mandat public d’un bien non mandaté est vide", authorizations.publicMandate(db, "bien-sans-mandat") === null);
+check(
+  "le mandat public d’un bien mandaté est lisible",
+  mandatedProperty ? authorizations.publicMandate(db, mandatedProperty) !== null : true,
+);
+const homeraAgent = user("HOM-DEMO-AGENT");
+const agentMandates = new Set(
+  authorizations.listAuthorizations(db, { agentId: "HOM-DEMO-AGENT", status: ["active"] }).map((entry) => entry.propertyId),
+);
+const agentContracts = contracts.listContracts(db, homeraAgent);
+check(
+  "un agent ne lit que les contrats des biens de ses mandats",
+  agentContracts.every((entry) => agentMandates.has(entry.propertyId)),
+);
+const testAgentMandates = new Set(
+  authorizations.listAuthorizations(db, { agentId, status: ["active"] }).map((entry) => entry.propertyId),
+);
+check(
+  "un agent ne lit aucun contrat étranger à ses mandats",
+  contracts
+    .listContracts(db, user(agentId))
+    .every((entry) => entry.clientId === agentId || entry.ownerId === agentId || testAgentMandates.has(entry.propertyId)),
+);
+
 const auditEntries = auditModule.listAudit(db, { entityType: "mandat" });
 check("les actions sur mandats sont journalisées", auditEntries.length >= 2, `${auditEntries.length} entrées`);
 check("le journal porte un auteur et une date", auditEntries.every((entry) => entry.created_at.length > 10));

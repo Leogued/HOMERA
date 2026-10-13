@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ChevronDown, Heart, LogOut, MailCheck, Search, UserRound, UserRoundPlus } from "lucide-react";
+import { Briefcase, Building2, Check, ChevronDown, Heart, LogOut, MailCheck, Search, ShieldCheck, UserRound, UserRoundPlus } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { accessibleWorkspaces, initials, roleDefinition, rolesLabel } from "@/lib/auth";
 import { AUTH_HREF, SIGNUP_HREF, VERIFY_HREF } from "@/lib/nav";
@@ -29,6 +29,21 @@ const PILL: Record<Tone, string> = {
   night:
     "border border-white/15 bg-white/8 text-white backdrop-blur-sm hover:bg-white/14",
 };
+
+/* Icône d’un espace : la même que celle de la barre latérale, pour que le
+   menu de profil et le bandeau d’espace parlent de la même chose. */
+const SPACE_ICON = {
+  admin: ShieldCheck,
+  agent: Briefcase,
+  proprietaire: Building2,
+  client: UserRound,
+} as const;
+
+/** Un espace est actif quand la page courante est la sienne ou l’une de ses sous-pages. */
+function isSpaceActive(pathname: string | null, href: string): boolean {
+  if (!pathname) return false;
+  return pathname === href || pathname.startsWith(`${href}/`);
+}
 
 function accountProfileHref(account: Pick<PublicAccount, "roles">): string {
   if (account.roles.includes("proprietaire")) return "/proprietaire/profil";
@@ -153,17 +168,36 @@ export function AccountControl({ tone = "light" }: { tone?: Tone }) {
             </Link>
           ) : null}
 
+          <nav aria-label="Changer d’espace" className="border-b border-border py-1.5">
+            <p className="px-4 pb-1 pt-1 text-micro font-semibold uppercase tracking-[0.14em] text-muted">
+              Changer d’espace
+            </p>
+            {accessibleWorkspaces(account.roles, { admin: account.admin, superAdmin: account.superAdmin }).map((space) => {
+              const SpaceIcon = SPACE_ICON[space.id];
+              const active = isSpaceActive(pathname, space.href);
+              return (
+                <Link
+                  key={space.id}
+                  href={space.href}
+                  aria-current={active ? "page" : undefined}
+                  className={`flex items-start gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover ${
+                    active ? "bg-surface-hover" : ""
+                  }`}
+                >
+                  <SpaceIcon className="mt-0.5 h-4 w-4 shrink-0 text-homera-terracotta" aria-hidden="true" />
+                  <span className="min-w-0 flex-1">
+                    <span className={`block truncate ${active ? "font-semibold" : ""}`}>{space.label}</span>
+                    <span className="block truncate text-caption text-muted">{space.description}</span>
+                  </span>
+                  {active ? (
+                    <Check className="mt-0.5 h-4 w-4 shrink-0 text-homera-terracotta" aria-hidden="true" />
+                  ) : null}
+                </Link>
+              );
+            })}
+          </nav>
+
           <nav aria-label="Compte" className="py-1.5">
-            {accessibleWorkspaces(account.roles, { admin: account.admin, superAdmin: account.superAdmin }).map((space) => (
-              <Link
-                key={space.id}
-                href={space.href}
-                className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"
-              >
-                <UserRound className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />
-                {space.label}
-              </Link>
-            ))}
             <Link
               href={accountProfileHref(account)}
               className="flex items-center gap-2.5 px-4 py-2.5 text-note transition-colors hover:bg-surface-hover"
@@ -215,6 +249,7 @@ export function AccountMobileLinks({
   onNavigate?: () => void;
 }) {
   const { ready, account, signOut } = useAuth();
+  const pathname = usePathname();
   const dark = tone === "night";
 
   if (!ready || !account) {
@@ -272,12 +307,44 @@ export function AccountMobileLinks({
           </span>
         ))}
       </p>
+      <p className={`mt-3 px-3 text-micro font-semibold uppercase tracking-[0.19em] ${dark ? "text-white/45" : "text-muted"}`}>
+        Changer d’espace
+      </p>
+      <ul className="mt-1 space-y-1">
+        {accessibleWorkspaces(account.roles, { admin: account.admin, superAdmin: account.superAdmin }).map((space) => {
+          const active = isSpaceActive(pathname, space.href);
+          return (
+            <li key={space.href}>
+              <Link
+                href={space.href}
+                onClick={onNavigate}
+                aria-current={active ? "page" : undefined}
+                className={`flex min-h-10 items-center justify-between gap-2 rounded-xl px-3 py-2 text-body-sm transition-colors ${
+                  active
+                    ? dark
+                      ? "bg-white/12 font-semibold text-white"
+                      : "bg-surface-hover font-semibold text-foreground"
+                    : dark
+                      ? "text-white/85 hover:bg-white/8"
+                      : "text-foreground hover:bg-surface-hover"
+                }`}
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate">{space.label}</span>
+                  <span className={`block truncate text-micro ${dark ? "text-white/50" : "text-muted"}`}>
+                    {space.description}
+                  </span>
+                </span>
+                <span className={`shrink-0 text-micro font-semibold ${active ? "text-homera-amber" : dark ? "text-white/45" : "text-muted"}`}>
+                  {active ? "Actif" : "Ouvrir"}
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
       <ul className="mt-3 space-y-1">
         {[
-          ...accessibleWorkspaces(account.roles, { admin: account.admin, superAdmin: account.superAdmin }).map((space) => ({
-            href: space.href,
-            label: space.label,
-          })),
           { href: accountProfileHref(account), label: "Mon profil" },
           { href: "/client/favoris", label: "Favoris et recherches" },
           ...(account.emailVerified ? [] : [{ href: VERIFY_HREF, label: "Confirmer mon adresse" }]),

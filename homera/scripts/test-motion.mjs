@@ -1913,80 +1913,54 @@ await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (pro
   assert.deepEqual(auth.accessibleWorkspaces(['agent'], {}).map((entry) => entry.id), ['agent', 'client'], 'un agent n’a droit qu’à son espace et l’espace client');
   assert.deepEqual(auth.accessibleWorkspaces(['client'], { demoRole: 'admin' }).map((entry) => entry.id), ['admin', 'agent', 'proprietaire', 'client'], 'un compte admin bascule entre Admin, Agent, Propriétaire et Client');
 
+  const propertiesService = await readFile(new URL('../lib/server/services/properties.ts', import.meta.url), 'utf8');
+  const authorizationsService = await readFile(new URL('../lib/server/services/authorizations.ts', import.meta.url), 'utf8');
   const workspaceShell = await readFile(new URL('../components/workspace/WorkspaceShell.tsx', import.meta.url), 'utf8');
   assert.ok(workspaceShell.includes('Switch d’espace') && workspaceShell.includes('Navigation principale') && workspaceShell.includes('Actions secondaires'), 'WorkspaceShell structure la navigation en 3 niveaux UX');
   assert.ok(workspaceShell.includes('homera-nav-scroll') && !workspaceShell.includes('mt-auto border-t'), 'WorkspaceShell défile comme une seule zone continue sans pied de page fixe');
   assert.ok(clientDashboard.includes('<WorkspaceShell role="client" section="dashboard">') && !clientDashboard.includes('<aside'), 'ClientDashboard utilise le système de navigation commun WorkspaceShell');
 
-  // Moyens de paiement Bénin / UEMOA, modèle économique et flux financiers HOMERA
-  assert.equal(workflow.PAYMENT_PROVIDERS.length, 5, '5 canaux de paiement Bénin / UEMOA disponibles');
-  assert.equal(workflow.CLIENT_PAYMENT_PROVIDERS.length, 5, '5 moyens de paiement client');
+  // Canaux annoncés pour le pilote béninois. HOMERA n’encaisse rien en
+  // ligne : le panneau « paiements » liste les canaux prévus, sans jamais
+  // afficher de solde, de transaction ni de bouton de règlement simulé.
+  assert.equal(workflow.PAYMENT_PROVIDERS.length, 5, '5 canaux de paiement Bénin / UEMOA référencés');
+  assert.equal(workflow.CLIENT_PAYMENT_PROVIDERS.length, 5, '5 canaux de règlement côté client');
   assert.equal(workflow.PAYOUT_RECEPTION_PROVIDERS.length, 4, 'la carte bancaire est exclue des moyens de réception / retrait');
-  assert.ok(!workflow.PAYOUT_RECEPTION_PROVIDERS.some((p) => p.id === 'carte-bancaire'), 'jamais de retrait sur carte bancaire');
+  assert.ok(!workflow.PAYOUT_RECEPTION_PROVIDERS.some((entry) => entry.id === 'carte-bancaire'), 'jamais de retrait sur carte bancaire');
 
-  assert.match(workflow.maskPaymentIdentifier('mtn-momo', '+229 01 97 12 34 56'), /^\+229 01 •• •• •• 56$/);
-  assert.equal(workflow.maskPaymentIdentifier('carte-bancaire', '4821'), 'Carte •••• 4821');
-  assert.equal(workflow.maskPaymentIdentifier('virement-uemoa', 'BJ06000100029102', 'BOA Bénin'), 'BOA Bénin · BJ06 •••• •••• 9102');
+  // Aucune simulation financière : ni paiement, ni retrait, ni solde local.
+  assert.equal(workflow.maskPaymentIdentifier, undefined, 'aucun masquage d’identifiant : aucun moyen de paiement n’est stocké');
+  assert.equal(workflow.canClientPayContract, undefined, 'aucun bouton « payer » dérivé d’un état local');
+  assert.equal(workflow.canClientPayVisit, undefined, 'aucun frais de visite réclamé depuis l’interface');
+  assert.equal(workflow.computeActorBalances, undefined, 'aucun solde calculé localement');
+  assert.equal(workflow.computeFinancialBreakdown, undefined, 'aucune ventilation financière simulée');
 
-  // Conditionnement strict du bouton Payer à l'étape du workflow (contrat signé uniquement)
-  const unsignedContract = { id: 'c-1', applicationId: 'a-1', propertyId: 'p-1', propertyRef: 'HOM-CTN-000421', propertyTitle: 'Villa pilote', rent: 350000, duration: '12 mois', clauses: '', status: 'envoye', updatedAt: '2026-10-07T10:00:00.000Z' };
-  const signedContract = { ...unsignedContract, status: 'signe' };
-  assert.equal(workflow.canClientPayContract(unsignedContract, [], 'loyer').allowed, false, 'aucun paiement autorisé avant signature du contrat');
-  assert.equal(workflow.canClientPayContract(unsignedContract, [], 'loyer').reason, 'workflow-non-signe');
-  const allowedRent = workflow.canClientPayContract(signedContract, [], 'loyer');
-  assert.equal(allowedRent.allowed, true, 'paiement autorisé après signature du contrat');
-  assert.match(allowedRent.contextualLabel, /Payer la location · 350[\s\u202f]000 FCFA/, 'bouton contextualisé avec montant');
-
-  // Conditionnement strict des frais de visite (§9) : uniquement sur visite confirmée
-  const unconfirmedVisit = { id: 'v-1', propertyId: 'p-1', propertyRef: 'HOM-CTN-000421', propertyTitle: 'Villa pilote', clientName: 'Awa Dossou', date: '2026-10-10', slot: '10:00 – 12:00', status: 'demande-envoyee', createdAt: '2026-10-07T10:00:00.000Z' };
-  const confirmedVisit = { ...unconfirmedVisit, status: 'confirmee' };
-  assert.equal(workflow.canClientPayVisit(unconfirmedVisit, []).allowed, false, 'aucun paiement de visite avant confirmation du créneau');
-  assert.equal(workflow.canClientPayVisit(unconfirmedVisit, []).reason, 'workflow-non-confirme');
-  const allowedVisitFee = workflow.canClientPayVisit(confirmedVisit, [], 5000);
-  assert.equal(allowedVisitFee.allowed, true, 'paiement des frais de visite autorisé après confirmation du créneau');
-  assert.match(allowedVisitFee.contextualLabel, /Payer les frais de visite · 5[\s\u202f]000 FCFA/, 'bouton contextualisé pour les frais de visite');
-
-  // Ventilation économique : Brut Client -> Commission HOMERA -> Part Agent éventuelle -> Net Propriétaire
-  const splitWithAgent = workflow.computeFinancialBreakdown('loyer', 350000, 'AG-HOM-0248');
-  assert.equal(splitWithAgent.grossAmount, 350000);
-  assert.equal(splitWithAgent.homeraFee + splitWithAgent.agentAmount + splitWithAgent.ownerNetAmount, 350000);
-  assert.ok(splitWithAgent.homeraFee > 0 && splitWithAgent.agentAmount > 0 && splitWithAgent.ownerNetAmount > 0);
-
-  // Soldes acteurs : somme en attente != somme disponible, et autorisation agent != droit automatique
-  const sampleTxs = [
-    { id: 'tx-confirmed', reference: 'PAY-1', kind: 'loyer', label: 'Loyer 1', amount: 350000, provider: 'mtn-momo', methodSummary: 'MTN MoMo', status: 'confirme', agentId: 'AG-HOM-0248', createdAt: '2026-10-07T10:00:00.000Z' },
-    { id: 'tx-pending', reference: 'PAY-2', kind: 'loyer', label: 'Loyer 2', amount: 500000, provider: 'virement-uemoa', methodSummary: 'Virement', status: 'en-verification', createdAt: '2026-10-07T10:05:00.000Z' },
-  ];
-  const ownerBalances = workflow.computeActorBalances(sampleTxs, [], 'proprietaire');
-  assert.equal(ownerBalances.availableAmount, splitWithAgent.ownerNetAmount, 'seule la transaction confirmée est disponible');
-  assert.ok(ownerBalances.pendingAmount > 0, 'la transaction en vérification reste en attente');
-  assert.equal(ownerBalances.canWithdraw, true);
-
-  const authorizedAgentBalances = workflow.computeActorBalances(sampleTxs, [], 'agent', 'AG-HOM-0248');
-  assert.equal(authorizedAgentBalances.availableAmount, splitWithAgent.agentAmount, 'l’agent rattaché à l’opération voit sa part disponible');
-  const otherAgentBalances = workflow.computeActorBalances(sampleTxs, [], 'agent', 'AG-HOM-9999');
-  assert.equal(otherAgentBalances.availableAmount, 0, 'un agent non rattaché à l’opération ne reçoit rien');
-  assert.equal(otherAgentBalances.canWithdraw, false, 'aucun bouton de retrait pour un agent sans solde disponible');
-
-  const parsedWithPayments = workflow.parseWorkspace({
-    paymentMethods: [
-      { id: 'pm-1', provider: 'mtn-momo', holderName: 'Awa Dossou', maskedIdentifier: '+229 01 •• •• •• 56', usage: 'paiement', isDefault: true, createdAt: '2026-10-07T10:00:00.000Z' },
-      { id: 'pm-invalid', provider: 'unknown-provider', holderName: 'Test', maskedIdentifier: '123' },
-    ],
-    transactions: [
-      { id: 'tx-1', reference: 'PAY-CTN-102030', kind: 'loyer', label: 'Loyer Octobre', amount: 350000, provider: 'mtn-momo', methodSummary: 'MTN MoMo', status: 'confirme', createdAt: '2026-10-07T10:05:00.000Z' },
-      { id: 'tx-invalid', reference: 'BAD', provider: 'bad' },
-    ],
-  });
-  assert.equal(parsedWithPayments.paymentMethods.length, 1, 'seuls les moyens de paiement valides sont conservés');
-  assert.equal(parsedWithPayments.transactions.length, 1, 'seules les transactions valides sont conservées');
+  const workflowSource = await readFile(new URL('../lib/workflow.ts', import.meta.url), 'utf8');
+  assert.ok(!workflowSource.includes('PaymentTransactionRecord') && !workflowSource.includes('WithdrawalRecord'), 'le stockage local ne conserve plus aucune opération financière');
+  const portalData = await readFile(new URL('../lib/portal-data.ts', import.meta.url), 'utf8');
+  assert.ok(!portalData.includes('DEMO_FINANCIAL_TRANSACTIONS'), 'aucune transaction financière de démonstration dans le jeu de données');
 
   const paymentPanel = await readFile(new URL('../components/workspace/PaymentMethodsPanel.tsx', import.meta.url), 'utf8');
-  assert.ok(paymentPanel.includes('PAYMENT_PROVIDERS') && paymentPanel.includes('maskPaymentIdentifier') && paymentPanel.includes('canClientPayContract') && paymentPanel.includes('computeActorBalances') && paymentPanel.includes('DEMO_FINANCIAL_TRANSACTIONS'), 'PaymentMethodsPanel respecte le modèle économique et les flux financiers HOMERA');
-  // Les moyens d’encaissement concernent qui reçoit de l’argent : propriétaire
-  // et agent. L’administration n’a pas de compte de reversement, et surtout
-  // HOMERA n’a pas encore de module de facturation : plutôt que d’afficher des
-  // soldes simulés, l’écran statistiques le dit explicitement.
+  assert.ok(paymentPanel.includes('/api/contracts'), 'le panneau paiements lit les contrats réels du serveur');
+  assert.ok(paymentPanel.includes('Aucun paiement, encaissement ou retrait n’est possible'), 'l’absence d’encaissement en ligne est annoncée');
+  for (const forbidden of ['DEMO_FINANCIAL_TRANSACTIONS', 'updateData', 'createLocalId', 'handlePayDueContractItem', 'handleRequestWithdrawal', 'computeActorBalances', 'maskPaymentIdentifier']) {
+    assert.ok(!paymentPanel.includes(forbidden), `le panneau paiements ne simule plus rien (${forbidden} absent)`);
+  }
+  assert.ok(!/Retrait effectu\u00e9|Confirmer le paiement|Payer maintenant/.test(paymentPanel), 'aucun libellé ne laisse croire à un paiement exécuté');
+  assert.ok(paymentPanel.includes('/contact?objet=paiement'), 'une vraie sortie de secours est proposée : contacter HOMERA');
+
+  // Historique public d’un bien : construit depuis le journal d’audit, sans date inventée.
+  const propertyHistory = await readFile(new URL('../components/workspace/PropertyHistory.tsx', import.meta.url), 'utf8');
+  assert.ok(!propertyHistory.includes('DEMO_OWNER_LISTINGS') && !propertyHistory.includes('jeu de démonstration'), 'l’historique public n’affiche plus de données d’exemple');
+  assert.ok(propertyHistory.includes('PropertyHistoryData') && propertyHistory.includes('Événement journalisé'), 'chaque étape affichée est une entrée journalisée');
+  assert.ok(propertiesService.includes('publicPropertyHistory') && propertiesService.includes('listAudit'), 'l’historique est construit côté serveur depuis le journal');
+  assert.ok(propertiesService.includes('PUBLIC_PROPERTY_EVENTS'), 'seules les actions opposables sont rendues publiques');
+
+  // Contrôle public d’un mandat : lu dans le registre serveur des autorisations.
+  assert.ok(!agentVerification.includes('DEMO_AGENT_AUTHORIZATIONS'), 'le contrôle d’un mandat ne lit plus de données d’exemple');
+  assert.ok(authorizationsService.includes('publicMandateCheck') && authorizationsService.includes('publicMandate'), 'le registre des mandats est interrogé côté serveur');
+  assert.ok(workspaceShell.includes('/api/admin/verifications') && !workspaceShell.includes('DEMO_VERIFICATION_CASES'), 'le badge de vérifications compte les dossiers réels du serveur');
+
   assert.ok(ownerWorkspace.includes('PaymentMethodsWorkspace') && agentWorkspace.includes('PaymentMethodsWorkspace') && !profileSettings.includes('PaymentMethodsWorkspace'), 'PaymentMethodsWorkspace est intégré par rôle chez les bénéficiaires, sans doublon dans ProfileSettings');
   assert.ok(adminSections.includes('aucun revenu, commission ou retrait n’est affiché'), 'les statistiques admin n’affichent aucun flux financier simulé');
   assert.ok(propertyDetail.includes('Cadre économique HOMERA') && propertyDetail.includes('Loyer mensuel') && propertyDetail.includes('Total séjour') && propertyDetail.includes('Frais notariés'), 'PropertyDetail affiche le cadre économique HOMERA adapté au projet (louer, séjour, acheter)');
