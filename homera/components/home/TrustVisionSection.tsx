@@ -113,17 +113,17 @@ export function TrustVisionSection() {
               />{" "}
               <div className="homera-final-content absolute inset-0 flex flex-col justify-end p-7 text-white sm:p-12">
                 {" "}
-                <Reveal delay={140} y={24} className="max-w-2xl">
+                <Reveal delay={140} y={24} className="mx-auto w-full max-w-2xl text-center">
                   {" "}
                   <h3 className="font-serif text-display-sm leading-tight sm:text-display-lg">
                     {" "}
                     {FINAL_CTA.title}{" "}
                   </h3>{" "}
-                  <p className="mt-4 max-w-xl text-body-sm leading-relaxed text-homera-cream/90">
+                  <p className="mx-auto mt-4 max-w-xl text-body-sm leading-relaxed text-homera-cream/90">
                     {" "}
                     {FINAL_CTA.description}{" "}
                   </p>{" "}
-                  <div className="mt-7 flex flex-wrap items-center gap-3">
+                  <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
                     {" "}
                     <Button
                       ref={buttonRef}

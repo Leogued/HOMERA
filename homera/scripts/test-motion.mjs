@@ -284,6 +284,18 @@ await test('HOMERA : la sélection affiche tout, sans boutons de filtre', async 
   const content = await readFile(new URL('../lib/content.ts', import.meta.url), 'utf8');
   assert.doesNotMatch(content, /PROPERTY_FILTERS/, 'liste des libellés supprimée');
 });
+await test('HOMERA : dossier sans note ni mention, projection finale centrée', async () => {
+  const dossier = await readFile(new URL('../components/home/PropertyDossier.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(dossier, /DOSSIER\.note/, 'note retirée du dossier d’accueil');
+  assert.doesNotMatch(dossier, /Dossier de démonstration/, 'mention de démonstration retirée');
+  assert.ok(dossier.includes('Voir toute la fiche'), 'le bouton du récit reste');
+  assert.ok(dossier.includes('href="#protocole"'), 'le lien vers le protocole reste');
+  const content = await readFile(new URL('../lib/content.ts', import.meta.url), 'utf8');
+  assert.ok(content.includes('L’identifiant relie le bien'), 'la donnée reste pour la page À propos');
+  const trust = await readFile(new URL('../components/home/TrustVisionSection.tsx', import.meta.url), 'utf8');
+  assert.ok(trust.includes('mx-auto w-full max-w-2xl text-center'), 'le bloc final est centré');
+  assert.ok(trust.includes('mt-7 flex flex-wrap items-center justify-center gap-3'), 'les deux boutons restent centrés');
+});
 const floating = await import(await moduleUrl('lib/floating.ts', { '@/lib/motion-math': await moduleUrl('lib/motion-math.ts') }));
 await test('HOMERA : dropdowns dans le viewport, y compris paysage et clavier mobile', () => {
   for (const width of [320, 390, 768, 1440]) for (const height of [200, 320, 700]) for (const top of [15, height / 2, height - 55]) {

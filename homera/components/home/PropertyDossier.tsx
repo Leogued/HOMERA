@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useRef, useState } from "react";
-import { ArrowDown, CheckCircle2, ShieldCheck } from "lucide-react";
-import { DEMO_DATA, DOSSIER, PROPERTIES, type DossierField } from "@/lib/content";
+import { ArrowDown, ShieldCheck } from "lucide-react";
+import { DOSSIER, PROPERTIES, type DossierField } from "@/lib/content";
 import { SceneHeader } from "@/components/ui/Scene";
 import { Visual } from "@/components/ui/Visual";
 import { CopyReference } from "@/components/ui/CopyReference";
@@ -132,10 +132,6 @@ export function PropertyDossier() {
             </div>{" "}
             <div className="homera-story-tools mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 border-t border-border/60 pt-5">
               {" "}
-              <p className="max-w-lg text-center text-caption leading-relaxed text-muted">
-                <CheckCircle2 className="mr-2 inline h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />
-                {DOSSIER.note}
-              </p>{" "}
               {story && (
                 <button
                   type="button"
@@ -163,11 +159,6 @@ export function PropertyDossier() {
             </span>{" "}
           </div>{" "}
         </div>{" "}
-        {DEMO_DATA && (
-          <p className="mt-5 text-center text-micro leading-relaxed text-muted">
-            Dossier de démonstration · visuel illustratif · aucune garantie juridique implicite.
-          </p>
-        )}{" "}
       </div>{" "}
     </section>
   );
