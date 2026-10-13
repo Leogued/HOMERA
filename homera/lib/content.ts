@@ -33,8 +33,18 @@ const MEDIA_FALLBACKS: Record<string, string> = {
   "cta-night": "prop-villa",
 };
 
-/** Récupère un visuel du manifeste (repli documenté si la source n’existe pas encore). */
+/**
+ * Récupère un visuel du manifeste (repli documenté si la source
+ * n’existe pas encore).
+ *
+ * Une clé commençant par « / » n’est pas une clé mais le chemin d’une
+ * photo téléversée par le propriétaire (`/api/uploads/...`) : elle est
+ * servie telle quelle, sans miniature floutée — HOMERA ne réencode pas
+ * la photo de l’utilisateur, et le conteneur garde ses dimensions, donc
+ * aucun décalage de mise en page à l’arrivée de l’image.
+ */
 export function media(key: string): MediaAsset | null {
+  if (key.startsWith("/")) return { src: key, width: 0, height: 0, blurDataURL: "" };
   return MEDIA[key] ?? MEDIA[MEDIA_FALLBACKS[key] ?? ""] ?? null;
 }
 

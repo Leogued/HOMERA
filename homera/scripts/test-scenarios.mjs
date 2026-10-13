@@ -44,7 +44,9 @@ function mergeCookies(role, setCookie) {
 
 async function call(role, path, options = {}) {
   const headers = { ...(options.headers ?? {}) };
-  if (!headers["Content-Type"] && options.body !== undefined) headers["Content-Type"] = "application/json";
+  /* Un corps `FormData` porte sa propre boundary : seul un corps texte
+     reçoit l’en-tête JSON. */
+  if (!headers["Content-Type"] && typeof options.body === "string") headers["Content-Type"] = "application/json";
   const cookie = role ? cookiesOf(role) : anonymous;
   if (cookie) headers.Cookie = cookie;
   const response = await fetch(new URL(path, BASE), { ...options, headers, redirect: "manual" });
@@ -609,4 +611,65 @@ await test("12. une recherche filtrée reste servie et retrouvable", async () =>
   const emptyItems = empty.body?.data?.items ?? [];
   assert.equal(emptyItems.length, 0, "une recherche sans résultat rend une liste vide, jamais un exemple");
   assert.ok(empty.body?.ok, "la recherche vide répond correctement");
+});
+
+/* Un JPEG 1×1 valide : l’envoi est contrôlé sur les octets, pas sur
+   l’extension, donc le fichier doit être une vraie image. */
+const JPEG_BYTES = Buffer.from(
+  "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwcJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPDs0NDT/wAALCAABAAEBAREA/8QAFAABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AJQA/9k=",
+  "base64",
+);
+
+function photoForm(name, bytes, type) {
+  const form = new FormData();
+  form.append("photos", new Blob([bytes], { type }), name);
+  return form;
+}
+
+await test("13. le propriétaire envoie une vraie photo, et rien qu’une photo", async () => {
+  const signInProp = await signIn("prop");
+  assert.ok(signInProp, "connexion propriétaire");
+  const mine = await call("prop", "/api/owner/properties");
+  const propertyId = mine.body?.data?.properties?.[0]?.id;
+  assert.ok(propertyId, "le propriétaire a au moins un bien");
+
+  const before = await call("prop", `/api/properties/${propertyId}/photos`);
+  const beforeCount = before.body?.data?.photos?.length ?? 0;
+
+  const sent = await call("prop", `/api/properties/${propertyId}/photos/upload`, {
+    method: "POST",
+    headers: { Accept: "application/json" },
+    body: photoForm("facade.jpg", JPEG_BYTES, "image/jpeg"),
+  });
+  assert.equal(sent.status, 201, `envoi accepté : HTTP ${sent.status} — ${sent.body?.message ?? ""}`);
+  const photos = sent.body?.data?.photos ?? [];
+  assert.equal(photos.length, beforeCount + 1, "la photo est ajoutée à la galerie");
+  const uploaded = photos.at(-1);
+  assert.ok(uploaded.media_key.startsWith(`/api/uploads/properties/${propertyId}/`), `photo servie : ${uploaded.media_key}`);
+  assert.equal(uploaded.filename, "facade.jpg", "le nom d’origine est conservé");
+  assert.equal(uploaded.bytes, JPEG_BYTES.byteLength, "le poids réel est enregistré");
+
+  const served = await call(null, uploaded.media_key);
+  assert.equal(served.status, 200, "le fichier est servi");
+  assert.match(served.headers.get("content-type") ?? "", /^image\//, "le fichier est servi comme image");
+
+  const refused = await call("prop", `/api/properties/${propertyId}/photos/upload`, {
+    method: "POST",
+    headers: { Accept: "application/json" },
+    body: photoForm("fausse.jpg", Buffer.from("ceci n’est pas une image"), "image/jpeg"),
+  });
+  assert.equal(refused.status, 400, "un texte déguisé en image est refusé");
+  assert.match(refused.body?.message ?? "", /jpeg, png, webp ou avif/, "le refus nomme les formats acceptés");
+
+  const client = await call("user", `/api/properties/${propertyId}/photos/upload`, {
+    method: "POST",
+    headers: { Accept: "application/json" },
+    body: photoForm("intrus.jpg", JPEG_BYTES, "image/jpeg"),
+  });
+  assert.equal(client.status, 403, "un client ne dépose pas de photo sur le bien d’un autre");
+
+  const removed = await call("prop", `/api/properties/${propertyId}/photos?photo=${uploaded.id}`, { method: "DELETE" });
+  assert.equal(removed.status, 200, "le propriétaire retire la photo");
+  const gone = await call(null, uploaded.media_key);
+  assert.equal(gone.status, 404, "le fichier disparaît avec la ligne de base");
 });

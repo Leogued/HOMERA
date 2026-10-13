@@ -44,8 +44,8 @@ export function Visual({
           fill
           sizes={sizes}
           quality={quality}
-          placeholder="blur"
-          blurDataURL={asset.blurDataURL}
+          placeholder={asset.blurDataURL ? "blur" : "empty"}
+          {...(asset.blurDataURL ? { blurDataURL: asset.blurDataURL } : {})}
           priority={priority}
           loading={priority ? undefined : "lazy"}
           className={`object-cover ${imageClassName}`}

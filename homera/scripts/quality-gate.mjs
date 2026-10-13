@@ -311,6 +311,32 @@ await check("5. Cohérence fonctionnelle des espaces (Profil par rôle, Footer d
   );
 });
 
+await check("6. Photos téléversées : contrôle serveur, stockage hors code, diffusion sûre", async () => {
+  const uploads = await readFile(path.join(appRoot, "lib/server/uploads.ts"), "utf8");
+  assert.ok(uploads.includes("export function sniffImage"), "la nature du fichier est lue dans ses octets, jamais dans le type annoncé");
+  assert.ok(uploads.includes("PHOTO_MAX_BYTES") && uploads.includes("PHOTO_MAX_PER_PROPERTY"), "poids et nombre de photos sont plafonnés");
+  assert.ok(uploads.includes("randomUUID"), "le nom sur le disque est imprévisible");
+  assert.ok(uploads.includes("path.resolve") && uploads.includes("startsWith(root"), "le chemin servi reste sous la racine des téléversements");
+
+  const route = await readFile(path.join(appRoot, "app/api/properties/[id]/photos/upload/route.ts"), "utf8");
+  assert.ok(route.includes("request.formData()"), "l’envoi passe par multipart/form-data");
+  assert.ok(route.includes("currentUser()"), "l’envoi exige une session");
+
+  const serving = await readFile(path.join(appRoot, "app/api/uploads/[...path]/route.ts"), "utf8");
+  assert.ok(serving.includes("X-Content-Type-Options"), "la diffusion pose X-Content-Type-Options: nosniff");
+
+  /* Les fichiers ne vont jamais dans public/ : ce dossier est figé à la
+     compilation, un fichier écrit après le build ne serait pas servi. */
+  for (const forbidden of ['"public/', "public/uploads", "public\\uploads"]) {
+    assert.ok(!uploads.includes(forbidden), `aucun fichier n’est écrit dans public/ (${forbidden})`);
+  }
+
+  const wizard = await readFile(path.join(appRoot, "components/workspace/PropertyWizard.tsx"), "utf8");
+  assert.ok(wizard.includes('type="file"'), "l’assistant propose un vrai champ d’envoi");
+  assert.ok(wizard.includes("image/jpeg,image/png,image/webp,image/avif"), "les formats acceptés sont annoncés à l’utilisateur");
+  assert.ok(!wizard.includes("téléversement depuis votre appareil n’est pas encore ouvert"), "l’assistant n’annonce plus une limite qui n’existe plus");
+});
+
 const failed = checks.filter((c) => !c.ok);
 if (failed.length > 0) {
   console.error(`\n${failed.length} contrôle(s) du QUALITY_GATE ont échoué.`);

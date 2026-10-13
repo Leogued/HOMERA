@@ -16,6 +16,13 @@ import { writeAudit } from "../audit";
 import { notify } from "../notifications";
 import type { ServiceResult } from "./accounts";
 import type { PropertyDraftInput } from "../validation";
+import {
+  PHOTO_MAX_BYTES,
+  PHOTO_MAX_PER_PROPERTY,
+  deleteUpload,
+  saveUpload,
+  sniffImage,
+} from "../uploads";
 
 /* ==================================================================
    HOMERA — BIENS (service serveur)
@@ -78,6 +85,9 @@ export type PhotoRow = {
   position: number;
   is_main: number;
   approved: number;
+  filename: string | null;
+  bytes: number | null;
+  uploaded_at: string | null;
 };
 
 /* ------------------------------------------------------------------
@@ -1114,6 +1124,7 @@ export function removePhoto(db: Db, actor: UserContext, propertyId: string, phot
   if (!canEditProperty(actor, row, null) && !canModerate(actor)) {
     return { ok: false, code: "permission", message: "Action non autorisée." };
   }
+  const photo = photosOf(db, row.id).find((entry) => entry.id === photoId);
   db.transaction(() => {
     db.prepare("DELETE FROM property_photos WHERE id = ? AND property_id = ?").run(photoId, row.id);
     const remaining = photosOf(db, row.id);
@@ -1129,7 +1140,106 @@ export function removePhoto(db: Db, actor: UserContext, propertyId: string, phot
       detail: { photoId },
     });
   })();
+  /* Le fichier suit la ligne : un retrait qui laisserait le fichier sur
+     le disque garderait une photo accessible par son URL. */
+  if (photo) deleteUpload(photo.media_key);
   return { ok: true, data: { photos: photosOf(db, row.id) } };
+}
+
+/* ------------------------------------------------------------------
+   PHOTOS TÉLÉVERSÉES
+   ------------------------------------------------------------------
+   Le navigateur n’est jamais cru sur parole : le poids est mesuré sur
+   les octets reçus, la nature du fichier est lue dans son en-tête, et
+   le nom sur le disque est un identifiant imprévisible. Un envoi refusé
+   ne laisse aucun fichier derrière lui.
+   ------------------------------------------------------------------ */
+
+export type UploadedPhoto = { name: string; bytes: Uint8Array };
+
+export type PhotoRejection = { name: string; reason: string };
+
+export function uploadPhotos(
+  db: Db,
+  actor: UserContext,
+  propertyId: string,
+  files: UploadedPhoto[],
+): ServiceResult<{ photos: PhotoRow[]; added: number; rejected: PhotoRejection[] }> {
+  const row = queryOne<PropertyRow>(`${PROPERTY_COLUMNS} WHERE id = ? OR reference = ?`, [propertyId, propertyId]);
+  if (!row) return { ok: false, code: "introuvable", message: "Bien introuvable." };
+  if (!canEditProperty(actor, row, null) && !canModerate(actor)) {
+    return { ok: false, code: "permission", message: "Vous n’avez pas l’autorisation d’ajouter une photo sur ce bien." };
+  }
+  if (files.length === 0) return { ok: false, message: "Choisissez au moins une photo." };
+
+  const existing = photosOf(db, row.id);
+  const rejected: PhotoRejection[] = [];
+  const accepted: { bytes: Uint8Array; extension: ReturnType<typeof sniffImage>; name: string }[] = [];
+
+  for (const file of files) {
+    if (existing.length + accepted.length >= PHOTO_MAX_PER_PROPERTY) {
+      rejected.push({ name: file.name, reason: `Ce bien a déjà ${PHOTO_MAX_PER_PROPERTY} photos.` });
+      continue;
+    }
+    if (file.bytes.byteLength === 0) {
+      rejected.push({ name: file.name, reason: "Le fichier est vide." });
+      continue;
+    }
+    if (file.bytes.byteLength > PHOTO_MAX_BYTES) {
+      rejected.push({
+        name: file.name,
+        reason: `Fichier trop lourd (${(file.bytes.byteLength / 1024 / 1024).toFixed(1)} Mo) — 8 Mo maximum.`,
+      });
+      continue;
+    }
+    const extension = sniffImage(file.bytes);
+    if (!extension) {
+      rejected.push({ name: file.name, reason: "Format refusé : jpeg, png, webp ou avif uniquement." });
+      continue;
+    }
+    accepted.push({ bytes: file.bytes, extension, name: file.name });
+  }
+
+  if (accepted.length === 0) {
+    return {
+      ok: false,
+      message: rejected[0]?.reason ?? "Aucune photo n’a pu être enregistrée.",
+      fields: { photo: rejected[0]?.reason ?? "Aucune photo n’a pu être enregistrée." },
+    };
+  }
+
+  const saved: { url: string; filename: string; bytes: number }[] = [];
+  try {
+    let position = existing.length;
+    db.transaction(() => {
+      for (const file of accepted) {
+        const { url, filename } = saveUpload(`properties/${row.id}`, file.bytes, file.extension!, file.name);
+        saved.push({ url, filename, bytes: file.bytes.byteLength });
+        const id = newId("PHO");
+        const isMain = position === 0 ? 1 : 0;
+        db.prepare(
+          `INSERT INTO property_photos
+             (id, property_id, media_key, alt, position, is_main, approved, filename, bytes, uploaded_at, created_by, created_at)
+           VALUES (?, ?, ?, '', ?, ?, 1, ?, ?, ?, ?, ?)`,
+        ).run(id, row.id, url, position, isMain, filename, file.bytes.byteLength, nowIso(), actor.id, nowIso());
+        if (isMain) db.prepare("UPDATE properties SET main_photo_id = ?, updated_at = ? WHERE id = ?").run(id, nowIso(), row.id);
+        position += 1;
+      }
+      writeAudit(db, {
+        actorId: actor.id,
+        action: "bien.photo.televersee",
+        entityType: "bien",
+        entityId: row.id,
+        detail: { count: saved.length, names: saved.map((entry) => entry.filename) },
+      });
+    })();
+  } catch (error) {
+    /* Base ou disque indisponible : aucun fichier ne reste orphelin. */
+    for (const entry of saved) deleteUpload(entry.url);
+    throw error;
+  }
+
+  return { ok: true, data: { photos: photosOf(db, row.id), added: saved.length, rejected } };
 }
 
 /* ------------------------------------------------------------------

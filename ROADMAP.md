@@ -124,7 +124,8 @@ Référence technique : [`BACKEND.md`](./BACKEND.md) §8.3.
 - [x] **Tableau de bord client aligné sur le serveur** : visites, candidatures, locations, messages et notifications de `/client` viennent des mêmes API que les pages dédiées ; le stockage local ne peut plus contredire `/client/visites`.
 - [x] **Code mort retiré** : `lib/portal-data.ts` (253 lignes de jeu d'exemple) supprimé, et la copie devenue fausse (compte « dans le navigateur », favoris « jamais transmis ») réécrite.
 - [ ] **Tests de bout en bout dans un navigateur** : bloqués — Playwright télécharge son Chromium depuis `cdn.playwright.dev`, injoignable depuis cet environnement (`registry.npmjs.org` répond, pas le CDN). Le besoin est couvert sans navigateur par les scénarios HTTP.
-- [ ] **Téléversement réel des photos et des pièces** : les tables existent, le parcours déclare sans héberger.
+- [x] **Téléversement réel des photos** : envoi `multipart/form-data` (`/api/properties/[id]/photos/upload`), octets contrôlés côté serveur (JPEG, PNG, WebP, AVIF — 8 Mo, 12 par bien), fichiers rangés dans `data/uploads/` hors de Git et servis par `/api/uploads/…`. Retirer une photo retire son fichier. 23 vérifications serveur et un contrôle `QUALITY_GATE` le couvrent.
+- [ ] **Téléversement des pièces justificatives** : la table `documents` existe, le dossier de vérification **déclare** les pièces sans encore les héberger.
 
 ### 6.3 Hors périmètre pilote, à décider avant production
 

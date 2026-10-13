@@ -87,7 +87,15 @@ type ServerProperty = {
   [key: string]: unknown;
 };
 
-type ServerPhoto = { id: string; media_key: string; alt: string; position: number; is_main: number };
+type ServerPhoto = {
+  id: string;
+  media_key: string;
+  alt: string;
+  position: number;
+  is_main: number;
+  filename?: string | null;
+  bytes?: number | null;
+};
 type ServerDocument = { id: string; kind: string; filename: string; status?: string; created_at?: string };
 type AgentOption = { id: string; matricule: string; name: string; agency: string; zone: string; verification: string };
 
@@ -137,6 +145,8 @@ export function PropertyWizard({ initialListingId = "" }: { initialListingId?: s
   const [docDraft, setDocDraft] = useState<{ kind: string; filename: string }[]>([]);
   const [photoDraft, setPhotoDraft] = useState<string[]>([]);
   const [mainPhotoKey, setMainPhotoKey] = useState<string>("");
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const [mandate, setMandate] = useState({
     agentId: "",
     agentEmail: "",
@@ -292,6 +302,47 @@ export function PropertyWizard({ initialListingId = "" }: { initialListingId?: s
     }
     return true;
   }, [draft.title, photoDraft, mainPhotoKey]);
+
+  /* Les photos du médiathèque attendent la validation du dossier ; un
+     fichier envoyé, lui, est écrit tout de suite (le bien existe déjà
+     côté serveur). On enregistre donc d’abord ce qui était en attente,
+     puis on envoie : la galerie reste dans l’ordre réel du serveur. */
+  const onUpload = useCallback(
+    async (files: File[]) => {
+      if (!property?.id || files.length === 0) return;
+      setUploading(true);
+      setUploadError(null);
+      try {
+        if (photoDraft.length > 0) {
+          const flushed = await flushPhotos(property);
+          if (!flushed) return;
+        }
+        const form = new FormData();
+        for (const file of files) form.append("photos", file);
+        const response = await fetch(`/api/properties/${property.id}/photos/upload`, { method: "POST", body: form });
+        const body = (await response.json().catch(() => null)) as
+          | { ok?: boolean; message?: string; data?: { photos: ServerPhoto[]; rejected: { name: string; reason: string }[] } }
+          | null;
+        if (!response.ok || !body?.ok || !body.data) {
+          setUploadError(body?.message ?? `Envoi refusé (HTTP ${response.status}).`);
+          return;
+        }
+        setPhotos(body.data.photos);
+        setPhotoDraft([]);
+        const main = body.data.photos.find((entry) => entry.is_main) ?? body.data.photos[0];
+        if (main) setMainPhotoKey(main.media_key);
+        const refused = body.data.rejected ?? [];
+        if (refused.length > 0) {
+          setUploadError(refused.map((entry) => `${entry.name} — ${entry.reason}`).join(" · "));
+        }
+      } catch {
+        setUploadError("L’envoi n’a pas abouti : vérifiez votre connexion et réessayez.");
+      } finally {
+        setUploading(false);
+      }
+    },
+    [flushPhotos, photoDraft.length, property],
+  );
 
   const persist = useCallback(async () => {
     if (!property) return;
@@ -622,6 +673,10 @@ export function PropertyWizard({ initialListingId = "" }: { initialListingId?: s
         onRemovePhoto={removePhoto}
         onMainPhoto={setMain}
         onMovePhoto={movePhoto}
+        onUpload={(files) => void onUpload(files)}
+        uploading={uploading}
+        uploadError={uploadError}
+        canUpload={Boolean(property?.id)}
         documents={documents}
         docDraft={docDraft}
         docKind={docKind}
@@ -670,6 +725,10 @@ type StepProps = {
   onRemovePhoto: (key: string) => void;
   onMainPhoto: (key: string) => void;
   onMovePhoto: (key: string, direction: -1 | 1) => void;
+  onUpload: (files: File[]) => void;
+  uploading: boolean;
+  uploadError: string | null;
+  canUpload: boolean;
   documents: ServerDocument[];
   docDraft: { kind: string; filename: string }[];
   docKind: string;
@@ -848,14 +907,42 @@ function WizardStep(props: StepProps) {
 /* ------------------------------------------------------------------ photos */
 
 function PhotoStep(props: StepProps) {
-  const { photos, photoDraft, chosenKeys, mainPhotoKey, onAddPhoto, onRemovePhoto, onMainPhoto, onMovePhoto } = props;
+  const { photos, photoDraft, chosenKeys, mainPhotoKey, onAddPhoto, onRemovePhoto, onMainPhoto, onMovePhoto, onUpload, uploading, uploadError, canUpload } = props;
   const order = [...photos].sort((a, b) => a.position - b.position);
   return (
     <WorkspacePanel title="Photos du bien" description="Choisissez les visuels de la galerie, désignez la photo principale et ordonnez-les." icon={ImagePlus}>
-      <p className="text-caption leading-relaxed text-muted">
-        Le téléversement depuis votre appareil n’est pas encore ouvert : la galerie est composée depuis la
-        médiathèque HOMERA. L’ordre et la photo principale sont enregistrés sur le serveur, définitivement.
-      </p>
+      <div className="rounded-2xl border border-dashed border-border bg-background/60 p-4">
+        <label htmlFor="photos-envoi" className="block text-note font-semibold text-foreground">
+          Ajouter vos propres photos
+        </label>
+        <input
+          id="photos-envoi"
+          type="file"
+          accept="image/jpeg,image/png,image/webp,image/avif"
+          multiple
+          disabled={!canUpload || uploading}
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
+            event.target.value = "";
+            if (files.length > 0) onUpload(files);
+          }}
+          className="mt-2 block w-full max-w-xl cursor-pointer rounded-input border border-border bg-card px-3 py-2 text-caption text-foreground file:mr-3 file:cursor-pointer file:rounded-btn file:border-0 file:bg-homera-terracotta file:px-3 file:py-2 file:text-caption file:font-semibold file:text-white disabled:cursor-not-allowed disabled:opacity-50"
+        />
+        <p className="mt-2 text-caption leading-relaxed text-muted">
+          JPEG, PNG, WebP ou AVIF · 8 Mo par photo · 12 photos par bien. Les fichiers sont contrôlés côté
+          serveur, rangés hors du code, et l’ordre comme la photo principale sont enregistrés définitivement.
+        </p>
+        {uploading && (
+          <p className="mt-2 inline-flex items-center gap-2 text-caption font-semibold text-homera-terracotta">
+            <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />Envoi en cours…
+          </p>
+        )}
+        {uploadError && (
+          <p role="alert" className="mt-2 text-caption leading-relaxed text-error">
+            {uploadError}
+          </p>
+        )}
+      </div>
 
       {chosenKeys.length > 0 && (
         <ul className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -870,13 +957,13 @@ function PhotoStep(props: StepProps) {
                 )}
               </div>
               <div className="flex items-center justify-between gap-1 p-2">
-                <button type="button" onClick={() => onMainPhoto(photo.media_key)} aria-label={`Désigner ${photo.media_key} comme photo principale`} className="flex min-h-8 items-center gap-1 rounded-lg px-2 text-micro font-semibold text-homera-terracotta hover:bg-surface-hover">
+                <button type="button" onClick={() => onMainPhoto(photo.media_key)} aria-label={`Désigner ${photo.filename ?? photo.media_key} comme photo principale`} className="flex min-h-8 items-center gap-1 rounded-lg px-2 text-micro font-semibold text-homera-terracotta hover:bg-surface-hover">
                   <Star className="h-3 w-3" aria-hidden="true" />Principale
                 </button>
                 <span className="flex items-center">
                   <button type="button" onClick={() => onMovePhoto(photo.media_key, -1)} disabled={index === 0} aria-label="Avancer la photo" className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover disabled:opacity-30"><GripVertical className="h-3.5 w-3.5 rotate-90" aria-hidden="true" /></button>
                   <button type="button" onClick={() => onMovePhoto(photo.media_key, 1)} disabled={index === order.length - 1} aria-label="Reculer la photo" className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-surface-hover disabled:opacity-30"><GripVertical className="h-3.5 w-3.5 -rotate-90" aria-hidden="true" /></button>
-                  <button type="button" onClick={() => onRemovePhoto(photo.media_key)} aria-label={`Retirer ${photo.media_key}`} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-error/[0.06] hover:text-error"><X className="h-3.5 w-3.5" aria-hidden="true" /></button>
+                  <button type="button" onClick={() => onRemovePhoto(photo.media_key)} aria-label={`Retirer ${photo.filename ?? photo.media_key}`} className="flex h-8 w-8 items-center justify-center rounded-lg text-muted hover:bg-error/[0.06] hover:text-error"><X className="h-3.5 w-3.5" aria-hidden="true" /></button>
                 </span>
               </div>
             </li>

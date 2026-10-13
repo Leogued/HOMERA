@@ -34,6 +34,7 @@ const reportReasonsModule = await import("../lib/reports");
 const messaging = await import("../lib/server/services/messaging");
 const applicationsModule = await import("../lib/server/services/applications");
 const contracts = await import("../lib/server/services/contracts");
+const uploads = await import("../lib/server/uploads");
 const passwordModule = await import("../lib/server/security/password");
 const sessionModule = await import("../lib/server/security/session");
 
@@ -723,6 +724,88 @@ check("les notifications du propriétaire sont persistantes", notifications.leng
 const unreadBefore = notificationsModule.unreadCount(db, ownerId);
 notificationsModule.markRead(db, ownerId, [notifications[0]!.id]);
 check("marquer comme lu diminue le compteur", notificationsModule.unreadCount(db, ownerId) === unreadBefore - 1);
+
+/* ------------------------------------------------------------------
+   PHOTOS TÉLÉVERSÉES
+   ------------------------------------------------------------------ */
+
+const JPEG = Buffer.from(
+  "/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAgGBgcGBQgHBwcJCQgKDBQNDAsLDBkSEw8UHRofHh0aHBwcJC4nICIsIxwcKDcpLDAxNDQ0Hyc5PTgyPDs0NDT/wAALCAABAAEBAREA/8QAFAABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AJQA/9k=",
+  "base64",
+);
+const PNG = Buffer.from("89504e470d0a1a0a0000000d49484452", "hex");
+const TEXT = Buffer.from("ceci n’est pas une image\n", "utf8");
+
+check("un jpeg est reconnu à ses octets, pas à son nom", uploads.sniffImage(JPEG) === "jpg");
+check("un png est reconnu", uploads.sniffImage(PNG) === "png");
+check("un fichier texte déguisé en image est refusé", uploads.sniffImage(TEXT) === null);
+check("un fichier trop court est refusé", uploads.sniffImage(new Uint8Array(4)) === null);
+
+const uploadDraft = properties.createProperty(db, owner, {
+  title: "Villa avec photos envoyées",
+  type: "villa",
+  city: "Cotonou",
+  district: "Fidjrossè",
+  price: 450000,
+  intent: "acheter",
+  surface: 180,
+  bedrooms: 4,
+  bathrooms: 3,
+  description: "Bien de test pour l’envoi de photos.",
+  features: ["jardin"],
+  furnished: false,
+});
+const uploadId = uploadDraft.ok ? uploadDraft.data.property.id : "";
+check("le bien de test des photos est créé", uploadDraft.ok);
+
+const firstUpload = properties.uploadPhotos(db, owner, uploadId, [{ name: "facade.jpg", bytes: new Uint8Array(JPEG) }]);
+check("un jpeg envoyé est accepté", firstUpload.ok, firstUpload.ok ? "" : firstUpload.message);
+const uploadedKey = firstUpload.ok ? (firstUpload.data.photos.at(-1)?.media_key ?? "") : "";
+check("la photo est servie sous /api/uploads", uploadedKey.startsWith(`/api/uploads/properties/${uploadId}/`), uploadedKey);
+equal("le nom d’origine est conservé pour l’affichage", firstUpload.ok ? firstUpload.data.photos.at(-1)?.filename : null, "facade.jpg");
+equal("le poids réel est enregistré", firstUpload.ok ? firstUpload.data.photos.at(-1)?.bytes : null, JPEG.byteLength);
+check("le fichier existe sur le disque", uploads.resolveUpload(uploadedKey) !== null, uploadedKey);
+
+const refusedFormat = properties.uploadPhotos(db, owner, uploadId, [{ name: "fausse.jpg", bytes: new Uint8Array(TEXT) }]);
+const formatMessage = refusedFormat.ok ? "" : refusedFormat.message;
+check("un texte déguisé en jpeg est refusé", !refusedFormat.ok);
+check("le refus explique le format attendu", /jpeg, png, webp ou avif/.test(formatMessage), formatMessage);
+
+const refusedSize = properties.uploadPhotos(db, owner, uploadId, [
+  { name: "lourde.jpg", bytes: new Uint8Array(Buffer.concat([Buffer.from("ffd8ffe0", "hex"), Buffer.alloc(9 * 1024 * 1024)])) },
+]);
+const sizeMessage = refusedSize.ok ? "" : refusedSize.message;
+check("un fichier de plus de 8 Mo est refusé", !refusedSize.ok);
+check("le refus chiffre le poids reçu", /8 Mo maximum/.test(sizeMessage), sizeMessage);
+
+const refusedOwner = properties.uploadPhotos(db, user("HOM-DEMO-OWNER2"), uploadId, [{ name: "facade.jpg", bytes: new Uint8Array(JPEG) }]);
+check("un autre propriétaire ne peut pas envoyer sur ce bien", !refusedOwner.ok && refusedOwner.code === "permission");
+
+const refusedMissing = properties.uploadPhotos(db, owner, "bien-inexistant", [{ name: "facade.jpg", bytes: new Uint8Array(JPEG) }]);
+check("un envoi sur un bien inexistant est refusé", !refusedMissing.ok && refusedMissing.code === "introuvable");
+
+for (let index = 0; index < 20; index += 1) {
+  properties.uploadPhotos(db, owner, uploadId, [{ name: `suite-${index}.jpg`, bytes: new Uint8Array(JPEG) }]);
+}
+const photoCount = db.prepare<[string], { count: number }>("SELECT COUNT(*) AS count FROM property_photos WHERE property_id = ?").get(uploadId)!.count;
+equal("la galerie plafonne à 12 photos", photoCount, uploads.PHOTO_MAX_PER_PROPERTY);
+
+const beforeDelete = fs.readdirSync(path.dirname(uploads.resolveUpload(uploadedKey)!)).length;
+const deleted = properties.removePhoto(db, owner, uploadId, firstUpload.ok ? firstUpload.data.photos.at(-1)!.id : "");
+check("le propriétaire retire une photo", deleted.ok);
+check("le fichier quitte le disque avec la ligne", uploads.resolveUpload(uploadedKey) === null);
+check(
+  "aucun autre fichier n’est emporté",
+  fs.readdirSync(path.join(uploads.uploadRoot(), "properties", uploadId)).length === beforeDelete - 1,
+);
+
+check("une URL de téléversement ne remonte pas dans l’arborescence", uploads.resolveUpload("/api/uploads/../../package.json") === null);
+check("une URL hors téléversement est refusée", uploads.resolveUpload("/images/page-cotonou.jpg") === null);
+check("un dossier n’est jamais servi", uploads.resolveUpload("/api/uploads/properties") === null);
+
+/* Nettoyage : les fichiers de test ne restent pas sur le disque. */
+fs.rmSync(path.join(uploads.uploadRoot(), "properties", uploadId), { recursive: true, force: true });
+
 
 closeDb();
 

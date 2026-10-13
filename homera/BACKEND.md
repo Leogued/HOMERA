@@ -184,7 +184,7 @@ Zod, affiché tel quel par l’interface — jamais reformulé, jamais masqué.
 | Groupe | Routes |
 |---|---|
 | Compte | `auth/session`, `auth/signup`, `auth/signin`, `auth/signout`, `auth/roles`, `auth/verify-email`, `auth/password/forgot`, `auth/password/reset`, `me` |
-| Biens | `properties`, `properties/[id]`, `properties/[id]/photos`, `properties/[id]/documents`, `properties/[id]/availability`, `properties/[id]/visits`, `properties/[id]/submit`, `properties/[id]/report` |
+| Biens | `properties`, `properties/[id]`, `properties/[id]/photos`, `properties/[id]/photos/upload`, `properties/[id]/documents`, `properties/[id]/availability`, `properties/[id]/visits`, `properties/[id]/submit`, `properties/[id]/report` |
 | Espaces | `owner/properties`, `agent/properties` |
 | Mandats | `authorizations`, `authorizations/[id]` |
 | Visites | `visits`, `visits/[id]` |
@@ -194,6 +194,7 @@ Zod, affiché tel quel par l’interface — jamais reformulé, jamais masqué.
 | Territoire | `locations` (`?departement=`, `?commune=`) |
 | Administration | `admin/overview`, `admin/users`, `admin/users/[id]`, `admin/verifications`, `admin/verifications/[propertyId]`, `admin/visits`, `admin/reports`, `admin/audit` |
 | Vie du compte | `notifications`, `favorites` |
+| Fichiers | `uploads/[...path]` (diffusion des photos téléversées) |
 
 **Validation** : `lib/server/validation.ts` (Zod 4). Les schémas sont exécutés **dans
 les services**, pas dans les routes : une écriture directe en base passe par les mêmes
@@ -227,6 +228,28 @@ sur 24 heures (type + titre + entité), compteur de non-lues servi par
 `/api/auth/session`. Elles sont produites **par les services**, au moment de l’événement.
 
 ---
+
+### 7.1 Photos téléversées
+
+Les photos d’un bien ont deux origines, et une seule colonne les retient :
+`property_photos.media_key` contient **soit** une clé de la médiathèque
+(`prop-villa-piscine`), **soit** le chemin servi d’un fichier envoyé
+(`/api/uploads/properties/<bien>/<uuid>.jpg`). Le reste de la plateforme
+— galerie, ordre, photo principale, fiche publique — ne fait aucune
+différence entre les deux.
+
+| Décision | Raison |
+|---|---|
+| Les fichiers vont dans `data/uploads/`, pas dans `public/` | `public/` est figé à la compilation : un fichier écrit après le build ne serait pas servi par `next start`. `data/` est déjà hors de Git. |
+| Diffusion par `GET /api/uploads/[...]` | le chemin doit rester sous la racine des téléversements, l’extension doit être une image connue, et aucun dossier n’est listé. En-tête `X-Content-Type-Options: nosniff`. |
+| La nature du fichier est lue dans ses **octets** | le type MIME annoncé par le navigateur n’est pas une preuve : un `.jpg` qui contient du texte est refusé. JPEG, PNG, WebP, AVIF. |
+| Le nom sur le disque est un `randomUUID()` | deux envois du même fichier ne se marchent pas dessus, et l’URL ne se devine pas. Le nom d’origine est conservé en base, pour l’affichage seulement. |
+| 8 Mo par fichier, 12 photos par bien | plafonds appliqués côté serveur sur les octets réellement reçus. |
+| Retirer une photo retire le fichier | une ligne supprimée qui laisserait le fichier accessible par son URL serait une fuite. |
+| Aucun réencodage | HOMERA ne recadre pas la photo du propriétaire ; le conteneur garde ses dimensions, donc pas de décalage à l’arrivée de l’image. |
+
+Les droits sont ceux du bien : propriétaire, agent mandaté (`canEditProperty`)
+ou administration. Un envoi refusé ne laisse aucun fichier sur le disque.
 
 ## 8. Ce qui a été réellement exécuté
 
@@ -315,11 +338,15 @@ démarré :
 | Contrôle public d’un mandat (`/verification-agent`) | actif / expiré / non confirmé selon le registre serveur |
 | Historique public d’un bien (`/historique/<référence>`) | chronologie construite depuis `audit_log`, liste blanche d’actions opposables |
 
-### 8.4 Les douze scénarios du cahier des charges (`npm run test:scenarios`)
+### 8.4 Les treize scénarios du cahier des charges (`npm run test:scenarios`)
 
-Serveur démarré, base amorcée, vrais comptes : 12 scénarios, 12 réussites,
+Serveur démarré, base amorcée, vrais comptes : 13 scénarios, 13 réussites,
 0 échec, et le même résultat à la deuxième et à la troisième exécution
 (les scénarios sont réécrits pour rester valables sur une base déjà utilisée).
+
+Le treizième couvre l’envoi de photos : fichier accepté puis servi, texte
+déguisé en image refusé, dépôt par un tiers refusé, et retrait qui emporte
+le fichier.
 
 | # | Scénario | Ce que le serveur répond |
 |---|---|---|
@@ -350,13 +377,14 @@ comme terminés :
 | Sujet | État | Lot porteur |
 |---|---|---|
 | Contrats de location signés | ✅ service et écrans livrés : rédaction après acceptation, signature par le locataire, contrat signé non annulable | — |
-| Téléversement réel des photos et pièces | tables `property_photos` / `documents` prêtes, le parcours **déclare** les pièces sans les héberger | LOT 8 |
+| Téléversement réel des **photos** | ✅ livré : envoi `multipart`, contrôle des octets, stockage dans `data/uploads`, diffusion par `/api/uploads/…` (voir §7.1) | — |
 | Favoris unifiés | ✅ `/api/favorites` : chargement, fusion du panier visiteur à la connexion, suppression | — |
 | Messagerie interne | ✅ conversations persistées, adossées à un bien, distinctes des notifications | — |
 | Paiements | aucun encaissement réel : l’écran affiche ce qu’un contrat signé prévoit et renvoie vers HOMERA. Aucun solde, aucun reçu, aucun bouton de règlement | hors périmètre pilote |
 | Pagination et facettes calculées en base | ✅ fait au LOT 6 — filtres, tri, facettes et pagination servis par SQL ; le premier écran est rendu côté serveur | — |
 | Envoi d’e-mails transactionnels | absent, remplacé par l’affichage du code | à décider |
-| Galerie multi-photos | la fiche affiche tous les visuels du bien dans l’ordre déclaré ; l’amorçage ne fournit qu’une photo par bien, faute de téléversement réel | LOT 8 |
+| Téléversement des **pièces justificatives** | la table `documents` existe, le parcours déclare les pièces sans les héberger | prochain lot |
+| Galerie multi-photos | ✅ la fiche affiche tous les visuels du bien dans l’ordre déclaré ; photos de la médiathèque **et** fichiers envoyés se mélangent, l’ordre et la photo principale sont enregistrés | — |
 
 ### 9.1 Risques ouverts
 

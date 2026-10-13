@@ -13,6 +13,7 @@
 > | Tableau de bord client | visites, candidatures, locations, messages et notifications lus du serveur, plus du stockage local | `components/client/ClientDashboard.tsx` |
 > | `QUALITY_GATE` | quatre règles devenues obsolètes remplacées par leur contraire mesurable ; 5/5 | `scripts/quality-gate.mjs` |
 > | Jeu de données d'exemple | `lib/portal-data.ts` supprimé, ainsi que la copie qui annonçait un compte « dans le navigateur » | [`AUDIT.md`](./AUDIT.md) §2.7 |
+> | Photos | envoi réel depuis l'appareil : octets contrôlés côté serveur, fichiers dans `data/uploads/`, servis par `/api/uploads/…` | [`BACKEND.md`](./BACKEND.md) §7.1 |
 >
 > ### 🟢 Ce qui change au 13 octobre 2026 (LOT 7)
 >

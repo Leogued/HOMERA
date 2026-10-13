@@ -556,6 +556,18 @@ CREATE INDEX IF NOT EXISTS idx_participants_user      ON conversation_participan
 CREATE INDEX IF NOT EXISTS idx_messages_conversation  ON messages(conversation_id, created_at);
 `;
 
+/* ------------------------------------------------------------------
+   004 — PHOTOS TÉLÉVERSÉES : nom d’origine, poids, date d’envoi
+   ------------------------------------------------------------------ */
+
+const M004 = `
+/* Un visuel de la médiathèque n’a ni fichier ni poids : les trois
+   colonnes restent vides, aucune ligne existante n’est modifiée. */
+ALTER TABLE property_photos ADD COLUMN filename    TEXT;
+ALTER TABLE property_photos ADD COLUMN bytes       INTEGER;
+ALTER TABLE property_photos ADD COLUMN uploaded_at TEXT;
+`;
+
 export const MIGRATIONS: Migration[] = [
   {
     id: "001",
@@ -571,5 +583,10 @@ export const MIGRATIONS: Migration[] = [
     id: "003",
     name: "messagerie-fils-de-discussion",
     sql: M003,
+  },
+  {
+    id: "004",
+    name: "photos-televersees-nom-poids-date",
+    sql: M004,
   },
 ];

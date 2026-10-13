@@ -67,9 +67,11 @@ Un second propriétaire semé existe : `sofia@homera.demo` / `sofia`.
    (`/client/visites/nouvelle`), déposer une candidature après la visite effectuée,
    signer le contrat proposé (`/client/contrats`).
 3. **Propriétaire** — se connecter avec `prop`, `/proprietaire/ajouter-bien` :
-   le bien est créé côté serveur dès la première étape, les photos se choisissent
-   dans la bibliothèque HOMERA (ordre et image principale enregistrés), puis
-   soumission du dossier. Ensuite `/proprietaire/agents` pour demander un mandat.
+   le bien est créé côté serveur dès la première étape. À l’étape « Photos », envoyez
+   **vos propres fichiers** (JPEG, PNG, WebP ou AVIF, 8 Mo maximum, 12 par bien) ou
+   piochez dans la médiathèque HOMERA ; l’ordre et la photo principale sont
+   enregistrés. Les fichiers sont rangés dans `data/uploads/` (jamais dans Git) et
+   servis par `/api/uploads/…`. Ensuite `/proprietaire/agents` pour demander un mandat.
 4. **Agent** — se connecter avec `agent`, `/agent/autorisations` pour accepter le
    mandat reçu : le bien apparaît alors dans `/agent/biens`, avec la portée du
    mandat (visite, location).
@@ -102,6 +104,8 @@ Un second propriétaire semé existe : `sofia@homera.demo` / `sofia`.
 | Je ne reçois pas l’e-mail de vérification | normal, HOMERA n’envoie pas encore d’e-mail : **le code s’affiche à l’écran**. |
 | Je ne peux pas payer en ligne | normal : aucun encaissement n’existe. `/client/paiements` n’affiche que le dû écrit par un contrat signé. |
 | J’ai ajouté un bien mais je ne le vois pas dans l’explorateur | un bien n’est public qu’après vérification par l’admin (`/admin/verifications`). |
+| Ma photo est refusée | seuls JPEG, PNG, WebP et AVIF passent, jusqu’à 8 Mo : le contrôle lit les octets du fichier, un `.jpg` qui contient autre chose est refusé. |
+| Où sont mes photos envoyées ? | dans `data/uploads/properties/<bien>/`, hors de Git, servies par `/api/uploads/…`. `npm run db:reset` ne les supprime pas : pour repartir de zéro, supprimez aussi ce dossier. |
 
 Les données de la base (`data/`) ne sont jamais versionnées : supprimer ce dossier
 équivaut à `npm run db:reset`.
