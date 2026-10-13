@@ -1,22 +1,110 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
-## Getting Started
+## Démarrer en local avec VS Code
 
-First, run the development server:
+Le projet exécutable est le dossier **`homera/`** : c’est celui qu’il faut ouvrir
+dans VS Code (`Fichier › Ouvrir le dossier… › homera`). Toutes les commandes ci-dessous
+se lancent depuis ce dossier.
+
+### 1. Prérequis
+
+- **Node.js 22 LTS** (ou 20.9 minimum) — `node -v` pour vérifier. Téléchargement :
+  <https://nodejs.org>. Aucun autre service n’est nécessaire : la base est un fichier
+  SQLite créé au premier démarrage, il n’y a ni Docker, ni Postgres, ni clé d’API.
+- **Git** (pour récupérer le projet) et **VS Code** avec le terminal intégré
+  (`` Ctrl+ù `` ou `Terminal › Nouveau terminal`).
+
+### 2. Installation
+
+```bash
+npm install
+```
+
+`better-sqlite3` est un module natif : des binaires précompilés existent pour Node 20
+et 22 sur Windows, macOS et Linux. Si l’installation échoue chez vous, installez les
+outils de compilation de votre système (« Desktop development with C++ » sous Windows,
+`xcode-select --install` sous macOS, `build-essential` sous Linux) puis relancez
+`npm install`.
+
+### 3. Lancement
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Puis ouvrez **<http://localhost:3000>**. Au premier démarrage, le dossier `data/`
+apparaît : la base `homera.db` y est créée, migrée et **amorcée** avec 36 biens et
+5 comptes. Rien d’autre à faire.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Pour un test à l’identique de la production :
+
+```bash
+npm run build
+npm start          # sert le build sur http://localhost:3000
+```
+
+### 4. Les quatre comptes de démonstration
+
+| Rôle | Identifiant | Mot de passe | Ce qu’on peut y faire |
+|---|---|---|---|
+| Client | `user@homera.demo` (ou `user`) | `user` | explorer, favoris, visites, candidatures, contrats, messages |
+| Propriétaire | `prop@homera.demo` (ou `prop`) | `prop` | ajouter un bien, mandater un agent, visites, locations |
+| Agent | `agent@homera.demo` (ou `agent`) | `agent` | accepter un mandat, gérer les visites et les candidatures |
+| Administration | `admin@homera.demo` (ou `admin`) | `admin` | dossiers de vérification, biens, utilisateurs, journal d’audit |
+
+Un second propriétaire semé existe : `sofia@homera.demo` / `sofia`.
+
+> **Important :** la session tient dans un cookie. Pour voir une demande circuler du
+> propriétaire vers l’agent puis vers l’admin, utilisez **plusieurs fenêtres de
+> navigation distinctes** (une normale, une privée, un autre profil) — pas deux
+> onglets de la même fenêtre, qui partagent le même compte.
+
+### 5. Le parcours complet, dans l’ordre
+
+1. **Visiteur** — `/explorer` : filtres (département, commune, budget, meublé),
+   pagination, retour aux résultats sans perdre le contexte, fiche `/biens/<slug>`.
+2. **Client** — se connecter avec `user`, ajouter des favoris, demander une visite
+   (`/client/visites/nouvelle`), déposer une candidature après la visite effectuée,
+   signer le contrat proposé (`/client/contrats`).
+3. **Propriétaire** — se connecter avec `prop`, `/proprietaire/ajouter-bien` :
+   le bien est créé côté serveur dès la première étape, les photos se choisissent
+   dans la bibliothèque HOMERA (ordre et image principale enregistrés), puis
+   soumission du dossier. Ensuite `/proprietaire/agents` pour demander un mandat.
+4. **Agent** — se connecter avec `agent`, `/agent/autorisations` pour accepter le
+   mandat reçu : le bien apparaît alors dans `/agent/biens`, avec la portée du
+   mandat (visite, location).
+5. **Administration** — se connecter avec `admin`, `/admin/verifications` : le dossier
+   déposé à l’étape 3 passe par les huit étapes, chaque décision étant datée,
+   commentée et écrite dans le journal d’audit, visible en bas de `/admin`.
+6. **Contrôles publics** — `/verification-agent` et `/historique/<référence>`
+   fonctionnent sans compte : ce sont les preuves opposables d’un bien.
+
+## Commandes utiles
+
+| Commande | Effet |
+|---|---|
+| `npm run dev` | serveur de développement, rechargement à la volée |
+| `npm run build` puis `npm start` | build de production servi localement |
+| `npm run db:reset` | **efface** la base et réamorce 36 biens + 5 comptes |
+| `npm test` | 199 vérifications serveur + 67 tests unitaires |
+| `npm run test:scenarios` | les 12 parcours du cahier des charges, contre un serveur démarré |
+| `npm run lint` · `npx tsc --noEmit` | ESLint · vérification des types |
+| `npm run quality:gate` | les 5 contrôles statiques du projet |
+| `npm run audit:home` | poids servi et taille des paquets JS |
+
+## Dépannage
+
+| Symptôme | Cause et correction |
+|---|---|
+| `EADDRINUSE : le port 3000 est déjà utilisé` | un serveur tourne déjà : fermez-le, ou lancez `npm run dev -- -p 3001`. |
+| `npm install` échoue sur `better-sqlite3` | voir §2 : outils de compilation, puis `npm install` à nouveau. |
+| Écrans vides ou données incohérentes après des essais | `npm run db:reset` puis relancez le serveur : la base est recréée proprement. |
+| Je ne reçois pas l’e-mail de vérification | normal, HOMERA n’envoie pas encore d’e-mail : **le code s’affiche à l’écran**. |
+| Je ne peux pas payer en ligne | normal : aucun encaissement n’existe. `/client/paiements` n’affiche que le dû écrit par un contrat signé. |
+| J’ai ajouté un bien mais je ne le vois pas dans l’explorateur | un bien n’est public qu’après vérification par l’admin (`/admin/verifications`). |
+
+Les données de la base (`data/`) ne sont jamais versionnées : supprimer ce dossier
+équivaut à `npm run db:reset`.
 
 This project uses [`next/font`](https://nextjs.org/docs/app/api-reference/components/font) to self-host the four brand fonts (Manrope, DM Serif Display, Cormorant Garamond Italic, Cakecafe) — see the *Typographie* section below.
 
