@@ -222,6 +222,22 @@ export function ApplicationsList({ viewpoint, title, description }: { viewpoint:
     await applications.reload();
   };
 
+  /* Le contrat naît de la candidature acceptée : jamais d’un bouton posé
+     sur un dossier qui n’a pas été instruit. */
+  const draftContract = async (application: ServerApplication) => {
+    setBusy(`${application.id}:contrat`);
+    setError(null);
+    setNotice(null);
+    const result = await apiPost<{ reference: string }>("/api/contracts", { applicationId: application.id });
+    setBusy("");
+    if (!result.ok) {
+      setError(messageOf(result));
+      return;
+    }
+    setNotice(`Contrat ${result.data.reference} rédigé : le locataire est notifié et peut le signer depuis son espace.`);
+    await applications.reload();
+  };
+
   if (applications.loading) {
     return <div className="flex items-center gap-3 py-16 text-note text-muted" role="status"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />Chargement des candidatures…</div>;
   }
@@ -278,6 +294,17 @@ export function ApplicationsList({ viewpoint, title, description }: { viewpoint:
                     )}
                     {application.canWithdraw && (
                       <button type="button" onClick={() => void act(application, "annuler")} disabled={busy.startsWith(application.id)} className={`${BUTTON_SECONDARY} disabled:opacity-60`}>Retirer ma demande</button>
+                    )}
+                    {application.status === "acceptee" && viewpoint !== "client" && (
+                      <button
+                        type="button"
+                        onClick={() => void draftContract(application)}
+                        disabled={busy.startsWith(application.id)}
+                        className={`${BUTTON_SECONDARY} disabled:opacity-60`}
+                      >
+                        {busy === `${application.id}:contrat` && <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />}
+                        Rédiger le contrat
+                      </button>
                     )}
                   </div>
                   <label className="mt-3 block text-caption font-semibold" htmlFor={`app-reason-${application.id}`}>

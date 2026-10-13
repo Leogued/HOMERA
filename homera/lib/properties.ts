@@ -63,6 +63,10 @@ export type CatalogQuery = {
   types: PropertyType[];
   cities: string[];
   districts: string[];
+  /** Département béninois (ex. « Littoral »). */
+  department: string;
+  /** Commune béninoise (ex. « Cotonou »). */
+  commune: string;
   features: PropertyFeature[];
   landTitles: LandTitle[];
   q: string;
@@ -92,6 +96,8 @@ export const EMPTY_QUERY: CatalogQuery = {
   types: [],
   cities: [],
   districts: [],
+  department: "",
+  commune: "",
   features: [],
   landTitles: [],
   q: "",
@@ -146,6 +152,8 @@ export function parseCatalogQuery(input: URLSearchParams | string): CatalogQuery
       (Object.keys(TYPE_LABELS) as string[]).includes(value)),
     cities: list(params, "ville"),
     districts: list(params, "quartier"),
+    department: (params.get("departement") ?? "").trim(),
+    commune: (params.get("commune") ?? "").trim(),
     features: list(params, "equipement").filter((value): value is PropertyFeature =>
       Object.keys(FEATURE_LABELS).includes(value)),
     landTitles: list(params, "titre").filter((value): value is LandTitle =>
@@ -174,6 +182,8 @@ export function buildCatalogParams(query: CatalogQuery): URLSearchParams {
   for (const type of query.types) params.append("type", type);
   for (const city of query.cities) params.append("ville", city);
   for (const district of query.districts) params.append("quartier", district);
+  if (query.department) params.set("departement", query.department);
+  if (query.commune) params.set("commune", query.commune);
   for (const feature of query.features) params.append("equipement", feature);
   for (const title of query.landTitles) params.append("titre", title);
   if (query.q) params.set("q", query.q);
@@ -473,7 +483,7 @@ export type CatalogFacets = {
 export function facets(source: Property[], query: CatalogQuery): CatalogFacets {
   const withoutIntent = searchCatalog({ ...query, intent: "" }, source);
   const withoutType = searchCatalog({ ...query, types: [] }, source);
-  const withoutPlace = searchCatalog({ ...query, cities: [], districts: [] }, source);
+  const withoutPlace = searchCatalog({ ...query, cities: [], districts: [], department: "", commune: "" }, source);
   const withoutFeature = searchCatalog({ ...query, features: [] }, source);
   const withoutTitle = searchCatalog({ ...query, landTitles: [] }, source);
   const withoutAvailability = searchCatalog({ ...query, availableOnly: false }, source);
@@ -540,6 +550,8 @@ export function queryToCatalogFilters(query: CatalogQuery): {
   types: CatalogQuery["types"];
   cities: string[];
   districts: string[];
+  department: string;
+  commune: string;
   features: CatalogQuery["features"];
   landTitles: CatalogQuery["landTitles"];
   q: string;
@@ -562,6 +574,8 @@ export function queryToCatalogFilters(query: CatalogQuery): {
     types: query.types,
     cities: query.cities,
     districts: query.districts,
+    department: query.department,
+    commune: query.commune,
     features: query.features,
     landTitles: query.landTitles,
     q: query.q,

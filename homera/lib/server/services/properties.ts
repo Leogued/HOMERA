@@ -155,6 +155,9 @@ export type CatalogFilters = {
   types?: PropertyType[];
   cities?: string[];
   districts?: string[];
+  /** Hiérarchie béninoise : département puis commune (ville ou arrondissement). */
+  department?: string;
+  commune?: string;
   features?: PropertyFeature[];
   landTitles?: LandTitle[];
   q?: string;
@@ -188,7 +191,7 @@ function inClause(values: string[], column: string, params: unknown[]): string {
  * que l’on est en train de compter, sinon chaque case afficherait zéro
  * dès qu’elle est cochée.
  */
-type Skip = "intent" | "types" | "cities" | "districts" | "features" | "landTitles" | "available" | "verified" | "furnished";
+type Skip = "intent" | "types" | "cities" | "districts" | "department" | "commune" | "features" | "landTitles" | "available" | "verified" | "furnished";
 
 function catalogWhere(
   db: Db,
@@ -212,6 +215,16 @@ function catalogWhere(
   if (filters.types?.length && !skip.has("types")) clauses.push(inClause([...filters.types], `${t}type`, params));
   if (filters.cities?.length && !skip.has("cities")) clauses.push(inClause([...filters.cities], `${t}city`, params));
   if (filters.districts?.length && !skip.has("districts")) clauses.push(inClause([...filters.districts], `${t}district`, params));
+  if (filters.department && !skip.has("department")) {
+    // Même tolérance qu’à l’affichage : un bien sans département renseigné
+    // est rattaché à sa commune, puis à sa ville.
+    clauses.push(`(COALESCE(NULLIF(${t}department, ''), NULLIF(${t}commune, ''), ${t}city) = ?)`);
+    params.push(filters.department);
+  }
+  if (filters.commune && !skip.has("commune")) {
+    clauses.push(`(COALESCE(NULLIF(${t}commune, ''), ${t}city) = ?)`);
+    params.push(filters.commune);
+  }
   if (filters.landTitles?.length && !skip.has("landTitles")) clauses.push(inClause([...filters.landTitles], `${t}land_title`, params));
   if (filters.priceMin !== null && filters.priceMin !== undefined) {
     clauses.push(`${t}price >= ?`);
@@ -642,6 +655,16 @@ export function createProperty(
   const propertyId = `${id || "bien"}-${Math.random().toString(36).slice(2, 6)}`;
   const iso = nowIso();
   const reference = nextReference(db, input.city);
+  // Le département se déduit de la commune quand il n’est pas saisi :
+  // la table de référence béninoise est la seule source, pas une supposition.
+  const commune = input.commune ?? input.city;
+  const department =
+    input.department ??
+    queryOne<{ department: string }>(
+      "SELECT department FROM locations WHERE kind = 'commune' AND commune = ? LIMIT 1",
+      [commune],
+    )?.department ??
+    "";
   const run = db.transaction(() => {
     db.prepare(
       `INSERT INTO properties (id, reference, title, type, intent, price, price_period, country, department, commune,
@@ -660,8 +683,8 @@ export function createProperty(
       input.price,
       input.pricePeriod ?? "",
       input.country ?? "Bénin",
-      input.department ?? "",
-      input.commune ?? input.city,
+      department,
+      commune,
       input.city,
       input.district,
       input.address ?? "",
@@ -1201,3 +1224,55 @@ export function ensureSteps(db: Db, verificationId: string, at = nowIso()): void
 }
 
 export { PROPERTY_COLUMNS };
+
+/* ------------------------------------------------------------------
+   HIÉRARCHIE ADMINISTRATIVE (Bénin)
+   ------------------------------------------------------------------
+   Le pays se découpe en départements, communes et quartiers
+   (arrondissements compris). Les listes sont calculées depuis les
+   biens **publiés** : proposer une commune sans annonce serait une
+   promesse vide.
+   ------------------------------------------------------------------ */
+
+export type LocationCount = { value: string; count: number };
+
+function countByColumn(
+  db: Db,
+  column: "department" | "commune" | "district",
+  where: string,
+  params: unknown[],
+): LocationCount[] {
+  // Un bien créé avant la hiérarchie, ou saisi sans elle, reste trouvable :
+  // la ville tient lieu de commune, et la commune tient lieu de département.
+  const value =
+    column === "department"
+      ? "COALESCE(NULLIF(department, ''), NULLIF(commune, ''), city)"
+      : column === "commune"
+        ? "COALESCE(NULLIF(commune, ''), city)"
+        : "district";
+  return queryAll<LocationCount>(
+    `SELECT ${value} AS value, COUNT(*) AS count
+       FROM properties
+      WHERE publication_status = 'publie' AND ${value} <> '' ${where}
+      GROUP BY ${value}
+      ORDER BY count DESC, value ASC`,
+    params,
+  );
+}
+
+export function locationTree(
+  db: Db,
+  scope: { department?: string; commune?: string } = {},
+): { country: string; departments: LocationCount[]; communes: LocationCount[]; districts: LocationCount[] } {
+  return {
+    country: "Bénin",
+    departments: countByColumn(db, "department", "", []),
+    communes: countByColumn(db, "commune", scope.department ? "AND department = ?" : "", scope.department ? [scope.department] : []),
+    districts: countByColumn(
+      db,
+      "district",
+      scope.commune ? "AND (commune = ? OR city = ?)" : scope.department ? "AND department = ?" : "",
+      scope.commune ? [scope.commune, scope.commune] : scope.department ? [scope.department] : [],
+    ),
+  };
+}

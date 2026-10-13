@@ -5,10 +5,11 @@ import { WorkspaceRefusal } from "@/components/workspace/WorkspaceRefusal";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import { MessagesPage } from "@/components/workspace/CommunicationPages";
 export const metadata: Metadata = { title: "Messages — HOMERA", robots: { index: false, follow: false } };
-export default async function MessagesRoute() {
+export default async function MessagesRoute({ searchParams }: { searchParams: Promise<{ bien?: string }> }) {
+  const { bien } = await searchParams;
   const gate = await guardWorkspace("any", "/messages");
   if (gate.status === "signin") redirect(signinHref(gate.returnTo));
   // « any » = session suffisante ; le refus reste traité si la règle change.
   if (gate.status === "denied") return <WorkspaceRefusal role="client" />;
-  return <WorkspaceShell role="any" section="messages"><MessagesPage /></WorkspaceShell>;
+  return <WorkspaceShell role="any" section="messages"><MessagesPage initialPropertyId={bien ?? ""} /></WorkspaceShell>;
 }

@@ -4,25 +4,14 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   ArrowLeft, ArrowRight, CalendarCheck2, CalendarDays, Check,
-  CheckCircle2, ClipboardCheck, Clock3, Download,
+  CheckCircle2, ClipboardCheck, Clock3,
   FileText, Home, Loader2, MapPin,
 } from "lucide-react";
-import { useWorkflow } from "@/components/providers/WorkflowProvider";
 import { Visual } from "@/components/ui/Visual";
 import {
-  canClientPayContract,
-  computeFinancialBreakdown,
-  createLocalId,
-  makeNotification,
-  PAYMENT_PROVIDERS,
-  type ContractRecord,
-  type PaymentTransactionRecord,
-} from "@/lib/workflow";
-import {
-  BUTTON_PRIMARY, BUTTON_SECONDARY, DemoNotice, EmptyPanel, FormField,
-  INPUT_CLASS, StatusBadge, WorkspaceHeading, WorkspacePanel,
+  BUTTON_PRIMARY, BUTTON_SECONDARY, EmptyPanel, FormField,
+  INPUT_CLASS, WorkspaceHeading, WorkspacePanel,
 } from "@/components/workspace/Primitives";
-import { PaymentMethodsWorkspace } from "@/components/workspace/PaymentMethodsPanel";
 import { apiPost, messageOf } from "@/lib/api-client";
 import { useServerResource } from "@/lib/use-server-resource";
 import { formatDay, VisitsList, type ServerVisit } from "@/components/workspace/VisitsSections";
@@ -158,101 +147,243 @@ export function ClientApplications() {
   return <ApplicationsList viewpoint="client" title="Mes demandes" description="Du dépôt de votre dossier à la décision du propriétaire, chaque changement de statut est enregistré ici et notifié." />;
 }
 
+/* ------------------------------------------------------------------
+   CONTRATS : écrits par le serveur, signés par le locataire
+   ------------------------------------------------------------------
+   Un contrat n’existe que s’il a été rédigé après l’acceptation d’une
+   candidature : la liste ci-dessous vient de /api/contracts, elle ne
+   contient donc aucun exemple fabriqué pour meubler l’écran.
+   ------------------------------------------------------------------ */
+
+type ServerContract = {
+  id: string;
+  reference: string;
+  propertyId: string;
+  propertyTitle: string;
+  propertyReference: string;
+  propertyCity: string;
+  clientName: string;
+  status: string;
+  rent: number;
+  deposit: number;
+  startDate: string;
+  endDate: string;
+  duration: string;
+  signedAt: string | null;
+  createdAt: string;
+  canSign: boolean;
+  canCancel: boolean;
+};
+
+const CONTRACT_STATUS_LABELS: Record<string, string> = {
+  brouillon: "Brouillon",
+  envoye: "Envoyé",
+  "a-signer": "À signer",
+  signe: "Signé",
+  annule: "Annulé",
+};
+
+function contractStatusLabel(status: string): string {
+  return CONTRACT_STATUS_LABELS[status] ?? status;
+}
+
 export function ClientContracts() {
-  const { data } = useWorkflow();
+  const { data, loading, error } = useServerResource<{ contracts: ServerContract[] }>("/api/contracts");
+  const contracts = data?.contracts ?? [];
+
   return <>
-    <WorkspaceHeading eyebrow="Documents de location & règlements" title="Mes contrats & moyens de paiement" description="Consultez les contrats envoyés, téléchargez une copie imprimable, suivez la signature et gérez vos moyens de paiement." actions={<Link href="/client/paiements" className={BUTTON_SECONDARY}>Moyens de paiement<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} />
-    {data.contracts.length ? <ul className="mb-8 grid gap-4 md:grid-cols-2">{data.contracts.map((contract) => <li key={contract.id}><ContractCard contract={contract} /></li>)}</ul> : <div className="mb-8"><EmptyPanel icon={FileText} title="Aucun contrat transmis" description="Lorsqu’une demande de location sera acceptée et qu’un contrat vous sera envoyé, vous pourrez le consulter et le signer ici." action={<Link href="/client/demandes" className={BUTTON_SECONDARY}>Voir mes demandes<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} /></div>}
-    <PaymentMethodsWorkspace contextRole="client" embedded />
+    <WorkspaceHeading
+      eyebrow="Documents de location"
+      title="Mes contrats"
+      description="Les contrats rédigés par le propriétaire ou son agent mandaté après l’acceptation de votre dossier. Vous les signez ici ; la signature est horodatée et journalisée."
+    />
+    {error && <p role="alert" className="mb-4 rounded-xl border border-error/20 bg-error/[0.05] px-4 py-3 text-note text-error">{error}</p>}
+    {loading ? (
+      <p className="mb-8 flex items-center gap-2 rounded-card border border-border bg-card p-6 text-caption text-muted">
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />Lecture de vos contrats…
+      </p>
+    ) : contracts.length ? (
+      <ul className="mb-8 grid gap-4 md:grid-cols-2">
+        {contracts.map((contract) => (
+          <li key={contract.id}>
+            <WorkspacePanel
+              title={contract.propertyTitle}
+              description={`${contract.reference} · ${contract.duration}`}
+              icon={FileText}
+              action={<span className="inline-flex items-center rounded-full border border-border px-2.5 py-1 text-micro font-semibold uppercase tracking-[0.1em] text-muted">{contractStatusLabel(contract.status)}</span>}
+            >
+              <p className="text-caption text-muted">
+                Loyer mensuel <strong className="homera-num text-foreground">{formatMoney(contract.rent)} FCFA</strong> · dépôt de garantie{" "}
+                <strong className="homera-num text-foreground">{formatMoney(contract.deposit)} FCFA</strong>
+              </p>
+              <p className="mt-1 text-caption text-muted">
+                Du {formatDay(contract.startDate)} au {formatDay(contract.endDate)}
+                {contract.signedAt ? ` · signé le ${formatDay(contract.signedAt)}` : ""}
+              </p>
+              <Link href={`/client/contrats/${contract.id}`} className="mt-4 inline-flex min-h-10 items-center gap-2 text-note font-semibold text-homera-terracotta hover:underline">
+                Ouvrir le contrat<ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            </WorkspacePanel>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      <div className="mb-8">
+        <EmptyPanel
+          icon={FileText}
+          title="Aucun contrat pour le moment"
+          description="Un contrat est rédigé par le propriétaire après l’acceptation de votre dossier de location. Il apparaîtra ici, avec sa date d’effet et son dépôt de garantie."
+          action={<Link href="/client/demandes" className={BUTTON_SECONDARY}>Voir mes demandes<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>}
+        />
+      </div>
+    )}
+    <div className="rounded-card border border-border bg-card p-4">
+      <p className="text-caption leading-relaxed text-muted">
+        <strong className="text-foreground">Aucun encaissement n’est ouvert sur ce pilote.</strong> HOMERA ne
+        demande ni loyer ni caution : le règlement se fait entre les parties, au moment de la remise des clés,
+        sur présentation du contrat signé.
+      </p>
+    </div>
   </>;
 }
 
-function ContractCard({ contract }: { contract: ContractRecord }) {
-  return <WorkspacePanel title={contract.propertyTitle} description={`${contract.propertyRef} · ${contract.duration}`} icon={FileText} action={<StatusBadge status={contract.status} />}><p className="text-caption text-muted">Loyer mensuel <strong className="homera-num text-foreground">{formatMoney(contract.rent)} FCFA</strong></p><Link href={`/client/contrats/${contract.id}`} className="mt-4 inline-flex min-h-10 items-center gap-2 text-note font-semibold text-homera-terracotta hover:underline">Ouvrir le contrat<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link></WorkspacePanel>;
-}
-
 export function ClientContractReader({ contractId }: { contractId: string }) {
-  const { data, updateData } = useWorkflow();
+  const { data, loading, error, reload } = useServerResource<{ contract: ServerContract }>(`/api/contracts/${contractId}`);
+  const [fullName, setFullName] = useState("");
   const [accepted, setAccepted] = useState(false);
-  const [signed, setSigned] = useState(false);
-  const [paidFeedback, setPaidFeedback] = useState("");
-  const contract = data.contracts.find((entry) => entry.id === contractId);
-  const application = contract ? data.applications.find((entry) => entry.id === contract.applicationId) : undefined;
-  const defaultMethod = data.paymentMethods.find((entry) => entry.isDefault) ?? data.paymentMethods[0];
-  if (!contract) return <div className="mx-auto max-w-3xl py-8"><WorkspaceHeading eyebrow="Contrat" title="Document introuvable" description="Aucun contrat local ne correspond à cette adresse." /><EmptyPanel icon={FileText} title="Le contrat n’est pas disponible" description="Il peut avoir été supprimé du stockage de démonstration. Revenez à votre liste de contrats." action={<Link href="/client/contrats" className={BUTTON_PRIMARY}>Mes contrats<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} /></div>;
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState("");
+  const [problem, setProblem] = useState("");
+  const contract = data?.contract;
 
-  const printContract = () => window.print();
-  const downloadSummary = () => {
-    const content = ["HOMERA — RÉCAPITULATIF DU CONTRAT (DOCUMENT DE DÉMONSTRATION)", "", `Bien : ${contract.propertyTitle}`, `Référence : ${contract.propertyRef}`, `Loyer : ${formatMoney(contract.rent)} FCFA par mois`, `Durée : ${contract.duration}`, `Statut : ${contract.status}`, `Clauses : ${contract.clauses}`, "", "Ce fichier est un résumé de démonstration, pas un contrat juridiquement valable."].join("\n");
-    const blob = new Blob([content], { type: "text/plain;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    const anchor = document.createElement("a");
-    anchor.href = url;
-    anchor.download = `HOMERA-${contract.propertyRef}-contrat-demo.txt`;
-    anchor.click();
-    URL.revokeObjectURL(url);
+  const sign = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!contract) return;
+    setBusy(true);
+    setProblem("");
+    const result = await apiPost<{ signedAt: string }>(`/api/contracts/${contract.id}`, { action: "signer", fullName });
+    setBusy(false);
+    if (!result.ok) {
+      setProblem(messageOf(result) ?? "La signature n’a pas pu être enregistrée.");
+      return;
+    }
+    setMessage("Votre signature est enregistrée : le propriétaire en est notifié et le contrat passe au statut « signé ».");
+    await reload();
   };
-  const payContractAmount = (kind: "loyer" | "caution") => {
-    const effectiveContract: ContractRecord = signed ? { ...contract, status: "signe" } : contract;
-    const check = canClientPayContract(effectiveContract, data.transactions, kind);
-    if (!check.allowed) return;
-    const amount = check.amount;
-    const provider = defaultMethod?.provider ?? "mtn-momo";
-    const providerSpec = PAYMENT_PROVIDERS.find((entry) => entry.id === provider) ?? PAYMENT_PROVIDERS[0];
-    const reference = createLocalId("PAY-CTN").toUpperCase();
-    const now = new Date().toISOString();
-    const split = computeFinancialBreakdown(kind, amount);
-    const txStatus = provider === "virement-uemoa" ? "en-verification" : "confirme";
-    const record: PaymentTransactionRecord = {
-      id: createLocalId("tx"),
-      reference,
-      kind,
-      label: `${kind === "caution" ? "Dépôt de garantie (2 mois)" : "Loyer mensuel"} · ${contract.propertyTitle}`,
-      amount,
-      homeraFee: split.homeraFee,
-      ownerNetAmount: split.ownerNetAmount,
-      agentAmount: split.agentAmount,
-      provider,
-      methodSummary: defaultMethod ? `${providerSpec.shortLabel} · ${defaultMethod.maskedIdentifier}` : `${providerSpec.shortLabel} · direct`,
-      propertyId: contract.propertyId,
-      propertyRef: contract.propertyRef,
-      contractId: contract.id,
-      status: txStatus,
-      fundsAvailability: txStatus === "confirme" ? "disponible" : "en-attente",
-      createdAt: now,
-    };
-    updateData((current) => ({
-      ...current,
-      transactions: [record, ...current.transactions],
-      notifications: [
-        makeNotification("contrat", `Règlement enregistré (${reference})`, `${formatMoney(amount)} FCFA · ${contract.propertyRef}`, "/client/paiements"),
-        ...current.notifications,
-      ],
-    }));
-    setPaidFeedback(`Règlement ${reference} (${formatMoney(amount)} FCFA) enregistré via HOMERA.`);
-  };
-  const sign = () => {
-    if (!accepted) return;
-    const now = new Date().toISOString();
-    updateData((current) => ({
-      ...current,
-      contracts: current.contracts.map((entry) => entry.id === contract.id ? { ...entry, status: "signe", signedAt: now, updatedAt: now } : entry),
-      applications: current.applications.map((entry) => entry.id === contract.applicationId ? { ...entry, stage: "signature" } : entry),
-      notifications: [makeNotification("contrat", "Signature enregistrée localement", `Contrat pour ${contract.propertyTitle}`, "/client/contrats"), ...current.notifications],
-    }));
-    setSigned(true);
-  };
-  const effectiveContract: ContractRecord = signed ? { ...contract, status: "signe" } : contract;
-  const rentPaymentCheck = canClientPayContract(effectiveContract, data.transactions, "loyer");
-  const depositPaymentCheck = canClientPayContract(effectiveContract, data.transactions, "caution");
-  if (signed || contract.status === "signe") return <div className="mx-auto max-w-4xl"><WorkspaceHeading eyebrow="Contrat" title="Votre signature est enregistrée" description="Le statut du contrat est mis à jour dans ce navigateur. Le règlement via HOMERA est désormais ouvert." actions={<Link href="/client/contrats" className={BUTTON_SECONDARY}><ArrowLeft className="h-4 w-4" aria-hidden="true" />Tous mes contrats</Link>} /><div className="rounded-card border border-success/25 bg-success/[0.04] p-6 text-center sm:p-10"><CheckCircle2 className="mx-auto h-12 w-12 text-success" aria-hidden="true" /><h2 className="mt-4 font-serif text-display-sm">Contrat signé · échéances ouvertes</h2><p className="mt-2 text-body-sm text-muted">La signature du contrat autorise le règlement de la location et du dépôt de garantie auprès de HOMERA.</p><p className="mt-4 font-mono text-caption text-muted">{contract.propertyRef}</p>{paidFeedback && <p role="status" className="mt-4 rounded-xl border border-success/30 bg-card px-4 py-2.5 text-caption font-semibold text-foreground">{paidFeedback}</p>}<div className="mt-6 flex flex-wrap justify-center gap-3">{rentPaymentCheck.allowed && <button type="button" onClick={() => payContractAmount("loyer")} className={BUTTON_PRIMARY}>{rentPaymentCheck.contextualLabel}</button>}{depositPaymentCheck.allowed && <button type="button" onClick={() => payContractAmount("caution")} className={BUTTON_SECONDARY}>{depositPaymentCheck.contextualLabel}</button>}<Link href="/client/paiements" className={BUTTON_SECONDARY}>Voir mes paiements & justificatifs<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link></div></div></div>;
-  return <div className="mx-auto max-w-5xl"><WorkspaceHeading eyebrow="Espace documentaire" title="Contrat de location" description="Document de démonstration, à relire avant signature. L’identité, l’horodatage et la valeur juridique de la signature nécessitent un service sécurisé." actions={<Link href="/client/contrats" className={BUTTON_SECONDARY}><ArrowLeft className="h-4 w-4" aria-hidden="true" />Mes contrats</Link>} />
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]"><article className="contract-paper rounded-card border border-border bg-card p-6 shadow-[var(--shadow-card)] sm:p-10"><div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6"><div><p className="homera-brand text-brand-sm text-homera-brown">Homera</p><p className="mt-1 text-caption uppercase tracking-[0.18em] text-muted">Contrat de location · aperçu</p></div><div className="text-right"><StatusBadge status={contract.status} /><p className="mt-2 font-mono text-caption text-muted">{contract.propertyRef}</p></div></div>
-      <h2 className="mt-8 font-serif text-display-sm">Bail d’habitation</h2><p className="mt-2 text-body-sm text-muted">Document généré pour l’aperçu du parcours de location.</p>
-      <dl className="mt-7 grid gap-4 sm:grid-cols-2"><SummaryItem label="Bien concerné" value={contract.propertyTitle} /><SummaryItem label="Référence HOMERA" value={contract.propertyRef} /><SummaryItem label="Loyer mensuel" value={`${formatMoney(contract.rent)} FCFA`} /><SummaryItem label="Durée prévue" value={contract.duration} /><SummaryItem label="Locataire" value="Titulaire du compte connecté" /><SummaryItem label="Propriétaire" value="À confirmer par les parties" /></dl>
-      <div className="mt-8 space-y-5 text-body-sm leading-relaxed text-muted"><section><h3 className="font-semibold text-foreground">1. Objet du contrat</h3><p className="mt-2">Le logement référencé ci-dessus est proposé à la location. Les parties devront vérifier l’identité des signataires, le titre de propriété et les pièces annexées avant tout engagement définitif.</p></section><section><h3 className="font-semibold text-foreground">2. Conditions financières</h3><p className="mt-2">Le loyer indiqué est une donnée de démonstration. Le dépôt de garantie, les charges et les modalités de paiement devront être précisés dans un document final.</p></section><section><h3 className="font-semibold text-foreground">3. Durée et entrée dans les lieux</h3><p className="mt-2">{contract.duration}. La date d’entrée, l’état des lieux et la remise des clés devront faire l’objet d’un accord distinct entre les parties.</p></section><section><h3 className="font-semibold text-foreground">4. Clauses complémentaires</h3><p className="mt-2">{contract.clauses}</p></section><p className="border-t border-border pt-5 text-caption font-medium text-warning">Ce document ne constitue pas un contrat juridiquement valable et ne doit pas être signé en dehors du parcours sécurisé HOMERA.</p></div>
-      <div className="mt-8 border-t border-border pt-5"><label className="flex cursor-pointer items-start gap-3 text-note leading-relaxed"><input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} className="mt-1 h-4 w-4 accent-homera-terracotta" /><span>J’ai lu ce document de démonstration et comprends qu’il ne s’agit pas d’une signature électronique juridiquement opposable.</span></label><button type="button" onClick={sign} disabled={!accepted || contract.status === "brouillon" || contract.status === "annule"} className={`${BUTTON_PRIMARY} mt-4 disabled:cursor-not-allowed disabled:opacity-45`}><CheckCircle2 className="h-4 w-4" aria-hidden="true" />Signer l’aperçu</button></div>
-    </article><aside className="space-y-4"><WorkspacePanel title="Actions document" description="Télécharger ou enregistrer en PDF depuis votre navigateur." icon={FileText}><button type="button" onClick={downloadSummary} className={`${BUTTON_SECONDARY} w-full`}><Download className="h-4 w-4" aria-hidden="true" />Télécharger le récapitulatif</button><button type="button" onClick={printContract} className={`${BUTTON_SECONDARY} mt-2 w-full`}><FileText className="h-4 w-4" aria-hidden="true" />Imprimer / enregistrer PDF</button><p className="mt-4 text-caption leading-relaxed text-muted">Statut actuel : <StatusBadge status={contract.status} /></p>{application && <p className="mt-3 text-caption leading-relaxed text-muted">Demande rattachée : {application.id}</p>}</WorkspacePanel><WorkspacePanel title="Règlement conditionné à la signature" description="Aucun paiement n’est demandé avant la signature du contrat." icon={CheckCircle2}><p className="text-caption leading-relaxed text-muted">Conformément au parcours HOMERA (<strong className="text-foreground">Contrat → Signature → Paiement</strong>), le bouton de paiement de la location ({formatMoney(contract.rent)} FCFA) ne s’active qu’une fois le contrat signé.</p><Link href="/client/paiements" className="mt-3 inline-flex min-h-9 items-center gap-1.5 text-caption font-semibold text-homera-terracotta hover:underline">Gérer mes moyens de paiement<ArrowRight className="h-3.5 w-3.5" aria-hidden="true" /></Link></WorkspacePanel><DemoNotice>Le fichier téléchargé est un récapitulatif de démonstration. La génération, l’envoi et la signature contractuelle nécessitent l’API HOMERA.</DemoNotice></aside></div>
+
+  if (loading) {
+    return (
+      <p className="flex items-center gap-2 rounded-card border border-border bg-card p-6 text-caption text-muted">
+        <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />Lecture du contrat…
+      </p>
+    );
+  }
+  if (!contract) {
+    return <div className="mx-auto max-w-3xl py-8">
+      <WorkspaceHeading eyebrow="Contrat" title="Contrat introuvable" description="Aucun contrat ne correspond à cette adresse, ou il ne vous concerne pas." />
+      <EmptyPanel icon={FileText} title="Le contrat n’est pas accessible" description="Il peut avoir été annulé, ou appartenir à un autre compte. Revenez à votre liste de contrats." action={<Link href="/client/contrats" className={BUTTON_PRIMARY}>Mes contrats<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} />
+      {error && <p role="alert" className="mt-4 text-note text-error">{error}</p>}
+    </div>;
+  }
+
+  const signed = contract.status === "signe";
+
+  return <div className="mx-auto max-w-5xl">
+    <WorkspaceHeading
+      eyebrow="Espace documentaire"
+      title={signed ? "Contrat signé" : "Contrat de location"}
+      description={
+        signed
+          ? "Votre signature est enregistrée avec la date et l’heure. Le propriétaire en a été notifié."
+          : "Relisez le contrat, puis signez-le. La signature est enregistrée côté serveur, horodatée et journalisée."
+      }
+      actions={<Link href="/client/contrats" className={BUTTON_SECONDARY}><ArrowLeft className="h-4 w-4" aria-hidden="true" />Mes contrats</Link>}
+    />
+    {message && <p role="status" className="mb-4 rounded-xl border border-success/20 bg-success/[0.05] px-4 py-3 text-note text-success">{message}</p>}
+    {problem && <p role="alert" className="mb-4 rounded-xl border border-error/20 bg-error/[0.05] px-4 py-3 text-note text-error">{problem}</p>}
+    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_18rem]">
+      <article className="contract-paper rounded-card border border-border bg-card p-6 shadow-[var(--shadow-card)] sm:p-10">
+        <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-6">
+          <div>
+            <p className="homera-brand text-brand-sm text-homera-brown">Homera</p>
+            <p className="mt-1 text-caption uppercase tracking-[0.18em] text-muted">Contrat de location</p>
+          </div>
+          <div className="text-right">
+            <span className="inline-flex items-center rounded-full border border-border px-3 py-1 text-caption font-semibold">{contractStatusLabel(contract.status)}</span>
+            <p className="mt-2 font-mono text-caption text-muted">{contract.reference}</p>
+          </div>
+        </div>
+        <h2 className="mt-8 font-serif text-display-sm">Bail d’habitation</h2>
+        <p className="mt-2 text-body-sm text-muted">{contract.propertyTitle} · {contract.propertyCity}</p>
+        <dl className="mt-7 grid gap-4 sm:grid-cols-2">
+          <SummaryItem label="Bien concerné" value={contract.propertyTitle} />
+          <SummaryItem label="Référence du bien" value={contract.propertyReference || "—"} />
+          <SummaryItem label="Loyer mensuel" value={`${formatMoney(contract.rent)} FCFA`} />
+          <SummaryItem label="Dépôt de garantie" value={`${formatMoney(contract.deposit)} FCFA`} />
+          <SummaryItem label="Locataire" value={contract.clientName} />
+          <SummaryItem label="Durée" value={`${contract.duration} · du ${formatDay(contract.startDate)} au ${formatDay(contract.endDate)}`} />
+        </dl>
+        <div className="mt-8 space-y-5 text-body-sm leading-relaxed text-muted">
+          <section>
+            <h3 className="font-semibold text-foreground">1. Objet du contrat</h3>
+            <p className="mt-2">Le logement référencé ci-dessus est donné à location pour la durée indiquée. Les pièces du dossier (identité, titre de propriété, mandat éventuel) ont été déposées sur HOMERA et peuvent être demandées aux parties.</p>
+          </section>
+          <section>
+            <h3 className="font-semibold text-foreground">2. Conditions financières</h3>
+            <p className="mt-2">Le loyer mensuel et le dépôt de garantie figurent ci-dessus. Aucun règlement n’est encaissé par HOMERA : il intervient entre les parties, contre reçu, au plus tard à la remise des clés.</p>
+          </section>
+          <section>
+            <h3 className="font-semibold text-foreground">3. Durée et entrée dans les lieux</h3>
+            <p className="mt-2">Le bail court du {formatDay(contract.startDate)} au {formatDay(contract.endDate)}. L’état des lieux et la remise des clés font l’objet d’un document signé par les deux parties.</p>
+          </section>
+          <section>
+            <h3 className="font-semibold text-foreground">4. Portée de la signature HOMERA</h3>
+            <p className="mt-2">La signature apposée ici est une signature électronique simple : le nom déclaré, la date, l’heure et l’adresse IP sont conservés dans le journal HOMERA. Elle ne remplace pas une signature électronique qualifiée ni un acte notarié.</p>
+          </section>
+        </div>
+        {signed ? (
+          <p className="mt-8 rounded-xl border border-success/25 bg-success/[0.05] p-4 text-note text-success">
+            Signé le {contract.signedAt ? formatDay(contract.signedAt) : "—"} par {contract.clientName}.
+          </p>
+        ) : (
+          <form onSubmit={sign} className="mt-8 border-t border-border pt-5">
+            <FormField label="Nom complet porté au contrat" name="contract-signature" required>
+              <input
+                id="contract-signature"
+                value={fullName}
+                onChange={(event) => setFullName(event.target.value)}
+                autoComplete="name"
+                placeholder="Prénom et nom"
+                className={INPUT_CLASS}
+              />
+            </FormField>
+            <label className="mt-3 flex cursor-pointer items-start gap-3 text-note leading-relaxed">
+              <input type="checkbox" checked={accepted} onChange={(event) => setAccepted(event.target.checked)} className="mt-1 h-4 w-4 accent-homera-terracotta" />
+              <span>J’ai lu le contrat et j’accepte que ma signature soit enregistrée avec la date, l’heure et l’adresse IP de cette connexion.</span>
+            </label>
+            <button type="submit" disabled={!accepted || fullName.trim().length < 3 || busy} className={`${BUTTON_PRIMARY} mt-4 disabled:cursor-not-allowed disabled:opacity-45`}>
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <CheckCircle2 className="h-4 w-4" aria-hidden="true" />}
+              Signer le contrat
+            </button>
+          </form>
+        )}
+      </article>
+      <aside className="space-y-4">
+        <WorkspacePanel title="Suivi" description="Où en est ce contrat." icon={ClipboardCheck}>
+          <ul className="space-y-2 text-caption text-muted">
+            <li>Rédigé le {formatDay(contract.createdAt)}</li>
+            <li>Statut : <strong className="text-foreground">{contractStatusLabel(contract.status)}</strong></li>
+            <li>{signed ? "Signé par les deux parties côté locataire." : "En attente de votre signature."}</li>
+          </ul>
+        </WorkspacePanel>
+        <WorkspacePanel title="Règlement" description="Aucun encaissement sur le pilote." icon={Clock3}>
+          <p className="text-caption leading-relaxed text-muted">
+            HOMERA n’encaisse ni loyer ni caution. Le règlement se fait entre vous et le propriétaire, contre reçu,
+            après la signature et la remise des clés.
+          </p>
+        </WorkspacePanel>
+      </aside>
+    </div>
   </div>;
 }
 

@@ -18,6 +18,8 @@ export async function GET(request: Request) {
     types: toStringArray(params.get("type")) as PropertyType[],
     cities: toStringArray(params.get("ville")),
     districts: toStringArray(params.get("quartier")),
+    department: (params.get("departement") ?? "").trim(),
+    commune: (params.get("commune") ?? "").trim(),
     features: toStringArray(params.get("equipement")) as PropertyFeature[],
     landTitles: toStringArray(params.get("titre")) as LandTitle[],
     q: params.get("q") ?? "",

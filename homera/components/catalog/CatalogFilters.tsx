@@ -8,6 +8,7 @@ import type { LandTitle, PropertyFeature, PropertyIntent, PropertyType } from "@
 import type { CatalogQuery } from "@/lib/properties";
 import type { CatalogFacets } from "@/lib/use-catalog";
 import { TextRoll } from "@/components/ui/TextRoll";
+import { useServerResource } from "@/lib/use-server-resource";
 
 /* ==================================================================
    HOMERA — FILTRES DE L’EXPLORATEUR
@@ -81,6 +82,17 @@ export function CatalogFilters({
       priceMax: null,
     });
 
+  /* Découpage administratif béninois : pays → département → commune →
+     quartier. Le département est le premier niveau ; en le choisissant,
+     les communes et quartiers proposés se resserrent d’eux-mêmes, car
+     les facettes sont recalculées par le serveur avec ce filtre. */
+  const locations = useServerResource<{
+    departments: { value: string; count: number }[];
+    communes: { value: string; count: number }[];
+  }>("/api/locations");
+  const departmentList = locations.data?.departments ?? [];
+  const communeList = locations.data?.communes ?? [];
+
   const typeValues = query.intent ? TYPES_BY_INTENT[query.intent] : (Object.keys(TYPE_LABELS) as PropertyType[]);
   const cityNames = facets?.cities.map((entry) => entry.value) ?? [];
   const districtNames = facets?.districts.map((entry) => entry.value) ?? [];
@@ -136,8 +148,61 @@ export function CatalogFilters({
         )}
 
         <Group label="Localisation">
+          {departmentList.length > 1 && (
+            <div className="mb-3">
+              <p className="mb-2 text-micro font-semibold uppercase tracking-[0.13em] text-muted">Département</p>
+              <div className="flex flex-wrap gap-2">
+                {departmentList.map((entry) => {
+                  const active = query.department === entry.value;
+                  return (
+                    <button
+                      key={entry.value}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() =>
+                        onChange({
+                          department: active ? "" : entry.value,
+                          // Changer de département rend caduques la commune et la ville retenues.
+                          commune: "",
+                          cities: [],
+                          districts: [],
+                        })
+                      }
+                      className={chipClass(active)}
+                    >
+                      {entry.value}
+                      <Count value={entry.count} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          {communeList.length > 1 && (
+            <div className="mb-3">
+              <p className="mb-2 text-micro font-semibold uppercase tracking-[0.13em] text-muted">Commune</p>
+              <div className="flex flex-wrap gap-2">
+                {communeList.map((entry) => {
+                  const active = query.commune === entry.value;
+                  return (
+                    <button
+                      key={entry.value}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => onChange({ commune: active ? "" : entry.value, cities: [], districts: [] })}
+                      className={chipClass(active)}
+                    >
+                      {entry.value}
+                      <Count value={entry.count} />
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+          <p className="mb-2 text-micro font-semibold uppercase tracking-[0.13em] text-muted">Ville</p>
           <div className="flex flex-wrap gap-2">
-            {cityNames.length === 0 && <p className="text-caption text-muted">Aucune commune dans ce périmètre.</p>}
+            {cityNames.length === 0 && <p className="text-caption text-muted">Aucune ville dans ce périmètre.</p>}
             {cityNames.map((city) => {
               const active = query.cities.includes(city);
               return (
@@ -272,8 +337,9 @@ export function CatalogFilters({
           <ChevronDown className={`h-4 w-4 text-muted transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
         </button>
 
-        {open && (
-          <div id={panelId} className="space-y-6 border-t border-border p-4">
+        {/* Le panneau reste dans le document, masqué : `aria-controls` doit
+            toujours désigner un élément qui existe. */}
+        <div id={panelId} hidden={!open} className="space-y-6 border-t border-border p-4">
             <Group label="Chambres">
               <Stepper
                 values={BEDROOM_STEPS}
@@ -389,8 +455,7 @@ export function CatalogFilters({
                 </div>
               </Group>
             )}
-          </div>
-        )}
+        </div>
       </div>
     </section>
   );

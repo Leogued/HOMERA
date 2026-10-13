@@ -1,6 +1,5 @@
 import Link from "next/link";
 import {
-  ArrowLeft,
   ArrowRight,
   Bath,
   Bed,
@@ -38,6 +37,8 @@ import {
   type AvailabilityWindow, type VerifiedOwner,
 } from "@/components/catalog/PropertySidePanels";
 import { CopyReference } from "@/components/ui/CopyReference";
+import { AskQuestionLink } from "@/components/catalog/AskQuestionLink";
+import { BackToResults } from "@/components/catalog/BackToResults";
 import { FavoriteButton } from "@/components/catalog/FavoriteButton";
 import { Reveal } from "@/components/ui/Reveal";
 import { Breadcrumbs } from "@/components/catalog/PageHero";
@@ -103,13 +104,12 @@ export function PropertyDetail({
             { label: property.title },
           ]}
         />{" "}
-        <Link
-          href="/explorer"
-          className="homera-underline mt-6 inline-flex min-h-10 items-center gap-2 text-note font-medium homera-accent-ink"
-        >
+        {/* Le lien ne promet un retour aux résultats que s’il vient vraiment
+            d’une recherche : sinon il mène à la page du projet. */}
+        <div className="mt-6">
           {" "}
-          <ArrowLeft className="h-3.5 w-3.5" aria-hidden="true" /> Revenir aux résultats{" "}
-        </Link>{" "}
+          <BackToResults fallbackHref={PROJECT_HREF[property.intent]} label={`Voir tous les biens ${INTENT_LABELS[property.intent].toLowerCase()}`} />{" "}
+        </div>{" "}
         {/* ---------------- En-tête du bien ---------------- */}{" "}
         <header className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-[1.35fr_1fr]">
           {" "}
@@ -158,13 +158,14 @@ export function PropertyDetail({
                   Demander une visite <ArrowRight className="h-4 w-4" aria-hidden="true" />
                 </Link>
               )}{" "}
-              <Link
-                href={`/contact?bien=${property.homeraId}`}
+              <AskQuestionLink
+                propertyId={property.id}
+                reference={property.homeraId}
                 className="homera-press inline-flex min-h-12 items-center gap-2 rounded-btn border border-border px-5 text-body-sm font-medium text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
               >
                 {" "}
                 Poser une question{" "}
-              </Link>{" "}
+              </AskQuestionLink>{" "}
               <FavoriteButton
                 propertyId={property.id}
                 title={property.title}

@@ -185,6 +185,14 @@ function seedAccounts(db: Db): void {
   ).run(CREATED_AT, CREATED_AT, CREATED_AT);
 }
 
+/** Le Bénin se découpe en départements et communes : une ville seule ne dit pas où l’on est. */
+function departmentAndCommune(city: string): { department: string; commune: string } {
+  for (const entry of DEPARTMENTS) {
+    if (entry.communes.includes(city)) return { department: entry.department, commune: city };
+  }
+  return { department: city, commune: city };
+}
+
 function seedProperties(db: Db): void {
   const owners = ["HOM-DEMO-PROP", "HOM-DEMO-OWNER2"];
   const insert = db.prepare(
@@ -217,8 +225,8 @@ function seedProperties(db: Db): void {
       property.intent,
       property.price,
       property.pricePeriod ?? "",
-      property.city,
-      property.city,
+      departmentAndCommune(property.city).department,
+      departmentAndCommune(property.city).commune,
       property.city,
       property.district,
       property.bedrooms,

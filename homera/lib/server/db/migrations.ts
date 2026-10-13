@@ -497,6 +497,65 @@ CREATE INDEX IF NOT EXISTS idx_applications_client ON rental_applications(client
 CREATE INDEX IF NOT EXISTS idx_applications_visit  ON rental_applications(visit_id);
 `;
 
+
+/* ------------------------------------------------------------------
+
+   003 — MESSAGERIE INTERNE : fils de discussion et messages
+
+   ------------------------------------------------------------------
+
+   Jusqu’ici, l’écran « Messages » conservait les échanges dans le
+
+   navigateur : deux personnes ne pouvaient pas se parler. La messagerie
+
+   devient un objet serveur :
+
+     • une conversation est rattachée à un bien (et, quand elle existe,
+       à la visite qui l’a motivée) ;
+     • seuls les participants voient le fil — jamais l’administration,
+       qui n’a pas à lire les échanges privés ;
+     • chaque participant a son propre curseur de lecture, ce qui rend
+       les « non lus » réels et personnels.
+
+   Migration additive : aucune table existante n’est modifiée.
+   ------------------------------------------------------------------ */
+
+const M003 = `
+CREATE TABLE IF NOT EXISTS conversations (
+  id              TEXT PRIMARY KEY,
+  property_id     TEXT NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+  visit_id        TEXT REFERENCES visits(id) ON DELETE SET NULL,
+  subject         TEXT NOT NULL DEFAULT '',
+  created_by      TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  created_at      TEXT NOT NULL,
+  updated_at      TEXT NOT NULL,
+  last_message_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS conversation_participants (
+  conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  user_id         TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  role            TEXT NOT NULL DEFAULT 'intervenant'
+                  CHECK (role IN ('client', 'proprietaire', 'agent', 'admin')),
+  joined_at       TEXT NOT NULL,
+  last_read_at    TEXT,
+  PRIMARY KEY (conversation_id, user_id)
+);
+
+CREATE TABLE IF NOT EXISTS messages (
+  id              TEXT PRIMARY KEY,
+  conversation_id TEXT NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+  author_id       TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  body            TEXT NOT NULL,
+  created_at      TEXT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_conversations_property ON conversations(property_id, last_message_at DESC);
+CREATE INDEX IF NOT EXISTS idx_conversations_visit    ON conversations(visit_id);
+CREATE INDEX IF NOT EXISTS idx_participants_user      ON conversation_participants(user_id);
+CREATE INDEX IF NOT EXISTS idx_messages_conversation  ON messages(conversation_id, created_at);
+`;
+
 export const MIGRATIONS: Migration[] = [
   {
     id: "001",
@@ -507,5 +566,10 @@ export const MIGRATIONS: Migration[] = [
     id: "002",
     name: "candidatures-motif-et-auteur",
     sql: M002,
+  },
+  {
+    id: "003",
+    name: "messagerie-fils-de-discussion",
+    sql: M003,
   },
 ];

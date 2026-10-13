@@ -31,6 +31,9 @@ const auditModule = await import("../lib/server/audit");
 const notificationsModule = await import("../lib/server/notifications");
 const validationModule = await import("../lib/server/validation");
 const reportReasonsModule = await import("../lib/reports");
+const messaging = await import("../lib/server/services/messaging");
+const applicationsModule = await import("../lib/server/services/applications");
+const contracts = await import("../lib/server/services/contracts");
 const passwordModule = await import("../lib/server/security/password");
 const sessionModule = await import("../lib/server/security/session");
 
@@ -556,6 +559,67 @@ const validReport = validationModule.parseInput(validationModule.reportSchema, {
   detail: "Détail conforme : au moins dix caractères.",
 });
 check("un signalement complet est accepté par la validation serveur", validReport.ok);
+
+/* --- Messagerie : fils privés, participants réels, curseur de lecture --- */
+const opened = messaging.openConversation(db, client, {
+  propertyId,
+  body: "Bonjour, le bien est-il toujours disponible pour une visite ce mois-ci ?",
+});
+check("un visiteur ouvre une conversation sur un bien publié", opened.ok);
+const conversationId = opened.ok ? opened.data.id : "";
+check("les interlocuteurs légitimes sont ajoutés au fil", conversationId ? messaging.listConversations(db, owner).some((entry) => entry.id === conversationId) : false);
+check("le fil n’apparaît qu’aux participants", !messaging.listConversations(db, user(secondClient)).some((entry) => entry.id === conversationId));
+check("un non-participant ne peut pas lire le fil", !messaging.readConversation(db, user(secondClient), conversationId).ok);
+check("l’administration n’entre pas dans les échanges privés", !messaging.openConversation(db, adminUser, { propertyId, body: "Message de contrôle interne." }).ok);
+check("un message trop court est refusé", !messaging.postMessage(db, client, conversationId, "ok").ok);
+
+const reply = messaging.postMessage(db, owner, conversationId, "Oui, je vous propose samedi matin.");
+check("le propriétaire répond dans le fil", reply.ok);
+const thread = messaging.readConversation(db, client, conversationId);
+check("le fil contient les deux messages", thread.ok && thread.data.messages.length === 2, thread.ok ? `${thread.data.messages.length}` : "");
+check("les messages sont attribués à leur auteur", thread.ok && thread.data.messages[0].mine && !thread.data.messages[1].mine);
+check("le client a un message non lu", messaging.unreadMessageCount(db, client) === 1, `${messaging.unreadMessageCount(db, client)}`);
+check("le propriétaire qui vient d’écrire n’en a aucun", messaging.unreadMessageCount(db, owner) === 0);
+messaging.markConversationRead(db, client, conversationId);
+check("le curseur de lecture est personnel", messaging.unreadMessageCount(db, client) === 0);
+check("une conversation sur un bien inexistant est refusée", !messaging.openConversation(db, client, { propertyId: "bien-qui-nexiste-pas", body: "Bonjour, ce bien existe ?" }).ok);
+check("un message déclenche une notification", notificationsModule.listNotifications(db, client.id).some((entry) => entry.type === "message"));
+
+/* --- Contrat : né d’une candidature acceptée, signé par le locataire --- */
+const contractVisit = visits.requestVisit(db, client, { propertyId, date: isoDate(20), time: "11:00" });
+const contractVisitId = contractVisit.ok ? contractVisit.data.visit.id : "";
+if (contractVisitId) {
+  visits.decideVisit(db, owner, contractVisitId, { action: "confirmer" });
+  visits.decideVisit(db, owner, contractVisitId, { action: "effectuer", reason: "Visite réalisée." });
+}
+const dossier = applicationsModule.createApplication(db, client, {
+  visitId: contractVisitId,
+  message: "Dossier complet, revenus stables.",
+  monthlyIncome: 900000,
+});
+check("une candidature suit une visite effectuée", dossier.ok);
+const dossierId = dossier.ok ? dossier.data.application.id : "";
+check("un contrat est refusé avant l’acceptation", !contracts.createContractFromApplication(db, owner, dossierId).ok);
+const acceptedDossier = applicationsModule.decideApplication(db, owner, dossierId, {
+  action: "accepter",
+  reason: "Dossier complet.",
+});
+check("le propriétaire accepte la candidature", acceptedDossier.ok);
+check("un tiers ne rédige pas le contrat d’un bien qui n’est pas le sien", !contracts.createContractFromApplication(db, user(secondClient), dossierId).ok);
+const drafted = contracts.createContractFromApplication(db, owner, dossierId);
+check("le contrat est rédigé après acceptation", drafted.ok, drafted.ok ? drafted.data.reference : "");
+const contractId = drafted.ok ? drafted.data.id : "";
+check("le locataire voit le contrat le concernant", contracts.listContracts(db, client).some((entry) => entry.id === contractId));
+check("un lecteur étranger ne voit pas le contrat", !contracts.getContract(db, user(secondClient), contractId).ok);
+check("une signature sans nom est refusée", !contracts.signContract(db, client, contractId, "A").ok);
+check("l’administration ne signe pas à la place du locataire", !contracts.signContract(db, adminUser, contractId, "Admin HOMERA").ok);
+const signed = contracts.signContract(db, client, contractId, "Aïcha Client");
+check("le locataire signe le contrat", signed.ok);
+const signedContract = contracts.getContract(db, client, contractId);
+check("le contrat porte la date de signature", signedContract.ok && Boolean(signedContract.data.signedAt));
+check("une seconde signature est refusée", !contracts.signContract(db, client, contractId, "Aïcha Client").ok);
+check("un contrat signé ne s’annule plus", !contracts.cancelContract(db, owner, contractId, "Changement d’avis.").ok);
+check("le locataire est notifié du contrat", notificationsModule.listNotifications(db, client.id).some((entry) => entry.type === "contrat"));
 
 const auditEntries = auditModule.listAudit(db, { entityType: "mandat" });
 check("les actions sur mandats sont journalisées", auditEntries.length >= 2, `${auditEntries.length} entrées`);

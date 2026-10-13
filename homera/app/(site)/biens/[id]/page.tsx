@@ -17,6 +17,7 @@ import { PropertyDetail } from "@/components/catalog/PropertyDetail";
    rend un vrai 404 décidé par le serveur.
    ================================================================== */
 
+
 /* Rendu à la demande : un bien publié, suspendu ou loué apparaît tel que
    la base le connaît, sans délai de revalidation ni redéploiement. Une
    référence inconnue rend un vrai 404 (statut HTTP compris). */

@@ -7,7 +7,8 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useVisitor } from "@/components/providers/VisitorProvider";
 import { PropertyCard } from "@/components/catalog/PropertyCard";
 import { PropertyComparison } from "@/components/catalog/PropertyComparison";
-import { PROPERTIES, type Property } from "@/lib/content";
+import type { Property } from "@/lib/content";
+import { useServerResource } from "@/lib/use-server-resource";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY, DemoNotice, EmptyPanel, INPUT_CLASS, WorkspaceHeading } from "@/components/workspace/Primitives";
 
 type FavoriteFolders = { folders: string[]; assignment: Record<string, string> };
@@ -22,9 +23,15 @@ export function ClientFavorites() {
   const [newFolder, setNewFolder] = useState("");
   const [folderError, setFolderError] = useState("");
   const storageKey = `homera.favorite-folders.v1.${account?.id ?? "invite"}`;
-  const favorites = useMemo(() => visitor.favorites
-    .map((id) => PROPERTIES.find((property) => property.id === id))
-    .filter(isProperty), [visitor.favorites]);
+  /* Les favoris sont lus sur le compte : le cœur d’une fiche et cette page
+     montrent donc exactement la même liste, sur le même appareil ou un autre. */
+  const accountFavorites = useServerResource<{ items: Property[]; ids: string[] }>(account ? "/api/favorites" : null);
+  const favorites = useMemo(() => {
+    if (account) return accountFavorites.data?.items ?? [];
+    return visitor.favorites
+      .map((id) => (accountFavorites.data?.items ?? []).find((property) => property.id === id))
+      .filter(isProperty);
+  }, [account, accountFavorites.data, visitor.favorites]);
 
   /* Lecture nécessaire après montage : évite de rendre le localStorage côté serveur. */
   /* eslint-disable react-hooks/set-state-in-effect */
@@ -81,8 +88,8 @@ export function ClientFavorites() {
 
   return <>
     <WorkspaceHeading eyebrow="Votre sélection" title="Favoris" description="Retrouvez les biens gardés de côté, rangez-les par dossier et reprenez la comparaison depuis leur fiche." actions={<Link href="/explorer" className={BUTTON_PRIMARY}>Explorer les biens<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} />
-    {visitor.ready && favorites.length === 0 ? <EmptyPanel icon={Heart} title="Votre sélection est vide" description="Ajoutez un bien avec le bouton cœur depuis les résultats ou sa fiche. Vos favoris seront synchronisés dans le navigateur." action={<Link href="/explorer" className={BUTTON_PRIMARY}>Voir les biens<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} /> : <>
-      <section className="rounded-card border border-border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5" aria-label="Organiser les favoris"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-note font-semibold">Organiser ma sélection</p><p className="mt-1 text-caption text-muted">{favorites.length} bien{favorites.length === 1 ? "" : "s"} · dossiers privés à ce navigateur</p></div><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-homera-terracotta/[0.08] text-homera-terracotta"><FolderHeart className="h-5 w-5" aria-hidden="true" /></span></div>
+    {visitor.ready && favorites.length === 0 ? <EmptyPanel icon={Heart} title="Votre sélection est vide" description="Ajoutez un bien avec le bouton cœur depuis les résultats ou sa fiche : la sélection est enregistrée sur votre compte." action={<Link href="/explorer" className={BUTTON_PRIMARY}>Voir les biens<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} /> : <>
+      <section className="rounded-card border border-border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5" aria-label="Organiser les favoris"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-note font-semibold">Organiser ma sélection</p><p className="mt-1 text-caption text-muted">{favorites.length} bien{favorites.length === 1 ? "" : "s"} · {account ? "enregistrés sur votre compte" : "dossiers privés à ce navigateur"}</p></div><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-homera-terracotta/[0.08] text-homera-terracotta"><FolderHeart className="h-5 w-5" aria-hidden="true" /></span></div>
         <div className="mt-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Filtrer par dossier"><button type="button" role="tab" aria-selected={activeFolder === "Tous"} onClick={() => setActiveFolder("Tous")} className={`min-h-10 shrink-0 rounded-full border px-4 text-caption font-semibold ${activeFolder === "Tous" ? "border-homera-brown bg-homera-brown text-white" : "border-border text-muted hover:text-foreground"}`}>Tous · {favorites.length}</button>{folders.map((folder) => <span key={folder} className="inline-flex shrink-0 items-center rounded-full border border-border"><button type="button" role="tab" aria-selected={activeFolder === folder} onClick={() => setActiveFolder(folder)} className={`min-h-10 rounded-l-full px-4 text-caption font-semibold ${activeFolder === folder ? "bg-homera-terracotta/[0.08] text-homera-terracotta" : "text-muted hover:text-foreground"}`}>{folder} · {countFor(folder)}</button>{!DEFAULT_FOLDERS.includes(folder) && <button type="button" onClick={() => removeFolder(folder)} aria-label={`Supprimer le dossier ${folder}`} className="flex h-9 w-9 items-center justify-center rounded-r-full text-muted hover:text-error"><Trash2 className="h-3.5 w-3.5" aria-hidden="true" /></button>}</span>)}</div>
         <form onSubmit={createFolder} className="mt-4 flex flex-col gap-2 sm:flex-row"><label className="sr-only" htmlFor="new-favorite-folder">Nom du nouveau dossier</label><input id="new-favorite-folder" value={newFolder} maxLength={32} onChange={(event) => setNewFolder(event.target.value)} placeholder="Créer un dossier (ex. Pour la famille)" className={`${INPUT_CLASS} sm:max-w-sm`} /><button type="submit" className={BUTTON_SECONDARY}><Plus className="h-4 w-4" aria-hidden="true" />Créer un dossier</button></form>
         {folderError && <p role="alert" className="mt-2 text-caption text-error">{folderError}</p>}

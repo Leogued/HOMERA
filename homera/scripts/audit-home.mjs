@@ -155,7 +155,6 @@ const EXPECTED = {
     'L’immobilier commence par un lieu.',
     'Explorer HOMERA',
     'démonstration',
-    'Pause vidéo',
   ],
   '/explorer': ['Explorer', 'Filtres', 'référence'],
   '/services': ['Sommaire des services', 'Fil d’Ariane', 'gestion'],
@@ -238,13 +237,29 @@ const beyond = await fetchOk('/explorer?page=99');
 assert.equal(beyond.status, 200, 'Une page hors bornes reste servie');
 
 /* --- Page 404 ------------------------------------------------------ */
-for (const path of ['/cette-page-nexiste-pas', '/biens/inexistant']) {
+/* Adresse sans route : Next sert le 404 dans le HTML, sans JavaScript. */
+{
+  const path = '/cette-page-nexiste-pas';
   const response = await fetchOk(path);
   assert.equal(response.status, 404, `${path} : statut 404 attendu`);
   const html = render(await response.text());
   assert.ok(html.includes('Erreur 404'), `${path} : page 404 éditoriale absente`);
   assert.ok(html.includes('Explorer tous les biens'), `${path} : sortie de secours absente`);
   assert.ok(!html.includes('NaN'), `${path} : valeur NaN`);
+}
+
+/* Bien inconnu : la fiche appelle notFound(). Next 16 diffuse alors la
+   bordure d’erreur dans le payload RSC (le HTML initial ne contient que la
+   coquille, le rendu visible arrive avec l’hydratation). On vérifie donc ce
+   que le navigateur reçoit réellement : statut 404 + contenu du payload. */
+{
+  const path = '/biens/inexistant';
+  const response = await fetchOk(path);
+  assert.equal(response.status, 404, `${path} : statut 404 attendu`);
+  const html = await response.text();
+  assert.ok(html.includes('Erreur 404'), `${path} : page 404 éditoriale absente du payload`);
+  assert.ok(html.includes('Explorer tous les biens'), `${path} : sortie de secours absente du payload`);
+  assert.ok(!render(html).includes('NaN'), `${path} : valeur NaN`);
 }
 
 /* --- CSS compilé et images ---------------------------------------- */

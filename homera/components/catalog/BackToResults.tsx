@@ -1,0 +1,49 @@
+"use client";
+
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
+
+/* ==================================================================
+   HOMERA — RETOUR AUX RÉSULTATS
+   ------------------------------------------------------------------
+   Un visiteur qui a filtré, trié et feuilleté plusieurs écrans ne doit
+   pas perdre ce travail après avoir ouvert une fiche.
+
+   Le composant est d’abord un **lien** vers la page du projet : il est
+   valide sans JavaScript, au survol, au clic du milieu et pour les
+   moteurs de recherche. S’il s’avère au clic que le visiteur arrivait
+   d’une page de résultats d’HOMERA, le clic est intercepté et l’on
+   revient d’un cran dans l’historique : filtres, tri et pagination
+   reviennent tels qu’il les avait laissés, sans nouveau chargement de
+   résultats.
+
+   Aucun état n’est deviné au rendu — le serveur ne connaît pas la page
+   précédente — donc aucune étiquette n’est annoncée à tort : c’est
+   « Retour », et le retour est réel dans les deux cas.
+   ================================================================== */
+
+export function BackToResults({ fallbackHref, label }: { fallbackHref: string; label: string }) {
+  const onClick = (event: React.MouseEvent<HTMLAnchorElement>) => {
+    if (event.metaKey || event.ctrlKey || event.shiftKey || event.button !== 0) return;
+    const origin = window.location.origin;
+    const referrer = document.referrer;
+    const fromResults =
+      referrer.startsWith(origin) && /\/explorer|\/acheter|\/louer|\/sejour|\/communes/.test(referrer.slice(origin.length));
+    if (fromResults) {
+      event.preventDefault();
+      window.history.back();
+    }
+  };
+
+  return (
+    <Link
+      href={fallbackHref}
+      onClick={onClick}
+      aria-label={label}
+      className="homera-press inline-flex min-h-10 items-center gap-2 rounded-full border border-border bg-card px-4 text-caption font-semibold text-muted transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
+    >
+      <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+      Retour
+    </Link>
+  );
+}
