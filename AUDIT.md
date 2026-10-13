@@ -90,6 +90,19 @@ Légende : **B** = bloquant (empêche une mise en production honnête), **I** = 
 | **B4** | Le signalement acceptait n’importe quel motif et n’importe quelle longueur d’explication : une requête forgée à la main passait. | `reportSchema` exige l’un des 7 motifs de `lib/reports.ts` et au moins 10 caractères d’explication. Ces motifs sont désormais partagés par le formulaire public, la validation serveur et l’affichage admin. |
 | **B5** | Signaler un bien inexistant provoquait une erreur `500` (contrainte de clé étrangère violée) au lieu d’un `404`. | `createReport()` vérifie l’existence du bien et renvoie `introuvable` → `404`. |
 
+### 2.6 Correctifs apportés pendant le LOT 7
+
+| # | Constat | Correction |
+|---|---|---|
+| **B6** | `?departement=` et `?commune=` étaient acceptés par l’URL puis ignorés par `app/api/properties/route.ts` : la route construisait ses filtres à la main. | La route lit les deux paramètres ; `properties.ts` filtre et compte avec `COALESCE(department, commune, city)` pour rester compatible avec les lignes anciennes. |
+| **B7** | Les biens étaient semés avec la **ville** recopiée dans `department` et `commune` : la table des 12 départements était inerte et « Cotonou » apparaissait comme une commune du Littoral. | `departmentAndCommune(city)` alimente l’insertion depuis la table de référence. Comptes vérifiés : Littoral/Cotonou 21, Atlantique/Abomey-Calavi 7, Atlantique/Ouidah 5, Ouémé/Porto-Novo 3. |
+| **B8** | `/client/paiements`, les espaces propriétaire et agent affichaient des **soldes, un historique de transactions et des retraits simulés**, avec un bouton « Payer » qui écrivait une opération locale et un justificatif téléchargeable. | Le panneau est réécrit : il lit les contrats signés (`/api/contracts`) et n’affiche que le loyer et la caution réellement écrits, avec la marche à suivre. Le modèle financier local (transactions, retraits, moyens enregistrés, ventilation, soldes) est supprimé de `lib/workflow.ts`, ainsi que les opérations financières de démonstration. |
+| **B9** | `/verification-agent` répondait à partir d’autorisations d’exemple, en précisant lui-même qu’il ne prouvait rien. | `publicMandateCheck()` interroge le registre serveur : actif, expiré / révoqué ou non confirmé, sans donnée privée. |
+| **B10** | `/historique/[reference]` affichait une chronologie inventée (dates fixes, mentions « jeu de démonstration ») construite depuis un fichier figé. | `publicPropertyHistory()` lit le journal d’audit avec une liste blanche d’actions opposables ; le seed écrit les entrées `bien.cree`, `bien.soumis`, `verification.valide`, `bien.publication.publie` datées par les colonnes du bien. |
+| **B11** | Un agent mandaté ne voyait pas les contrats des biens de son mandat, alors qu’il peut les rédiger. | `listContracts()` ajoute les biens couverts par un mandat actif, et rien de plus. |
+| **B12** | Le panneau « critères complémentaires » de l’explorateur n’existait que déplié : son `aria-controls` pointait vers un identifiant absent. | Le panneau reste monté avec `hidden`, l’identifiant existe toujours. |
+| **B13** | La vidéo d’accueil (4,45 Mo) restait attendue par l’audit. | L’audit vérifie au contraire qu’elle n’est plus téléchargée ni référencée. |
+
 ---
 
 ## 3. Décisions structurantes prises à l’issue de l’audit
@@ -119,8 +132,8 @@ Légende : **B** = bloquant (empêche une mise en production honnête), **I** = 
 | LOT 4 | Disponibilités, visites, annulations, demandes de location, notifications | ✅ Terminé — visites et candidatures écrites en base, motifs obligatoires, notifications réelles |
 | LOT 5 | Outils de contrôle administratif et workflow de vérification | ✅ Terminé — indicateurs réels, 8 étapes de vérification, décisions motivées, journal |
 | LOT 6 | Refonte des fiches de biens et d’Explorer | ✅ Terminé — filters, tri, facettes et pagination servis par SQL ; fiche enrichie (galerie, disponibilité, interlocuteur, signalement, biens comparables) |
-| LOT 7 | Navigation, espaces, messagerie, responsive, design system | ⏳ À venir |
-| LOT 8 | Tests complets, performances, documentation finale | ⏳ À venir |
+| LOT 7 | Navigation, espaces, messagerie, responsive, design system | ✅ Terminé — messagerie persistée, contrats réels, bascule d’espace, feuille de filtres mobile, aucune simulation financière |
+| LOT 8 | Tests complets, performances, documentation finale | ⏳ En cours — 196 assertions serveur, 67 assertions mouvement, audit HTTP avec budgets de poids |
 
 > Les statuts de ce tableau sont mis à jour à la fin de chaque lot. Les preuves
 > (commandes exécutées et résultats) sont consignées dans `BACKEND.md` §8, une seule

@@ -1,10 +1,21 @@
 # CURRENT_STATE — État Actuel & Journal d'Audit HOMERA
 
-> **Dernière mise à jour** : 2026-10-12 (fin du LOT 6)
+> **Dernière mise à jour** : 2026-10-13 (LOT 7 livré, LOT 8 en cours)
 > **Branche active** : `arena/87b15d6d-homera`
 > **Statut global** : `QUALITY_GATE.md` 100 % validé (Fonctionnel, Design System, UX, Accessibilité/Technique, Custom Design & Creative Quality)
 
-> ### 🟢 Ce qui change au 12 octobre 2026 (LOT 6)
+> ### 🟢 Ce qui change au 13 octobre 2026 (LOT 7)
+>
+> | Sujet | État | Référence |
+> |---|---|---|
+> | Messagerie interne | conversations persistées, adossées à un bien | [`BACKEND.md`](./BACKEND.md) §7 |
+> | Contrats de location | rédaction après acceptation, signature par le locataire, contrat signé non annulable | [`BACKEND.md`](./BACKEND.md) §8.3 |
+> | Hiérarchie béninoise | département et commune réels ; `?departement=` et `?commune=` filtrent et resserrent les facettes | `lib/server/services/properties.ts` |
+> | Bascule d'espace | menu de profil : espaces accessibles, descriptifs, `aria-current` | `components/auth/AccountControl.tsx` |
+> | Paiements | plus aucune simulation : soldes, retraits et bouton « Payer » supprimés | `components/workspace/PaymentMethodsPanel.tsx` |
+> | Contrôle d'un mandat et historique d'un bien | lus sur le serveur (registre des autorisations, journal d'audit) | `publicMandateCheck`, `publicPropertyHistory` |
+>
+> ### 🟢 Ce qui changeait au 12 octobre 2026 (LOT 6)
 >
 > Ce document reste le **journal historique de l'interface** ; il ne décrit plus
 > l'état courant. Depuis le LOT 6 :

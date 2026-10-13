@@ -188,6 +188,10 @@ Zod, affiché tel quel par l’interface — jamais reformulé, jamais masqué.
 | Espaces | `owner/properties`, `agent/properties` |
 | Mandats | `authorizations`, `authorizations/[id]` |
 | Visites | `visits`, `visits/[id]` |
+| Candidatures | `applications`, `applications/[id]` |
+| Contrats | `contracts`, `contracts/[id]` |
+| Messagerie | `messages`, `messages/[id]` |
+| Territoire | `locations` (`?departement=`, `?commune=`) |
 | Administration | `admin/overview`, `admin/users`, `admin/users/[id]`, `admin/verifications`, `admin/verifications/[propertyId]`, `admin/visits`, `admin/reports`, `admin/audit` |
 | Vie du compte | `notifications`, `favorites` |
 
@@ -199,7 +203,7 @@ contrôles qu’un appel HTTP.
 
 ## 7. Services métier
 
-`homera/lib/server/services/` — sept modules, une seule règle : ils rendent une issue
+`homera/lib/server/services/` — dix modules, une seule règle : ils rendent une issue
 explicite (`ServiceResult`), jamais d’exception, jamais d’état inventé.
 
 | Service | Responsabilité |
@@ -212,6 +216,8 @@ explicite (`ServiceResult`), jamais d’exception, jamais d’état inventé.
 | `admin.ts` | indicateurs, comptes, signalements, journal |
 | `documents.ts` | pièces déclarées d’un bien |
 | `applications.ts` | candidatures de location : dépôt après visite effectuée, instruction motivée |
+| `contracts.ts` | contrats : référence `CTR-<année>-<n>`, rédaction après acceptation, signature par le locataire désigné |
+| `messaging.ts` | conversations adossées à un bien, lecture, envoi, marquage comme lu, compteur de non-lus |
 
 **Journal** (`lib/server/audit.ts`) : `audit_log` est une table d’ajout pur — action,
 auteur, date, entité, détail, IP. Aucun service ne réécrit une ligne existante.
@@ -292,6 +298,22 @@ démarré :
 | Signalement : bien inexistant | `404` — « Ce bien n’existe pas ou a été retiré. » (c’était un `500` : contrainte de clé étrangère violée) |
 | Signalement valide | `201`, présent dans `/api/admin/reports`, libellé lisible dans l’espace admin |
 | Traitement du signalement par un non-admin | `403` — « Accès réservé à l’administration. » |
+
+### 8.3 Contrôles du LOT 7 (contrats, messagerie, territoire, mandats publics)
+
+| Vérifié | Résultat |
+|---|---|
+| `GET /api/locations` | départements `[Littoral 21, Atlantique 12, Ouémé 3]`, communes `[Cotonou 21, Abomey-Calavi 7, Ouidah 5, Porto-Novo 3]` |
+| `?departement=Atlantique` | `[Abomey-Calavi 7, Ouidah 5]` — la liste des communes se resserre |
+| `?departement=Littoral` / `?departement=Ouémé` / `?commune=Ouidah` | 21 · 3 · 5 biens, comptes exacts |
+| Contrat rédigé avant acceptation | refusé — « Le contrat ne peut être rédigé qu’après l’acceptation de la candidature. » |
+| Rédaction par un agent **mandaté** « location » | acceptée |
+| Rédaction par un agent **non** mandaté | refusée, code `permission` |
+| Signature par l’administration à la place du locataire | refusée |
+| Signature par le locataire désigné | `CTR-2026-0001` → `signe`, `signedAt` horodaté |
+| Annulation d’un contrat signé | refusée — « passez par une résiliation » |
+| Contrôle public d’un mandat (`/verification-agent`) | actif / expiré / non confirmé selon le registre serveur |
+| Historique public d’un bien (`/historique/<référence>`) | chronologie construite depuis `audit_log`, liste blanche d’actions opposables |
 | Agent mandaté (portée « location ») sur un dossier | `canDecide = true`, « étudier » puis « accepter » → dossier `acceptee`, motif conservé, candidat notifié |
 | Agent mandaté (portée « visite ») | confirme puis constate la visite ; le client peut alors déposer son dossier |
 | Second dépôt sur un créneau déjà réservé | `409` — « Ce créneau vient d’être réservé. » (incrément atomique) |
@@ -306,11 +328,11 @@ comme terminés :
 
 | Sujet | État | Lot porteur |
 |---|---|---|
-| Contrats de location signés | table `contracts` prête, aucun écran ni service de signature | LOT 7 |
+| Contrats de location signés | ✅ service et écrans livrés : rédaction après acceptation, signature par le locataire, contrat signé non annulable | — |
 | Téléversement réel des photos et pièces | tables `property_photos` / `documents` prêtes, le parcours **déclare** les pièces sans les héberger | LOT 8 |
-| Favoris unifiés | table `favorites` + `/api/favorites` prêts, deux vues côté interface | LOT 7 |
-| Messagerie interne | aucune table de fils de discussion ; la page existe et reste honnête | LOT 7 |
-| Paiements | aucun encaissement réel, aucune écriture serveur | hors périmètre pilote |
+| Favoris unifiés | ✅ `/api/favorites` : chargement, fusion du panier visiteur à la connexion, suppression | — |
+| Messagerie interne | ✅ conversations persistées, adossées à un bien, distinctes des notifications | — |
+| Paiements | aucun encaissement réel : l’écran affiche ce qu’un contrat signé prévoit et renvoie vers HOMERA. Aucun solde, aucun reçu, aucun bouton de règlement | hors périmètre pilote |
 | Pagination et facettes calculées en base | ✅ fait au LOT 6 — filtres, tri, facettes et pagination servis par SQL ; le premier écran est rendu côté serveur | — |
 | Envoi d’e-mails transactionnels | absent, remplacé par l’affichage du code | à décider |
 | Galerie multi-photos | la fiche affiche tous les visuels du bien dans l’ordre déclaré ; l’amorçage ne fournit qu’une photo par bien, faute de téléversement réel | LOT 8 |
@@ -333,7 +355,8 @@ comme terminés :
 
 ```bash
 cd homera
-npm run test:backend   # scénarios métier sur la base (151 vérifications)
+npm run test:backend         # scénarios métier sur la base (196 vérifications)
+node scripts/audit-home.mjs  # audit HTTP : liens, contenu, poids servi, CSS compilé
 npm test               # test-motion.mjs puis test:backend
 npm run lint           # ESLint
 npx tsc --noEmit       # types

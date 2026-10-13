@@ -606,6 +606,14 @@ const acceptedDossier = applicationsModule.decideApplication(db, owner, dossierI
 });
 check("le propriétaire accepte la candidature", acceptedDossier.ok);
 check("un tiers ne rédige pas le contrat d’un bien qui n’est pas le sien", !contracts.createContractFromApplication(db, user(secondClient), dossierId).ok);
+/* L’agent du test détient un mandat « visite + location » sur ce bien : il
+   peut donc rédiger. Celui du jeu d’amorçage n’a qu’un mandat en attente
+   sur le même bien : il doit être refusé. */
+check("un agent mandaté « location » rédige le contrat", contracts.createContractFromApplication(db, user(agentId), dossierId).ok);
+check(
+  "un agent non mandaté ne rédige pas le contrat",
+  !contracts.createContractFromApplication(db, user("HOM-DEMO-AGENT"), dossierId).ok,
+);
 const drafted = contracts.createContractFromApplication(db, owner, dossierId);
 check("le contrat est rédigé après acceptation", drafted.ok, drafted.ok ? drafted.data.reference : "");
 const contractId = drafted.ok ? drafted.data.id : "";

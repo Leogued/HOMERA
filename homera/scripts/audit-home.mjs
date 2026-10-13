@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import { existsSync, readdirSync, statSync } from 'node:fs';
+import { gzipSync } from 'node:zlib';
 import { readFile } from 'node:fs/promises';
 
 /* ==================================================================
@@ -285,8 +287,31 @@ assert.ok(image.status === 200 && image.headers.get('content-type')?.startsWith(
 const bytes = (await image.arrayBuffer()).byteLength;
 assert.ok(bytes > 0, 'Image non vide');
 
+/* --- Poids servi : garde-fou de performance ------------------------ */
+/* Ce qui compte au chargement, c’est ce qui passe sur le réseau. Les
+   plateformes de déploiement compriment les réponses ; on mesure donc la
+   page telle qu’elle part, et les paquets JS tels qu’ils sont livrés. */
+/* `fetch` décompresse déjà la réponse : on mesure donc la taille qu’aurait
+   la page une fois compressée par la plateforme, ce qui est ce que le
+   navigateur télécharge réellement. */
+const servedSize = async (path) => gzipSync(Buffer.from(await (await fetchOk(path)).text())).byteLength;
+for (const [path, budget] of [['/', 150_000], ['/explorer', 90_000], ['/biens/villa-fidjrosse', 90_000]]) {
+  const size = await servedSize(path);
+  assert.ok(size <= budget, `${path} : ${size} octets servis (budget ${budget})`);
+}
+
+const chunksDir = new URL('../.next/static/chunks/', import.meta.url);
+if (existsSync(chunksDir)) {
+  const jsFiles = readdirSync(chunksDir, { recursive: true }).filter((name) => name.endsWith('.js'));
+  let heaviest = 0;
+  for (const name of jsFiles) heaviest = Math.max(heaviest, statSync(new URL(name, chunksDir)).size);
+  assert.ok(heaviest <= 400_000, `paquet JS le plus lourd : ${heaviest} octets (budget 400 000)`);
+}
+assert.ok(!homeRaw.includes('/video/background_video.mp4'), 'aucune vidéo lourde référencée par la page d’accueil');
+
 console.log(`✓ ${pages.size} pages publiques explorées, ${[...pages.values()].reduce((total, page) => total + page.ids.length, 0)} identifiants uniques, aucun lien interne cassé`);
 console.log('✓ Accueil : 9 chapitres, 4 intentions, 6 données reliées, 7 étapes, 4 services');
 console.log('✓ Catalogue : projets, catégories et fiches atteignables ; filtres et états vides servis côté serveur');
 console.log(`✓ CSS des scènes et du mouvement réduit compilé ; image ${image.headers.get('content-type')} : ${bytes} octets`);
+console.log('✓ Poids servi sous budget (accueil, explorateur, fiche) et paquets JS maîtrisés');
 console.log('Audit HTTP terminé (pas de test visuel ou tactile).');

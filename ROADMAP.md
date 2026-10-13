@@ -67,8 +67,8 @@ Référence technique : [`BACKEND.md`](./BACKEND.md). Aucune information n'est d
 | LOT 4 | Disponibilités, visites, annulations, demandes de location, notifications | **Livré** |
 | LOT 5 | Outils de contrôle administratif et workflow de vérification | **Livré** |
 | LOT 6 | Refonte des fiches de biens et d'Explorer | ✅ Livré — exploration servie par la base (filtres, tri, facettes, pagination) ; fiche : galerie, disponibilité, interlocuteur vérifié, signalement, biens comparables |
-| LOT 7 | Navigation, espaces, messagerie, responsive, design system | À venir |
-| LOT 8 | Tests complets, performances, documentation finale | À venir |
+| LOT 7 | Navigation, espaces, messagerie, responsive, design system | ✅ Livré — voir jalon 10 |
+| LOT 8 | Tests complets, performances, documentation finale | En cours — garde-fous de poids, 196 assertions serveur, 67 assertions mouvement, audit HTTP |
 
 ---
 
@@ -93,6 +93,20 @@ Référence technique : [`BACKEND.md`](./BACKEND.md) §8.1.
 - [x] Instruction par le propriétaire, l'agent mandaté « location » ou l'administration ; refus motivé obligatoire.
 - [x] Notifications réelles à chaque transition, pour chaque acteur concerné.
 
+## Jalon 10 — LOT 7 : navigation, espaces, messagerie (Livré & Vérifié)
+
+Référence technique : [`BACKEND.md`](./BACKEND.md) §8.3.
+
+- [x] **Messagerie interne persistée** (`lib/server/services/messaging.ts`, `/api/messages`) : conversation adossée à un bien, lecture, envoi, marquage comme lu, compteur de non-lus. Distincte des notifications système et des alertes d'administration.
+- [x] **Contrats de location réels** (`lib/server/services/contracts.ts`) : référence `CTR-<année>-<n>`, rédaction après acceptation de la candidature, signature réservée au locataire désigné, contrat signé non annulable, notification du locataire.
+- [x] **Hiérarchie béninoise réelle** : les biens portent un département et une commune issus de la table des 12 départements ; `?departement=` et `?commune=` filtrent réellement (ils étaient ignorés par la route) et resserrent les facettes.
+- [x] **Bascule d'espace depuis le menu de profil** : espaces réellement accessibles, avec description et espace courant marqué `aria-current`, dans le menu déroulant comme dans le menu mobile.
+- [x] **Responsive** : filtres en feuille mobile (`<dialog>`), navigation d'espace repliable, en-tête public à volets.
+- [x] **Favoris servis par le serveur** : `/api/favorites`, fusion du panier visiteur à la connexion.
+- [x] **Retour aux résultats** sans perdre le contexte (`components/catalog/BackToResults.tsx`).
+- [x] **Aucune simulation financière** : `/client/paiements`, espaces propriétaire et agent n'affichent plus ni solde, ni retrait, ni bouton « Payer ». Seuls les montants écrits dans un contrat signé sont montrés, avec la marche à suivre pour régler.
+- [x] **Contrôle public d'un mandat** (`/verification-agent`) et **historique public d'un bien** (`/historique/[reference]`) : les deux lisent le serveur (registre des autorisations, journal d'audit) au lieu de jeux d'exemple.
+
 ## Jalon 9 — LOT 5 : administration et vérification (Livré & Vérifié)
 
 - [x] Dashboard administratif sur `/api/admin/overview` : plus aucun indicateur fictif.
@@ -107,4 +121,4 @@ Référence technique : [`BACKEND.md`](./BACKEND.md) §8.1.
 - [ ] E-mails transactionnels (vérification, réinitialisation) : aujourd'hui le code est **affiché** à l'écran, jamais présenté comme envoyé.
 - [ ] Hébergement réel des photos et des pièces justificatives.
 - [ ] Encaissement de paiements et intégration Mobile Money (FedaPay / KkiaPay) : aucun paiement fictif n'est présenté comme réel.
-- [ ] Messagerie interne (fils de discussion persistés).
+- [ ] Messagerie interne (fils de discussion persistés). → **livrée au LOT 7**, retiré de la liste d'attente.
