@@ -291,7 +291,9 @@ function traceProperty(
     `INSERT INTO audit_log (id, actor_id, actor_label, action, entity_type, entity_id, detail, ip, created_at)
      VALUES (?, ?, ?, ?, 'bien', ?, ?, '', ?)`,
   );
-  const ownerLabel = ownerId === "HOM-DEMO-PROP" ? "prop@homera.demo" : "owner2@homera.demo";
+  /* L’acteur cité dans le journal doit être un compte qui existe : le second
+     propriétaire semé est Sofia (HOM-DEMO-OWNER2). */
+  const ownerLabel = ownerId === "HOM-DEMO-PROP" ? "prop@homera.demo" : "sofia@homera.demo";
   /* Les dates d’amorçage arrivent parfois en `YYYY-MM-DD` : le journal est
      normalisé en ISO complet pour rester triable avec les écritures
      produites par le serveur. */

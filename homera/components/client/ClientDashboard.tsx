@@ -30,7 +30,6 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useVisitor } from "@/components/providers/VisitorProvider";
-import { useWorkflow } from "@/components/providers/WorkflowProvider";
 import { PropertyCard } from "@/components/catalog/PropertyCard";
 import { PROPERTIES, type Property, type PropertyIntent, type PropertyType } from "@/lib/content";
 import { CAPABILITIES, describeProfile, initials, maskPhone, roleDefinition, rolesLabel } from "@/lib/auth";
@@ -38,13 +37,51 @@ import type { PublicAccount } from "@/lib/accounts";
 import { countLabel, formatFCFA } from "@/lib/format";
 import { parseCatalogQuery } from "@/lib/properties";
 import { useServerResource } from "@/lib/use-server-resource";
-import { StatusBadge } from "@/components/workspace/Primitives";
+import { VISIT_LABELS } from "@/components/workspace/VisitsSections";
+import { APPLICATION_STATUS_LABELS } from "@/components/workspace/ApplicationSections";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
 import type { SavedSearch } from "@/lib/persistence";
 
 const AUTOMATIC_ALERTS_CAPABILITY = CAPABILITIES.find((entry) => entry.id === "alertes");
 const PROPERTY_TYPES: readonly PropertyType[] = ["villa", "appartement", "studio", "terrain", "local"];
 const PROPERTY_INTENTS: readonly PropertyIntent[] = ["acheter", "louer", "sejour"];
+
+type ServerVisit = {
+  id: string;
+  reference: string;
+  propertyId: string;
+  propertyTitle: string;
+  propertyReference: string;
+  status: string;
+  date: string;
+  time: string;
+};
+
+type ServerApplication = {
+  id: string;
+  reference: string;
+  propertyTitle: string;
+  propertyReference: string;
+  status: string;
+  createdAt: string;
+};
+
+type ServerConversation = {
+  id: string;
+  propertyTitle: string;
+  lastMessageAt: string;
+  lastMessagePreview: string;
+  unreadCount: number;
+};
+
+type ServerNotification = {
+  id: string;
+  title: string;
+  body: string;
+  link: string;
+  read_at: string | null;
+  created_at: string;
+};
 
 type ClientNavItem = {
   id: string;
@@ -106,7 +143,6 @@ export function ClientDashboard() {
 function ClientDashboardContent() {
   const { account } = useAuth();
   const visitor = useVisitor();
-  const workflow = useWorkflow();
   const { resolvedTheme, setTheme } = useTheme();
 
   const favoriteProperties = useMemo(
@@ -124,9 +160,21 @@ function ClientDashboardContent() {
     () => (account ? describeProfile(account.roles, account.profile) : []),
     [account],
   );
-  const recentVisits = useMemo(() => [...workflow.data.visits].sort((a, b) => `${a.date} ${a.slot}`.localeCompare(`${b.date} ${b.slot}`)).slice(0, 3), [workflow.data.visits]);
-  const recentApplications = useMemo(() => [...workflow.data.applications].sort((a, b) => b.submittedAt.localeCompare(a.submittedAt)).slice(0, 3), [workflow.data.applications]);
-  const activeRentals = workflow.data.applications.filter((application) => application.stage === "active");
+  /* Visites, candidatures, locations, messages et notifications viennent du
+     serveur, comme sur les pages dédiées : le tableau de bord ne montre
+     jamais une copie locale qui pourrait contredire /client/visites. */
+  const serverVisits = useServerResource<{ visits: ServerVisit[] }>("/api/visits");
+  const serverApplications = useServerResource<{ applications: ServerApplication[] }>("/api/applications");
+  const serverMessages = useServerResource<{ conversations: ServerConversation[] }>("/api/messages");
+  const serverNotifications = useServerResource<{ items: ServerNotification[]; unread: number }>("/api/notifications");
+  const recentVisits = useMemo(
+    () => [...(serverVisits.data?.visits ?? [])].sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`)).slice(0, 3),
+    [serverVisits.data],
+  );
+  const recentApplications = useMemo(
+    () => [...(serverApplications.data?.applications ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 3),
+    [serverApplications.data],
+  );
   /* Sommes réellement dues : celles qu’un contrat signé écrit. Rien n’est
      réclamé pour une visite, et aucun historique de paiement local n’est
      affiché puisqu’HOMERA n’encaisse rien depuis cette page. */
@@ -150,12 +198,16 @@ function ClientDashboardContent() {
       title: contract.propertyTitle,
       href: `/client/contrats/${contract.id}`,
     }));
-  const recentMessages = useMemo(() => [...workflow.data.messages].sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)).slice(0, 3), [workflow.data.messages]);
-  const unreadWorkflowNotifications = useMemo(
-    () => (workflow.ready ? workflow.data.notifications.filter((entry) => !entry.read) : []),
-    [workflow.data.notifications, workflow.ready],
+  const activeRentals = (serverContracts.data?.contracts ?? []).filter((contract) => contract.status === "signe");
+  const recentMessages = useMemo(
+    () => [...(serverMessages.data?.conversations ?? [])].sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt)).slice(0, 3),
+    [serverMessages.data],
   );
-  const pendingActions = (account && !account.emailVerified ? 1 : 0) + unreadWorkflowNotifications.length;
+  const unreadNotifications = useMemo(
+    () => (serverNotifications.data?.items ?? []).filter((entry) => !entry.read_at),
+    [serverNotifications.data],
+  );
+  const pendingActions = (account && !account.emailVerified ? 1 : 0) + (serverNotifications.data?.unread ?? 0);
   const currentThemeIsDark = resolvedTheme === "dark";
 
   if (!account) return null;
@@ -230,7 +282,7 @@ function ClientDashboardContent() {
           <div className="mt-5 flex items-start gap-3 rounded-2xl border border-info/20 bg-info/[0.06] px-4 py-3.5 text-note leading-relaxed text-foreground">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-info" aria-hidden="true" />
             <p>
-              <span className="font-semibold">État réel du pilote.</span> Votre compte, vos rôles et vos notifications viennent du serveur HOMERA. Les favoris et les recherches restent, eux, sur cet appareil. Les visites, demandes, locations et messages encore affichés depuis ce navigateur seront reliés au serveur avant d’être présentés comme actifs.
+              <span className="font-semibold">Ce que vous voyez est servi par HOMERA.</span> Votre compte, vos rôles, vos favoris, vos visites, vos candidatures, vos contrats, vos messages et vos notifications viennent du serveur : vous retrouvez la même liste sur tous vos appareils, et dans les pages dédiées. Deux limites, annoncées partout : HOMERA n’envoie pas encore d’e-mail (les codes s’affichent à l’écran) et n’encaisse aucun paiement en ligne.
             </p>
           </div>
 
@@ -240,14 +292,14 @@ function ClientDashboardContent() {
               icon={Heart}
               label="Biens favoris"
               value={visitor.ready ? String(favoriteProperties.length) : "—"}
-              hint="Dans ce navigateur"
+              hint="Dans votre compte"
             />
             <OverviewMetric
               href="/client/favoris"
               icon={Search}
               label="Recherches récentes"
               value={visitor.ready ? String(visitor.searches.length) : "—"}
-              hint="Enregistrées ici"
+              hint="Sur cet appareil"
             />
             <OverviewMetric
               href="/client/profil"
@@ -264,7 +316,7 @@ function ClientDashboardContent() {
               hint={
                 !account.emailVerified
                   ? "Confirmez votre adresse"
-                  : unreadWorkflowNotifications.length > 0
+                  : (serverNotifications.data?.unread ?? 0) > 0
                     ? "Activité de votre espace"
                     : "Alertes automatiques non actives"
               }
@@ -348,10 +400,10 @@ function ClientDashboardContent() {
                   </div>
                 )}
 
-                {unreadWorkflowNotifications.slice(0, 2).map((notification) => (
+                {unreadNotifications.slice(0, 2).map((notification) => (
                   <Link
                     key={notification.id}
-                    href={notification.href || "/notifications"}
+                    href={notification.link || "/notifications"}
                     className="block rounded-2xl border border-homera-terracotta/25 bg-homera-terracotta/[0.05] p-3.5 transition-colors hover:border-homera-terracotta/45"
                   >
                     <p className="text-note font-semibold text-foreground">{notification.title}</p>
@@ -417,17 +469,17 @@ function ClientDashboardContent() {
               eyebrow="Votre agenda"
               title="Prochaines visites"
               description="Les rendez-vous liés à votre projet immobilier."
-              badge={<AvailabilityBadge>Prototype local</AvailabilityBadge>}
+
               className="xl:col-span-5"
             >
-              {!workflow.ready ? <PanelLoading label="Lecture de votre agenda…" /> : recentVisits.length === 0 ? (
+              {serverVisits.loading ? <PanelLoading label="Lecture de votre agenda…" /> : recentVisits.length === 0 ? (
                 <EmptyState
                   icon={CalendarDays}
                   title="Aucune visite programmée"
-                  description="Demandez une date et un créneau, puis suivez la réponse de l’agent dans votre agenda local."
+                  description="Demandez une date et un créneau, puis suivez la réponse de l’agent dans votre agenda."
                   action={{ href: "/client/visites/nouvelle", label: "Demander une visite" }}
                 />
-              ) : <div className="space-y-3">{recentVisits.map((visit) => <Link key={visit.id} href="/client/visites" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/35"><span className="min-w-0"><span className="block truncate text-note font-semibold text-foreground">{visit.propertyTitle}</span><span className="mt-1 block text-caption text-muted">{formatDay(visit.date)} · {visit.slot} · {visit.propertyRef}</span></span><StatusBadge status={visit.status} /></Link>)}<Link href="/client/visites" className="inline-flex min-h-9 items-center text-caption font-semibold text-homera-terracotta hover:underline">Toutes mes visites <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" /></Link></div>}
+              ) : <div className="space-y-3">{recentVisits.map((visit) => <Link key={visit.id} href="/client/visites" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/35"><span className="min-w-0"><span className="block truncate text-note font-semibold text-foreground">{visit.propertyTitle}</span><span className="mt-1 block text-caption text-muted">{formatDay(visit.date)} · {visit.time} · {visit.reference}</span></span><span className="shrink-0 rounded-full border border-border bg-card px-2.5 py-1 text-micro font-semibold text-muted">{VISIT_LABELS[visit.status] ?? visit.status}</span></Link>)}<Link href="/client/visites" className="inline-flex min-h-9 items-center text-caption font-semibold text-homera-terracotta hover:underline">Toutes mes visites <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" /></Link></div>}
             </DashboardPanel>
 
             <DashboardPanel
@@ -436,17 +488,17 @@ function ClientDashboardContent() {
               eyebrow="En cours de traitement"
               title="Mes demandes"
               description="Demandes d’information et dossiers rattachés à votre compte."
-              badge={<AvailabilityBadge>Prototype local</AvailabilityBadge>}
+
               className="xl:col-span-6"
             >
-              {!workflow.ready ? <PanelLoading label="Lecture de vos demandes…" /> : recentApplications.length === 0 ? (
+              {serverApplications.loading ? <PanelLoading label="Lecture de vos demandes…" /> : recentApplications.length === 0 ? (
                 <EmptyState
                   icon={ClipboardList}
                   title="Aucune demande en cours"
                   description="Après une visite terminée, déposez une candidature et suivez l’étude du dossier jusqu’à la remise des clés."
                   action={{ href: "/client/demandes", label: "Mes demandes" }}
                 />
-              ) : <div className="space-y-3">{recentApplications.map((application) => <Link key={application.id} href="/client/demandes" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/35"><span className="min-w-0"><span className="block truncate text-note font-semibold text-foreground">{application.propertyTitle}</span><span className="mt-1 block text-caption text-muted">Dossier {application.id} · {formatDay(application.submittedAt)}</span></span><StatusBadge status={application.stage} /></Link>)}<Link href="/client/demandes" className="inline-flex min-h-9 items-center text-caption font-semibold text-homera-terracotta hover:underline">Toutes mes demandes <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" /></Link></div>}
+              ) : <div className="space-y-3">{recentApplications.map((application) => <Link key={application.id} href="/client/demandes" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/35"><span className="min-w-0"><span className="block truncate text-note font-semibold text-foreground">{application.propertyTitle}</span><span className="mt-1 block text-caption text-muted">Dossier {application.reference} · {formatDay(application.createdAt)}</span></span><span className="shrink-0 rounded-full border border-border bg-card px-2.5 py-1 text-micro font-semibold text-muted">{APPLICATION_STATUS_LABELS[application.status] ?? application.status}</span></Link>)}<Link href="/client/demandes" className="inline-flex min-h-9 items-center text-caption font-semibold text-homera-terracotta hover:underline">Toutes mes demandes <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" /></Link></div>}
             </DashboardPanel>
 
             <DashboardPanel
@@ -458,9 +510,9 @@ function ClientDashboardContent() {
               action={{ href: "/client/paiements", label: "Paiements" }}
               className="xl:col-span-6"
             >
-              {!workflow.ready || serverContracts.loading ? (
+              {serverContracts.loading ? (
                 <PanelLoading label="Lecture de vos contrats…" />
-              ) : activeRentals.length === 0 && payableWorkflowItems.length === 0 ? (
+              ) : activeRentals.length === 0 ? (
                 <EmptyState
                   icon={Building2}
                   title="Aucune location active ni échéance due"
@@ -482,19 +534,19 @@ function ClientDashboardContent() {
                       <ArrowRight className="h-4 w-4 shrink-0 text-homera-terracotta" aria-hidden="true" />
                     </Link>
                   ))}
-                  {activeRentals.map((application) => (
+                  {activeRentals.map((contract) => (
                     <Link
-                      key={application.id}
-                      href="/client/contrats"
+                      key={contract.id}
+                      href={`/client/contrats/${contract.id}`}
                       className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/60 p-3.5 transition-colors hover:border-homera-terracotta/35"
                     >
                       <span className="min-w-0">
-                        <span className="block truncate text-note font-semibold text-foreground">{application.propertyTitle}</span>
+                        <span className="block truncate text-note font-semibold text-foreground">{contract.propertyTitle}</span>
                         <span className="mt-1 block text-caption text-muted">
-                          {application.propertyRef} · depuis {formatDay(application.submittedAt)}
+                          {contract.reference} · {formatFCFA(contract.rent)} / mois
                         </span>
                       </span>
-                      <StatusBadge status={application.stage} />
+                      <span className="shrink-0 rounded-full border border-success/30 bg-success/[0.07] px-2.5 py-1 text-micro font-semibold text-success">Signé</span>
                     </Link>
                   ))}
                 </div>
@@ -536,17 +588,17 @@ function ClientDashboardContent() {
               eyebrow="Échanges"
               title="Messages"
               description="Retrouvez ici les échanges liés à vos biens et à vos demandes."
-              badge={<AvailabilityBadge>Prototype local</AvailabilityBadge>}
+
               className="xl:col-span-5"
             >
-              {!workflow.ready ? <PanelLoading label="Lecture de vos échanges…" /> : recentMessages.length === 0 ? (
+              {serverMessages.loading ? <PanelLoading label="Lecture de vos échanges…" /> : recentMessages.length === 0 ? (
                 <EmptyState
                   icon={MessageCircle}
                   title="Aucun échange dans cet espace"
-                  description="Créez une conversation rattachée à un bien et à sa référence HOMERA. Les messages de démonstration restent locaux."
+                  description="Écrivez depuis la fiche d’un bien : la conversation est rattachée à sa référence HOMERA et au professionnel qui le suit."
                   action={{ href: "/messages", label: "Ouvrir la messagerie" }}
                 />
-              ) : <div className="space-y-2">{recentMessages.map((thread) => { const lastMessage = thread.messages[thread.messages.length - 1]; return <Link key={thread.id} href="/messages" className="block rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/35"><span className="flex items-center justify-between gap-3"><span className="truncate text-note font-semibold text-foreground">{thread.propertyTitle}</span><span className="shrink-0 text-micro text-muted">{formatDay(thread.updatedAt)}</span></span><span className="mt-1 block truncate text-caption text-muted">{lastMessage?.body ?? "Conversation créée"}</span></Link>; })}<Link href="/messages" className="inline-flex min-h-9 items-center text-caption font-semibold text-homera-terracotta hover:underline">Ouvrir la messagerie <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" /></Link></div>}
+              ) : <div className="space-y-2">{recentMessages.map((thread) => <Link key={thread.id} href="/messages" className="block rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/35"><span className="flex items-center justify-between gap-3"><span className="truncate text-note font-semibold text-foreground">{thread.propertyTitle}</span><span className="shrink-0 text-micro text-muted">{formatDay(thread.lastMessageAt)}</span></span><span className="mt-1 block truncate text-caption text-muted">{thread.lastMessagePreview || "Conversation ouverte"}</span></Link>)}<Link href="/messages" className="inline-flex min-h-9 items-center text-caption font-semibold text-homera-terracotta hover:underline">Ouvrir la messagerie <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" /></Link></div>}
             </DashboardPanel>
 
             <DashboardPanel
@@ -739,13 +791,6 @@ function DashboardPanel({
   );
 }
 
-function AvailabilityBadge({ children }: { children: ReactNode }) {
-  return (
-    <span className="inline-flex items-center rounded-full border border-warning/25 bg-warning/[0.07] px-2 py-0.5 text-micro font-semibold uppercase tracking-[0.08em] text-warning">
-      {children}
-    </span>
-  );
-}
 
 function EmptyState({
   icon: Icon,

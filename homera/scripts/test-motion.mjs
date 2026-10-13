@@ -22,11 +22,6 @@ const contentUrl = await moduleUrl('lib/content.ts', { '@/lib/media.generated': 
 const data = await import(contentUrl);
 const workflowUrl = await moduleUrl('lib/workflow.ts', { '@/lib/content': contentUrl });
 const workflow = await import(workflowUrl);
-const portalDataUrl = await moduleUrl('lib/portal-data.ts', {
-  '@/lib/content': contentUrl,
-  '@/lib/workflow': workflowUrl,
-});
-const portalData = await import(portalDataUrl);
 const formatUrl = await moduleUrl('lib/format.ts', { '@/lib/content': contentUrl });
 const format = await import(formatUrl);
 const catalogUrl = await moduleUrl('lib/properties.ts', {
@@ -876,9 +871,14 @@ await test('HOMERA : identifiants de démonstration seedés et utilisables par c
     assert.equal(await accounts.verifyPassword(record.password, credential.password), true, `${credential.username} / ${credential.password}`);
   }
   const admin = seeded.find((entry) => entry.email === 'admin@homera.demo');
-  const agent = seeded.find((entry) => entry.email === 'agent@homera.demo');
   assert.equal(admin?.profile.demoRole, 'admin');
-  assert.equal(portalData.authorizationsForAgent(agent, new Date('2026-10-03T12:00:00.000Z')).length, 3);
+  /* Ce que l’écran de connexion annonce doit être exactement ce que la base
+     accepte : les comptes de démonstration sont créés par le seed serveur. */
+  const seedSource = await readFile(new URL('../lib/server/db/seed.ts', import.meta.url), 'utf8');
+  const seedEmails = new Set([...seedSource.matchAll(/email: "([^"]+@homera\.demo)"/g)].map((match) => match[1]));
+  for (const entry of demoAccounts.DEMO_LOGIN_CREDENTIALS) {
+    assert.ok(seedEmails.has(entry.email), `compte annoncé réellement créé par le seed serveur : ${entry.email}`);
+  }
   assert.equal(demoAccounts.ensureDemoAccounts([seeded[0]]).length, 4, 'un compte demo existant n’est pas dupliqué');
 });
 
@@ -1365,32 +1365,20 @@ await test('HOMERA : la décision admin met à jour le bien et conserve chaque �
   assert.equal(workflow.nextOwnerListingStatus(approved.listingStatusOverrides[listing.id]), 'publie');
 });
 
-await test('HOMERA : accès agent limité à son identité, au mandat exact et à sa période de validité', () => {
-  const demoIdentity = {
-    roles: ['agent'], prenom: 'Koffi', nom: 'Ahouansou',
-    profile: { structure: 'Cabinet Ahouansou Immobilier', identification: 'RB/COT/24 B 1234' },
-  };
-  const authorized = portalData.authorizationsForAgent(demoIdentity, new Date('2026-10-03T12:00:00.000Z'));
-  assert.equal(authorized.length, 3);
-  assert.equal(portalData.authorizationsForAgent(null).length, 0);
-  assert.equal(portalData.authorizationsForAgent({ ...demoIdentity, prenom: 'Autre' }).length, 0);
-  assert.equal(portalData.authorizationsForAgent({ ...demoIdentity, roles: ['client'] }).length, 0);
-  assert.equal(portalData.authorizationsForAgent(demoIdentity, new Date('2028-01-01T00:00:00.000Z')).length, 0);
-  const firstMandate = portalData.DEMO_AGENT_AUTHORIZATIONS[0];
-  assert.equal(portalData.isAgentAuthorizationCurrent(firstMandate, new Date(`${firstMandate.authorizedAt}T12:00:00.000Z`)), true);
-  assert.equal(portalData.isAgentAuthorizationCurrent(firstMandate, new Date('2027-02-19T00:00:00.000Z')), false);
-
-  const active = authorized;
-  assert.ok(active.length > 0);
-  const authorizedIds = new Set(active.map((entry) => entry.propertyId));
-  for (const authorization of active) {
-    const property = data.PROPERTIES.find((entry) => entry.id === authorization.propertyId);
-    assert.ok(property, `bien autorisé présent : ${authorization.propertyId}`);
-    assert.equal(property.homeraId, authorization.propertyRef, 'mandat lié à la bonne référence du bien');
-    assert.equal(authorization.agentId, portalData.DEMO_AGENT_ID);
-  }
-  assert.ok(authorizedIds.size < data.PROPERTIES.length, 'l’agent ne voit pas l’ensemble du catalogue');
-  assert.equal(new Set(active.map((entry) => `${entry.agentId}:${entry.propertyRef}`)).size, active.length);
+/* Le mandat n’est plus un jeu de données local : le serveur le détient, le
+   filtre par échéance et le sert à l’espace agent. La règle est couverte
+   côté serveur (`npm run test:backend`, section mandats — « un mandat
+   expiré n’est pas déclaré actif ») et par le scénario 2 de
+   `npm run test:scenarios`. On vérifie ici qu’aucun écran ne peut
+   retomber sur une liste de mandats écrite en dur. */
+await test('HOMERA : l’accès agent vient du serveur, jamais d’un jeu de mandats local', async () => {
+  assert.equal(existsSync(new URL('../lib/portal-data.ts', import.meta.url)), false, 'aucun jeu de données de mandats côté client');
+  const authorizations = await readFile(new URL('../lib/server/services/authorizations.ts', import.meta.url), 'utf8');
+  assert.ok(/expires_?at/i.test(authorizations), 'un mandat porte une échéance');
+  assert.ok(/expiree|expir/i.test(authorizations), 'l’échéance produit un statut « expirée »');
+  assert.ok(!/DEMO_AGENT_AUTHORIZATIONS|DEMO_OWNER_LISTINGS/.test(authorizations), 'le service serveur ne lit aucun jeu d’exemple');
+  const agentWorkspace = await readFile(new URL('../components/workspace/AgentWorkspace.tsx', import.meta.url), 'utf8');
+  assert.ok(agentWorkspace.includes('/api/authorizations'), 'l’espace agent lit les mandats servis par /api/authorizations');
 });
 
 /* ==================================================================
@@ -1629,8 +1617,8 @@ await test('HOMERA : le QR code produit se relit sans perte', () => {
   }
 
   // La référence affichée par l’espace agent se relit à l’identique.
-  const authorization = portalData.DEMO_AGENT_AUTHORIZATIONS[0];
-  const url = `https://homera.example/verification-agent?agent=${encodeURIComponent(authorization.agentId)}&bien=${encodeURIComponent(authorization.propertyRef)}`;
+  const property = data.PROPERTIES[0];
+  const url = `https://homera.example/verification-agent?bien=${encodeURIComponent(property.homeraId)}`;
   assert.equal(qr.decodeQrMatrix(qr.createQrMatrix(url)), url);
 });
 
@@ -1846,7 +1834,9 @@ await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (pro
   assert.ok(!workspaceFooter.includes('new Date().getFullYear()'), 'WorkspaceFooter déterministe au rendu SSR/CSR');
 
   const clientDashboard = await readFile(new URL('../components/client/ClientDashboard.tsx', import.meta.url), 'utf8');
-  assert.ok(clientDashboard.includes('unreadWorkflowNotifications'), 'ClientDashboard synchronise les notifications du workflow');
+  assert.ok(clientDashboard.includes('useServerResource<{ items: ServerNotification[]; unread: number }>("/api/notifications")'), 'ClientDashboard lit les notifications du serveur');
+  assert.ok(clientDashboard.includes('useServerResource<{ visits: ServerVisit[] }>("/api/visits")'), 'ClientDashboard lit les visites du serveur');
+  assert.ok(!clientDashboard.includes('workflow.data.visits') && !clientDashboard.includes('workflow.data.notifications'), 'ClientDashboard n’affiche plus de données locales');
 
   const agentVerification = await readFile(new URL('../components/workspace/AgentVerification.tsx', import.meta.url), 'utf8');
   assert.ok(agentVerification.includes('action="/verification-agent"'), 'AgentVerification expose un formulaire de recherche interactif');
@@ -1937,8 +1927,7 @@ await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (pro
 
   const workflowSource = await readFile(new URL('../lib/workflow.ts', import.meta.url), 'utf8');
   assert.ok(!workflowSource.includes('PaymentTransactionRecord') && !workflowSource.includes('WithdrawalRecord'), 'le stockage local ne conserve plus aucune opération financière');
-  const portalData = await readFile(new URL('../lib/portal-data.ts', import.meta.url), 'utf8');
-  assert.ok(!portalData.includes('DEMO_FINANCIAL_TRANSACTIONS'), 'aucune transaction financière de démonstration dans le jeu de données');
+  assert.equal(existsSync(new URL('../lib/portal-data.ts', import.meta.url)), false, 'aucun jeu de données de démonstration côté client');
 
   const paymentPanel = await readFile(new URL('../components/workspace/PaymentMethodsPanel.tsx', import.meta.url), 'utf8');
   assert.ok(paymentPanel.includes('/api/contracts'), 'le panneau paiements lit les contrats réels du serveur');

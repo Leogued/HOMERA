@@ -152,11 +152,17 @@ export const CONTACT_PAGE = {
    /connexion, /inscription, /mot-de-passe-oublie,
    /reinitialisation, /verification-email
    ------------------------------------------------------------------
-   La copie des cinq écrans de compte. Elle assume une position claire,
-   répétée partout : phase 4 ouvre réellement les comptes — création,
-   connexion, rôles, confirmation d’adresse, mot de passe oublié — mais
-   aucun serveur ne les reçoit encore. Ce qui est vrai est dit ; le
-   reste est annoncé comme à venir, jamais simulé.
+   La copie des cinq écrans de compte. Elle décrit ce qui existe
+   réellement : les comptes vivent sur le serveur HOMERA (création,
+   connexion, rôles, confirmation d’adresse, mot de passe oublié), le mot
+   de passe n’est jamais conservé en clair, et la session tient dans un
+   cookie `httpOnly`.
+
+   Deux limites sont dites telles quelles, jamais maquillées : HOMERA
+   n’envoie pas encore d’e-mail, donc le code de vérification et le code
+   de réinitialisation sont affichés à l’écran au lieu d’être expédiés ;
+   et le paiement en ligne n’existe pas (voir /historique et la fiche
+   d’un bien).
    ------------------------------------------------------------------ */
 
 export const AUTH_PAGE = {
@@ -165,10 +171,10 @@ export const AUTH_PAGE = {
     eyebrow: "Espace personnel",
     title: "Se connecter à votre espace",
     intro:
-      "Votre compte reprend vos favoris, vos recherches enregistrées et vos dossiers en cours. Le pilote n’ayant pas encore de serveur de comptes, il vit dans ce navigateur — et il reste facultatif pour consulter le catalogue.",
+      "Votre compte retrouve vos favoris, vos recherches enregistrées et vos dossiers en cours, sur n’importe quel appareil : il est hébergé sur les serveurs HOMERA, et votre mot de passe n’y est jamais conservé en clair. La consultation du catalogue reste libre, sans compte.",
     facts: [
       { label: "Compte requis", value: "Aucun" },
-      { label: "Stockage", value: "Navigateur" },
+      { label: "Stockage", value: "Serveur HOMERA" },
       { label: "Rôles cumulables", value: "3" },
     ],
     asideTitle: "Ce qu’ouvre un compte",
@@ -218,7 +224,7 @@ export const AUTH_PAGE = {
       "Le mot de passe n’est jamais stocké en clair : l’empreinte est recalculée",
     ],
     asideNote:
-      "Adresse inconnue dans ce navigateur ? Le pilote ne partage pas encore les comptes entre appareils : créez le compte ici ou vérifiez l’adresse saisie.",
+      "Aucun compte HOMERA ne correspond à cette adresse ? Créez un compte, ou vérifiez l’adresse saisie : le même compte fonctionne sur tous vos appareils.",
   },
   reinitialisation: {
     breadcrumb: "Réinitialisation",
@@ -245,7 +251,7 @@ export const AUTH_PAGE = {
     eyebrow: "Confirmation d’adresse",
     title: "Confirmer votre adresse e-mail",
     intro:
-      "Le code à six chiffres protège votre adresse : quinze minutes de validité, cinq essais au total. Le pilote n’envoyant aucun e-mail, il s’affiche directement sur cette page — et vous pouvez le renvoyer à tout moment.",
+      "Le code à six chiffres protège votre adresse : quinze minutes de validité, cinq essais au total. HOMERA n’envoyant pas encore d’e-mail, il s’affiche directement sur cette page — et vous pouvez le renvoyer à tout moment.",
     facts: [
       { label: "Validité", value: "15 minutes" },
       { label: "Essais", value: "5" },
@@ -272,7 +278,7 @@ export const LEGAL_PAGE = {
     eyebrow: "Informations légales",
     title: "Mentions, confidentialité et conditions",
     intro:
-      "Ces textes décrivent le fonctionnement du système pilote HOMERA. Ils seront complétés par les mentions de la société d’exploitation avant l’ouverture commerciale et l’ouverture des comptes.",
+      "Ces textes décrivent le fonctionnement du système pilote HOMERA. Ils seront complétés par les mentions de la société d’exploitation avant l’ouverture commerciale.",
   },
   jumpNavLabel: "Sommaire légal",
   sections: [
@@ -292,10 +298,10 @@ export const LEGAL_PAGE = {
       title: "Politique de confidentialité",
       paragraphs: [
         "Navigation publique : aucune donnée personnelle n’est collectée, aucun cookie de mesure d’audience ni traceur publicitaire n’est déposé, et aucune requête n’est faite vers un serveur d’analyse.",
-        "Stockage local : trois choses seulement sont conservées dans votre navigateur, jamais transmises à HOMERA — votre préférence de thème (clair ou sombre), les biens que vous mettez en favori et les recherches que vous enregistrez depuis l’explorateur. Effacer les données du site dans les réglages de votre navigateur les supprime définitivement.",
+        "Stockage local, sans compte : votre préférence de thème (clair ou sombre), les biens mis en favori et les recherches enregistrées depuis l’explorateur restent dans ce navigateur et ne sont transmis à personne. Effacer les données du site dans les réglages de votre navigateur les supprime définitivement.",
         "Recherche : les critères que vous saisissez restent dans l’adresse de la page (paramètres d’URL) afin que vous puissiez la partager ou revenir en arrière. Ils ne sont envoyés à aucun serveur d’analyse.",
         "Prise de contact : le formulaire de la page Contact ne transmet rien automatiquement — il prépare un e-mail dans votre logiciel de messagerie. Les informations que vous choisissez d’envoyer sont alors traitées par échange de courrier.",
-        "Lorsque l’espace personnel ouvrira, une politique complète (données traitées, finalités, durées de conservation, droits d’accès et de suppression) sera publiée et devra être acceptée avant toute création de compte.",
+        "Avec un compte : votre identité (nom, prénom, adresse e-mail, téléphone et les champs propres à votre rôle), l’empreinte de votre mot de passe — jamais le mot de passe lui-même — et vos sessions sont enregistrées sur les serveurs HOMERA ; vos favoris et vos recherches enregistrées y sont conservés pour vous suivre d’un appareil à l’autre. Vous pouvez demander l’accès, la rectification ou la suppression de ces données. La politique complète (finalités, durées de conservation, destinataires) sera publiée avec les mentions de la société d’exploitation avant l’ouverture commerciale.",
       ],
     },
     {

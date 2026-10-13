@@ -195,7 +195,14 @@ await check("5. Cohérence fonctionnelle des espaces (Profil par rôle, Footer d
   assert.ok(!workspaceFooter.includes("new Date().getFullYear()"), "WorkspaceFooter doit éviter new Date().getFullYear() au rendu pour garantir un SSR/CSR déterministe");
 
   const clientDashboard = await readFile(path.join(appRoot, "components/client/ClientDashboard.tsx"), "utf8");
-  assert.ok(clientDashboard.includes("unreadWorkflowNotifications"), "ClientDashboard doit inclure les notifications non lues du workflow dans ses compteurs et sa liste");
+  /* Le tableau de bord client lit le serveur : notifications, visites,
+     candidatures et messages viennent des mêmes API que les pages dédiées.
+     Aucune copie locale ne peut donc contredire /client/visites. */
+  assert.ok(clientDashboard.includes('useServerResource<{ items: ServerNotification[]; unread: number }>("/api/notifications")'), "ClientDashboard doit compter les notifications non lues lues depuis /api/notifications");
+  assert.ok(clientDashboard.includes('useServerResource<{ visits: ServerVisit[] }>("/api/visits")'), "ClientDashboard doit lire les visites depuis /api/visits");
+  assert.ok(clientDashboard.includes('useServerResource<{ applications: ServerApplication[] }>("/api/applications")'), "ClientDashboard doit lire les candidatures depuis /api/applications");
+  assert.ok(clientDashboard.includes('useServerResource<{ conversations: ServerConversation[] }>("/api/messages")'), "ClientDashboard doit lire les conversations depuis /api/messages");
+  assert.ok(!clientDashboard.includes("workflow.data.visits") && !clientDashboard.includes("workflow.data.applications") && !clientDashboard.includes("workflow.data.messages") && !clientDashboard.includes("workflow.data.notifications"), "ClientDashboard ne doit plus afficher de visites, candidatures, messages ou notifications locales");
 
   const agentVerification = await readFile(path.join(appRoot, "components/workspace/AgentVerification.tsx"), "utf8");
   assert.ok(agentVerification.includes('action="/verification-agent"'), "AgentVerification doit proposer un formulaire de recherche interactif");

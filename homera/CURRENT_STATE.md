@@ -1,9 +1,19 @@
 # CURRENT_STATE — État Actuel & Journal d'Audit HOMERA
 
-> **Dernière mise à jour** : 2026-10-13 (LOT 7 livré, LOT 8 en cours)
+> **Dernière mise à jour** : 2026-10-13 (LOT 8 livré)
 > **Branche active** : `arena/87b15d6d-homera`
 > **Statut global** : `QUALITY_GATE.md` 100 % validé (Fonctionnel, Design System, UX, Accessibilité/Technique, Custom Design & Creative Quality)
 
+> ### 🟢 Ce qui change au 13 octobre 2026 (LOT 8)
+>
+> | Sujet | État | Référence |
+> |---|---|---|
+> | Les douze scénarios du cahier des charges | joués contre un serveur démarré : 12 réussites, 0 échec, rejouables | `npm run test:scenarios` |
+> | Portée d'un mandat | `parseScope()` corrige la lecture du JSON (avant : découpé à la virgule) | `lib/server/services/properties.ts` |
+> | Tableau de bord client | visites, candidatures, locations, messages et notifications lus du serveur, plus du stockage local | `components/client/ClientDashboard.tsx` |
+> | `QUALITY_GATE` | quatre règles devenues obsolètes remplacées par leur contraire mesurable ; 5/5 | `scripts/quality-gate.mjs` |
+> | Jeu de données d'exemple | `lib/portal-data.ts` supprimé, ainsi que la copie qui annonçait un compte « dans le navigateur » | [`AUDIT.md`](./AUDIT.md) §2.7 |
+>
 > ### 🟢 Ce qui change au 13 octobre 2026 (LOT 7)
 >
 > | Sujet | État | Référence |

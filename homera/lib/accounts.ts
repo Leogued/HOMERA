@@ -13,28 +13,26 @@ import {
 } from "@/lib/auth";
 
 /* ==================================================================
-   HOMERA — COMPTES ET SESSION (stockage du navigateur)
+   HOMERA — RÈGLES DE COMPTE, CÔTÉ INTERFACE
    ------------------------------------------------------------------
-   Phase 4 ouvre les comptes, mais aucun serveur ne les reçoit encore :
-   le pilote n’a ni base de données ni service d’envoi d’e-mails. Les
-   comptes vivent donc dans ce navigateur, exactement comme les favoris
-   de la phase 2 — et l’interface le dit à chaque écran concerné.
+   ⚠️ Depuis le socle serveur (LOT 2), le compte n’est PLUS dans le
+   navigateur : la base SQLite est la seule source de vérité pour
+   l’identité, les rôles, l’empreinte du mot de passe et les sessions
+   (cookie `httpOnly`). Les écrans lisent `/api/auth/session`.
 
-   Ce que ce fichier garantit malgré tout, parce que ce sont de vraies
-   règles et pas une mise en scène :
+   Ce module reste la référence *pure* de deux choses, et c’est
+   volontaire :
 
-   • le mot de passe n’est jamais conservé en clair — une empreinte
-     PBKDF2-SHA-256 (150 000 itérations, sel aléatoire par compte) est
-     calculée dans le navigateur avec l’API Web Crypto ;
-   • les données relues du stockage sont validées champ par champ ;
-   • les codes de vérification et de réinitialisation expirent, et le
-     nombre d’essais est réellement compté ;
-   • la session expire, et « rester connecté » change réellement de
-     support (sessionStorage vs localStorage).
+   • les formes échangées avec l’API (`PublicAccount`, `PendingCode`) —
+     aucune empreinte, aucun code n’y circule ;
+   • les règles de robustesse d’un mot de passe et d’un code, sous une
+     forme exécutable sans serveur : `npm run test:motion` les vérifie
+     unitairement, et `lib/server/services/accounts.ts` applique les
+     mêmes côté serveur (`checkPasswordPolicy`, `hashPassword`).
 
-   Ce que ce fichier ne prétend pas : une sécurité serveur. Un pilote
-   sans serveur ne protège pas des données locales. La page /legal et
-   chaque écran de compte le disent sans détour.
+   Le stockage local (`ACCOUNTS_STORAGE_KEY`, `SESSION_STORAGE_KEY`) et
+   ses helpers ne sont plus câblés à aucun écran : ils ne servent plus
+   qu’aux tests de la partie pure.
    ================================================================== */
 
 export const ACCOUNTS_STORAGE_KEY = "homera.comptes.v1";

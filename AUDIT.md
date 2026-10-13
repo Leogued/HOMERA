@@ -103,6 +103,14 @@ Légende : **B** = bloquant (empêche une mise en production honnête), **I** = 
 | **B12** | Le panneau « critères complémentaires » de l’explorateur n’existait que déplié : son `aria-controls` pointait vers un identifiant absent. | Le panneau reste monté avec `hidden`, l’identifiant existe toujours. |
 | **B13** | La vidéo d’accueil (4,45 Mo) restait attendue par l’audit. | L’audit vérifie au contraire qu’elle n’est plus téléchargée ni référencée. |
 | **B14** | L’espace agent relisait la portée d’un mandat en découpant le JSON à la virgule : la portée affichée devenait `[\"visite\"` / `"location"]`, donc fausse. | `parseScope()` lit le tableau JSON enregistré, avec repli sur l’ancien format ; trois assertions serveur le vérifient. |
+### 2.7 Correctifs apportés pendant le LOT 8
+
+| # | Constat | Correction |
+|---|---|---|
+| **B15** | Le tableau de bord client (`/client`) affichait visites, candidatures, locations, messages et notifications **relues du stockage local**, alors que `/client/visites`, `/client/demandes` et `/messages` lisent le serveur : un rendez-vous enregistré côté serveur n’apparaissait pas sur l’accueil, et trois panneaux portaient un badge « Prototype local ». | Les cinq panneaux lisent `/api/visits`, `/api/applications`, `/api/messages`, `/api/notifications` et `/api/contracts` ; le compteur « notifications » est celui du serveur (`unread`). Les badges disparaissent. |
+| **B16** | `lib/portal-data.ts` (253 lignes) conservait un jeu d’exemple — mandats d’agent, annonces propriétaire, dossiers de vérification — qu’aucun écran ne lisait plus, mais sur lequel trois tests s’appuyaient. | Fichier supprimé. Les tests vérifient la règle là où elle vit : le service serveur des mandats (`expires_at` → statut `expiree`), et l’espace agent qui lit `/api/authorizations`. |
+| **B17** | La copie destinée aux visiteurs (`lib/pages.ts`, `/legal`, `/favoris`) affirmait que « le compte vit dans ce navigateur », que les favoris « ne sont jamais transmis à HOMERA » et que l’espace personnel n’était pas encore ouvert — trois affirmations devenues fausses après le socle serveur. | Textes réécrits : compte hébergé sur les serveurs HOMERA, favoris rattachés au compte après connexion, limites réelles annoncées (aucun e-mail envoyé, aucun encaissement en ligne). |
+| **B18** | Le seed journalisait `owner2@homera.demo` comme acteur du journal d’audit alors que le second propriétaire semé est `sofia@homera.demo`. | L’acteur écrit dans le journal est un compte qui existe. |
 
 ---
 

@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Heart } from "lucide-react";
 import { useVisitor } from "@/components/providers/VisitorProvider";
-/* ================================================================== HOMERA — BOUTON FAVORI ------------------------------------------------------------------ Un seul bouton par bien, dans la carte comme sur la fiche : `aria-pressed` porte l’état, le libellé dit ce que fait le clic, et une confirmation annoncée suit l’action. Aucun compte n’est demandé : le favori reste dans le navigateur. ================================================================== */ export function FavoriteButton({
+/* ================================================================== HOMERA — BOUTON FAVORI ------------------------------------------------------------------ Un seul bouton par bien, dans la carte comme sur la fiche : `aria-pressed` porte l’état, le libellé dit ce que fait le clic, et une confirmation annoncée suit l’action. Sans compte, le favori reste dans ce navigateur ; une fois connecté, il est enregistré dans le compte HOMERA et suit l’utilisateur d’un appareil à l’autre. ================================================================== */ export function FavoriteButton({
   propertyId,
   title,
   size = "card",
