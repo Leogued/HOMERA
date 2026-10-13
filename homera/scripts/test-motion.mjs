@@ -271,6 +271,12 @@ await test('HOMERA : la sélection affiche tout, sans boutons de filtre', async 
   assert.doesNotMatch(featured, /PROPERTY_FILTERS/, 'plus de boutons Tous/Villas/… dans la sélection');
   assert.doesNotMatch(featured, /Filtrer par type de bien/);
   assert.doesNotMatch(featured, /Réinitialiser la sélection/, 'bouton redondant retiré du bloc final');
+  assert.doesNotMatch(featured, /Glisser pour découvrir/, 'aide au glisser retirée');
+  assert.doesNotMatch(featured, /padStart\(2, "0"\)/, 'compteur « X / N » retiré');
+  assert.doesNotMatch(featured, /Explorer tout le catalogue/, 'appel vers l’explorateur retiré');
+  assert.doesNotMatch(featured, /Sélection de démonstration/, 'mention de démonstration retirée');
+  assert.ok(featured.includes('aria-label="Choisir un bien"'), 'les pastilles de navigation restent');
+  assert.ok(featured.includes('aria-label="Bien précédent"'), 'les flèches du carrousel restent');
   assert.doesNotMatch(featured, /setActiveFilter/, 'plus d’état de filtre rapide');
   assert.ok(featured.includes('isSearching ? appliedResults : visibleProperties'), 'la recherche du hero filtre toujours la sélection');
   const provider = await readFile(new URL('../components/providers/SearchProvider.tsx', import.meta.url), 'utf8');

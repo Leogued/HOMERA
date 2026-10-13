@@ -1,14 +1,12 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import Link from "next/link";
 import { ArrowLeft, ArrowRight, Eye, RotateCcw } from "lucide-react";
-import { DEMO_DATA, type Property } from "@/lib/content";
+import type { Property } from "@/lib/content";
 import { countLabel, INTENT_LABELS, TYPE_LABELS } from "@/lib/format";
 import { SceneHeader } from "@/components/ui/Scene";
 import { Reveal } from "@/components/ui/Reveal";
 import { Button } from "@/components/ui/Button";
 import { requestMotionFrame, useMotionPreferences } from "@/lib/motion";
-import { catalogHref, criteriaToCatalogQuery } from "@/lib/properties";
 import { galleryDepth } from "@/lib/motion-math";
 import { PropertyCard } from "@/components/catalog/PropertyCard";
 import { PropertyPreview } from "@/components/home/PropertyPreview";
@@ -304,7 +302,6 @@ import { useSearch } from "@/components/providers/SearchProvider";
                 </div>{" "}
                 <div className="flex min-w-0 flex-1 items-center justify-end gap-3 sm:gap-4">
                   {" "}
-                  <span className="hidden text-caption text-muted sm:inline">Glisser pour découvrir</span>{" "}
                   <div
                     role="group"
                     aria-label="Choisir un bien"
@@ -324,42 +321,10 @@ import { useSearch } from "@/components/providers/SearchProvider";
                       </button>
                     ))}{" "}
                   </div>{" "}
-                  <span className="homera-num shrink-0 text-caption tracking-[.16em] text-muted">
-                    {String(activeIndex + 1).padStart(2, "0")} / {String(results.length).padStart(2, "0")}
-                  </span>{" "}
                 </div>{" "}
               </div>{" "}
             </div>{" "}
-            {/* CTA final — la sélection de l’accueil prolonge l’explorateur */}{" "}
-            <Reveal y={18} className="mt-14">
-              {" "}
-              <div className="flex flex-col items-center gap-4 text-center">
-                {" "}
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  {" "}
-                  <Link
-                    href={catalogHref(criteriaToCatalogQuery(appliedCriteria), "/explorer")}
-                    className="homera-press inline-flex min-h-12 items-center gap-2 rounded-btn homera-cta px-6 text-body-sm font-medium text-white transition-colors "
-                  >
-                    {" "}
-                    {isSearching
-                      ? `Voir les ${results.length} résultats dans l’explorateur`
-                      : "Explorer tout le catalogue"}{" "}
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />{" "}
-                  </Link>{" "}
-                </div>{" "}
-                <p className="text-caption text-muted">
-                  {" "}
-                  L’explorateur ouvre la recherche complète : filtres par commune, budget, surface et équipements.{" "}
-                </p>{" "}
-              </div>{" "}
-            </Reveal>{" "}
           </>
-        )}{" "}
-        {DEMO_DATA && (
-          <p className="mt-6 text-center text-micro leading-relaxed text-muted">
-            Sélection de démonstration · biens et visuels illustratifs, non commercialisés.
-          </p>
         )}{" "}
         <span role="status" className="sr-only">
           {countLabel(results.length)} dans la sélection.
