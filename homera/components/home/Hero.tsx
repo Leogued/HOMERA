@@ -4,11 +4,11 @@ import { ArrowDown } from "lucide-react";
 import { SearchModule } from "@/components/home/SearchModule";
 import { useSearch } from "@/components/providers/SearchProvider";
 import { Visual } from "@/components/ui/Visual";
-import { cssVars, useMotionPreferences, usePointerMotion, useSceneMotion } from "@/lib/motion";
+import { cssVars, useMotionPreferences, useSceneMotion } from "@/lib/motion";
 import { phase } from "@/lib/motion-math";
-/* Cadrage, titre et recherche d'origine conservés. Trois couches indépendantes :
-   le visuel dérive à peine, le titre se retire, la recherche reste présente plus
-   longtemps. Aucun scroll détourné.
+/* Cadrage, titre et recherche d'origine conservés. Le titre et l'accroche sont
+   posés, sans mouvement ; seules deux couches respirent : le visuel dérive à
+   peine, la recherche reste présente plus longtemps. Aucun scroll détourné.
 
    La vidéo d'ouverture (4,45 Mo, lecture automatique) est remplacée par le
    visuel qui en était l'affiche : même image à l'arrêt, plus de 4 Mo économisés,
@@ -19,9 +19,6 @@ export function Hero() {
   const { isSearching } = useSearch();
   const update = useCallback(
     (element: HTMLElement, progress: number) => {
-      const exit = phase(progress, 0.06, 0.88);
-      element.style.setProperty("--hero-copy-y", `${(-exit * (compact ? 28 : 64)).toFixed(2)}px`);
-      element.style.setProperty("--hero-copy-opacity", (1 - exit).toFixed(4));
       element.style.setProperty("--hero-search-y", `${(-progress * (compact ? 8 : 20)).toFixed(2)}px`);
       element.style.setProperty("--hero-search-opacity", (1 - phase(progress, 0.54, 1)).toFixed(4));
       element.style.setProperty("--hero-video-scale", (1 + progress * 0.018).toFixed(5));
@@ -34,7 +31,6 @@ export function Hero() {
     [compact],
   );
   const sectionRef = useSceneMotion<HTMLElement>(update, { enabled: !reduced, mode: "exit", response: 75 });
-  const pointerRef = usePointerMotion<HTMLDivElement>({ strength: 5, enabled: !reduced, sourceRef: sectionRef });
   const reveal = (delay: number, blur = 0) =>
     cssVars({ "--reveal-delay": `${delay}ms`, "--reveal-blur": `${blur}px` });
   return (
@@ -72,30 +68,19 @@ export function Hero() {
         {" "}
         <div className="space-y-8 text-center lg:mt-[max(0px,calc(100svh-32rem))]">
           {" "}
-          <div ref={pointerRef} className="homera-hero-pointer space-y-8">
-            {" "}
-            <div className="homera-hero-copy">
-              {" "}
-              <div className="homera-reveal" data-revealed={entered} style={reveal(90)}>
-                {" "}
+          <div className="space-y-8">
+                          {/* Titre posé : aucun mouvement. */}
                 <h1 className="font-serif text-display-sm sm:text-display-lg lg:text-display-xl text-white max-w-4xl mx-auto lg:-translate-y-[max(7rem,calc(50svh-12.5rem))]">
                   {" "}
                   L&apos;immobilier au Bénin en toute <br />{" "}
                   <span className="homera-accent text-[1.06em]">simplicité</span>{" "}
                 </h1>{" "}
-              </div>{" "}
-            </div>{" "}
-            <div className="homera-hero-copy">
-              {" "}
-              <div className="homera-reveal" data-revealed={entered} style={reveal(240)}>
-                {" "}
+              {/* Accroche posée : aucun mouvement. */}
                 <p className="text-homera-cream-dark text-body-sm sm:text-body max-w-2xl mx-auto font-sans font-normal leading-relaxed lg:-translate-y-[max(7rem,calc(50svh-12.5rem))]">
                   {" "}
                   Immobilier en toute sérénité, sans surprise ni intermédiaire douteux — la plateforme de confiance
                   pour tous vos projets au Bénin.{" "}
                 </p>{" "}
-              </div>{" "}
-            </div>{" "}
           </div>{" "}
           <div className="homera-reveal -mt-1" data-revealed={entered} style={reveal(400, 2)}>
             {" "}

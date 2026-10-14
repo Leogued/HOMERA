@@ -2024,5 +2024,10 @@ await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (pro
   assert.ok(propertyDetail.includes('Cadre économique HOMERA') && propertyDetail.includes('Loyer mensuel') && propertyDetail.includes('Total séjour') && propertyDetail.includes('Frais notariés'), 'PropertyDetail affiche le cadre économique HOMERA adapté au projet (louer, séjour, acheter)');
 });
 
-
-
+await test('HOMERA : le titre et l’accroche du hero restent immobiles', async () => {
+  const hero = await readFile(new URL('../components/home/Hero.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(hero, /homera-hero-(copy|pointer)/, 'ni parallaxe souris ni sortie au scroll sur le titre');
+  assert.doesNotMatch(hero, /--hero-copy-/, 'aucune variable de sortie pour le titre');
+  assert.doesNotMatch(css, /\.homera-hero-pointer/, 'CSS de la parallaxe du titre supprimé');
+  assert.doesNotMatch(css, /\.homera-hero-copy/, 'CSS de la sortie du titre supprimé');
+});

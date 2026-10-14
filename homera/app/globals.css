@@ -1207,16 +1207,9 @@ a {
 .homera-hero[data-motion-ready="true"] .homera-hero-veil {
   background: rgba(0, 0, 0, var(--hero-veil, .35));
 }
-.homera-hero[data-motion-ready="true"] .homera-hero-copy {
-  transform: translate3d(0, var(--hero-copy-y, 0px), 0);
-  opacity: var(--hero-copy-opacity, 1);
-}
 .homera-hero[data-motion-ready="true"] .homera-hero-search {
   transform: translate3d(0, var(--hero-search-y, 0px), 0);
   opacity: var(--hero-search-opacity, 1);
-}
-.homera-hero-pointer {
-  transform: translate3d(var(--parallax-x, 0px), var(--parallax-y, 0px), 0);
 }
 .homera-hero:focus-within .homera-hero-search { opacity: 1 !important; }
 
@@ -1523,8 +1516,8 @@ a {
     transition-delay: 0ms !important;
     scroll-behavior: auto !important;
   }
-  .homera-roll-original, .homera-roll-echo, .homera-hero-pointer,
-  .homera-hero-video, .homera-hero-copy, .homera-hero-search,
+  .homera-roll-original, .homera-roll-echo,
+  .homera-hero-video, .homera-hero-search,
   .homera-magnetic, .homera-final-image, .homera-final-content,
   .homera-property-photo, .homera-property-title { transform: none !important; }
   .homera-roll-echo { visibility: hidden; }
