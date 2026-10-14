@@ -32,6 +32,7 @@ const catalog = await import(catalogUrl);
 const nav = await import(await moduleUrl('lib/nav.ts', {
   '@/lib/content': contentUrl,
   '@/lib/properties': catalogUrl,
+  '@/lib/format': formatUrl,
 }));
 const visitorUrl = await moduleUrl('lib/persistence.ts', {
   '@/lib/properties': catalogUrl,
@@ -2055,10 +2056,11 @@ await test('HOMERA : les sous-menus : couleur unie, largeur sur mesure, marron a
   assert.ok(navbar.includes('<span className="whitespace-nowrap">{child.label}</span>') && header.includes('<span className="whitespace-nowrap">{child.label}</span>'), 'libellés insécables (la largeur épouse le contenu)');
 });
 
-await test('HOMERA : la recherche d’accueil redirige vers la page du projet avec les critères', async () => {
-  const searchModule = await readFile(new URL('../components/home/SearchModule.tsx', import.meta.url), 'utf8');
-  const props = await readFile(new URL('../lib/properties.ts', import.meta.url), 'utf8');
-  assert.ok(searchModule.includes('useRouter') && searchModule.includes('router.push(catalogHref(criteriaToCatalogQuery(criteria), searchDestination(criteria)))'), 'soumission : navigation avec les critères en paramètres');
-  assert.ok(props.includes('`/${criteria.project}`') && props.includes('"/explorer"'), 'destination : page du projet, explorateur sans projet');
-  assert.doesNotMatch(searchModule, /pushState\(null, "", "#biens"\)/, 'fini le simple défilement vers #biens');
+await test('HOMERA : la recherche d’accueil vise la sous-rubrique puis la page projet', async () => {
+  const searchComponent = await readFile(new URL('../components/home/SearchModule.tsx', import.meta.url), 'utf8');
+  const nav = await readFile(new URL('../lib/nav.ts', import.meta.url), 'utf8');
+  assert.ok(searchComponent.includes('router.push(searchHref(criteria))'), 'soumission : navigation vers l’adresse de recherche');
+  assert.ok(nav.includes('export function searchCategorySlug') && nav.includes('export function searchHref'), 'destination : sous-rubrique, page projet, explorateur');
+  assert.ok(nav.includes('`/${criteria.project}/${category}`'), 'le type mène à la page de sous-menu');
+  assert.doesNotMatch(searchComponent, /pushState\(null, "", "#biens"\)/, 'fini le simple défilement vers #biens');
 });

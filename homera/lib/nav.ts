@@ -1,5 +1,6 @@
 import { SERVICES, type PropertyIntent, type PropertyType } from "@/lib/content";
-import { EMPTY_QUERY, type CatalogQuery } from "@/lib/properties";
+import { catalogHref, criteriaToCatalogQuery, EMPTY_QUERY, INTENT_IDS, type CatalogQuery } from "@/lib/properties";
+import { SEARCH_TYPE_TO_PROPERTY_TYPE, type SearchCriteria } from "@/lib/format";
 
 /* ==================================================================
    HOMERA — NAVIGATION PUBLIQUE & PAGES DE PROJET
@@ -223,6 +224,41 @@ export function findCategory(project: string, slug: string): { page: PublicProje
   const page = findProject(project);
   const category = page?.categories.find((entry) => entry.slug === slug);
   return page && category ? { page, category } : undefined;
+}
+
+/* ------------------------------------------------------------------
+   DESTINATION D’UNE RECHERCHE
+   ------------------------------------------------------------------ */
+
+/** Sous-rubrique portant le type cherché (« appartement » → « appartements »), ou null. */
+export function searchCategorySlug(project: string, propertyType: string): string | null {
+  if (!propertyType) return null;
+  const wanted = SEARCH_TYPE_TO_PROPERTY_TYPE[propertyType];
+  const entry = findProject(project);
+  if (!entry || !wanted) return null;
+  const match = entry.categories.find((category) => {
+    const types = category.filter.types ?? [];
+    return types.length > 0 && types.length === wanted.length && types.every((type) => wanted.includes(type));
+  });
+  return match ? match.slug : null;
+}
+
+/** Page de destination : la sous-rubrique quand le type y mène, sinon la page du projet, sinon l’explorateur global. */
+export function searchDestination(criteria: SearchCriteria): string {
+  if (!(INTENT_IDS as string[]).includes(criteria.project)) return "/explorer";
+  const category = searchCategorySlug(criteria.project, criteria.propertyType);
+  return category ? `/${criteria.project}/${category}` : `/${criteria.project}`;
+}
+
+/** Adresse complète : le type voyage dans le chemin quand une sous-rubrique le porte, le reste en paramètres. */
+export function searchHref(criteria: SearchCriteria): string {
+  const query = criteriaToCatalogQuery(criteria);
+  const destination = searchDestination(criteria);
+  if (searchCategorySlug(criteria.project, criteria.propertyType)) {
+    query.intent = "";
+    query.types = [];
+  }
+  return catalogHref(query, destination);
 }
 
 /* ------------------------------------------------------------------

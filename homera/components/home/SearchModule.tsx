@@ -12,7 +12,8 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { countLabel } from "@/lib/format";
-import { catalogHref, criteriaToCatalogQuery, searchDestination } from "@/lib/properties";
+import { catalogHref, criteriaToCatalogQuery } from "@/lib/properties";
+import { searchHref } from "@/lib/nav";
 import { fitDropdown, restoreFieldFocus } from "@/lib/floating";
 import { useMounted } from "@/lib/motion";
 import { useSearch } from "@/components/providers/SearchProvider";
@@ -131,7 +132,7 @@ export function SearchModule({ className = "" }: { className?: string }) {
     closePanel();
     // La recherche redirige vers la page du projet (ou l’explorateur
     // global sans projet), critères transmis en paramètres d’URL.
-    router.push(catalogHref(criteriaToCatalogQuery(criteria), searchDestination(criteria)));
+    router.push(searchHref(criteria));
   };
   const options = openField ? optionsFor(openField) : [];
   const activeValue = openField ? criteria[openField as keyof typeof criteria] : "";

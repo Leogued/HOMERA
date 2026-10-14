@@ -1,14 +1,23 @@
 /* ------------------------------------------------------------------
-   HOMERA — Recherche d’accueil : redirection + critères réellement appliqués.
+   HOMERA — Recherche d’accueil : destination + critères réellement appliqués.
 
-   Couvre les 7 cas obligatoires :
-     1. Acheter + localisation + type + montant
-     2. Louer + localisation + type
-     3. Séjour + localisation
-     4. Acheter, critères vides
-     5. Louer, critères vides
-     6. Sans projet -> explorateur global
-     7. Aucun bien correspondant -> état vide explicite
+   Règle de destination : le tri se fait SUR LA PAGE DE SOUS-MENU.
+     - projet + type connu  -> /{projet}/{sous-rubrique} (type dans le
+       chemin, le reste en paramètres : ville, budget…)
+     - projet sans type (ou type sans rubrique : studio à acheter,
+       séjour par type)     -> /{projet} + paramètres complets
+     - sans projet          -> /explorer + paramètres (recherche globale)
+
+   Cas couverts (les 7 obligatoires + 2 replis) :
+     1. Acheter + Cotonou + appartement + 50M   -> /acheter/appartements
+     2. Louer + Abomey-Calavi + maison          -> /louer/maisons
+     3. Séjour + Ouidah                        -> /sejour
+     4. Acheter, critères vides                 -> /acheter
+     5. Louer, critères vides                   -> /louer
+     6. Sans projet                             -> /explorer
+     7. Aucun bien (budget 1 000)               -> état vide explicite
+     8. Séjour + appartement (pas de rubrique)  -> /sejour + type
+     9. Acheter + studio (pas de rubrique)      -> /acheter + type, vide
 
    Deux couches vérifiées VRAIMENT :
      A. construction de l’adresse (logique pure, exécutée ici) ;
@@ -24,7 +33,7 @@
    ------------------------------------------------------------------ */
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { catalogHref, criteriaToCatalogQuery, searchDestination } from '../lib/properties.ts';
+import { searchDestination, searchHref } from '../lib/nav.ts';
 
 const BASE = process.env.HOMERA_BASE_URL ?? 'http://127.0.0.1:3000';
 
@@ -32,14 +41,14 @@ const CASES = [
   {
     name: '1. Acheter + Cotonou + appartement + 50M',
     criteria: { project: 'acheter', location: 'Cotonou', propertyType: 'appartement', budget: '50 000 000' },
-    url: '/acheter?intention=acheter&type=appartement&ville=Cotonou&prix-max=50000000',
-    present: ['HOM-CTN-000671', '1 bien', '>Cotonou<', '>Appartement<'],
+    url: '/acheter/appartements?ville=Cotonou&prix-max=50000000',
+    present: ['HOM-CTN-000671', '1 bien', '>Cotonou<'],
     absent: ['HOM-CTN-000658'],
   },
   {
     name: '2. Louer + Abomey-Calavi + maison',
     criteria: { project: 'louer', location: 'Abomey-Calavi', propertyType: 'maison', budget: '' },
-    url: '/louer?intention=louer&type=villa&ville=Abomey-Calavi',
+    url: '/louer/maisons?ville=Abomey-Calavi',
     present: ['HOM-CAL-000342', '1 bien', '>Abomey-Calavi<'],
     absent: [],
   },
@@ -78,11 +87,27 @@ const CASES = [
     present: ['Aucun bien ne correspond à ces critères</h2>', 'Aucun bien ne correspond à ces critères dans la rubrique Louer', 'Aucun bien'],
     absent: ['HOM-'],
   },
+  {
+    name: '8. Séjour + appartement (repli page projet)',
+    criteria: { project: 'sejour', location: '', propertyType: 'appartement', budget: '' },
+    url: '/sejour?intention=sejour&type=appartement',
+    present: ['5 biens', 'HOM-PNV-000084', '>Appartement<'],
+    absent: [],
+  },
+  {
+    name: '9. Acheter + studio (repli vide)',
+    criteria: { project: 'acheter', location: '', propertyType: 'studio', budget: '' },
+    url: '/acheter?intention=acheter&type=studio',
+    present: ['Aucun bien ne correspond à ces critères</h2>', 'Aucun bien ne correspond à ces critères dans la rubrique Acheter'],
+    // "(HOM-...)" est le texte d'aide générique, pas une annonce : on l'écarte avant contrôle.
+    ignore: ['(HOM-...)'],
+    absent: ['HOM-'],
+  },
 ];
 
-await test('recherche : adresses construites exactes (7 cas)', () => {
+await test('recherche : adresses construites exactes (9 cas)', () => {
   for (const entry of CASES) {
-    const built = catalogHref(criteriaToCatalogQuery(entry.criteria), searchDestination(entry.criteria));
+    const built = searchHref(entry.criteria);
     assert.equal(built, entry.url, `${entry.name} : ${built}`);
   }
   assert.equal(searchDestination({ project: 'xxx', location: '', propertyType: '', budget: '' }), '/explorer');
@@ -94,6 +119,8 @@ for (const entry of CASES) {
     assert.equal(response.status, 200, `${entry.name} : HTTP ${response.status}`);
     const html = await response.text();
     for (const needle of entry.present) assert.ok(html.includes(needle), `${entry.name} : absent « ${needle} »`);
-    for (const needle of entry.absent) assert.ok(!html.includes(needle), `${entry.name} : présent « ${needle} »`);
+    let body = html;
+    for (const drop of entry.ignore ?? []) body = body.replaceAll(drop, '');
+    for (const needle of entry.absent) assert.ok(!body.includes(needle), `${entry.name} : présent « ${needle} »`);
   });
 }
