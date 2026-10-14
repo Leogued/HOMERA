@@ -1,11 +1,11 @@
 "use client";
 import { MapPin, ShieldCheck, UserCheck, Users, type LucideIcon } from "lucide-react";
-import { DEMO_DATA, STATS, type Stat } from "@/lib/content";
+import { STATS, type Stat } from "@/lib/content";
 import { SceneHeader } from "@/components/ui/Scene";
 import { Reveal } from "@/components/ui/Reveal";
 import { useCountUp, useInView, useMotionPreferences } from "@/lib/motion";
 import { formatNumber } from "@/lib/format";
-/* ================================================================== HOMERA — EN QUELQUES CHIFFRES ------------------------------------------------------------------ Les chiffres entrent en scène, comptent depuis zéro et s’arrêtent net sur leur valeur. Chaque compteur est déclenché par sa propre entrée dans le viewport, jamais tous en même temps. ⚠️ Valeurs de démonstration : elles se modifient dans lib/content.ts (`STATS`) et sont signalées comme telles tant que `DEMO_DATA` est actif — aucun chiffre réel n’est affirmé. ================================================================== */ const ICONS: Record<
+/* ================================================================== HOMERA — EN QUELQUES CHIFFRES ------------------------------------------------------------------ Les chiffres entrent en scène, comptent depuis zéro et s’arrêtent net sur leur valeur. Chaque compteur est déclenché par sa propre entrée dans le viewport, jamais tous en même temps. ⚠️ Valeurs de démonstration (lib/content.ts `STATS`) : la mention visible a été retirée sur décision éditoriale — brancher l’API des chiffres réels avant la mise en production. ================================================================== */ const ICONS: Record<
   Stat["icon"],
   LucideIcon
 > = { shield: ShieldCheck, "user-check": UserCheck, users: Users, "map-pin": MapPin };
@@ -28,17 +28,6 @@ export function StatsSection() {
               title={<span id="chiffres-titre">HOMERA en quelques chiffres</span>}
               intro="Une dynamique au service de la sécurité immobilière et de la lisibilité du marché béninois."
             />{" "}
-            {DEMO_DATA && (
-              <Reveal delay={260} y={14} className="mt-8">
-                {" "}
-                <p className="flex items-start gap-2 text-caption leading-relaxed text-muted-light">
-                  {" "}
-                  <span aria-hidden="true" className="mt-[6px] h-1 w-6 shrink-0 bg-homera-terracotta/40" /> Données de
-                  démonstration du système pilote HOMERA — remplacées par les chiffres réels de la plateforme à la
-                  mise en production.{" "}
-                </p>{" "}
-              </Reveal>
-            )}{" "}
           </div>{" "}
           {/* Compteurs */}{" "}
           <div className="relative">
