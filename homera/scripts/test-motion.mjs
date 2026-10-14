@@ -2040,13 +2040,15 @@ await test('HOMERA : les récits se fixent dès 1024px, sans garde de hauteur', 
   assert.ok(css.includes('@media (min-width: 1024px) and (max-height: 780px)'), 'compacité des récits sur écrans peu hauts');
 });
 
-await test('HOMERA : les sous-menus : verre renforcé sur l’accueil, marron au survol, centrés et uniformes', async () => {
+await test('HOMERA : les sous-menus : verre transparent flouté, barre remontée à l’ouverture, marron au survol', async () => {
   const navbar = await readFile(new URL('../components/layout/Navbar.tsx', import.meta.url), 'utf8');
   const header = await readFile(new URL('../components/layout/PublicHeader.tsx', import.meta.url), 'utf8');
   assert.ok(navbar.includes('w-[17rem]') && header.includes('w-[17rem]'), 'largeur uniforme des panneaux');
   const panels = navbar.split('\n').filter((l) => l.includes('homera-nav-panel'));
-  assert.ok(panels.length >= 1 && panels.every((l) => l.includes('bg-white/15') && l.includes('border-white/10') && l.includes('backdrop-blur-[80px]')), 'panneau d’accueil : verre très épais (voile 15 %, flou 80 px)');
-  assert.ok(header.includes('bg-transparent') && header.includes('backdrop-blur-md'), 'panneau des pages : transparent, flou de la barre');
+  assert.ok(panels.length >= 1 && panels.every((l) => l.includes('bg-transparent') && l.includes('backdrop-blur-[28px]')), 'panneau d’accueil : transparent, flou 28 px');
+  const publicPanels = header.split('\n').filter((l) => l.includes('homera-dropdown-enter'));
+  assert.ok(publicPanels.length >= 1 && publicPanels.every((l) => l.includes('bg-transparent') && l.includes('backdrop-blur-[28px]')), 'panneau des pages : transparent, flou 28 px');
+  assert.ok(navbar.includes('mobileOpen || openMenu ? "z-[100]"') && header.includes('mobileOpen || openMenu ? "z-[100]"'), 'barres remontées en z-100 à l’ouverture d’un menu');
   assert.ok(navbar.includes('hover:bg-homera-brown') && header.includes('hover:bg-homera-brown'), 'survol marron');
   assert.doesNotMatch(navbar, /homera-nav-entry homera-underline/, 'aucun soulignement au survol dans les sous-menus');
   assert.ok(navbar.includes('px-2 py-2 text-center') && header.includes('px-2 py-2.5 text-center'), 'libellés et descriptions centrés');
