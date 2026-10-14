@@ -1,5 +1,10 @@
 /* ------------------------------------------------------------------
-   QA visuelle du flou des sous-menus (navigation desktop + mobile).
+   QA des sous-menus de navigation (desktop + mobile).
+
+   NOTE : le nom du fichier est conservé pour ne pas casser le harnais
+   Playwright existant, mais les panneaux ne sont PLUS en verre dépoli :
+   ils sont en couleur unie opaque (décision : fini le flou, place au
+   solide conforme à la charte).
 
    Utilisation (depuis VS Code, Playwright installé sur la machine) :
      1. démarrer le site :  npm run dev      (http://localhost:3000)
@@ -8,14 +13,14 @@
    Les captures sont écrites dans le dossier courant (chemins relatifs :
    aucun chemin absolu Windows ne doit figurer ici).
 
-   Le script ÉCHOUE (throw) si le givre est sous le seuil spécifié :
-     - flou d'arrière-plan >= 160 px
-     - désaturation saturate(0) présente
-     - assombrissement brightness <= 0.7 présent
-     - contraste backdrop contrast <= 0.85 présent
-     - menu mobile : fond opaque (aucun contenu derrière)
-   Les captures PNG restent l'arbitre final : à l'œil, le contenu
-   derrière le panneau ne doit plus être reconnaissable.
+   Le script ÉCHOUE (throw) si un panneau n'est pas conforme :
+     - fond calculé totalement opaque (alpha = 1)
+     - teinte attendue : nuit #1c110b sur l'accueil, crème #faf6ef
+       sur les pages (thème clair), nuit opaque sur mobile
+     - aucun backdrop-filter résiduel (effet mort sous un fond opaque)
+     - largeur >= 224 px (min-w-56), chaque panneau épousant son contenu
+   Les captures PNG restent l'arbitre final : à l'œil, chaque panneau
+   doit être uni, net, et dimensionné à son contenu.
 
    Rappel des identifiants réels (lib/nav.ts -> navPanelId sur le TITRE
    complet de l'entrée) :
@@ -32,30 +37,22 @@ const DESKTOP_PANELS = [
   'menu-services',
 ];
 
-// Seuils du givre intense : refuser tout rendu en dessous.
-function assertFrost(value, where) {
-  const filter = value && value !== 'none' ? value : null;
-  if (!filter) {
-    throw new Error(`[nav-blur-qa] ${where} : backdrop-filter absent (navigateur incompatible ?).`);
+// Panneau uni : opaque, teinte exacte, sans flou résiduel, pas étriqué.
+function assertSolidPanel(measured, expectedRgb, minWidth, where) {
+  const match = measured.background?.match(/rgba?\(([^)]+)\)/);
+  const parts = match ? match[1].split(',').map((p) => p.trim()) : [];
+  const alpha = parts.length === 4 ? Number(parts[3]) : 1;
+  if (!match || alpha < 1) {
+    throw new Error(`[nav-blur-qa] ${where} : fond translucide (${measured.background}), opaque requis.`);
   }
-  const blur = filter.match(/blur\(([0-9.]+)px\)/);
-  if (!blur || Number(blur[1]) < 160) {
-    throw new Error(`[nav-blur-qa] ${where} : flou ${blur ? `${blur[1]}px` : 'absent'} < 160px requis.`);
+  if (expectedRgb && !measured.background.startsWith(expectedRgb)) {
+    throw new Error(`[nav-blur-qa] ${where} : fond ${measured.background}, ${expectedRgb} attendu.`);
   }
-  if (!/saturate\(0%?\)/.test(filter)) {
-    throw new Error(`[nav-blur-qa] ${where} : désaturation saturate(0) absente.`);
+  if (measured.backdropFilter && measured.backdropFilter !== 'none') {
+    throw new Error(`[nav-blur-qa] ${where} : backdrop-filter résiduel (${measured.backdropFilter}), à retirer.`);
   }
-  const brightness = filter.match(/brightness\(([0-9.]+)\)/);
-  if (!brightness || Number(brightness[1]) > 0.7) {
-    throw new Error(
-      `[nav-blur-qa] ${where} : assombrissement ${brightness ? brightness[1] : 'absent'} insuffisant (<= 0.7 requis).`,
-    );
-  }
-  const contrast = filter.match(/contrast\(([0-9.]+)\)/);
-  if (!contrast || Number(contrast[1]) > 0.85) {
-    throw new Error(
-      `[nav-blur-qa] ${where} : contraste ${contrast ? contrast[1] : 'absent'} insuffisant (<= 0.85 requis).`,
-    );
+  if (minWidth && measured.width < minWidth) {
+    throw new Error(`[nav-blur-qa] ${where} : largeur ${measured.width}px < ${minWidth}px (min-w-56).`);
   }
 }
 
@@ -79,10 +76,11 @@ export default async function run(page) {
         backdropFilter: style.backdropFilter,
         webkitBackdropFilter: style.webkitBackdropFilter,
         opacity: style.opacity,
+        width: Math.round(element.getBoundingClientRect().width),
         headerZIndex: header ? getComputedStyle(header).zIndex : null,
       };
     });
-    assertFrost(result.backdropFilter || result.webkitBackdropFilter, `accueil #${id}`);
+    assertSolidPanel(result, 'rgb(28, 17, 11)', 224, `accueil #${id}`);
     desktop.push(result);
     if (id === 'menu-services') {
       await page.screenshot({ path: 'nav-blur-desktop.png' });
@@ -101,11 +99,12 @@ export default async function run(page) {
       background: style.backgroundColor,
       backdropFilter: style.backdropFilter,
       webkitBackdropFilter: style.webkitBackdropFilter,
+      width: Math.round(element.getBoundingClientRect().width),
       headerBackdropFilter: header ? getComputedStyle(header).backdropFilter : null,
       headerZIndex: header ? getComputedStyle(header).zIndex : null,
     };
   });
-  assertFrost(publicHeader.backdropFilter || publicHeader.webkitBackdropFilter, 'explorer #public-menu-services');
+  assertSolidPanel(publicHeader, 'rgb(250, 246, 239)', 224, 'explorer #public-menu-services');
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('http://localhost:3000/', { waitUntil: 'domcontentloaded' });
@@ -121,10 +120,7 @@ export default async function run(page) {
       childLinks: element.querySelectorAll('a[href^="/services/"]').length,
     };
   });
-  const alpha = mobile.surface?.match(/rgba?\([^)]*,\s*([0-9.]+)\s*\)/);
-  if (alpha && Number(alpha[1]) < 1) {
-    throw new Error(`[nav-blur-qa] mobile : fond du tiroir translucide (${mobile.surface}), opaque requis.`);
-  }
+  assertSolidPanel({ background: mobile.surface }, 'rgb(28, 17, 11)', 0, 'mobile #homera-mobile-menu');
   await page.screenshot({ path: 'nav-blur-mobile.png' });
 
   return { desktop, publicHeader, mobile };

@@ -264,7 +264,7 @@ export function Navbar() {
                           items[event.key === "Home" ? 0 : items.length - 1]?.focus();
                         }
                       }}
-                      className="homera-nav-panel homera-noscrollbar flex w-68 flex-col justify-center gap-0.5 overflow-y-auto rounded-menu border border-white/10 bg-white/10 p-1.5 text-white shadow-[0_28px_60px_-24px_rgba(0,0,0,0.75)] backdrop-blur-[160px] backdrop-saturate-0 backdrop-brightness-[.7] backdrop-contrast-[.85]"
+                      className="homera-nav-panel homera-noscrollbar flex w-max min-w-56 max-w-[92vw] flex-col justify-center gap-0.5 overflow-y-auto rounded-menu border border-white/10 bg-homera-night p-1.5 text-white shadow-[0_28px_60px_-24px_rgba(0,0,0,0.75)]"
                     >
                       {" "}
                       {entry.children.map((child, index) => (
@@ -278,7 +278,7 @@ export function Navbar() {
                           className="homera-nav-entry group flex w-full flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-center text-note font-medium tracking-[0.01em] text-white/85 transition-colors duration-300 hover:bg-homera-brown hover:text-white focus-visible:bg-homera-brown focus-visible:text-white focus-visible:outline-none"
                         >
                           {" "}
-                          <span>{child.label}</span>{" "}
+                          <span className="whitespace-nowrap">{child.label}</span>{" "}
                           {child.hint && <span className="text-caption font-normal text-white/50 group-hover:text-white/75 group-focus-visible:text-white/75">{child.hint}</span>}{" "}
                         </Link>
                       ))}{" "}

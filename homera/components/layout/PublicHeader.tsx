@@ -198,7 +198,7 @@ export function PublicHeader() {
                   <div
                     id={panelId(entry.title)}
                     inert={!open}
-                    className={`absolute left-1/2 top-full z-50 w-68 -translate-x-1/2 pt-2 transition-all duration-320 ease-standard ${open ? "pointer-events-auto visible translate-y-0 opacity-100" : "pointer-events-none invisible -translate-y-1.5 opacity-0"}`}
+                    className={`absolute left-1/2 top-full z-50 w-max min-w-56 max-w-[92vw] -translate-x-1/2 pt-2 transition-all duration-320 ease-standard ${open ? "pointer-events-auto visible translate-y-0 opacity-100" : "pointer-events-none invisible -translate-y-1.5 opacity-0"}`}
                   >
                     {" "}
                     <div
@@ -223,7 +223,7 @@ export function PublicHeader() {
                           items[event.key === "Home" ? 0 : items.length - 1]?.focus();
                         }
                       }}
-                      className="homera-dropdown-enter homera-noscrollbar max-h-88 overflow-y-auto rounded-menu bg-white/10 p-1.5 shadow-[0_28px_60px_-30px_rgba(28,17,11,0.45)] backdrop-blur-[160px] backdrop-saturate-0 backdrop-brightness-[.7] backdrop-contrast-[.85]"
+                      className="homera-dropdown-enter homera-noscrollbar max-h-88 overflow-y-auto rounded-menu border border-border bg-background p-1.5 shadow-[0_28px_60px_-30px_rgba(28,17,11,0.45)]"
                     >
                       {" "}
                       {entry.children.map((child) => (
@@ -236,7 +236,7 @@ export function PublicHeader() {
                           className="group flex flex-col items-center gap-0.5 rounded-xl px-2 py-2.5 text-center text-note font-medium text-foreground transition-colors hover:bg-homera-brown hover:text-white focus-visible:bg-homera-brown focus-visible:text-white focus-visible:outline-none"
                         >
                           {" "}
-                          <span>{child.label}</span>{" "}
+                          <span className="whitespace-nowrap">{child.label}</span>{" "}
                           {child.hint && <span className="text-caption font-normal text-muted group-hover:text-white/75 group-focus-visible:text-white/75">{child.hint}</span>}{" "}
                         </Link>
                       ))}{" "}
