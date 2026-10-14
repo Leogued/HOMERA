@@ -1803,6 +1803,7 @@ await test('HOMERA : cadre de gouvernance markdown complet et synchronisé', asy
   const governanceFiles = [
     'AGENTS.md',
     'ARCHITECTURE.md',
+    'ARCHITECTURE_CIBLE.md',
     'AUDIT.md',
     'BACKEND.md',
     'PROJECT.md',

@@ -42,6 +42,7 @@ async function collectTsxFiles(dir) {
 const REQUIRED_GOVERNANCE_FILES = [
   "AGENTS.md",
   "ARCHITECTURE.md",
+  "ARCHITECTURE_CIBLE.md",
   "PROJECT.md",
   "VISION.md",
   "DESIGN_SYSTEM.md",

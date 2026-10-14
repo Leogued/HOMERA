@@ -49,11 +49,14 @@ Aucun code natif (ni `android/`, ni `ios/`, ni enveloppe hybride) : les
 applications Android/iOS restent des applications distinctes à développer et à
 publier. Elles ne sont pas considérées comme existantes.
 
-### Cartes géographiques — CIBLE (optionnelle)
+### Cartes géographiques — RÉEL (schématique) / CIBLE (géoréférencée)
 
-Aucune intégration cartographique (Leaflet, Google Maps, Mapbox : zéro
-occurrence). La localisation repose sur la hiérarchie béninoise réelle
-(département, commune, quartier). L'ajout d'une carte reste optionnel.
+Vue schématique SVG interactive des communes dans l'Explorateur (Cotonou,
+Abomey-Calavi, Ouidah, Porto-Novo), sans librairie cartographique. Aucun fond
+de carte géoréférencé (Leaflet, Google Maps, Mapbox : zéro occurrence) :
+l'ajout de tuiles reste optionnel.
+
+Preuves : `components/catalog/CommuneMapExplorer.tsx`, ROADMAP 6.1.
 
 ## 3. Les services métier — le cœur d'HOMERA
 
