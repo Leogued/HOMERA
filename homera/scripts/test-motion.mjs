@@ -2045,7 +2045,7 @@ await test('HOMERA : les sous-menus : verre renforcé sur l’accueil, marron au
   const header = await readFile(new URL('../components/layout/PublicHeader.tsx', import.meta.url), 'utf8');
   assert.ok(navbar.includes('w-[17rem]') && header.includes('w-[17rem]'), 'largeur uniforme des panneaux');
   const panels = navbar.split('\n').filter((l) => l.includes('homera-nav-panel'));
-  assert.ok(panels.length >= 1 && panels.every((l) => l.includes('bg-white/10') && l.includes('border-white/10') && l.includes('backdrop-blur-xl')), 'panneau d’accueil : verre renforcé (voile 10 %, flou xl)');
+  assert.ok(panels.length >= 1 && panels.every((l) => l.includes('bg-white/15') && l.includes('border-white/10') && l.includes('backdrop-blur-[80px]')), 'panneau d’accueil : verre très épais (voile 15 %, flou 80 px)');
   assert.ok(header.includes('bg-transparent') && header.includes('backdrop-blur-md'), 'panneau des pages : transparent, flou de la barre');
   assert.ok(navbar.includes('hover:bg-homera-brown') && header.includes('hover:bg-homera-brown'), 'survol marron');
   assert.doesNotMatch(navbar, /homera-nav-entry homera-underline/, 'aucun soulignement au survol dans les sous-menus');
