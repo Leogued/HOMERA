@@ -2040,11 +2040,13 @@ await test('HOMERA : les récits se fixent dès 1024px, sans garde de hauteur', 
   assert.ok(css.includes('@media (min-width: 1024px) and (max-height: 780px)'), 'compacité des récits sur écrans peu hauts');
 });
 
-await test('HOMERA : les sous-menus desktop sont en verre, marron au survol, centrés et uniformes', async () => {
+await test('HOMERA : les sous-menus reprennent le verre de leur barre, marron au survol, centrés et uniformes', async () => {
   const navbar = await readFile(new URL('../components/layout/Navbar.tsx', import.meta.url), 'utf8');
   const header = await readFile(new URL('../components/layout/PublicHeader.tsx', import.meta.url), 'utf8');
   assert.ok(navbar.includes('w-[17rem]') && header.includes('w-[17rem]'), 'largeur uniforme des panneaux');
-  assert.ok(navbar.includes('backdrop-blur-[14px]') && header.includes('backdrop-blur-md'), 'flou des barres sur les panneaux');
+  const panels = navbar.split('\n').filter((l) => l.includes('homera-nav-panel'));
+  assert.ok(panels.length >= 1 && panels.every((l) => l.includes('bg-white/5') && l.includes('border-white/10') && l.includes('backdrop-blur-sm')), 'panneau d’accueil : même verre que la capsule');
+  assert.ok(header.includes('bg-transparent') && header.includes('backdrop-blur-md'), 'panneau des pages : transparent, flou de la barre');
   assert.ok(navbar.includes('hover:bg-homera-brown') && header.includes('hover:bg-homera-brown'), 'survol marron');
   assert.doesNotMatch(navbar, /homera-nav-entry homera-underline/, 'aucun soulignement au survol dans les sous-menus');
   assert.ok(navbar.includes('px-2 py-2 text-center') && header.includes('px-2 py-2.5 text-center'), 'libellés et descriptions centrés');
