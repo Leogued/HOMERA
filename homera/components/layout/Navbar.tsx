@@ -264,7 +264,7 @@ export function Navbar() {
                           items[event.key === "Home" ? 0 : items.length - 1]?.focus();
                         }
                       }}
-                      className="homera-nav-panel homera-noscrollbar flex w-[17rem] flex-col justify-center gap-0.5 overflow-y-auto rounded-menu border border-white/10 bg-white/5 p-1.5 text-white shadow-[0_28px_60px_-24px_rgba(0,0,0,0.75)] backdrop-blur-sm"
+                      className="homera-nav-panel homera-noscrollbar flex w-[17rem] flex-col justify-center gap-0.5 overflow-y-auto rounded-menu border border-white/10 bg-white/10 p-1.5 text-white shadow-[0_28px_60px_-24px_rgba(0,0,0,0.75)] backdrop-blur-xl"
                     >
                       {" "}
                       {entry.children.map((child, index) => (
