@@ -181,6 +181,11 @@ await test('HOMERA : les médias référencés existent, y compris ceux du catal
     assert.ok(media.MEDIA[property.media], `visuel manquant pour ${property.id} : ${property.media}`);
   }
 });
+await test('HOMERA : le magazine affiche cinq sujets, sans les rubriques retirées', () => {
+  assert.equal(data.EDITORIAL.stories.length, 5);
+  assert.deepEqual(data.EDITORIAL.categories, ['Architecture', 'Quartiers', 'Styles de vie', 'Maisons', 'Appartements']);
+  assert.ok(data.EDITORIAL.stories.every((story) => story.id !== 'parcelle-lisible' && story.id !== 'matieres'));
+});
 
 const css = await readFile(new URL('../app/globals.css', import.meta.url), 'utf8');
 const tokens = (selector) => Object.fromEntries([...css.matchAll(new RegExp(`${selector}\\s*\\{([^}]+)\\}`, 'g'))].flatMap((block) => [...block[1].matchAll(/(--[\w-]+)\s*:\s*(#[\da-f]{6})\b/gi)].map((entry) => [entry[1], entry[2]])));

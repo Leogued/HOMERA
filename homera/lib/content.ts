@@ -1394,7 +1394,7 @@ export const PILLARS = [
 
 export type Story = {
   id: string;
-  category: "Architecture" | "Quartiers" | "Styles de vie" | "Maisons" | "Appartements" | "Terrains" | "Inspirations";
+  category: "Architecture" | "Quartiers" | "Styles de vie" | "Maisons" | "Appartements";
   title: string;
   excerpt: string;
   readingTime: string;
@@ -1412,8 +1412,6 @@ export const EDITORIAL = {
     "Styles de vie",
     "Maisons",
     "Appartements",
-    "Terrains",
-    "Inspirations",
   ],
   stories: [
     {
@@ -1465,26 +1463,6 @@ export const EDITORIAL = {
       readingTime: "5 min",
       media: "intent-louer",
       alt: "Séjour lumineux ouvert sur un balcon planté, rideaux clairs et sols en terre cuite",
-    },
-    {
-      id: "parcelle-lisible",
-      category: "Terrains",
-      title: "Lire une parcelle avant de signer",
-      excerpt:
-        "Bornage, accès, assainissement : les vérifications simples qui évitent les dossiers sans fin.",
-      readingTime: "8 min",
-      media: "prop-terrain",
-      alt: "Parcelle clôturée avec bornes visibles le long d’une voie de latérite",
-    },
-    {
-      id: "matieres",
-      category: "Inspirations",
-      title: "Matières du pays : terre, bois, fibres",
-      excerpt:
-        "Comment une palette locale — crème, terre cuite, brun profond — donne sa chaleur à un intérieur.",
-      readingTime: "6 min",
-      media: "prop-duplex",
-      alt: "Intérieur chaleureux aux tons crème, terre cuite et bois clair en fin de journée",
     },
   ] satisfies Story[],
 } as const;

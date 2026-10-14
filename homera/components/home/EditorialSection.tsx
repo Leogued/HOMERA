@@ -7,7 +7,7 @@ import { SceneHeader } from "@/components/ui/Scene";
 import { Reveal } from "@/components/ui/Reveal";
 import { Visual } from "@/components/ui/Visual";
 import { useInView, useMotionPreferences } from "@/lib/motion";
-/* ================================================================== HOMERA — L’UNIVERS ÉDITORIAL ------------------------------------------------------------------ Un magazine digital, pas un blog. Le bandeau de rubriques défile en continu (il s’arrête dès qu’on le regarde ou qu’on le parcourt au clavier), puis sept sujets se déplient : architecture, quartiers, styles de vie, maisons, appartements, terrains, inspirations. Objectif : montrer que HOMERA documente le contexte avant de parler de prix — et donner envie de continuer à lire. Les sujets ne sont pas encore des articles : ils s’affichent donc comme un sommaire, sans faux lien. La seule action réelle de la section mène au protocole de vérification. ================================================================== */ export function EditorialSection() {
+/* ================================================================== HOMERA — L’UNIVERS ÉDITORIAL ------------------------------------------------------------------ Un magazine digital, pas un blog. Le bandeau de rubriques défile en continu (il s’arrête dès qu’on le regarde ou qu’on le parcourt au clavier), puis cinq sujets se déplient : architecture, quartiers, styles de vie, maisons, appartements. Objectif : montrer que HOMERA documente le contexte avant de parler de prix — et donner envie de continuer à lire. Les sujets ne sont pas encore des articles : ils s’affichent donc comme un sommaire, sans faux lien. La seule action réelle de la section mène au protocole de vérification. ================================================================== */ export function EditorialSection() {
   const { reduced, coarse } = useMotionPreferences();
   const [paused, setPaused] = useState(false);
   const { ref: ribbonRef, inView: ribbonVisible } = useInView<HTMLDivElement>({ once: false, threshold: 0 });
@@ -157,44 +157,6 @@ import { useInView, useMotionPreferences } from "@/lib/motion";
               </Reveal>
             ))}{" "}
           </ul>{" "}
-        </div>{" "}
-        {/* Sujets restants — même grammaire visuelle, rythme plus court */}{" "}
-        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {" "}
-          {rest.slice(4).map((story, index) => (
-            <Reveal key={story.id} delay={index * 110} y={20} blur={0}>
-              {" "}
-              <article className="group relative block overflow-hidden rounded-2xl border border-border">
-                {" "}
-                <Visual
-                  mediaKey={story.media}
-                  alt={story.alt}
-                  sizes="(min-width: 1024px) 30vw, (min-width: 640px) 46vw, 92vw"
-                  hoverable
-                  veil="none"
-                  quality={68}
-                  className="h-[17rem] w-full"
-                  imageClassName="transition-transform duration-[1300ms] ease-standard"
-                />{" "}
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(to_top,rgba(18,11,7,0.9)_0%,rgba(18,11,7,0.35)_50%,transparent_80%)]"
-                />{" "}
-                <div className="absolute inset-x-0 bottom-0 z-[2] p-5 text-white">
-                  {" "}
-                  <span className="text-micro font-semibold uppercase tracking-[0.2em] text-homera-amber">
-                    {" "}
-                    {story.category}{" "}
-                  </span>{" "}
-                  <h3 className="mt-2 text-body font-semibold leading-snug">{story.title}</h3>{" "}
-                  <span className="mt-2 flex items-center gap-2 text-caption text-homera-cream-dark">
-                    {" "}
-                    <Clock className="h-3 w-3" aria-hidden="true" /> {story.readingTime}{" "}
-                  </span>{" "}
-                </div>{" "}
-              </article>{" "}
-            </Reveal>
-          ))}{" "}
         </div>{" "}
         {/* Une seule action, et elle mène quelque part : le protocole. */}{" "}
         <Reveal y={16} className="mt-10">
