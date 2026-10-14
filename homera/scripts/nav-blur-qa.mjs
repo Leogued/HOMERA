@@ -8,6 +8,14 @@
    Les captures sont écrites dans le dossier courant (chemins relatifs :
    aucun chemin absolu Windows ne doit figurer ici).
 
+   Le script ÉCHOUE (throw) si le givre est sous le seuil spécifié :
+     - flou d'arrière-plan >= 100 px
+     - désaturation saturate(0) présente
+     - assombrissement brightness <= 0.85 présent
+     - menu mobile : fond opaque (aucun contenu derrière)
+   Les captures PNG restent l'arbitre final : à l'œil, le contenu
+   derrière le panneau ne doit plus être reconnaissable.
+
    Rappel des identifiants réels (lib/nav.ts -> navPanelId sur le TITRE
    complet de l'entrée) :
      - accueil   : menu-acheter-un-bien-au-benin, menu-louer-un-logement-au-benin,
@@ -23,6 +31,27 @@ const DESKTOP_PANELS = [
   'menu-services',
 ];
 
+// Seuils du givre intense : refuser tout rendu en dessous.
+function assertFrost(value, where) {
+  const filter = value && value !== 'none' ? value : null;
+  if (!filter) {
+    throw new Error(`[nav-blur-qa] ${where} : backdrop-filter absent (navigateur incompatible ?).`);
+  }
+  const blur = filter.match(/blur\(([0-9.]+)px\)/);
+  if (!blur || Number(blur[1]) < 100) {
+    throw new Error(`[nav-blur-qa] ${where} : flou ${blur ? `${blur[1]}px` : 'absent'} < 100px requis.`);
+  }
+  if (!/saturate\(0%?\)/.test(filter)) {
+    throw new Error(`[nav-blur-qa] ${where} : désaturation saturate(0) absente.`);
+  }
+  const brightness = filter.match(/brightness\(([0-9.]+)\)/);
+  if (!brightness || Number(brightness[1]) > 0.85) {
+    throw new Error(
+      `[nav-blur-qa] ${where} : assombrissement ${brightness ? brightness[1] : 'absent'} insuffisant (<= 0.85 requis).`,
+    );
+  }
+}
+
 export default async function run(page) {
   page.setDefaultNavigationTimeout(120000);
   await page.setViewportSize({ width: 1440, height: 900 });
@@ -34,20 +63,20 @@ export default async function run(page) {
     await trigger.hover();
     const panel = page.locator(`#${id} .homera-nav-panel`);
     await panel.waitFor({ state: 'visible' });
-    desktop.push(
-      await panel.evaluate((element) => {
-        const style = getComputedStyle(element);
-        const header = element.closest('header');
-        return {
-          id: element.parentElement?.id ?? element.getAttribute('aria-label'),
-          background: style.backgroundColor,
-          backdropFilter: style.backdropFilter,
-          webkitBackdropFilter: style.webkitBackdropFilter,
-          opacity: style.opacity,
-          headerZIndex: header ? getComputedStyle(header).zIndex : null,
-        };
-      }),
-    );
+    const result = await panel.evaluate((element) => {
+      const style = getComputedStyle(element);
+      const header = element.closest('header');
+      return {
+        id: element.parentElement?.id ?? element.getAttribute('aria-label'),
+        background: style.backgroundColor,
+        backdropFilter: style.backdropFilter,
+        webkitBackdropFilter: style.webkitBackdropFilter,
+        opacity: style.opacity,
+        headerZIndex: header ? getComputedStyle(header).zIndex : null,
+      };
+    });
+    assertFrost(result.backdropFilter || result.webkitBackdropFilter, `accueil #${id}`);
+    desktop.push(result);
     if (id === 'menu-services') {
       await page.screenshot({ path: 'nav-blur-desktop.png' });
     }
@@ -69,6 +98,7 @@ export default async function run(page) {
       headerZIndex: header ? getComputedStyle(header).zIndex : null,
     };
   });
+  assertFrost(publicHeader.backdropFilter || publicHeader.webkitBackdropFilter, 'explorer #public-menu-services');
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto('http://localhost:3000/', { waitUntil: 'domcontentloaded' });
@@ -84,6 +114,10 @@ export default async function run(page) {
       childLinks: element.querySelectorAll('a[href^="/services/"]').length,
     };
   });
+  const alpha = mobile.surface?.match(/rgba?\([^)]*,\s*([0-9.]+)\s*\)/);
+  if (alpha && Number(alpha[1]) < 1) {
+    throw new Error(`[nav-blur-qa] mobile : fond du tiroir translucide (${mobile.surface}), opaque requis.`);
+  }
   await page.screenshot({ path: 'nav-blur-mobile.png' });
 
   return { desktop, publicHeader, mobile };

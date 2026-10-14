@@ -223,7 +223,7 @@ export function PublicHeader() {
                           items[event.key === "Home" ? 0 : items.length - 1]?.focus();
                         }
                       }}
-                      className="homera-dropdown-enter homera-noscrollbar max-h-88 overflow-y-auto rounded-menu bg-white/10 p-1.5 shadow-[0_28px_60px_-30px_rgba(28,17,11,0.45)] backdrop-blur-3xl"
+                      className="homera-dropdown-enter homera-noscrollbar max-h-88 overflow-y-auto rounded-menu bg-white/10 p-1.5 shadow-[0_28px_60px_-30px_rgba(28,17,11,0.45)] backdrop-blur-[100px] backdrop-saturate-0 backdrop-brightness-[.85]"
                     >
                       {" "}
                       {entry.children.map((child) => (
