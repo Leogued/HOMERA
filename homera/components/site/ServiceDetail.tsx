@@ -74,7 +74,7 @@ export function ServiceDetail({ slug }: { slug: string }) {
             quality={72}
             className="absolute inset-0 h-full w-full"
           >
-            <div className="absolute inset-x-5 bottom-5 z-[2] text-white sm:inset-x-7 sm:bottom-7">
+            <div className="absolute inset-x-5 bottom-5 z-2 text-white sm:inset-x-7 sm:bottom-7">
               <p className="text-caption font-semibold uppercase tracking-[0.17em] text-homera-amber">
                 {service.short}
               </p>

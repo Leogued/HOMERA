@@ -146,22 +146,22 @@ export function Navbar() {
     entry.href !== "/" && (pathname === entry.href || pathname.startsWith(`${entry.href}/`));
   return (
     <header
-      className={`homera-header homera-on-dark fixed inset-x-0 top-0 w-full border-0 bg-transparent text-white ${mobileOpen || openMenu ? "z-[100]" : "z-50"}`}
+      className={`homera-header homera-on-dark fixed inset-x-0 top-0 w-full border-0 bg-transparent text-white ${mobileOpen || openMenu ? "z-100" : "z-50"}`}
       data-scrolled={scrolled}
     >
       {" "}
       {/* Voile de verre — purement décoratif, jamais opaque */}{" "}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 opacity-0 transition-[opacity,backdrop-filter] duration-[650ms] ease-standard data-[scrolled=true]:opacity-100 data-[scrolled=true]:backdrop-blur-[14px] data-[scrolled=true]:backdrop-saturate-150"
+        className="pointer-events-none absolute inset-0 opacity-0 transition-[opacity,backdrop-filter] duration-650 ease-standard data-[scrolled=true]:opacity-100 data-[scrolled=true]:backdrop-blur-[14px] data-[scrolled=true]:backdrop-saturate-150"
         data-scrolled={scrolled}
       >
         {" "}
-        <div className="absolute inset-0 bg-gradient-to-b from-[rgba(20,12,8,0.62)] via-[rgba(20,12,8,0.28)] to-transparent" />{" "}
-        <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/12 to-transparent" />{" "}
+        <div className="absolute inset-0 bg-linear-to-b from-[rgba(20,12,8,0.62)] via-[rgba(20,12,8,0.28)] to-transparent" />{" "}
+        <div className="absolute inset-x-0 bottom-0 h-px bg-linear-to-r from-transparent via-white/12 to-transparent" />{" "}
       </div>{" "}
       <div
-        className={`homera-header-container relative mx-auto flex items-center justify-between px-4 transition-[padding] duration-[650ms] ease-standard sm:px-8 xl:px-12 2xl:px-16 lg:grid lg:grid-cols-3 ${compactHeader ? "py-2.5" : "py-4"}`}
+        className={`homera-header-container relative mx-auto flex items-center justify-between px-4 transition-[padding] duration-650 ease-standard sm:px-8 xl:px-12 2xl:px-16 lg:grid lg:grid-cols-3 ${compactHeader ? "py-2.5" : "py-4"}`}
       >
         {" "}
         {/* Mot-symbole HOMERA */}{" "}
@@ -236,7 +236,7 @@ export function Navbar() {
                   <div
                     id={panelId(entry.title)}
                     inert={!open}
-                    className={`absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3 transition-all duration-[320ms] ease-standard ${open ? "pointer-events-auto visible translate-y-0 opacity-100" : "pointer-events-none invisible -translate-y-1.5 opacity-0"}`}
+                    className={`absolute left-1/2 top-full z-50 -translate-x-1/2 pt-3 transition-all duration-320 ease-standard ${open ? "pointer-events-auto visible translate-y-0 opacity-100" : "pointer-events-none invisible -translate-y-1.5 opacity-0"}`}
                     onMouseEnter={() => openWithIntent(entry.title)}
                     onMouseLeave={closeWithIntent}
                   >
@@ -264,7 +264,7 @@ export function Navbar() {
                           items[event.key === "Home" ? 0 : items.length - 1]?.focus();
                         }
                       }}
-                      className="homera-nav-panel homera-noscrollbar flex w-[17rem] flex-col justify-center gap-0.5 overflow-y-auto rounded-menu border border-white/10 bg-transparent p-1.5 text-white shadow-[0_28px_60px_-24px_rgba(0,0,0,0.75)] backdrop-blur-[28px]"
+                      className="homera-nav-panel homera-noscrollbar flex w-68 flex-col justify-center gap-0.5 overflow-y-auto rounded-menu border border-white/10 bg-transparent p-1.5 text-white shadow-[0_28px_60px_-24px_rgba(0,0,0,0.75)] backdrop-blur-[28px]"
                     >
                       {" "}
                       {entry.children.map((child, index) => (
@@ -302,9 +302,9 @@ export function Navbar() {
             >
               {" "}
               {isDark ? (
-                <Sun className="h-[18px] w-[18px] text-homera-terracotta" aria-hidden="true" />
+                <Sun className="h-4.5 w-4.5 text-homera-terracotta" aria-hidden="true" />
               ) : (
-                <Moon className="h-[18px] w-[18px] text-homera-paper" aria-hidden="true" />
+                <Moon className="h-4.5 w-4.5 text-homera-paper" aria-hidden="true" />
               )}{" "}
             </button>
           )}{" "}
@@ -346,19 +346,19 @@ export function Navbar() {
         id="homera-mobile-menu"
         aria-hidden={!mobileOpen}
         inert={!mobileOpen}
-        className={`fixed inset-0 z-[70] lg:hidden ${mobileOpen ? "visible pointer-events-auto" : "invisible pointer-events-none"}`}
+        className={`fixed inset-0 z-70 lg:hidden ${mobileOpen ? "visible pointer-events-auto" : "invisible pointer-events-none"}`}
       >
         {" "}
         <div className="absolute inset-0 bg-homera-night">
           {" "}
-          <div className="absolute inset-0 opacity-[0.16] [background-image:radial-gradient(circle_at_20%_0%,rgba(198,93,59,0.9),transparent_58%),radial-gradient(circle_at_85%_18%,rgba(224,164,94,0.5),transparent_52%)]" />{" "}
+          <div className="absolute inset-0 opacity-[0.16] bg-[radial-gradient(circle_at_20%_0%,rgba(198,93,59,0.9),transparent_58%),radial-gradient(circle_at_85%_18%,rgba(224,164,94,0.5),transparent_52%)]" />{" "}
         </div>{" "}
         <div
           ref={mobilePanelRef}
           role="dialog"
           aria-modal="true"
           aria-label="Menu HOMERA"
-          className={`relative flex h-full flex-col transition-all duration-[280ms] ease-standard ${mobileOpen ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0"} ${reduced ? "duration-200" : ""}`}
+          className={`relative flex h-full flex-col transition-all duration-280 ease-standard ${mobileOpen ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0"} ${reduced ? "duration-200" : ""}`}
         >
           {" "}
           <div className="flex items-center justify-between px-5 pt-5">
@@ -401,7 +401,7 @@ export function Navbar() {
                           onClick={() => setMobileSection(open ? null : entry.title)}
                           aria-expanded={open}
                           aria-controls={`mobile-${panelId(entry.title)}`}
-                          className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-left text-body font-medium transition-colors duration-300 ${open ? "border-homera-terracotta/40 bg-white/8 text-white" : "border-white/10 bg-white/[0.04] text-white/90"}`}
+                          className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-left text-body font-medium transition-colors duration-300 ${open ? "border-homera-terracotta/40 bg-white/8 text-white" : "border-white/10 bg-white/4 text-white/90"}`}
                         >
                           {" "}
                           <TextRoll>{entry.title}</TextRoll>{" "}
@@ -413,7 +413,7 @@ export function Navbar() {
                         <div
                           id={`mobile-${panelId(entry.title)}`}
                           inert={!open}
-                          className={`grid overflow-hidden transition-all duration-[420ms] ease-standard ${open ? "mt-1.5 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+                          className={`grid overflow-hidden transition-all duration-420 ease-standard ${open ? "mt-1.5 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
                         >
                           {" "}
                           <ul className="min-h-0 space-y-1 border-l border-white/10 pl-3">
@@ -449,7 +449,7 @@ export function Navbar() {
                       <Link
                         href={entry.href}
                         onClick={() => setMobileOpen(false)}
-                        className="block rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-body font-medium text-white/90 transition-colors hover:bg-white/8"
+                        className="block rounded-2xl border border-white/10 bg-white/4 px-4 py-3.5 text-body font-medium text-white/90 transition-colors hover:bg-white/8"
                       >
                         {" "}
                         {entry.title}{" "}
@@ -494,7 +494,7 @@ export function Navbar() {
                 >
                   {" "}
                   <span
-                    className={`absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-white transition-all duration-300 ease-standard ${isDark ? "left-[1.15rem]" : "left-[3px]"}`}
+                    className={`absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-white transition-all duration-300 ease-standard ${isDark ? "left-[1.15rem]" : "left-0.75"}`}
                   />{" "}
                 </span>{" "}
               </button>

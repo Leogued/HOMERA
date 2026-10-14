@@ -11,7 +11,7 @@ import { Footer } from "@/components/layout/Footer";
       {" "}
       <a
         href="#contenu"
-        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-btn focus:bg-homera-brown focus:px-4 focus:py-2 focus:text-note focus:text-white"
+        className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-100 focus:rounded-btn focus:bg-homera-brown focus:px-4 focus:py-2 focus:text-note focus:text-white"
       >
         {" "}
         Aller au contenu{" "}

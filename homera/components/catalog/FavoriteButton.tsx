@@ -39,7 +39,7 @@ import { useVisitor } from "@/components/providers/VisitorProvider";
       {" "}
       <Heart
         aria-hidden="true"
-        className={`h-[18px] w-[18px] transition-transform duration-300 ease-standard ${active ? "scale-110 fill-current" : "scale-100"} ${active ? "" : tone === "onSurface" ? "text-homera-terracotta" : ""}`}
+        className={`h-4.5 w-4.5 transition-transform duration-300 ease-standard ${active ? "scale-110 fill-current" : "scale-100"} ${active ? "" : tone === "onSurface" ? "text-homera-terracotta" : ""}`}
       />{" "}
       {withLabel && <span className="text-note font-medium">{active ? "En favori" : "Favori"}</span>}{" "}
       {/* Annonce réservée aux lecteurs d’écran : jamais de doublon visuel. */}{" "}

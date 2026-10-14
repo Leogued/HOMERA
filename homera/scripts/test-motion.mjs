@@ -304,7 +304,7 @@ await test('HOMERA : dossier sans note ni mention, projection finale centrée', 
 await test('HOMERA : la légende du carrousel est incrustée sur la photo', async () => {
   const card = await readFile(new URL('../components/catalog/PropertyCard.tsx', import.meta.url), 'utf8');
   assert.ok(card.includes('homera-property-caption pointer-events-none absolute inset-x-0 bottom-0'), 'légende ancrée au bas, clics traversants');
-  assert.ok(card.includes('rounded-b-media bg-gradient-to-t from-[rgba(20,12,8'), 'fondu dégradé raccordé à la photo');
+  assert.ok(card.includes('rounded-b-media bg-linear-to-t from-[rgba(20,12,8'), 'fondu dégradé raccordé à la photo');
   assert.ok(card.includes('line-clamp-2'), 'titre borné à deux lignes');
   assert.doesNotMatch(card, /homera-property-explore/, 'pastille redondante supprimée');
   assert.doesNotMatch(css, /\.homera-property-explore/, 'CSS de la pastille supprimé');
@@ -2043,12 +2043,12 @@ await test('HOMERA : les récits se fixent dès 1024px, sans garde de hauteur', 
 await test('HOMERA : les sous-menus : verre transparent flouté, barre remontée à l’ouverture, marron au survol', async () => {
   const navbar = await readFile(new URL('../components/layout/Navbar.tsx', import.meta.url), 'utf8');
   const header = await readFile(new URL('../components/layout/PublicHeader.tsx', import.meta.url), 'utf8');
-  assert.ok(navbar.includes('w-[17rem]') && header.includes('w-[17rem]'), 'largeur uniforme des panneaux');
+  assert.ok(navbar.includes('w-68') && header.includes('w-68'), 'largeur uniforme des panneaux');
   const panels = navbar.split('\n').filter((l) => l.includes('homera-nav-panel'));
   assert.ok(panels.length >= 1 && panels.every((l) => l.includes('bg-transparent') && l.includes('backdrop-blur-[28px]')), 'panneau d’accueil : transparent, flou 28 px');
   const publicPanels = header.split('\n').filter((l) => l.includes('homera-dropdown-enter'));
   assert.ok(publicPanels.length >= 1 && publicPanels.every((l) => l.includes('bg-transparent') && l.includes('backdrop-blur-[28px]')), 'panneau des pages : transparent, flou 28 px');
-  assert.ok(navbar.includes('mobileOpen || openMenu ? "z-[100]"') && header.includes('mobileOpen || openMenu ? "z-[100]"'), 'barres remontées en z-100 à l’ouverture d’un menu');
+  assert.ok(navbar.includes('mobileOpen || openMenu ? "z-100"') && header.includes('mobileOpen || openMenu ? "z-100"'), 'barres remontées en z-100 à l’ouverture d’un menu');
   assert.ok(navbar.includes('hover:bg-homera-brown') && header.includes('hover:bg-homera-brown'), 'survol marron');
   assert.doesNotMatch(navbar, /homera-nav-entry homera-underline/, 'aucun soulignement au survol dans les sous-menus');
   assert.ok(navbar.includes('px-2 py-2 text-center') && header.includes('px-2 py-2.5 text-center'), 'libellés et descriptions centrés');

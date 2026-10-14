@@ -73,7 +73,7 @@ export function PropertyDossier() {
               {" "}
               <div className="homera-dossier-core relative sm:col-span-2 lg:col-span-1 lg:col-start-2 lg:row-start-1 lg:row-span-3 lg:self-center">
                 {" "}
-                <div className="homera-dossier-reference relative z-[2] text-center">
+                <div className="homera-dossier-reference relative z-2 text-center">
                   {" "}
                   <p className="homera-dossier-caption mb-3 text-micro font-semibold uppercase tracking-[.23em] text-muted">
                     L’identité du lieu
@@ -98,7 +98,7 @@ export function PropertyDossier() {
                     quality={74}
                     className="h-[18rem] w-full sm:h-[20rem]"
                   />{" "}
-                  <div className="absolute inset-x-0 bottom-0 z-[2] p-5 text-white">
+                  <div className="absolute inset-x-0 bottom-0 z-2 p-5 text-white">
                     {" "}
                     <p className="mb-2 inline-flex items-center gap-2 text-micro font-semibold uppercase tracking-[.18em] text-homera-amber">
                       <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" />

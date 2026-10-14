@@ -22,7 +22,7 @@ export function IdentityStatement() {
       aria-labelledby="homera-statement-title"
     >
       {" "}
-      <div className="relative z-[1] mx-auto max-w-5xl">
+      <div className="relative z-1 mx-auto max-w-5xl">
         {" "}
         <span aria-hidden="true" className="homera-statement-thread mx-auto mb-10 block h-20 w-px bg-white/15">
           <span />

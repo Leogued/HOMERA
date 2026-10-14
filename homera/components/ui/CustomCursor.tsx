@@ -87,7 +87,7 @@ export function CustomCursor() {
     <div
       ref={ref}
       aria-hidden="true"
-      className="homera-cursor fixed left-0 top-0 z-[90]"
+      className="homera-cursor fixed left-0 top-0 z-90"
       style={{ opacity: label ? 1 : 0, transition: "opacity 160ms var(--homera-ease)" }}
     >
       {" "}

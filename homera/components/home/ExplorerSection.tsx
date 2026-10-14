@@ -96,7 +96,7 @@ export function ExplorerSection() {
                 </Reveal>{" "}
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(to_top,rgba(28,17,11,.95),rgba(28,17,11,.50)_45%,rgba(28,17,11,.08)_80%)]"
+                  className="pointer-events-none absolute inset-0 z-1 bg-[linear-gradient(to_top,rgba(28,17,11,.95),rgba(28,17,11,.50)_45%,rgba(28,17,11,.08)_80%)]"
                 />{" "}
                 <button
                   type="button"
@@ -108,14 +108,14 @@ export function ExplorerSection() {
                   tabIndex={active ? 0 : -1}
                   onFocus={() => setActiveIndex(index)}
                   onClick={() => setActiveIndex(index)}
-                  className="absolute inset-0 z-[2] rounded-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-homera-amber"
+                  className="absolute inset-0 z-2 rounded-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-homera-amber"
                 >
                   {" "}
                   <span className="sr-only">Ouvrir {intent.title}</span>{" "}
                 </button>{" "}
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-x-5 top-5 z-[3] flex items-center justify-between text-caption font-semibold tracking-[.25em] sm:inset-x-6 sm:top-6"
+                  className="pointer-events-none absolute inset-x-5 top-5 z-3 flex items-center justify-between text-caption font-semibold tracking-[.25em] sm:inset-x-6 sm:top-6"
                 >
                   {" "}
                   <span className="homera-num">{intent.index}</span>{" "}
@@ -123,7 +123,7 @@ export function ExplorerSection() {
                     <ArrowUpRight className="h-4 w-4" />
                   </span>{" "}
                 </div>{" "}
-                <div className="homera-intent-copy pointer-events-none absolute inset-x-5 bottom-5 z-[3] sm:inset-x-6 sm:bottom-6">
+                <div className="homera-intent-copy pointer-events-none absolute inset-x-5 bottom-5 z-3 sm:inset-x-6 sm:bottom-6">
                   {" "}
                   <h3 id={`intent-title-${intent.id}`} className="homera-intent-title font-serif">
                     {intent.title}

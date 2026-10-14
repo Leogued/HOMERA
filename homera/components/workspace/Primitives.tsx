@@ -50,7 +50,7 @@ export function WorkspacePanel({
       {(Icon || title || action) && (
         <div className="mb-5 flex flex-wrap items-start justify-between gap-3">
           <div className="flex min-w-0 items-start gap-3">
-            {Icon && <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-homera-terracotta/[0.09] text-homera-terracotta"><Icon className="h-[18px] w-[18px]" aria-hidden="true" /></span>}
+            {Icon && <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-homera-terracotta/[0.09] text-homera-terracotta"><Icon className="h-4.5 w-4.5" aria-hidden="true" /></span>}
             <div>
               <h2 className="text-body font-semibold">{title}</h2>
               {description && <p className="mt-1 text-caption leading-relaxed text-muted">{description}</p>}

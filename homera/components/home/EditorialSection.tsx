@@ -89,13 +89,13 @@ import { useInView, useMotionPreferences } from "@/lib/motion";
                 veil="none"
                 quality={70}
                 className="h-[24rem] w-full sm:h-[30rem]"
-                imageClassName="transition-transform duration-[1400ms] ease-standard"
+                imageClassName="transition-transform duration-1400 ease-standard"
               />{" "}
               <div
                 aria-hidden="true"
-                className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(to_top,rgba(18,11,7,0.92)_0%,rgba(18,11,7,0.5)_42%,rgba(18,11,7,0.08)_75%)]"
+                className="pointer-events-none absolute inset-0 z-1 bg-[linear-gradient(to_top,rgba(18,11,7,0.92)_0%,rgba(18,11,7,0.5)_42%,rgba(18,11,7,0.08)_75%)]"
               />{" "}
-              <div className="absolute inset-0 z-[2] flex flex-col justify-between p-6 text-white sm:p-8">
+              <div className="absolute inset-0 z-2 flex flex-col justify-between p-6 text-white sm:p-8">
                 {" "}
                 <span className="inline-flex w-max items-center gap-2 rounded-full border border-white/20 bg-black/35 px-3 py-1.5 text-micro font-semibold uppercase tracking-[0.18em] backdrop-blur-md">
                   {" "}
@@ -138,7 +138,7 @@ import { useInView, useMotionPreferences } from "@/lib/motion";
                       veil="none"
                       quality={62}
                       className="h-full w-full"
-                      imageClassName="transition-transform duration-[1200ms] ease-standard"
+                      imageClassName="transition-transform duration-1200 ease-standard"
                     />{" "}
                   </span>{" "}
                   <span className="min-w-0 flex-1">

@@ -48,7 +48,7 @@ export function PropertyCard(props: {
   const features = (property.features ?? []).slice(0, 3);
 
   const badges = (
-    <div className="pointer-events-none absolute inset-x-4 top-4 z-[2] flex flex-wrap items-start justify-between gap-2 text-micro text-white sm:inset-x-5 sm:top-5">
+    <div className="pointer-events-none absolute inset-x-4 top-4 z-2 flex flex-wrap items-start justify-between gap-2 text-micro text-white sm:inset-x-5 sm:top-5">
       <span className="flex flex-wrap gap-2">
         <span className="rounded-full border border-white/30 bg-homera-brown/70 px-3 py-1.5 font-semibold uppercase tracking-[.12em]">
           {INTENT_LABELS[property.intent]} · {TYPE_LABELS[property.type]}
@@ -63,7 +63,7 @@ export function PropertyCard(props: {
   );
 
   const reference = (
-    <div className="pointer-events-none absolute inset-x-4 bottom-4 z-[2] flex items-center justify-between gap-3 sm:inset-x-5 sm:bottom-5">
+    <div className="pointer-events-none absolute inset-x-4 bottom-4 z-2 flex items-center justify-between gap-3 sm:inset-x-5 sm:bottom-5">
       <span className="homera-num font-mono text-caption tracking-[.06em] text-homera-amber">
         {property.homeraId}
       </span>
@@ -177,7 +177,7 @@ export function PropertyCard(props: {
           </Reveal>
           <div
             aria-hidden="true"
-            className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(to_top,rgba(28,17,11,.80),transparent_48%,rgba(28,17,11,.2))]"
+            className="pointer-events-none absolute inset-0 z-1 bg-[linear-gradient(to_top,rgba(28,17,11,.80),transparent_48%,rgba(28,17,11,.2))]"
           />
           {badges}
           {/* Seul arrêt de tabulation de la photo : l’aperçu du bien. */}
@@ -186,7 +186,7 @@ export function PropertyCard(props: {
             onClick={props.onOpen}
             data-cursor="property"
             aria-label={`Voir le bien : ${property.title}`}
-            className="absolute inset-0 z-[3] rounded-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-homera-amber"
+            className="absolute inset-0 z-3 rounded-[inherit] outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-homera-amber"
           >
             <span className="sr-only">Voir le bien</span>
           </button>
@@ -195,7 +195,7 @@ export function PropertyCard(props: {
         {/* Légende incrustée : ancrée au bas de la carte, hors du bloc photo
             transformé en 3D — les prix restent immobiles. Les clics traversent
             vers le bouton de la photo, sauf le lien et le favori. */}
-        <div className="homera-property-caption pointer-events-none absolute inset-x-0 bottom-0 z-[2] rounded-b-media bg-gradient-to-t from-[rgba(20,12,8,.92)] via-[rgba(20,12,8,.55)] to-transparent px-5 pb-4 pt-8 text-white sm:px-6 lg:px-7 lg:pb-6 lg:pt-16">
+        <div className="homera-property-caption pointer-events-none absolute inset-x-0 bottom-0 z-2 rounded-b-media bg-linear-to-t from-[rgba(20,12,8,.92)] via-[rgba(20,12,8,.55)] to-transparent px-5 pb-4 pt-8 text-white sm:px-6 lg:px-7 lg:pb-6 lg:pt-16">
           <div className="flex items-center justify-between gap-3">
             <span className="homera-num font-mono text-micro tracking-[.08em] text-homera-amber">
               {property.homeraId}
@@ -254,10 +254,10 @@ export function PropertyCard(props: {
         />
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(to_top,rgba(28,17,11,.72),transparent_55%)]"
+          className="pointer-events-none absolute inset-0 z-1 bg-[linear-gradient(to_top,rgba(28,17,11,.72),transparent_55%)]"
         />
         {badges}
-        <div className="absolute bottom-4 right-4 z-[3] sm:bottom-5 sm:right-5">
+        <div className="absolute bottom-4 right-4 z-3 sm:bottom-5 sm:right-5">
           <FavoriteButton propertyId={property.id} title={property.title} />
         </div>
         {reference}
@@ -311,7 +311,7 @@ export function PropertyCard(props: {
         onKeyDown={openOnSpace}
         data-cursor="property"
         aria-label={`Voir la fiche : ${property.title}, ${property.district}, ${property.city}`}
-        className="absolute inset-0 z-[2] rounded-card outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-homera-terracotta"
+        className="absolute inset-0 z-2 rounded-card outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-homera-terracotta"
       />
     </article>
   );

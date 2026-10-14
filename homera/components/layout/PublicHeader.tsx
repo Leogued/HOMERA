@@ -129,7 +129,7 @@ export function PublicHeader() {
   const isActive = (entry: NavEntry) => pathname === entry.href || pathname.startsWith(`${entry.href}/`);
   return (
     <header
-      className={`homera-public-header sticky top-0 ${mobileOpen || openMenu ? "z-[100]" : "z-[70]"} border-b border-border/70`}
+      className={`homera-public-header sticky top-0 ${mobileOpen || openMenu ? "z-100" : "z-70"} border-b border-border/70`}
       data-scrolled={scrolled}
     >
       {" "}
@@ -198,7 +198,7 @@ export function PublicHeader() {
                   <div
                     id={panelId(entry.title)}
                     inert={!open}
-                    className={`absolute left-1/2 top-full z-50 w-[17rem] -translate-x-1/2 pt-2 transition-all duration-[320ms] ease-standard ${open ? "pointer-events-auto visible translate-y-0 opacity-100" : "pointer-events-none invisible -translate-y-1.5 opacity-0"}`}
+                    className={`absolute left-1/2 top-full z-50 w-68 -translate-x-1/2 pt-2 transition-all duration-320 ease-standard ${open ? "pointer-events-auto visible translate-y-0 opacity-100" : "pointer-events-none invisible -translate-y-1.5 opacity-0"}`}
                   >
                     {" "}
                     <div
@@ -223,7 +223,7 @@ export function PublicHeader() {
                           items[event.key === "Home" ? 0 : items.length - 1]?.focus();
                         }
                       }}
-                      className="homera-dropdown-enter homera-noscrollbar max-h-[22rem] overflow-y-auto rounded-menu bg-transparent p-1.5 shadow-[0_28px_60px_-30px_rgba(28,17,11,0.45)] backdrop-blur-[28px]"
+                      className="homera-dropdown-enter homera-noscrollbar max-h-88 overflow-y-auto rounded-menu bg-transparent p-1.5 shadow-[0_28px_60px_-30px_rgba(28,17,11,0.45)] backdrop-blur-[28px]"
                     >
                       {" "}
                       {entry.children.map((child) => (
@@ -260,9 +260,9 @@ export function PublicHeader() {
             >
               {" "}
               {isDark ? (
-                <Sun className="h-[18px] w-[18px]" aria-hidden="true" />
+                <Sun className="h-4.5 w-4.5" aria-hidden="true" />
               ) : (
-                <Moon className="h-[18px] w-[18px]" aria-hidden="true" />
+                <Moon className="h-4.5 w-4.5" aria-hidden="true" />
               )}{" "}
             </button>
           )}{" "}
@@ -288,7 +288,7 @@ export function PublicHeader() {
         id="homera-public-mobile-menu"
         aria-hidden={!mobileOpen}
         inert={!mobileOpen}
-        className={`fixed inset-0 z-[90] lg:hidden ${mobileOpen ? "visible pointer-events-auto" : "invisible pointer-events-none"}`}
+        className={`fixed inset-0 z-90 lg:hidden ${mobileOpen ? "visible pointer-events-auto" : "invisible pointer-events-none"}`}
       >
         {" "}
         <div className="absolute inset-0 bg-homera-night" aria-hidden="true" />{" "}
@@ -297,7 +297,7 @@ export function PublicHeader() {
           role="dialog"
           aria-modal="true"
           aria-label="Menu HOMERA"
-          className={`relative flex h-full flex-col transition-all duration-[280ms] ease-standard ${mobileOpen ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0"}`}
+          className={`relative flex h-full flex-col transition-all duration-280 ease-standard ${mobileOpen ? "translate-y-0 opacity-100" : "-translate-y-3 opacity-0"}`}
         >
           {" "}
           <div className="flex items-center justify-between px-5 pt-5">
@@ -336,7 +336,7 @@ export function PublicHeader() {
                           onClick={() => setMobileSection(open ? null : entry.title)}
                           aria-expanded={open}
                           aria-controls={`mobile-${panelId(entry.title)}`}
-                          className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-left text-body font-medium transition-colors ${open ? "border-homera-terracotta/40 bg-white/8 text-white" : "border-white/10 bg-white/[0.04] text-white/90"}`}
+                          className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3.5 text-left text-body font-medium transition-colors ${open ? "border-homera-terracotta/40 bg-white/8 text-white" : "border-white/10 bg-white/4 text-white/90"}`}
                         >
                           {" "}
                           {entry.title}{" "}
@@ -348,7 +348,7 @@ export function PublicHeader() {
                         <div
                           id={`mobile-${panelId(entry.title)}`}
                           inert={!open}
-                          className={`grid overflow-hidden transition-all duration-[420ms] ease-standard ${open ? "mt-1.5 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
+                          className={`grid overflow-hidden transition-all duration-420 ease-standard ${open ? "mt-1.5 grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"}`}
                         >
                           {" "}
                           <ul className="min-h-0 space-y-1 border-l border-white/10 pl-3">
@@ -384,7 +384,7 @@ export function PublicHeader() {
                       <Link
                         href={entry.href}
                         onClick={() => setMobileOpen(false)}
-                        className="block rounded-2xl border border-white/10 bg-white/[0.04] px-4 py-3.5 text-body font-medium text-white/90 transition-colors hover:bg-white/8"
+                        className="block rounded-2xl border border-white/10 bg-white/4 px-4 py-3.5 text-body font-medium text-white/90 transition-colors hover:bg-white/8"
                       >
                         {" "}
                         {entry.title}{" "}
@@ -429,7 +429,7 @@ export function PublicHeader() {
                 >
                   {" "}
                   <span
-                    className={`absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-white transition-all duration-300 ease-standard ${isDark ? "left-[1.15rem]" : "left-[3px]"}`}
+                    className={`absolute top-1/2 h-3.5 w-3.5 -translate-y-1/2 rounded-full bg-white transition-all duration-300 ease-standard ${isDark ? "left-[1.15rem]" : "left-0.75"}`}
                   />{" "}
                 </span>{" "}
               </button>

@@ -761,7 +761,7 @@ function DashboardPanel({
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
           <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-homera-terracotta/[0.08] text-homera-terracotta">
-            <Icon className="h-[18px] w-[18px]" aria-hidden="true" />
+            <Icon className="h-4.5 w-4.5" aria-hidden="true" />
           </span>
           <div className="min-w-0">
             <p className="text-micro font-semibold uppercase tracking-[0.17em] homera-accent-ink">{eyebrow}</p>

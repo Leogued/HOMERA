@@ -403,7 +403,7 @@ export function WorkspaceShell({
               <Link href="/explorer" className="hidden min-h-10 items-center gap-2 rounded-btn homera-cta px-3.5 text-note font-medium text-white sm:inline-flex"><Search className="h-3.5 w-3.5" aria-hidden="true" />Explorer</Link>
               <div ref={notificationsContainerRef} className="relative">
                 <button ref={notificationsButtonRef} type="button" aria-label={unread ? `Notifications, ${unread} non lues` : "Notifications"} aria-expanded={notificationsOpen} aria-controls={notificationsOpen ? "workspace-notifications-menu" : undefined} onClick={() => setNotificationsOpen((open) => !open)} className="relative flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground hover:border-homera-terracotta hover:text-homera-terracotta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                  <Bell className="h-[18px] w-[18px]" aria-hidden="true" />
+                  <Bell className="h-4.5 w-4.5" aria-hidden="true" />
                   {unread > 0 && <span className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full border-2 border-background bg-homera-terracotta" />}
                 </button>
                 {notificationsOpen && <div id="workspace-notifications-menu" className="absolute right-0 top-12 z-50 w-[min(92vw,360px)] rounded-2xl border border-border bg-card p-3 shadow-[var(--shadow-card-hover)]" role="region" aria-label="Notifications récentes">

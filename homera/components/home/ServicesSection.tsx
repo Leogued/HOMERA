@@ -84,7 +84,7 @@ export function ServicesSection() {
                   <div
                     key={service.id}
                     aria-hidden={service.id !== active.id}
-                    className="absolute inset-0 transition-[opacity,transform] duration-[900ms] ease-standard"
+                    className="absolute inset-0 transition-[opacity,transform] duration-900 ease-standard"
                     style={{
                       opacity: service.id === active.id ? 1 : 0,
                       transform: service.id === active.id ? "scale(1)" : "scale(1.04)",
@@ -103,7 +103,7 @@ export function ServicesSection() {
                     )}{" "}
                   </div>
                 ))}{" "}
-                <div className="pointer-events-none absolute inset-x-0 top-0 z-[2] flex items-start justify-between p-5">
+                <div className="pointer-events-none absolute inset-x-0 top-0 z-2 flex items-start justify-between p-5">
                   {" "}
                   <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-3 py-1.5 text-micro font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-md">
                     {" "}
@@ -165,7 +165,7 @@ export function ServicesSection() {
                     {" "}
                     <span
                       aria-hidden="true"
-                      className="absolute inset-y-0 left-0 w-[3px] origin-top bg-gradient-to-b from-homera-terracotta to-homera-amber transition-transform duration-700 ease-standard"
+                      className="absolute inset-y-0 left-0 w-0.75 origin-top bg-linear-to-b from-homera-terracotta to-homera-amber transition-transform duration-700 ease-standard"
                       style={{ transform: `scaleY(${isActive ? 1 : 0})` }}
                     />{" "}
                     <span

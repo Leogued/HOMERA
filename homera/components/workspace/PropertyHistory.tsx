@@ -66,7 +66,7 @@ export function PropertyHistory({ history }: { history: PropertyHistoryData }) {
               <li key={`${event.title}-${event.date}-${index}`} className="relative grid grid-cols-[44px_minmax(0,1fr)] gap-4 pb-7 last:pb-0">
                 {!last && <span className="absolute bottom-0 left-[21px] top-10 w-px bg-border" aria-hidden="true" />}
                 <span
-                  className={`relative z-[1] flex h-11 w-11 items-center justify-center rounded-full border ${
+                  className={`relative z-1 flex h-11 w-11 items-center justify-center rounded-full border ${
                     event.status === "done"
                       ? "border-success/30 bg-success/10 text-success"
                       : "border-warning/30 bg-warning/10 text-warning"

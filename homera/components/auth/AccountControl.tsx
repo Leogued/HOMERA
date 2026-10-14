@@ -132,7 +132,7 @@ export function AccountControl({ tone = "light" }: { tone?: Tone }) {
       <div
         id="homera-account-menu"
         inert={!open}
-        className={`absolute right-0 top-full z-50 w-[19rem] pt-2 transition-all duration-[220ms] ease-standard ${
+        className={`absolute right-0 top-full z-50 w-76 pt-2 transition-all duration-220 ease-standard ${
           open ? "pointer-events-auto visible translate-y-0 opacity-100" : "pointer-events-none invisible -translate-y-1.5 opacity-0"
         }`}
       >
@@ -282,7 +282,7 @@ export function AccountMobileLinks({
   return (
     <div
       className={`rounded-2xl border px-4 py-3.5 ${
-        dark ? "border-white/12 bg-white/[0.04] text-white" : "border-border bg-card text-foreground"
+        dark ? "border-white/12 bg-white/4 text-white" : "border-border bg-card text-foreground"
       }`}
     >
       <p className="text-body-sm font-semibold">

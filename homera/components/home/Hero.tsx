@@ -59,10 +59,10 @@ export function Hero() {
         aria-hidden="true"
         className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_10%,transparent_35%,rgba(0,0,0,0.55)_100%)]"
       />{" "}
-      <div aria-hidden="true" className="homera-grain-layer absolute inset-0 z-[2]" />{" "}
+      <div aria-hidden="true" className="homera-grain-layer absolute inset-0 z-2" />{" "}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-x-0 bottom-0 z-[3] h-36 bg-gradient-to-b from-transparent to-background sm:h-48"
+        className="pointer-events-none absolute inset-x-0 bottom-0 z-3 h-36 bg-linear-to-b from-transparent to-background sm:h-48"
       />{" "}
       <div className="relative z-10 mx-auto flex min-h-[inherit] max-w-7xl flex-col px-4 sm:px-6 lg:px-8">
         {" "}

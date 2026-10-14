@@ -380,7 +380,7 @@ export function SearchModule({ className = "" }: { className?: string }) {
             ref={panelRef}
             role="listbox"
             aria-label={SEARCH_FIELD_LABELS[openField]}
-            className="homera-dropdown-menu homera-dropdown-enter homera-noscrollbar fixed z-[80] flex flex-col overflow-y-auto overscroll-contain rounded-menu border border-border bg-card p-1.5 text-foreground shadow-[0_30px_70px_-30px_rgba(28,17,11,0.6)] dark:border-white/10 dark:text-white"
+            className="homera-dropdown-menu homera-dropdown-enter homera-noscrollbar fixed z-80 flex flex-col overflow-y-auto overscroll-contain rounded-menu border border-border bg-card p-1.5 text-foreground shadow-[0_30px_70px_-30px_rgba(28,17,11,0.6)] dark:border-white/10 dark:text-white"
             style={{ top: position.top, left: position.left, width: position.width, maxHeight: position.maxHeight }}
             onKeyDown={(event) => {
               const items = Array.from(panelRef.current?.querySelectorAll<HTMLButtonElement>("[role=option]") ?? []);

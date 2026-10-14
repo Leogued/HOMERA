@@ -5,7 +5,7 @@ import { media } from "@/lib/content";
   "none" | "soft" | "strong";
 const veilClasses: Record<Veil, string | null> = {
   none: null,
-  soft: "bg-gradient-to-t from-[rgba(20,12,8,0.62)] via-transparent to-[rgba(20,12,8,0.18)]",
+  soft: "bg-linear-to-t from-[rgba(20,12,8,0.62)] via-transparent to-[rgba(20,12,8,0.18)]",
   strong: null,
 };
 export function Visual({
@@ -59,7 +59,7 @@ export function Visual({
       {veil === "strong" ? (
         <div className="homera-media-veil" aria-hidden="true" />
       ) : veil === "soft" ? (
-        <div className={`pointer-events-none absolute inset-0 z-[1] ${veilClasses.soft}`} aria-hidden="true" />
+        <div className={`pointer-events-none absolute inset-0 z-1 ${veilClasses.soft}`} aria-hidden="true" />
       ) : null}{" "}
       {children}{" "}
     </div>

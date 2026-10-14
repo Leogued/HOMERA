@@ -14,11 +14,11 @@ import { onScrollFrame } from "@/lib/motion";
     [],
   );
   return (
-    <div aria-hidden="true" className="fixed inset-x-0 top-0 z-[60] h-[2px] bg-transparent">
+    <div aria-hidden="true" className="fixed inset-x-0 top-0 z-60 h-0.5 bg-transparent">
       {" "}
       <div
         ref={barRef}
-        className="h-full origin-left bg-gradient-to-r from-homera-terracotta via-homera-terracotta-light to-homera-amber"
+        className="h-full origin-left bg-linear-to-r from-homera-terracotta via-homera-terracotta-light to-homera-amber"
         style={{ transform: "scaleX(0)" }}
       />{" "}
     </div>
@@ -50,7 +50,7 @@ import { onScrollFrame } from "@/lib/motion";
       aria-hidden={!visible}
       aria-label="Revenir en haut de la page"
       title="Haut de page"
-      className={`homera-press fixed bottom-6 right-5 z-[65] flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card/95 text-foreground shadow-[0_20px_45px_-30px_rgba(28,17,11,0.9)] backdrop-blur-md transition-all duration-500 ease-standard hover:border-homera-terracotta hover:text-homera-terracotta ${visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"}`}
+      className={`homera-press fixed bottom-6 right-5 z-65 flex h-11 w-11 items-center justify-center rounded-full border border-border bg-card/95 text-foreground shadow-[0_20px_45px_-30px_rgba(28,17,11,0.9)] backdrop-blur-md transition-all duration-500 ease-standard hover:border-homera-terracotta hover:text-homera-terracotta ${visible ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"}`}
     >
       {" "}
       <ArrowUp className="h-4 w-4" aria-hidden="true" />{" "}

@@ -78,7 +78,7 @@ export function PageHero({
           />{" "}
           <div
             aria-hidden="true"
-            className="absolute inset-0 -z-[5] bg-[linear-gradient(to_top,rgba(28,17,11,.90),rgba(28,17,11,.62)_46%,rgba(28,17,11,.34))]"
+            className="absolute inset-0 -z-5 bg-[linear-gradient(to_top,rgba(28,17,11,.90),rgba(28,17,11,.62)_46%,rgba(28,17,11,.34))]"
           />{" "}
         </>
       )}{" "}

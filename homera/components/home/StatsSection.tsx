@@ -101,7 +101,7 @@ function StatCell({ stat, index }: { stat: Stat; index: number }) {
           />{" "}
         </div>{" "}
         <h3 className="mt-4 text-body-sm font-semibold leading-snug text-foreground"> {stat.label} </h3>{" "}
-        <p className="mt-2 max-w-[22rem] text-note leading-relaxed text-muted"> {stat.description} </p>{" "}
+        <p className="mt-2 max-w-88 text-note leading-relaxed text-muted"> {stat.description} </p>{" "}
       </div>{" "}
     </Reveal>
   );
