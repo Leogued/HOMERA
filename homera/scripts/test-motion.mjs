@@ -2045,9 +2045,9 @@ await test('HOMERA : les sous-menus : verre dépoli fort, barre remontée à l�
   const header = await readFile(new URL('../components/layout/PublicHeader.tsx', import.meta.url), 'utf8');
   assert.ok(navbar.includes('w-68') && header.includes('w-68'), 'largeur uniforme des panneaux');
   const panels = navbar.split('\n').filter((l) => l.includes('homera-nav-panel'));
-  assert.ok(panels.length >= 1 && panels.every((l) => l.includes('bg-white/10') && l.includes('backdrop-blur-[64px]')), 'panneau d’accueil : voile blanc 10 %, flou 64 px');
+  assert.ok(panels.length >= 1 && panels.every((l) => l.includes('bg-white/10') && l.includes('backdrop-blur-3xl')), 'panneau d’accueil : voile blanc 10 %, flou 3xl (64 px)');
   const publicPanels = header.split('\n').filter((l) => l.includes('homera-dropdown-enter'));
-  assert.ok(publicPanels.length >= 1 && publicPanels.every((l) => l.includes('bg-white/10') && l.includes('backdrop-blur-[64px]')), 'panneau des pages : voile blanc 10 %, flou 64 px');
+  assert.ok(publicPanels.length >= 1 && publicPanels.every((l) => l.includes('bg-white/10') && l.includes('backdrop-blur-3xl')), 'panneau des pages : voile blanc 10 %, flou 3xl (64 px)');
   assert.ok(navbar.includes('mobileOpen || openMenu ? "z-100"') && header.includes('mobileOpen || openMenu ? "z-100"'), 'barres remontées en z-100 à l’ouverture d’un menu');
   assert.ok(navbar.includes('hover:bg-homera-brown') && header.includes('hover:bg-homera-brown'), 'survol marron');
   assert.doesNotMatch(navbar, /homera-nav-entry homera-underline/, 'aucun soulignement au survol dans les sous-menus');

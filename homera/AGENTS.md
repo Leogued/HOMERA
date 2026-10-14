@@ -2044,7 +2044,14 @@ Le frontend ne doit jamais créer le modèle économique. Il doit **traduire fid
 
 ### Ce à quoi tu ne dois JAMAIS toucher sans raison explicite :
 1. **`lib/media.generated.ts`** : fichier généré par `scripts/build-images.mjs` — ne jamais l'éditer à la main.
-2. **Le bloc `<!-- BEGIN:nextjs-agent-rules -->
+2. **Le bloc `<!-- BEGIN:nextjs-agent-rules -->`** en bas de ce fichier : géré automatiquement par Next.js 16 (`next dev`).
+3. **Les garde-fous d'hydratation** :
+   - Ne jamais insérer d'espace JSX explicite (`{" "}`) sous `<html>`, `<head>` ou `<table>`/`<tr>`.
+   - Ne jamais appeler `new Date()` ou `window.location` pendant le rendu initial d'un composant client sans `useMounted()` ou `useSyncExternalStore`.
+4. **L'encodeur QR interne (`lib/qr.ts` + `components/ui/QrCode.tsx`)** : ne jamais réintroduire `qrcode.react` ou une dépendance externe de QR code.
+5. **L'identité typographique** : ne jamais mettre `font-bold` ou `font-semibold` sur `font-serif` (*DM Serif Display* n'existe qu'en 400), et ne jamais utiliser `.homera-brand` sur autre chose que le nom « HOMERA » / « Homera ».
+
+<!-- BEGIN:nextjs-agent-rules -->
 
 # This is NOT the Next.js you know
 
