@@ -281,7 +281,9 @@ for (const token of ['--duration-instant', '--duration-base', '--duration-scene'
   assert.ok(values.some((value) => !value.includes(token)), `${token} n'a que des déclarations circulaires dans le CSS compilé`);
 }
 assert.match(css, /\.homera-dropdown-enter\{animation:[^}]*var\(--duration-instant\)/, 'le dropdown n\'utilise pas le token de durée');
-assert.ok(css.includes('min-height: 700px') || css.includes('min-height:700px'), 'Garde de hauteur pour les sticky');
+assert.match(css, /min-width:\s*1024px/, 'Récits fixés dès 1024px de large');
+assert.doesNotMatch(css, /min-height:\s*700px/, 'Plus de garde de hauteur excluant les portables');
+assert.match(css, /max-height:\s*780px/, 'Version compacte des récits sur écrans peu hauts');
 const image = await fetchOk('/_next/image?url=%2Fimages%2Fprop-villa.jpg&w=1080&q=72', { headers: { Accept: 'image/avif' } });
 assert.ok(image.status === 200 && image.headers.get('content-type')?.startsWith('image/'), 'Image optimisée servie');
 const bytes = (await image.arrayBuffer()).byteLength;

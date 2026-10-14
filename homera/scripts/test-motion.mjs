@@ -2031,3 +2031,11 @@ await test('HOMERA : le titre et l’accroche du hero restent immobiles', async 
   assert.doesNotMatch(css, /\.homera-hero-pointer/, 'CSS de la parallaxe du titre supprimé');
   assert.doesNotMatch(css, /\.homera-hero-copy/, 'CSS de la sortie du titre supprimé');
 });
+
+await test('HOMERA : les récits se fixent dès 1024px, sans garde de hauteur', async () => {
+  const motion = await readFile(new URL('../lib/motion.ts', import.meta.url), 'utf8');
+  assert.ok(motion.includes('(min-width: 1024px) and (prefers-reduced-motion: no-preference)'), 'useStoryCapable sans garde de hauteur');
+  assert.doesNotMatch(motion, /min-height:\s*700px/, 'le hook n’exclut plus les écrans peu hauts');
+  assert.ok(css.includes('@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {'), 'CSS des récits synchronisée avec le hook');
+  assert.ok(css.includes('@media (min-width: 1024px) and (max-height: 780px)'), 'compacité des récits sur écrans peu hauts');
+});

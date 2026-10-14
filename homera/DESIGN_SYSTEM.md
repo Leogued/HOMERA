@@ -144,4 +144,4 @@ Chaque composant utilise le **token de rôle** correspondant (qui pointe vers l'
 1. **Zéro boucle `requestAnimationFrame` au repos** : tout passe par `lib/motion-frame.ts`.
 2. **Respect absolu de `prefers-reduced-motion: reduce`** : désactivation immédiate des parallax, compteurs animés, text-rolls, curseur personnalisé et fixations sticky longues.
 3. **Lisibilité sacrée** : les prix, références et boutons d'action ne subissent jamais de flou (`blur`) ni d'inclinaison 3D.
-4. **Gardes d'écran pour les séquences sticky** : réservées aux viewports `≥ 1024px` de large et `≥ 700px` de haut. En dessous, le récit se déplie naturellement.
+4. **Gardes d'écran pour les séquences sticky** : réservées aux viewports `≥ 1024px` de large (mouvement non réduit). En dessous, le récit se déplie naturellement ; sur écrans peu hauts (`≤ 780px`, puis `≤ 660px`), version compacte.

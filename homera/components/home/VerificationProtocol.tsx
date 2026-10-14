@@ -104,7 +104,7 @@ export function VerificationProtocol() {
                   })}{" "}
                 </ol>{" "}
                 {story && (
-                  <div className="mt-7 flex items-center gap-3">
+                  <div className="homera-protocol-arrows mt-7 flex items-center gap-3">
                     {" "}
                     <button
                       type="button"
@@ -210,7 +210,7 @@ function ProtocolVisual({ stage }: { stage: number }) {
             Fidjrossè · Cotonou
           </span>{" "}
         </div>{" "}
-        <div className="p-5">
+        <div className="homera-protocol-body p-5">
           {" "}
           <p className="homera-num font-mono text-body-sm font-medium">{DOSSIER.reference}</p>{" "}
           <div className="mt-5 space-y-3">

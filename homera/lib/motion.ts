@@ -200,7 +200,7 @@ export function useSceneMotion<T extends HTMLElement>(
 
 /** Fixation seulement lorsqu'il existe assez de place pour lire toute la scène. */
 export function useStoryCapable() {
-  return useMediaQuery("(min-width: 1024px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)");
+  return useMediaQuery("(min-width: 1024px) and (prefers-reduced-motion: no-preference)");
 }
 
 /** Les commandes clavier et le scroll parlent exactement la même timeline. */
