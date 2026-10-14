@@ -13,7 +13,8 @@
     "audit:home": "node scripts/audit-home.mjs",
     "test:backend": "node --experimental-strip-types --no-warnings --import ./scripts/ts-alias-register.mjs scripts/test-backend.mts",
     "db:reset": "node --experimental-strip-types --no-warnings --import ./scripts/ts-alias-register.mjs scripts/db-reset.mts",
-    "test:scenarios": "node scripts/test-scenarios.mjs"
+    "test:scenarios": "node scripts/test-scenarios.mjs",
+    "test:search": "node --experimental-strip-types --no-warnings --import ./scripts/ts-alias-register.mjs scripts/test-search-redirect.mjs"
   },
   "dependencies": {
     "better-sqlite3": "^13.0.3",

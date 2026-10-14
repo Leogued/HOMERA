@@ -289,6 +289,11 @@ export function criteriaToCatalogQuery(criteria: SearchCriteria): CatalogQuery {
   };
 }
 
+/** Page de destination d’une recherche : le projet choisi, ou l’explorateur global sans projet. */
+export function searchDestination(criteria: SearchCriteria): string {
+  return (INTENT_IDS as string[]).includes(criteria.project) ? `/${criteria.project}` : "/explorer";
+}
+
 /* ------------------------------------------------------------------
    FILTRES
    ------------------------------------------------------------------ */

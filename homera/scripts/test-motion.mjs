@@ -2054,3 +2054,11 @@ await test('HOMERA : les sous-menus : couleur unie, largeur sur mesure, marron a
   assert.ok(navbar.includes('px-2 py-2 text-center') && header.includes('px-2 py-2.5 text-center'), 'libellés et descriptions centrés');
   assert.ok(navbar.includes('<span className="whitespace-nowrap">{child.label}</span>') && header.includes('<span className="whitespace-nowrap">{child.label}</span>'), 'libellés insécables (la largeur épouse le contenu)');
 });
+
+await test('HOMERA : la recherche d’accueil redirige vers la page du projet avec les critères', async () => {
+  const searchModule = await readFile(new URL('../components/home/SearchModule.tsx', import.meta.url), 'utf8');
+  const props = await readFile(new URL('../lib/properties.ts', import.meta.url), 'utf8');
+  assert.ok(searchModule.includes('useRouter') && searchModule.includes('router.push(catalogHref(criteriaToCatalogQuery(criteria), searchDestination(criteria)))'), 'soumission : navigation avec les critères en paramètres');
+  assert.ok(props.includes('`/${criteria.project}`') && props.includes('"/explorer"'), 'destination : page du projet, explorateur sans projet');
+  assert.doesNotMatch(searchModule, /pushState\(null, "", "#biens"\)/, 'fini le simple défilement vers #biens');
+});

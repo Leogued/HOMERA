@@ -10,8 +10,9 @@ import {
   type SelectOption,
 } from "@/lib/content";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { countLabel } from "@/lib/format";
-import { catalogHref, criteriaToCatalogQuery } from "@/lib/properties";
+import { catalogHref, criteriaToCatalogQuery, searchDestination } from "@/lib/properties";
 import { fitDropdown, restoreFieldFocus } from "@/lib/floating";
 import { useMounted } from "@/lib/motion";
 import { useSearch } from "@/components/providers/SearchProvider";
@@ -20,6 +21,7 @@ import { useSearch } from "@/components/providers/SearchProvider";
 const PANEL_MAX_HEIGHT = 304;
 export function SearchModule({ className = "" }: { className?: string }) {
   const { criteria, setCriterion, resetCriteria, submitSearch, results, isSearching } = useSearch();
+  const router = useRouter();
   const mounted = useMounted();
   const [openField, setOpenField] = useState<SearchFieldName | null>(null);
   const [position, setPosition] = useState<PanelPosition | null>(null);
@@ -127,12 +129,9 @@ export function SearchModule({ className = "" }: { className?: string }) {
   const submit = () => {
     submitSearch();
     closePanel();
-    const target = document.getElementById("biens");
-    target?.scrollIntoView({
-      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
-      block: "start",
-    });
-    window.history.pushState(null, "", "#biens");
+    // La recherche redirige vers la page du projet (ou l’explorateur
+    // global sans projet), critères transmis en paramètres d’URL.
+    router.push(catalogHref(criteriaToCatalogQuery(criteria), searchDestination(criteria)));
   };
   const options = openField ? optionsFor(openField) : [];
   const activeValue = openField ? criteria[openField as keyof typeof criteria] : "";
