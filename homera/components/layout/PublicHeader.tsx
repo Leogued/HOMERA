@@ -223,7 +223,7 @@ export function PublicHeader() {
                           items[event.key === "Home" ? 0 : items.length - 1]?.focus();
                         }
                       }}
-                      className="homera-dropdown-enter homera-noscrollbar max-h-[22rem] overflow-y-auto rounded-menu bg-background/85 p-1.5 shadow-[0_28px_60px_-30px_rgba(28,17,11,0.45)] backdrop-blur-md"
+                      className="homera-dropdown-enter homera-noscrollbar max-h-[22rem] overflow-y-auto rounded-menu bg-transparent p-1.5 shadow-[0_28px_60px_-30px_rgba(28,17,11,0.45)] backdrop-blur-md"
                     >
                       {" "}
                       {entry.children.map((child) => (
@@ -233,11 +233,11 @@ export function PublicHeader() {
                           role="menuitem"
                           data-roving-item
                           onClick={() => setOpenMenu(null)}
-                          className="flex flex-col items-center gap-0.5 rounded-xl px-2 py-2.5 text-center text-note font-medium text-foreground transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
+                          className="group flex flex-col items-center gap-0.5 rounded-xl px-2 py-2.5 text-center text-note font-medium text-foreground transition-colors hover:bg-homera-brown hover:text-white focus-visible:bg-homera-brown focus-visible:text-white focus-visible:outline-none"
                         >
                           {" "}
                           <span>{child.label}</span>{" "}
-                          {child.hint && <span className="text-caption font-normal text-muted">{child.hint}</span>}{" "}
+                          {child.hint && <span className="text-caption font-normal text-muted group-hover:text-white/75 group-focus-visible:text-white/75">{child.hint}</span>}{" "}
                         </Link>
                       ))}{" "}
                     </div>{" "}

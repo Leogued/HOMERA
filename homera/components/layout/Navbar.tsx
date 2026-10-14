@@ -264,7 +264,7 @@ export function Navbar() {
                           items[event.key === "Home" ? 0 : items.length - 1]?.focus();
                         }
                       }}
-                      className="homera-nav-panel homera-noscrollbar flex w-[17rem] flex-col justify-center gap-0.5 overflow-y-auto rounded-menu bg-homera-night-soft/85 p-1.5 text-white shadow-[0_28px_60px_-24px_rgba(0,0,0,0.75)] backdrop-blur-xl"
+                      className="homera-nav-panel homera-noscrollbar flex w-[17rem] flex-col justify-center gap-0.5 overflow-y-auto rounded-menu bg-transparent p-1.5 text-white shadow-[0_28px_60px_-24px_rgba(0,0,0,0.75)] backdrop-blur-[14px] backdrop-saturate-150"
                     >
                       {" "}
                       {entry.children.map((child, index) => (
@@ -275,11 +275,11 @@ export function Navbar() {
                           data-roving-item
                           onClick={() => setOpenMenu(null)}
                           style={{ "--nav-stagger": `${index * 35}ms` } as React.CSSProperties}
-                          className="homera-nav-entry flex w-full flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-center text-note font-medium tracking-[0.01em] text-white/85 transition-colors duration-300 hover:bg-white/8 hover:text-white focus-visible:bg-white/8 focus-visible:text-white focus-visible:outline-none"
+                          className="homera-nav-entry group flex w-full flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-center text-note font-medium tracking-[0.01em] text-white/85 transition-colors duration-300 hover:bg-homera-brown hover:text-white focus-visible:bg-homera-brown focus-visible:text-white focus-visible:outline-none"
                         >
                           {" "}
                           <span>{child.label}</span>{" "}
-                          {child.hint && <span className="text-caption font-normal text-white/50">{child.hint}</span>}{" "}
+                          {child.hint && <span className="text-caption font-normal text-white/50 group-hover:text-white/75 group-focus-visible:text-white/75">{child.hint}</span>}{" "}
                         </Link>
                       ))}{" "}
                     </div>{" "}
