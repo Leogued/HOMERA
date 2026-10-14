@@ -1802,6 +1802,7 @@ await test('HOMERA : le SVG du QR trace exactement la matrice vérifiée', async
 await test('HOMERA : cadre de gouvernance markdown complet et synchronisé', async () => {
   const governanceFiles = [
     'AGENTS.md',
+    'ARCHITECTURE.md',
     'AUDIT.md',
     'BACKEND.md',
     'PROJECT.md',
