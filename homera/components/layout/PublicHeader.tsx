@@ -198,7 +198,7 @@ export function PublicHeader() {
                   <div
                     id={panelId(entry.title)}
                     inert={!open}
-                    className={`absolute left-1/2 top-full z-50 w-72 -translate-x-1/2 pt-2 transition-all duration-[320ms] ease-standard ${open ? "pointer-events-auto visible translate-y-0 opacity-100" : "pointer-events-none invisible -translate-y-1.5 opacity-0"}`}
+                    className={`absolute left-1/2 top-full z-50 w-[17rem] -translate-x-1/2 pt-2 transition-all duration-[320ms] ease-standard ${open ? "pointer-events-auto visible translate-y-0 opacity-100" : "pointer-events-none invisible -translate-y-1.5 opacity-0"}`}
                   >
                     {" "}
                     <div
@@ -223,7 +223,7 @@ export function PublicHeader() {
                           items[event.key === "Home" ? 0 : items.length - 1]?.focus();
                         }
                       }}
-                      className="homera-dropdown-enter homera-noscrollbar max-h-[22rem] overflow-y-auto rounded-menu border border-border bg-card p-2 shadow-[0_28px_60px_-30px_rgba(28,17,11,0.45)]"
+                      className="homera-dropdown-enter homera-noscrollbar max-h-[22rem] overflow-y-auto rounded-menu bg-background/85 p-1.5 shadow-[0_28px_60px_-30px_rgba(28,17,11,0.45)] backdrop-blur-md"
                     >
                       {" "}
                       {entry.children.map((child) => (
@@ -233,7 +233,7 @@ export function PublicHeader() {
                           role="menuitem"
                           data-roving-item
                           onClick={() => setOpenMenu(null)}
-                          className="flex flex-col gap-0.5 rounded-xl px-3 py-2.5 text-note font-medium text-foreground transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
+                          className="flex flex-col items-center gap-0.5 rounded-xl px-2 py-2.5 text-center text-note font-medium text-foreground transition-colors hover:bg-surface-hover focus-visible:bg-surface-hover focus-visible:outline-none"
                         >
                           {" "}
                           <span>{child.label}</span>{" "}

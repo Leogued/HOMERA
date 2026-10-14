@@ -690,8 +690,8 @@ await test('HOMERA : les identifiants de panneaux restent lisibles', () => {
   for (const entry of nav.PUBLIC_NAV) {
     assert.ok(nav.navPanelId(entry.title).length > 0);
   }
-  // Le menu tient la commande annoncée : Explorer → Favoris, rien d’autre.
-  assert.deepEqual(nav.PUBLIC_NAV.map((entry) => entry.title), ['Explorer', 'Acheter', 'Louer', 'Séjour', 'Services', 'Favoris']);
+  // Le menu tient la commande annoncée : Explorer → Services, rien d’autre.
+  assert.deepEqual(nav.PUBLIC_NAV.map((entry) => entry.title), ['Explorer', 'Acheter', 'Louer', 'Séjour', 'Services']);
 });
 
 /* ==================================================================
@@ -2038,4 +2038,13 @@ await test('HOMERA : les récits se fixent dès 1024px, sans garde de hauteur', 
   assert.doesNotMatch(motion, /min-height:\s*700px/, 'le hook n’exclut plus les écrans peu hauts');
   assert.ok(css.includes('@media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {'), 'CSS des récits synchronisée avec le hook');
   assert.ok(css.includes('@media (min-width: 1024px) and (max-height: 780px)'), 'compacité des récits sur écrans peu hauts');
+});
+
+await test('HOMERA : les sous-menus desktop sont centrés, uniformes et sans soulignement', async () => {
+  const navbar = await readFile(new URL('../components/layout/Navbar.tsx', import.meta.url), 'utf8');
+  const header = await readFile(new URL('../components/layout/PublicHeader.tsx', import.meta.url), 'utf8');
+  assert.ok(navbar.includes('w-[17rem]') && header.includes('w-[17rem]'), 'largeur uniforme des panneaux');
+  assert.ok(navbar.includes('bg-homera-night-soft/85') && header.includes('bg-background/85'), 'panneaux translucides assortis aux barres');
+  assert.doesNotMatch(navbar, /homera-nav-entry homera-underline/, 'aucun soulignement au survol dans les sous-menus');
+  assert.ok(navbar.includes('px-2 py-2 text-center') && header.includes('px-2 py-2.5 text-center'), 'libellés et descriptions centrés');
 });

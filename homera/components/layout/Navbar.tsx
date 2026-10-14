@@ -264,7 +264,7 @@ export function Navbar() {
                           items[event.key === "Home" ? 0 : items.length - 1]?.focus();
                         }
                       }}
-                      className={`homera-nav-panel homera-noscrollbar flex flex-col justify-center gap-0.5 overflow-y-auto rounded-menu border border-white/10 bg-homera-night-soft p-2 text-white shadow-[0_28px_60px_-24px_rgba(0,0,0,0.75)] backdrop-blur-xl ${entry.children.length > 4 ? "h-[13.5rem] w-[21rem]" : "w-[19rem]"}`}
+                      className="homera-nav-panel homera-noscrollbar flex w-[17rem] flex-col justify-center gap-0.5 overflow-y-auto rounded-menu bg-homera-night-soft/85 p-1.5 text-white shadow-[0_28px_60px_-24px_rgba(0,0,0,0.75)] backdrop-blur-xl"
                     >
                       {" "}
                       {entry.children.map((child, index) => (
@@ -275,7 +275,7 @@ export function Navbar() {
                           data-roving-item
                           onClick={() => setOpenMenu(null)}
                           style={{ "--nav-stagger": `${index * 35}ms` } as React.CSSProperties}
-                          className="homera-nav-entry homera-underline flex w-full flex-col gap-0.5 whitespace-nowrap rounded-xl px-4 py-2 text-left text-note font-medium tracking-[0.01em] text-white/85 transition-colors duration-300 hover:bg-white/8 hover:text-white focus-visible:bg-white/8 focus-visible:text-white focus-visible:outline-none"
+                          className="homera-nav-entry flex w-full flex-col items-center gap-0.5 rounded-xl px-2 py-2 text-center text-note font-medium tracking-[0.01em] text-white/85 transition-colors duration-300 hover:bg-white/8 hover:text-white focus-visible:bg-white/8 focus-visible:text-white focus-visible:outline-none"
                         >
                           {" "}
                           <span>{child.label}</span>{" "}

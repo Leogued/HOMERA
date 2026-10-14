@@ -232,7 +232,7 @@ export function findCategory(project: string, slug: string): { page: PublicProje
 export type NavChild = { label: string; href: string; hint?: string };
 export type NavEntry = { title: string; href: string; children?: NavChild[] };
 
-/** Navigation principale — six entrées, dans cet ordre.
+/** Navigation principale — cinq entrées, dans cet ordre.
     Les liens de service (À propos, Contact, accès personnel) vivent dans
     le pied de page : la barre reste lisible, et le menu ne double pas. */
 export const PUBLIC_NAV: NavEntry[] = [
@@ -255,7 +255,6 @@ export const PUBLIC_NAV: NavEntry[] = [
       hint: service.short,
     })),
   },
-  { title: "Favoris", href: "/favoris" },
 ];
 
 /** Identifiant stable pour les panneaux de navigation (aria-controls).
