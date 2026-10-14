@@ -284,7 +284,7 @@ await test('HOMERA : la sélection affiche tout, sans boutons de filtre', async 
   assert.ok(featured.includes('aria-label="Choisir un bien"'), 'les pastilles de navigation restent');
   assert.ok(featured.includes('aria-label="Bien précédent"'), 'les flèches du carrousel restent');
   assert.doesNotMatch(featured, /setActiveFilter/, 'plus d’état de filtre rapide');
-  assert.ok(featured.includes('isSearching ? appliedResults : visibleProperties'), 'la recherche du hero filtre toujours la sélection');
+  assert.ok(featured.includes('isSearching ? appliedResults : visibleProperties'), 'les intentions d’exploration filtrent la sélection (la recherche du hero redirige)');
   const provider = await readFile(new URL('../components/providers/SearchProvider.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(provider, /activeFilter/, 'état de filtre rapide supprimé du parcours partagé');
   const content = await readFile(new URL('../lib/content.ts', import.meta.url), 'utf8');
@@ -2063,4 +2063,10 @@ await test('HOMERA : la recherche d’accueil vise la sous-rubrique puis la page
   assert.ok(nav.includes('export function searchCategorySlug') && nav.includes('export function searchHref'), 'destination : sous-rubrique, page projet, explorateur');
   assert.ok(nav.includes('`/${criteria.project}/${category}`'), 'le type mène à la page de sous-menu');
   assert.doesNotMatch(searchComponent, /pushState\(null, "", "#biens"\)/, 'fini le simple défilement vers #biens');
+  assert.doesNotMatch(searchComponent, /submitSearch/, 'Rechercher n’applique rien à la page d’accueil');
+  assert.doesNotMatch(searchComponent, /scrollIntoView/, 'aucun défilement vers le bas de l’accueil');
+  assert.doesNotMatch(searchComponent, /Voir la sélection/, 'bandeau de résumé supprimé : ouverture automatique');
+  assert.doesNotMatch(searchComponent, /Ouvrir dans l’explorateur/, 'même l’explorateur passe par la navigation directe');
+  const provider = await readFile(new URL('../components/providers/SearchProvider.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(provider, /submitSearch/, 'état appliqué réservé aux intentions d’exploration');
 });

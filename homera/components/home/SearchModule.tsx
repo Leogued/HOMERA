@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { ArrowRight, Check, ChevronDown, RotateCcw, Search, X } from "lucide-react";
+import { Check, ChevronDown, RotateCcw, Search, X } from "lucide-react";
 import {
   BUDGET_OPTIONS,
   SEARCH_FIELD_LABELS,
@@ -9,10 +9,8 @@ import {
   type SearchFieldName,
   type SelectOption,
 } from "@/lib/content";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { countLabel } from "@/lib/format";
-import { catalogHref, criteriaToCatalogQuery } from "@/lib/properties";
 import { searchHref } from "@/lib/nav";
 import { fitDropdown, restoreFieldFocus } from "@/lib/floating";
 import { useMounted } from "@/lib/motion";
@@ -21,7 +19,7 @@ import { useSearch } from "@/components/providers/SearchProvider";
   { top: number; left: number; width: number; maxHeight: number };
 const PANEL_MAX_HEIGHT = 304;
 export function SearchModule({ className = "" }: { className?: string }) {
-  const { criteria, setCriterion, resetCriteria, submitSearch, results, isSearching } = useSearch();
+  const { criteria, setCriterion, resetCriteria, results } = useSearch();
   const router = useRouter();
   const mounted = useMounted();
   const [openField, setOpenField] = useState<SearchFieldName | null>(null);
@@ -128,10 +126,10 @@ export function SearchModule({ className = "" }: { className?: string }) {
     pulseTimer.current = window.setTimeout(() => setPulse(false), 620);
   };
   const submit = () => {
-    submitSearch();
     closePanel();
-    // La recherche redirige vers la page du projet (ou l’explorateur
-    // global sans projet), critères transmis en paramètres d’URL.
+    // Rechercher n'a aucun lien avec la page d'accueil : navigation
+    // directe vers la sous-rubrique concernée (page projet ou
+    // explorateur en repli), critères transmis en paramètres d'URL.
     router.push(searchHref(criteria));
   };
   const options = openField ? optionsFor(openField) : [];
@@ -317,59 +315,6 @@ export function SearchModule({ className = "" }: { className?: string }) {
           )}{" "}
         </div>{" "}
       </form>{" "}
-      {/* ---------------- Résumé de recherche active ---------------- */}{" "}
-      {isSearching && (
-        <div className="mx-auto mt-4 flex w-full max-w-4xl flex-col items-center justify-between gap-3 rounded-2xl border border-white/15 bg-black/35 px-4 py-3 text-left backdrop-blur-md sm:flex-row">
-          {" "}
-          <div className="flex items-center gap-3">
-            {" "}
-            <span className="relative flex h-2.5 w-2.5 shrink-0">
-              {" "}
-              <span className="homera-pulse-ring absolute inset-0 rounded-full bg-homera-amber/70" />{" "}
-              <span className="relative h-2.5 w-2.5 rounded-full bg-homera-amber" />{" "}
-            </span>{" "}
-            <p className="text-note text-homera-cream">
-              {" "}
-              {results.length === 0 ? (
-                <> Aucun bien ne correspond encore à votre recherche — élargissez les critères. </>
-              ) : (
-                <>
-                  {" "}
-                  <span className="font-medium text-white"> {countLabel(results.length)} </span> correspond
-                  {results.length > 1 ? "ent" : ""} à votre recherche{" "}
-                  {criteria.location ? ` à ${criteria.location}` : ""}.{" "}
-                </>
-              )}{" "}
-            </p>{" "}
-          </div>{" "}
-          <div className="flex flex-wrap items-center gap-2">
-            {" "}
-            <button
-              type="button"
-              onClick={() => document.getElementById("biens")?.scrollIntoView({ behavior: "smooth" })}
-              className="homera-press inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3.5 py-1.5 text-note font-medium text-white transition-colors hover:bg-white/16"
-            >
-              {" "}
-              Voir la sélection <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />{" "}
-            </button>{" "}
-            <Link
-              href={catalogHref(criteriaToCatalogQuery(criteria), "/explorer")}
-              className="homera-press inline-flex items-center gap-1.5 rounded-full border border-homera-amber/40 bg-homera-amber/15 px-3.5 py-1.5 text-note font-medium text-white transition-colors hover:bg-homera-amber/25"
-            >
-              {" "}
-              Ouvrir dans l’explorateur <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />{" "}
-            </Link>{" "}
-            <button
-              type="button"
-              onClick={resetCriteria}
-              className="homera-underline text-note text-homera-cream-dark transition-colors hover:text-white"
-            >
-              {" "}
-              Effacer{" "}
-            </button>{" "}
-          </div>{" "}
-        </div>
-      )}{" "}
       {/* ---------------- Panneau déroulant (portail, jamais rogné) ---------------- */}{" "}
       {mounted &&
         openField &&

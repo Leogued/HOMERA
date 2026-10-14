@@ -5,16 +5,16 @@ import { PROPERTIES, type Property } from "@/lib/content";
 /* ==================================================================
    HOMERA — ÉTAT PARTAGÉ DU PARCOURS
    ------------------------------------------------------------------
-   Le module de recherche du hero et la sélection de biens lisent le même
-   état : choisir « Louer » puis appuyer sur Rechercher filtre réellement
-   les biens présentés plus bas, sans rechargement.
+   Les intentions d'exploration et la sélection de biens lisent le même
+   état : choisir une intention filtre réellement les biens présentés
+   plus bas, sans rechargement. Le module de recherche du hero, lui,
+   redirige vers la page concernée et n'a aucun lien avec l'accueil.
    ================================================================== */
 type SearchContextValue = {
   criteria: SearchCriteria;
   /** Critères réellement validés : les libellés correspondent aux résultats. */ appliedCriteria: SearchCriteria;
   setCriterion: (field: keyof SearchCriteria, value: string) => void;
   resetCriteria: () => void;
-  /** Valide et applique la recherche en cours d’édition. */ submitSearch: () => void;
   /** Applique directement un jeu de critères complet (navigation, intentions). */ applySearch: (
     next: SearchCriteria,
   ) => void;
@@ -40,9 +40,6 @@ export function SearchProvider({ children, source }: { children: ReactNode; sour
     setCriteria(EMPTY_CRITERIA);
     setApplied(EMPTY_CRITERIA);
   }, []);
-  const submitSearch = useCallback(() => {
-    setApplied(criteria);
-  }, [criteria]);
   const applySearch = useCallback((next: SearchCriteria) => {
     // Une seule mise à jour par état : aucun risque de lire des critères périmés.
     setCriteria(next);
@@ -65,7 +62,6 @@ export function SearchProvider({ children, source }: { children: ReactNode; sour
       appliedCriteria: applied,
       setCriterion,
       resetCriteria,
-      submitSearch,
       applySearch,
       results,
       appliedResults,
@@ -76,7 +72,6 @@ export function SearchProvider({ children, source }: { children: ReactNode; sour
       criteria,
       setCriterion,
       resetCriteria,
-      submitSearch,
       applySearch,
       results,
       appliedResults,
