@@ -129,7 +129,7 @@ export function PublicHeader() {
   const isActive = (entry: NavEntry) => pathname === entry.href || pathname.startsWith(`${entry.href}/`);
   return (
     <header
-      className="homera-public-header sticky top-0 z-[70] border-b border-border/70 backdrop-blur-md"
+      className={`homera-public-header sticky top-0 ${mobileOpen || openMenu ? "z-[100]" : "z-[70]"} border-b border-border/70`}
       data-scrolled={scrolled}
     >
       {" "}
@@ -223,7 +223,7 @@ export function PublicHeader() {
                           items[event.key === "Home" ? 0 : items.length - 1]?.focus();
                         }
                       }}
-                      className="homera-dropdown-enter homera-noscrollbar max-h-[22rem] overflow-y-auto rounded-menu bg-transparent p-1.5 shadow-[0_28px_60px_-30px_rgba(28,17,11,0.45)] backdrop-blur-md"
+                      className="homera-dropdown-enter homera-noscrollbar max-h-[22rem] overflow-y-auto rounded-menu bg-transparent p-1.5 shadow-[0_28px_60px_-30px_rgba(28,17,11,0.45)] backdrop-blur-[28px]"
                     >
                       {" "}
                       {entry.children.map((child) => (

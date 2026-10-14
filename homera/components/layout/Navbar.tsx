@@ -146,7 +146,7 @@ export function Navbar() {
     entry.href !== "/" && (pathname === entry.href || pathname.startsWith(`${entry.href}/`));
   return (
     <header
-      className={`homera-header homera-on-dark fixed inset-x-0 top-0 w-full border-0 bg-transparent text-white ${mobileOpen ? "z-[100]" : "z-50"}`}
+      className={`homera-header homera-on-dark fixed inset-x-0 top-0 w-full border-0 bg-transparent text-white ${mobileOpen || openMenu ? "z-[100]" : "z-50"}`}
       data-scrolled={scrolled}
     >
       {" "}
@@ -178,7 +178,7 @@ export function Navbar() {
         {/* Navigation — capsule centrée, dropdowns sobres */}{" "}
         <nav
           aria-label="Navigation principale"
-          className="relative hidden items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-note font-medium text-white shadow-[0_0_0_1px_rgba(255,255,255,0.04)] backdrop-blur-sm lg:flex lg:justify-self-center xl:gap-4 xl:px-5 2xl:gap-5 2xl:px-6"
+          className="relative hidden items-center gap-3 rounded-full border border-white/10 bg-white/5 px-4 py-2.5 text-note font-medium text-white shadow-[0_0_0_1px_rgba(255,255,255,0.04)] lg:flex lg:justify-self-center xl:gap-4 xl:px-5 2xl:gap-5 2xl:px-6"
         >
           {" "}
           {PUBLIC_NAV.map((entry) => {
@@ -264,7 +264,7 @@ export function Navbar() {
                           items[event.key === "Home" ? 0 : items.length - 1]?.focus();
                         }
                       }}
-                      className="homera-nav-panel homera-noscrollbar flex w-[17rem] flex-col justify-center gap-0.5 overflow-y-auto rounded-menu border border-white/10 bg-white/15 p-1.5 text-white shadow-[0_28px_60px_-24px_rgba(0,0,0,0.75)] backdrop-blur-[80px]"
+                      className="homera-nav-panel homera-noscrollbar flex w-[17rem] flex-col justify-center gap-0.5 overflow-y-auto rounded-menu border border-white/10 bg-transparent p-1.5 text-white shadow-[0_28px_60px_-24px_rgba(0,0,0,0.75)] backdrop-blur-[28px]"
                     >
                       {" "}
                       {entry.children.map((child, index) => (
