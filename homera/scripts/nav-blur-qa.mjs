@@ -9,9 +9,10 @@
    aucun chemin absolu Windows ne doit figurer ici).
 
    Le script ÉCHOUE (throw) si le givre est sous le seuil spécifié :
-     - flou d'arrière-plan >= 100 px
+     - flou d'arrière-plan >= 160 px
      - désaturation saturate(0) présente
-     - assombrissement brightness <= 0.85 présent
+     - assombrissement brightness <= 0.7 présent
+     - contraste backdrop contrast <= 0.85 présent
      - menu mobile : fond opaque (aucun contenu derrière)
    Les captures PNG restent l'arbitre final : à l'œil, le contenu
    derrière le panneau ne doit plus être reconnaissable.
@@ -38,16 +39,22 @@ function assertFrost(value, where) {
     throw new Error(`[nav-blur-qa] ${where} : backdrop-filter absent (navigateur incompatible ?).`);
   }
   const blur = filter.match(/blur\(([0-9.]+)px\)/);
-  if (!blur || Number(blur[1]) < 100) {
-    throw new Error(`[nav-blur-qa] ${where} : flou ${blur ? `${blur[1]}px` : 'absent'} < 100px requis.`);
+  if (!blur || Number(blur[1]) < 160) {
+    throw new Error(`[nav-blur-qa] ${where} : flou ${blur ? `${blur[1]}px` : 'absent'} < 160px requis.`);
   }
   if (!/saturate\(0%?\)/.test(filter)) {
     throw new Error(`[nav-blur-qa] ${where} : désaturation saturate(0) absente.`);
   }
   const brightness = filter.match(/brightness\(([0-9.]+)\)/);
-  if (!brightness || Number(brightness[1]) > 0.85) {
+  if (!brightness || Number(brightness[1]) > 0.7) {
     throw new Error(
-      `[nav-blur-qa] ${where} : assombrissement ${brightness ? brightness[1] : 'absent'} insuffisant (<= 0.85 requis).`,
+      `[nav-blur-qa] ${where} : assombrissement ${brightness ? brightness[1] : 'absent'} insuffisant (<= 0.7 requis).`,
+    );
+  }
+  const contrast = filter.match(/contrast\(([0-9.]+)\)/);
+  if (!contrast || Number(contrast[1]) > 0.85) {
+    throw new Error(
+      `[nav-blur-qa] ${where} : contraste ${contrast ? contrast[1] : 'absent'} insuffisant (<= 0.85 requis).`,
     );
   }
 }

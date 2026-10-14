@@ -2045,9 +2045,9 @@ await test('HOMERA : les sous-menus : givre intense, barre remontée, marron au 
   const header = await readFile(new URL('../components/layout/PublicHeader.tsx', import.meta.url), 'utf8');
   assert.ok(navbar.includes('w-68') && header.includes('w-68'), 'largeur uniforme des panneaux');
   const panels = navbar.split('\n').filter((l) => l.includes('homera-nav-panel'));
-  assert.ok(panels.length >= 1 && panels.every((l) => l.includes('bg-white/10') && l.includes('backdrop-blur-[100px]') && l.includes('backdrop-saturate-0') && l.includes('backdrop-brightness-[.85]')), 'panneau d’accueil : givre intense (flou 100, désaturé, assombri)');
+  assert.ok(panels.length >= 1 && panels.every((l) => l.includes('bg-white/10') && l.includes('backdrop-blur-[160px]') && l.includes('backdrop-saturate-0') && l.includes('backdrop-brightness-[.7]') && l.includes('backdrop-contrast-[.85]')), 'panneau d’accueil : givre extrême (flou 160, désaturé, assombri 0.7, contraste 0.85)');
   const publicPanels = header.split('\n').filter((l) => l.includes('homera-dropdown-enter'));
-  assert.ok(publicPanels.length >= 1 && publicPanels.every((l) => l.includes('bg-white/10') && l.includes('backdrop-brightness-[.85]') && l.includes('backdrop-saturate-0') && l.includes('backdrop-blur-[100px]')), 'panneau des pages : givre intense (flou 100, désaturé, assombri)');
+  assert.ok(publicPanels.length >= 1 && publicPanels.every((l) => l.includes('bg-white/10') && l.includes('backdrop-brightness-[.7]') && l.includes('backdrop-saturate-0') && l.includes('backdrop-blur-[160px]') && l.includes('backdrop-contrast-[.85]')), 'panneau des pages : givre extrême (flou 160, désaturé, assombri 0.7, contraste 0.85)');
   assert.ok(navbar.includes('mobileOpen || openMenu ? "z-100"') && header.includes('mobileOpen || openMenu ? "z-100"'), 'barres remontées en z-100 à l’ouverture d’un menu');
   assert.ok(navbar.includes('hover:bg-homera-brown') && header.includes('hover:bg-homera-brown'), 'survol marron');
   assert.doesNotMatch(navbar, /homera-nav-entry homera-underline/, 'aucun soulignement au survol dans les sous-menus');
