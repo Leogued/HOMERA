@@ -146,7 +146,7 @@ export function Navbar() {
     entry.href !== "/" && (pathname === entry.href || pathname.startsWith(`${entry.href}/`));
   return (
     <header
-      className={`homera-header homera-on-dark fixed inset-x-0 top-0 w-full border-0 bg-transparent text-white ${mobileOpen || openMenu ? "z-100" : "z-50"}`}
+      className={`homera-header homera-on-dark fixed inset-x-0 top-0 w-full bg-transparent border-0 text-white ${mobileOpen || openMenu ? "z-100" : "z-50"}`}
       data-scrolled={scrolled}
     >
       {" "}
