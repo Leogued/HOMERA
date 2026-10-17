@@ -11,10 +11,13 @@ import { useMotionPreferences } from "@/lib/motion";
    mise en page pendant le cycle. Les lecteurs d'écran reçoivent le
    texte complet, jamais la frappe en cours.
    ================================================================== */
-const TYPE_MS = 34;
+const TYPE_MS = 40;
 const ERASE_MS = 12;
-const READ_MS = 4200;
-const NEXT_MS = 500;
+/* Pause de lecture adaptée à la quantité de texte : ~85 ms par caractère,
+   6,5 s minimum pour lire confortablement la phrase entière. */
+const READ_MIN_MS = 6500;
+const READ_PER_CHAR_MS = 85;
+const NEXT_MS = 700;
 const START_MS = 600;
 export function Typewriter({ phrases, className = "" }: { phrases: string[]; className?: string }) {
   const { reduced } = useMotionPreferences();
@@ -41,7 +44,7 @@ export function Typewriter({ phrases, className = "" }: { phrases: string[]; cla
       if (!erasing) {
         char += 1;
         setText(current.slice(0, char));
-        later(tick, char >= current.length ? ((erasing = true), READ_MS) : TYPE_MS);
+        later(tick, char >= current.length ? ((erasing = true), Math.max(READ_MIN_MS, current.length * READ_PER_CHAR_MS)) : TYPE_MS);
       } else {
         char -= 1;
         setText(current.slice(0, Math.max(0, char)));

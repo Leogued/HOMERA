@@ -1397,6 +1397,8 @@ export const PILLARS = [
 
 export type Story = {
   id: string;
+  /** Destination réelle du sujet ; sans href, la carte reste un sommaire (aucun faux lien). */
+  href?: string;
   category: "Architecture" | "Quartiers" | "Styles de vie" | "Maisons" | "Appartements";
   title: string;
   excerpt: string;

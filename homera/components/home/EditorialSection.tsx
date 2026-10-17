@@ -1,12 +1,38 @@
 "use client";
 import Link from "next/link";
-import { ArrowRight, Clock } from "lucide-react";
-import { EDITORIAL } from "@/lib/content";
+import type { ReactNode } from "react";
+import { ArrowRight, ArrowUpRight, Clock } from "lucide-react";
+import { EDITORIAL, type Story } from "@/lib/content";
 import { SceneHeader } from "@/components/ui/Scene";
 import { Reveal } from "@/components/ui/Reveal";
 import { Visual } from "@/components/ui/Visual";
 import { useInView, useMotionPreferences } from "@/lib/motion";
-/* ================================================================== HOMERA — L’UNIVERS ÉDITORIAL ------------------------------------------------------------------ Un magazine digital, pas un blog. Le bandeau de rubriques défile en continu (il s’arrête dès qu’on le regarde ou qu’on le parcourt au clavier), puis cinq sujets se déplient : architecture, quartiers, styles de vie, maisons, appartements. Objectif : montrer que HOMERA documente le contexte avant de parler de prix — et donner envie de continuer à lire. Les sujets ne sont pas encore des articles : ils s’affichent donc comme un sommaire, sans faux lien. La seule action réelle de la section mène au protocole de vérification. ================================================================== */ export function EditorialSection() {
+/* ================================================================== HOMERA — L’UNIVERS ÉDITORIAL ------------------------------------------------------------------ Un magazine digital, pas un blog. Le bandeau de rubriques défile en continu (il s’arrête dès qu’on le regarde ou qu’on le parcourt au clavier), puis cinq sujets se déplient : architecture, quartiers, styles de vie, maisons, appartements. Objectif : montrer que HOMERA documente le contexte avant de parler de prix — et donner envie de continuer à lire. Les sujets ne sont pas encore des articles : ils s’affichent donc comme un sommaire, sans faux lien. La seule action réelle de la section mène au protocole de vérification. Quand un sujet disposera d’une destination réelle (`story.href`), toute sa carte deviendra le lien. ================================================================== */
+function StoryFrame({
+  story,
+  className = "",
+  children,
+}: {
+  story: Story;
+  className?: string;
+  children: ReactNode;
+}) {
+  if (!story.href) return <article className={className}>{children}</article>;
+  const ring =
+    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-terracotta focus-visible:ring-offset-2 focus-visible:ring-offset-background";
+  if (/^https?:/.test(story.href))
+    return (
+      <a href={story.href} target="_blank" rel="noreferrer" className={`${className} ${ring}`}>
+        {children}
+      </a>
+    );
+  return (
+    <Link href={story.href} className={`${className} ${ring}`}>
+      {children}
+    </Link>
+  );
+}
+export function EditorialSection() {
   const { reduced, coarse } = useMotionPreferences();
   const { ref: ribbonRef, inView: ribbonVisible } = useInView<HTMLDivElement>({ once: false, threshold: 0 });
   const stories = EDITORIAL.stories;
@@ -65,8 +91,15 @@ import { useInView, useMotionPreferences } from "@/lib/motion";
           {" "}
           <Reveal y={0} blur={0} clip clipRadius={28} duration={1100}>
             {" "}
-            <article className="group relative block overflow-hidden rounded-3xl border border-border">
+            <StoryFrame story={lead} className="group relative block overflow-hidden rounded-3xl border border-border">
               {" "}
+              <span
+                aria-hidden="true"
+                className="absolute top-6 right-6 z-2 flex h-9 w-9 items-center justify-center rounded-full border border-white/30 bg-black/35 text-white backdrop-blur-md sm:top-8 sm:right-8"
+              >
+                {" "}
+                <ArrowUpRight className="h-4 w-4" />{" "}
+              </span>{" "}
               <Visual
                 mediaKey={lead.media}
                 alt={lead.alt}
@@ -105,15 +138,27 @@ import { useInView, useMotionPreferences } from "@/lib/motion";
                   </span>{" "}
                 </div>{" "}
               </div>{" "}
-            </article>{" "}
+            </StoryFrame>{" "}
           </Reveal>{" "}
           <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1 lg:gap-4">
             {" "}
             {rest.slice(0, 4).map((story, index) => (
               <Reveal as="li" key={story.id} delay={index * 90} y={22}>
                 {" "}
-                <article className="group flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card p-3 sm:p-3.5">
+                <StoryFrame
+                  story={story}
+                  className="group relative flex items-center gap-4 overflow-hidden rounded-2xl border border-border bg-card p-3 sm:p-3.5"
+                >
                   {" "}
+                  {story.id === "fidjrosse" && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute top-3 right-3 flex h-8 w-8 items-center justify-center rounded-full border border-border bg-card text-muted"
+                    >
+                      {" "}
+                      <ArrowUpRight className="h-4 w-4" />{" "}
+                    </span>
+                  )}{" "}
                   <span className="relative block h-20 w-24 shrink-0 overflow-hidden rounded-xl sm:h-[5.5rem] sm:w-28">
                     {" "}
                     <Visual
@@ -127,7 +172,7 @@ import { useInView, useMotionPreferences } from "@/lib/motion";
                       imageClassName="transition-transform duration-1200 ease-standard"
                     />{" "}
                   </span>{" "}
-                  <span className="min-w-0 flex-1">
+                  <span className={`min-w-0 flex-1 ${story.id === "fidjrosse" ? "pr-12" : ""}`}>
                     {" "}
                     <span className="homera-accent-ink text-micro font-semibold uppercase tracking-[0.2em]">
                       {" "}
@@ -139,7 +184,7 @@ import { useInView, useMotionPreferences } from "@/lib/motion";
                     </span>{" "}
                     <span className="mt-1 block truncate text-caption text-muted"> {story.excerpt} </span>{" "}
                   </span>{" "}
-                </article>{" "}
+                </StoryFrame>{" "}
               </Reveal>
             ))}{" "}
           </ul>{" "}
@@ -149,11 +194,6 @@ import { useInView, useMotionPreferences } from "@/lib/motion";
           {" "}
           <div className="flex flex-col items-start gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
             {" "}
-            <p className="max-w-lg text-note leading-relaxed text-muted">
-              {" "}
-              Les articles du magazine paraîtront avec l’ouverture publique de la plateforme. En attendant, notre
-              méthode est documentée, et vérifiable.{" "}
-            </p>{" "}
             <Link
               href="/a-propos#protocole"
               className="homera-press inline-flex min-h-11 items-center gap-2 rounded-btn border border-border bg-card px-5 text-body-sm font-medium text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"

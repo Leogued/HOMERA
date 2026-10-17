@@ -2088,6 +2088,7 @@ await test('HOMERA : accueil — suppressions et libellés du cahier', async () 
   assert.ok(typewriter.includes('clearTimeout'), 'machine à écrire : timers nettoyés');
   assert.ok(typewriter.includes('useMotionPreferences'), 'machine à écrire : mouvement réduit respecté');
   assert.ok(typewriter.includes('sr-only') && typewriter.includes('aria-hidden'), 'machine à écrire : texte complet pour les lecteurs d’écran');
+  assert.ok(typewriter.includes('READ_MIN_MS') && typewriter.includes('READ_PER_CHAR_MS'), 'hero : pause de lecture adaptée au texte');
   assert.doesNotMatch(hero, /intermédiaire douteux/, '§2.3 : ancienne accroche retirée');
   const search = await readFile(new URL('../components/home/SearchModule.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(search, /Separator/, '§2.4 : séparateurs verticaux retirés');
@@ -2115,4 +2116,13 @@ await test('HOMERA : accueil — suppressions et libellés du cahier', async () 
   assert.ok(editorial.includes('align="center"'), '§5.5 : magazine centré');
   assert.doesNotMatch(editorial, /intro=\{EDITORIAL\.intro\}/, '§5.4 : intro détachée de l’en-tête');
   assert.ok(editorial.indexOf('homera-marquee') < editorial.indexOf('{EDITORIAL.intro}'), '§5.4 : intro après le bandeau');
+  assert.equal((editorial.match(/ArrowUpRight/g) ?? []).length, 3, '§8.1/§8.2 : flèches grande image + carte quartier');
+  assert.ok(editorial.includes('story.id === "fidjrosse"'), '§8.2 : flèche en coin sur la carte quartier');
+  assert.ok(
+    editorial.includes('story.href') && editorial.includes('target="_blank"') && editorial.includes('rel="noreferrer"'),
+    '§8.3 : cartes cliquables vers destinations réelles uniquement',
+  );
+  assert.ok(editorial.includes('À paraître'), '§8.3 : sujets sans destination identifiés');
+  assert.doesNotMatch(editorial, /paraîtront avec l’ouverture/, '§2.2 : texte magazine retiré (rattrapage)');
+  assert.ok(subtitles.includes('href?: string'), '§8.3 : destination optionnelle par sujet');
 });
