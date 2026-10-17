@@ -115,10 +115,9 @@ export function ExplorerSection() {
                 </button>{" "}
                 <div
                   aria-hidden="true"
-                  className="pointer-events-none absolute inset-x-5 top-5 z-3 flex items-center justify-between text-caption font-semibold tracking-[.25em] sm:inset-x-6 sm:top-6"
+                  className="pointer-events-none absolute inset-x-5 top-5 z-3 flex items-center justify-end text-caption font-semibold tracking-[.25em] sm:inset-x-6 sm:top-6"
                 >
                   {" "}
-                  <span className="homera-num">{intent.index}</span>{" "}
                   <span className="homera-intent-arrow flex h-9 w-9 items-center justify-center rounded-full border border-white/30">
                     <ArrowUpRight className="h-4 w-4" />
                   </span>{" "}

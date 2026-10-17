@@ -76,7 +76,7 @@ export const SEARCH_SELECTS = {
   project: [
     { value: "acheter", label: "Acheter", hint: "Devenir propriétaire" },
     { value: "louer", label: "Louer", hint: "Se loger au quotidien" },
-    { value: "sejour", label: "Séjour", hint: "Nuitée & courte durée" },
+    { value: "sejour", label: "Séjourner", hint: "Nuitée & courte durée" },
   ] satisfies SelectOption[],
   location: [
     { value: "Cotonou", label: "Cotonou", hint: "Fidjrossè, Akpakpa, Ganhi…" },
@@ -176,7 +176,6 @@ export const STATS: Stat[] = [
 export type Intent = {
   id: string;
   anchor: string;
-  index: string;
   title: string;
   claim: string;
   description: string;
@@ -191,7 +190,6 @@ export const INTENTS: Intent[] = [
   {
     id: "acheter",
     anchor: "acheter",
-    index: "01",
     title: "Acheter",
     claim: "Constituer un patrimoine sans zone d’ombre",
     description:
@@ -207,7 +205,6 @@ export const INTENTS: Intent[] = [
   {
     id: "louer",
     anchor: "louer",
-    index: "02",
     title: "Louer",
     claim: "Se loger au quotidien, sans mauvaise surprise",
     description:
@@ -223,7 +220,6 @@ export const INTENTS: Intent[] = [
   {
     id: "sejour",
     anchor: "sejour",
-    index: "03",
     title: "Séjourner",
     claim: "L’hospitalité béninoise, dans des espaces vérifiés",
     description:
@@ -239,7 +235,6 @@ export const INTENTS: Intent[] = [
   {
     id: "investir",
     anchor: "investir",
-    index: "04",
     title: "Investir",
     claim: "Faire travailler un capital dans la pierre béninoise",
     description:

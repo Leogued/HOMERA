@@ -190,7 +190,7 @@ assert.ok(pages.get('/').html.includes('homera-header'), 'l’accueil garde son 
 const home = pages.get('/');
 for (const id of ['hero', 'chiffres', 'explorer', 'biens', 'bien-homera', 'protocole', 'services', 'magazine', 'manifeste']) assert.ok(home.ids.includes(id), `Chapitre manquant : ${id}`);
 for (const intent of ['acheter', 'louer', 'sejour', 'investir']) assert.ok(home.ids.includes(`intent-${intent}`), `Intention manquante : ${intent}`);
-for (const id of ['acheter', 'louer', 'sejour', 'services']) assert.ok(home.ids.includes(`menu-${id}`), `Menu manquant : ${id}`);
+for (const id of ['acheter', 'louer', 'sejourner', 'services']) assert.ok(home.ids.includes(`menu-${id}`), `Menu manquant : ${id}`);
 for (let index = 0; index < 7; index++) assert.ok(home.ids.includes(`protocol-step-${index}`), `Étape manquante : ${index}`);
 for (const id of ['localisation', 'statut', 'proprietaire', 'verification', 'agent', 'date']) assert.ok(home.ids.includes(`dossier-field-${id}`), `Donnée manquante : ${id}`);
 for (const id of ['gestion', 'maintenance', 'demenagement', 'travaux']) assert.ok(home.ids.includes(`services-${id}`), `Service manquant : ${id}`);

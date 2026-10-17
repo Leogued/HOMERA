@@ -154,10 +154,6 @@ export function TrustVisionSection() {
                       <TextRoll>{FINAL_CTA.secondary}</TextRoll> <ArrowRight className="h-4 w-4" aria-hidden="true" />{" "}
                     </Button>{" "}
                   </div>{" "}
-                  <p className="mt-6 text-caption uppercase tracking-[0.22em] text-homera-cream-dark/70">
-                    {" "}
-                    Cotonou · Abomey-Calavi · Porto-Novo · Ouidah{" "}
-                  </p>{" "}
                 </Reveal>{" "}
               </div>{" "}
             </div>{" "}

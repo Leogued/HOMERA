@@ -6,7 +6,7 @@ import { SEARCH_TYPE_TO_PROPERTY_TYPE, type SearchCriteria } from "@/lib/format"
    HOMERA — NAVIGATION PUBLIQUE & PAGES DE PROJET
    ------------------------------------------------------------------
    Une seule source pour : le menu du site, le pied de page, les pages
-   de projet (Acheter, Louer, Séjour) et leurs catégories.
+   de projet (Acheter, Louer, Séjourner) et leurs catégories.
 
    Toute la partie publique est ici — un visiteur sans compte peut
    parcourir l’ensemble de ces adresses. L’espace client (/client) est
@@ -159,7 +159,7 @@ export const PROJECT_PAGES: PublicProjectPage[] = [
   },
   {
     slug: "sejour",
-    navLabel: "Séjour",
+    navLabel: "Séjourner",
     eyebrow: "Nuitée, quelques jours, courte période",
     title: "Séjourner au Bénin",
     intro:
@@ -294,7 +294,7 @@ export const PUBLIC_NAV: NavEntry[] = [
 ];
 
 /** Identifiant stable pour les panneaux de navigation (aria-controls).
-    Les accents sont retirés, pas convertis en tirets : « Séjour » → « sejour ». */
+    Les accents sont retirés, pas convertis en tirets : « Séjourner » → « sejourner ». */
 export function navPanelId(title: string): string {
   return title
     .normalize("NFD")

@@ -72,14 +72,14 @@ export function Hero() {
                           {/* Titre posé : aucun mouvement. */}
                 <h1 className="font-serif text-display-sm sm:text-display-lg lg:text-display-xl text-white max-w-4xl mx-auto lg:-translate-y-[max(7rem,calc(50svh-12.5rem))]">
                   {" "}
-                  L&apos;immobilier au Bénin en toute <br />{" "}
-                  <span className="homera-accent text-[1.06em]">simplicité</span>{" "}
+                  Un lieu à trouver. <br />{" "}
+                  <span className="homera-accent text-[1.06em]">Un projet à concrétiser.</span>{" "}
                 </h1>{" "}
               {/* Accroche posée : aucun mouvement. */}
                 <p className="text-homera-cream-dark text-body-sm sm:text-body max-w-2xl mx-auto font-sans font-normal leading-relaxed lg:-translate-y-[max(7rem,calc(50svh-12.5rem))]">
                   {" "}
-                  Immobilier en toute sérénité, sans surprise ni intermédiaire douteux — la plateforme de confiance
-                  pour tous vos projets au Bénin.{" "}
+                  Louez, achetez, vendez ou préparez votre séjour au Bénin. HOMERA vous accompagne
+                  dans votre recherche.{" "}
                 </p>{" "}
           </div>{" "}
           <div className="homera-reveal -mt-1" data-revealed={entered} style={reveal(400, 2)}>

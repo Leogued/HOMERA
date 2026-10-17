@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useRef, useState } from "react";
+import { useCallback } from "react";
 import { ArrowDown, ShieldCheck } from "lucide-react";
 import { DOSSIER, PROPERTIES, type DossierField } from "@/lib/content";
 import { SceneHeader } from "@/components/ui/Scene";
@@ -23,8 +23,6 @@ const FIELDS = FIELD_ORDER.map(
 export function PropertyDossier() {
   const story = useStoryCapable();
   const { reduced } = useMotionPreferences();
-  const [activeField, setActiveField] = useState(-1);
-  const activeRef = useRef(-1);
   const reference = PROPERTIES[0];
   const update = useCallback((element: HTMLDivElement, progress: number) => {
     const photo = phase(progress, 0.08, 0.27);
@@ -45,10 +43,6 @@ export function PropertyDossier() {
     element.querySelectorAll<HTMLElement>("[data-dossier-field]").forEach((field, index) => {
       field.dataset.current = String(index === active);
     });
-    if (activeRef.current !== active) {
-      activeRef.current = active;
-      setActiveField(active);
-    }
   }, []);
   const trackRef = useSceneMotion<HTMLDivElement>(update, { enabled: story, mode: "sticky", response: 65 });
   return (
@@ -149,14 +143,6 @@ export function PropertyDossier() {
                 <ArrowDown className="h-3 w-3" aria-hidden="true" />
               </a>{" "}
             </div>{" "}
-            <span
-              aria-hidden="true"
-              className="homera-story-indicator mx-auto mt-4 text-micro tracking-[.18em] text-muted"
-            >
-              {activeField < 0
-                ? "UNE RÉFÉRENCE UNIQUE"
-                : `${String(activeField + 1).padStart(2, "0")} / 06 — ${FIELDS[activeField].label.toUpperCase()}`}
-            </span>{" "}
           </div>{" "}
         </div>{" "}
       </div>{" "}

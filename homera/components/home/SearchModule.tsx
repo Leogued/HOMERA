@@ -10,16 +10,15 @@ import {
   type SelectOption,
 } from "@/lib/content";
 import { useRouter } from "next/navigation";
-import { countLabel } from "@/lib/format";
 import { searchHref } from "@/lib/nav";
 import { fitDropdown, restoreFieldFocus } from "@/lib/floating";
 import { useMounted } from "@/lib/motion";
 import { useSearch } from "@/components/providers/SearchProvider";
-/* ================================================================== HOMERA — MODULE DE RECHERCHE ------------------------------------------------------------------ Concept conservé à l’identique : Projet · Localisation · Type de bien · Montant · Recherche, dans une seule ligne premium. Ce qui est ajouté : • tous les champs partagent hauteur, rayons, états et retours ; • la sélection d’une valeur ne déplace jamais la mise en page (hauteurs fixes, aucune largeur dépendante du contenu) ; • le panneau déroulant s’ouvre avec une translation de quelques pixels, sans scrollbar visible, navigable au clavier ; • le montant proposé s’adapte au projet (budget d’achat ≠ loyer) ; • un pied de panneau annonce le nombre de résultats avant de valider. ================================================================== */ type PanelPosition =
+/* ================================================================== HOMERA — MODULE DE RECHERCHE ------------------------------------------------------------------ Concept conservé à l’identique : Projet · Localisation · Type de bien · Montant · Recherche, dans une seule ligne premium. Ce qui est ajouté : • tous les champs partagent hauteur, rayons, états et retours ; • la sélection d’une valeur ne déplace jamais la mise en page (hauteurs fixes, aucune largeur dépendante du contenu) ; • le panneau déroulant s’ouvre avec une translation de quelques pixels, sans scrollbar visible, navigable au clavier ; • le montant proposé s’adapte au projet (budget d’achat ≠ loyer) ; • le panneau déroulant présente des options centrées, sans compteur ni pied de panneau. ================================================================== */ type PanelPosition =
   { top: number; left: number; width: number; maxHeight: number };
 const PANEL_MAX_HEIGHT = 304;
 export function SearchModule({ className = "" }: { className?: string }) {
-  const { criteria, setCriterion, resetCriteria, results } = useSearch();
+  const { criteria, setCriterion, resetCriteria } = useSearch();
   const router = useRouter();
   const mounted = useMounted();
   const [openField, setOpenField] = useState<SearchFieldName | null>(null);
@@ -248,9 +247,8 @@ export function SearchModule({ className = "" }: { className?: string }) {
         {" "}
         <div className="flex h-12 min-w-0 flex-1 items-center">
           {" "}
-          {renderField("project", { variant: "pill" })} <Separator /> {renderField("location", { variant: "pill" })}{" "}
-          <Separator /> {renderField("propertyType", { variant: "pill" })} <Separator />{" "}
-          {renderField("budget", { variant: "pill" })}{" "}
+          {renderField("project", { variant: "pill" })} {renderField("location", { variant: "pill" })}{" "}
+          {renderField("propertyType", { variant: "pill" })} {renderField("budget", { variant: "pill" })}{" "}
           {/* Emplacement réservé au bouton d’effacement : aucun décalage de mise en page */}{" "}
           <span className="ml-1 flex h-11 w-9 shrink-0 items-center justify-center">
             {" "}
@@ -358,10 +356,10 @@ export function SearchModule({ className = "" }: { className?: string }) {
                   aria-selected={selected}
                   tabIndex={index === activeIndex ? 0 : -1}
                   onClick={() => choose(openField, option)}
-                  className={`flex w-full items-center justify-between gap-4 rounded-xl px-3 py-2.5 text-left text-body-sm leading-snug transition-colors duration-200 focus:outline-none ${selected ? "homera-accent-ink bg-homera-terracotta/12 font-semibold" : "hover:bg-surface-hover focus:bg-surface-hover dark:hover:bg-white/8 dark:focus:bg-white/8"}`}
+                  className={`flex w-full items-center justify-center gap-4 rounded-xl px-3 py-2.5 text-center text-body-sm leading-snug transition-colors duration-200 focus:outline-none ${selected ? "homera-accent-ink bg-homera-terracotta/12 font-semibold" : "hover:bg-surface-hover focus:bg-surface-hover dark:hover:bg-white/8 dark:focus:bg-white/8"}`}
                 >
                   {" "}
-                  <span className="flex min-w-0 flex-col">
+                  <span className="flex min-w-0 flex-col items-center">
                     {" "}
                     <span className="truncate">{option.label}</span>{" "}
                     {option.hint && (
@@ -375,21 +373,9 @@ export function SearchModule({ className = "" }: { className?: string }) {
                 </button>
               );
             })}{" "}
-            {/* Pied de panneau : le nombre de résultats, avant même de valider */}{" "}
-            <div className="mt-1 flex items-center justify-between gap-2 border-t border-border px-3 pt-2 pb-1 text-caption text-muted dark:border-white/10 dark:text-muted-light">
-              {" "}
-              <span>{countLabel(results.length)} correspondant aux critères</span>{" "}
-              <button type="button" onClick={submit} className="homera-underline font-medium text-homera-terracotta">
-                {" "}
-                Rechercher{" "}
-              </button>{" "}
-            </div>{" "}
           </div>,
           document.body,
         )}{" "}
     </div>
   );
-}
-function Separator() {
-  return <span aria-hidden="true" className="h-7 w-px shrink-0 bg-homera-cream-dark dark:bg-white/10" />;
 }

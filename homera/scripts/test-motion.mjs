@@ -684,7 +684,7 @@ await test('HOMERA : une recherche enregistrée reprend l’adresse exacte', () 
 });
 
 await test('HOMERA : les identifiants de panneaux restent lisibles', () => {
-  assert.equal(nav.navPanelId('Séjour'), 'sejour');
+  assert.equal(nav.navPanelId('Séjourner'), 'sejourner');
   assert.equal(nav.navPanelId('À propos'), 'a-propos');
   assert.equal(nav.navPanelId('Locaux commerciaux'), 'locaux-commerciaux');
   assert.equal(nav.navPanelId('Écosystème & services'), 'ecosysteme-services');
@@ -692,7 +692,7 @@ await test('HOMERA : les identifiants de panneaux restent lisibles', () => {
     assert.ok(nav.navPanelId(entry.title).length > 0);
   }
   // Le menu tient la commande annoncée : Explorer → Services, rien d’autre.
-  assert.deepEqual(nav.PUBLIC_NAV.map((entry) => entry.title), ['Explorer', 'Acheter', 'Louer', 'Séjour', 'Services']);
+  assert.deepEqual(nav.PUBLIC_NAV.map((entry) => entry.title), ['Explorer', 'Acheter', 'Louer', 'Séjourner', 'Services']);
 });
 
 /* ==================================================================
@@ -2069,4 +2069,26 @@ await test('HOMERA : la recherche d’accueil vise la sous-rubrique puis la page
   assert.doesNotMatch(searchComponent, /Ouvrir dans l’explorateur/, 'même l’explorateur passe par la navigation directe');
   const provider = await readFile(new URL('../components/providers/SearchProvider.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(provider, /submitSearch/, 'état appliqué réservé aux intentions d’exploration');
+});
+
+await test('HOMERA : accueil — suppressions et libellés du cahier', async () => {
+  const explorer = await readFile(new URL('../components/home/ExplorerSection.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(explorer, /intent\.index/, '§2.1 : numéros 01-04 retirés des cartes vision');
+  assert.doesNotMatch(explorer, /homera-num/, '§2.1 : pastille de numéro retirée');
+  assert.ok(explorer.includes('ArrowUpRight'), '§2.1 : flèche oblique conservée');
+  const editorial = await readFile(new URL('../components/home/EditorialSection.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(editorial, /setPaused/, '§2.2 : bouton Pause retiré du magazine');
+  assert.ok(editorial.includes('homera-marquee'), '§2.2 : bandeau de rubriques conservé');
+  const hero = await readFile(new URL('../components/home/Hero.tsx', import.meta.url), 'utf8');
+  assert.ok(hero.includes('Un lieu à trouver.') && hero.includes('Un projet à concrétiser.'), '§4.1 : nouveau titre du Hero');
+  assert.ok(hero.includes('HOMERA vous accompagne'), '§4.1 : nouveau sous-titre du Hero');
+  assert.doesNotMatch(hero, /intermédiaire douteux/, '§2.3 : ancienne accroche retirée');
+  const search = await readFile(new URL('../components/home/SearchModule.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(search, /Separator/, '§2.4 : séparateurs verticaux retirés');
+  assert.doesNotMatch(search, /correspondant aux critères/, '§2.5 : compteur de panneau retiré');
+  assert.ok(search.includes('justify-center gap-4'), '§2.5 : options du panneau centrées');
+  const dossier = await readFile(new URL('../components/home/PropertyDossier.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(dossier, /homera-story-indicator/, '§2.6 : compteur 01/06 retiré du dossier');
+  const trust = await readFile(new URL('../components/home/TrustVisionSection.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(trust, /Cotonou · Abomey-Calavi/, '§2.7 : ligne de villes retirée du CTA');
 });

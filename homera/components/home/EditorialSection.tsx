@@ -1,7 +1,6 @@
 "use client";
-import { useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Clock, Pause, Play } from "lucide-react";
+import { ArrowRight, Clock } from "lucide-react";
 import { EDITORIAL } from "@/lib/content";
 import { SceneHeader } from "@/components/ui/Scene";
 import { Reveal } from "@/components/ui/Reveal";
@@ -9,7 +8,6 @@ import { Visual } from "@/components/ui/Visual";
 import { useInView, useMotionPreferences } from "@/lib/motion";
 /* ================================================================== HOMERA — L’UNIVERS ÉDITORIAL ------------------------------------------------------------------ Un magazine digital, pas un blog. Le bandeau de rubriques défile en continu (il s’arrête dès qu’on le regarde ou qu’on le parcourt au clavier), puis cinq sujets se déplient : architecture, quartiers, styles de vie, maisons, appartements. Objectif : montrer que HOMERA documente le contexte avant de parler de prix — et donner envie de continuer à lire. Les sujets ne sont pas encore des articles : ils s’affichent donc comme un sommaire, sans faux lien. La seule action réelle de la section mène au protocole de vérification. ================================================================== */ export function EditorialSection() {
   const { reduced, coarse } = useMotionPreferences();
-  const [paused, setPaused] = useState(false);
   const { ref: ribbonRef, inView: ribbonVisible } = useInView<HTMLDivElement>({ once: false, threshold: 0 });
   const stories = EDITORIAL.stories;
   const [lead, ...rest] = stories;
@@ -31,7 +29,7 @@ import { useInView, useMotionPreferences } from "@/lib/motion";
           {" "}
           <div
             ref={ribbonRef}
-            data-running={ribbonVisible && !reduced && !coarse && !paused}
+            data-running={ribbonVisible && !reduced && !coarse}
             className="homera-marquee-wrap homera-noscrollbar relative flex overflow-hidden border-y border-border py-4"
             aria-hidden="true"
           >
@@ -49,24 +47,6 @@ import { useInView, useMotionPreferences } from "@/lib/motion";
               ))}{" "}
             </div>{" "}
           </div>{" "}
-          {!reduced && !coarse && (
-            <div className="mt-2 flex justify-end">
-              <button
-                type="button"
-                onClick={() => setPaused((value) => !value)}
-                aria-pressed={paused}
-                aria-label={paused ? "Relancer le bandeau des rubriques" : "Mettre le bandeau des rubriques en pause"}
-                className="homera-press inline-flex min-h-9 items-center gap-2 rounded-full px-2 text-micro text-muted"
-              >
-                {paused ? (
-                  <Play className="h-3 w-3" aria-hidden="true" />
-                ) : (
-                  <Pause className="h-3 w-3" aria-hidden="true" />
-                )}
-                {paused ? "Relancer" : "Pause"}
-              </button>
-            </div>
-          )}{" "}
           <ul className="sr-only">
             {" "}
             {EDITORIAL.categories.map((category) => (
