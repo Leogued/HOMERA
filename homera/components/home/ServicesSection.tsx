@@ -27,7 +27,6 @@ export function ServicesSection() {
     router.push(slug ? `/services/${slug}` : "/services");
   };
   const active = SERVICES.find((service) => service.id === activeId) ?? SERVICES[0];
-  const ActiveIcon = ICONS[active.icon];
   const { containerRef, handleKeyDown, focusItem } = useRovingFocus<HTMLDivElement>();
   /* --- Le menu peut demander un service précis (ancre #services-xxx) --- */ useEffect(() => {
     const focusService = (id: string) => {
@@ -103,14 +102,6 @@ export function ServicesSection() {
                     )}{" "}
                   </div>
                 ))}{" "}
-                <div className="pointer-events-none absolute inset-x-0 top-0 z-2 flex items-start justify-between p-5">
-                  {" "}
-                  <span className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/40 px-3 py-1.5 text-micro font-semibold uppercase tracking-[0.16em] text-white backdrop-blur-md">
-                    {" "}
-                    <ActiveIcon className="h-3.5 w-3.5 text-homera-amber" aria-hidden="true" /> {active.index} —
-                    Écosystème HOMERA{" "}
-                  </span>{" "}
-                </div>{" "}
               </div>{" "}
               <div className="homera-service-stage-copy relative grid p-6 sm:p-7">
                 {" "}

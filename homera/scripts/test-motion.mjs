@@ -2081,7 +2081,13 @@ await test('HOMERA : accueil — suppressions et libellés du cahier', async () 
   assert.ok(editorial.includes('homera-marquee'), '§2.2 : bandeau de rubriques conservé');
   const hero = await readFile(new URL('../components/home/Hero.tsx', import.meta.url), 'utf8');
   assert.ok(hero.includes('Un lieu à trouver.') && hero.includes('Un projet à concrétiser.'), '§4.1 : nouveau titre du Hero');
-  assert.ok(hero.includes('HOMERA vous accompagne'), '§4.1 : nouveau sous-titre du Hero');
+  assert.ok(hero.includes('<Typewriter phrases={HERO_SUBTITLES}'), 'hero : accroche tapée à la machine à écrire');
+  const subtitles = await readFile(new URL('../lib/content.ts', import.meta.url), 'utf8');
+  assert.ok(subtitles.includes('HERO_SUBTITLES') && subtitles.includes('HOMERA vous accompagne'), '§4.1 : formulations conservées en contenu');
+  const typewriter = await readFile(new URL('../components/ui/Typewriter.tsx', import.meta.url), 'utf8');
+  assert.ok(typewriter.includes('clearTimeout'), 'machine à écrire : timers nettoyés');
+  assert.ok(typewriter.includes('useMotionPreferences'), 'machine à écrire : mouvement réduit respecté');
+  assert.ok(typewriter.includes('sr-only') && typewriter.includes('aria-hidden'), 'machine à écrire : texte complet pour les lecteurs d’écran');
   assert.doesNotMatch(hero, /intermédiaire douteux/, '§2.3 : ancienne accroche retirée');
   const search = await readFile(new URL('../components/home/SearchModule.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(search, /Separator/, '§2.4 : séparateurs verticaux retirés');
@@ -2091,4 +2097,7 @@ await test('HOMERA : accueil — suppressions et libellés du cahier', async () 
   assert.doesNotMatch(dossier, /homera-story-indicator/, '§2.6 : compteur 01/06 retiré du dossier');
   const trust = await readFile(new URL('../components/home/TrustVisionSection.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(trust, /Cotonou · Abomey-Calavi/, '§2.7 : ligne de villes retirée du CTA');
+  const services = await readFile(new URL('../components/home/ServicesSection.tsx', import.meta.url), 'utf8');
+  assert.doesNotMatch(services, /Écosystème HOMERA/, 'services : mentions « 01 — Écosystème » retirées');
+  assert.ok(services.includes('services-panel') && subtitles.includes('Gestion immobilière'), 'services : scène et contenus conservés');
 });

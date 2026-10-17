@@ -99,6 +99,14 @@ export const SEARCH_SELECTS = {
   ] satisfies SelectOption[],
 } as const;
 
+/** Accroche du Hero : la première formulation est le message principal,
+    les suivantes alternent à la machine à écrire (achat, location, séjour). */
+export const HERO_SUBTITLES: string[] = [
+  "Louez, achetez, vendez ou préparez votre séjour au Bénin. HOMERA vous accompagne dans votre recherche.",
+  "Achetez un terrain, une villa ou un appartement vérifié, sans intermédiaire douteux.",
+  "Louez au mois ou réservez votre séjour : des biens identifiés et des prix affichés.",
+];
+
 export type SearchFieldName = keyof typeof SEARCH_SELECTS | "budget";
 
 export const SEARCH_FIELD_LABELS: Record<SearchFieldName, string> = {

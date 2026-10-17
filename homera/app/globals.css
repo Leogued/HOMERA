@@ -935,6 +935,29 @@ a {
   animation-play-state: paused;
 }
 
+/* Curseur de la machine à écrire du Hero : clignotement franc, pas de transition. */
+.homera-type-caret {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 3px;
+  vertical-align: -0.12em;
+  background: var(--homera-amber);
+}
+@keyframes homera-caret-blink {
+  to {
+    visibility: hidden;
+  }
+}
+.homera-hero .homera-type-caret {
+  animation: homera-caret-blink 1.1s steps(2, start) infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .homera-hero .homera-type-caret {
+    animation: none;
+  }
+}
+
 /* Trait de progression (protocole, storytelling) */
 .homera-progress-line {
   position: relative;
@@ -1200,7 +1223,7 @@ a {
 
 /* HERO : entrée et sortie vivent sur des couches distinctes. */
 .homera-hero-video { transform: none; }
-.homera-hero-veil { background: rgba(0, 0, 0, .35); }
+.homera-hero-veil { background: rgba(0, 0, 0, .42); }
 .homera-hero[data-motion-ready="true"] .homera-hero-video {
   transform: translate3d(0, var(--hero-video-y, 0px), 0) scale(var(--hero-video-scale, 1));
 }

@@ -2,13 +2,16 @@
 import { useCallback, useState } from "react";
 import { ArrowDown } from "lucide-react";
 import { SearchModule } from "@/components/home/SearchModule";
+import { Typewriter } from "@/components/ui/Typewriter";
 import { useSearch } from "@/components/providers/SearchProvider";
 import { Visual } from "@/components/ui/Visual";
 import { cssVars, useMotionPreferences, useSceneMotion } from "@/lib/motion";
+import { HERO_SUBTITLES } from "@/lib/content";
 import { phase } from "@/lib/motion-math";
-/* Cadrage, titre et recherche d'origine conservés. Le titre et l'accroche sont
-   posés, sans mouvement ; seules deux couches respirent : le visuel dérive à
-   peine, la recherche reste présente plus longtemps. Aucun scroll détourné.
+/* Cadrage, titre et recherche d'origine conservés. Le titre est posé, sans
+   mouvement ; l'accroche se tape à la machine à écrire (statique si mouvement
+   réduit). Seules deux couches respirent : le visuel dérive à peine, la
+   recherche reste présente plus longtemps. Aucun scroll détourné.
 
    La vidéo d'ouverture (4,45 Mo, lecture automatique) est remplacée par le
    visuel qui en était l'affiche : même image à l'arrêt, plus de 4 Mo économisés,
@@ -26,7 +29,7 @@ export function Hero() {
         "--hero-video-y",
         `${(progress * Math.min(5, element.offsetHeight * 0.004)).toFixed(2)}px`,
       );
-      element.style.setProperty("--hero-veil", (0.35 + progress * 0.12).toFixed(4));
+      element.style.setProperty("--hero-veil", (0.42 + progress * 0.12).toFixed(4));
     },
     [compact],
   );
@@ -59,6 +62,10 @@ export function Hero() {
         aria-hidden="true"
         className="absolute inset-0 bg-[radial-gradient(120%_80%_at_50%_10%,transparent_35%,rgba(0,0,0,0.55)_100%)]"
       />{" "}
+      <div
+        aria-hidden="true"
+        className="absolute inset-0 bg-[linear-gradient(115deg,rgba(120,45,20,0.22),transparent_45%,rgba(8,4,2,0.38))]"
+      />{" "}
       <div aria-hidden="true" className="homera-grain-layer absolute inset-0 z-2" />{" "}
       <div
         aria-hidden="true"
@@ -73,13 +80,12 @@ export function Hero() {
                 <h1 className="font-serif text-display-sm sm:text-display-lg lg:text-display-xl text-white max-w-4xl mx-auto lg:-translate-y-[max(7rem,calc(50svh-12.5rem))]">
                   {" "}
                   Un lieu à trouver. <br />{" "}
-                  <span className="homera-accent text-[1.06em]">Un projet à concrétiser.</span>{" "}
+                  <span className="homera-accent bg-linear-to-r from-homera-cream-dark via-homera-amber to-homera-terracotta-light bg-clip-text text-[1.06em] text-transparent">Un projet à concrétiser.</span>{" "}
                 </h1>{" "}
               {/* Accroche posée : aucun mouvement. */}
-                <p className="text-homera-cream-dark text-body-sm sm:text-body max-w-2xl mx-auto font-sans font-normal leading-relaxed lg:-translate-y-[max(7rem,calc(50svh-12.5rem))]">
+                <p className="text-homera-cream-dark text-body-sm sm:text-body max-w-2xl mx-auto font-sans font-normal leading-relaxed min-h-[4.5rem] sm:min-h-[3.5rem] lg:-translate-y-[max(7rem,calc(50svh-12.5rem))]">
                   {" "}
-                  Louez, achetez, vendez ou préparez votre séjour au Bénin. HOMERA vous accompagne
-                  dans votre recherche.{" "}
+                  <Typewriter phrases={HERO_SUBTITLES} />{" "}
                 </p>{" "}
           </div>{" "}
           <div className="homera-reveal -mt-1" data-revealed={entered} style={reveal(400, 2)}>
