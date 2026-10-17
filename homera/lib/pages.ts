@@ -85,7 +85,7 @@ export const ABOUT_PAGE = {
     },
   },
   protocol: {
-    title: "Le protocole de vérification, en sept mouvements",
+    title: "Le protocole de vérification, en sept étapes",
     intro:
       "Le même parcours pour chaque bien, du dépôt du dossier à sa publication. Ce qui a été contrôlé — et ce qui ne l’a pas été — reste lisible sur la fiche.",
     closing: {

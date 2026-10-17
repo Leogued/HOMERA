@@ -20,10 +20,7 @@ import { useInView, useMotionPreferences } from "@/lib/motion";
       {" "}
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {" "}
-        <SceneHeader
-          title={<span id="magazine-titre">{EDITORIAL.title}</span>}
-          intro={EDITORIAL.intro}
-        />{" "}
+        <SceneHeader align="center" title={<span id="magazine-titre">{EDITORIAL.title}</span>} />{" "}
         {/* Bandeau de rubriques : respiration éditoriale, jamais décorative */}{" "}
         <Reveal y={16} className="mt-10">
           {" "}
@@ -53,6 +50,15 @@ import { useInView, useMotionPreferences } from "@/lib/motion";
               <li key={category}>{category}</li>
             ))}{" "}
           </ul>{" "}
+        </Reveal>{" "}
+        <Reveal
+          delay={170}
+          y={20}
+          as="p"
+          className="mx-auto mt-8 max-w-2xl text-center text-body-sm leading-relaxed text-muted sm:text-body"
+        >
+          {" "}
+          {EDITORIAL.intro}{" "}
         </Reveal>{" "}
         {/* Sujet de couverture + sélection */}{" "}
         <div className="mt-12 grid gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-10">

@@ -25,7 +25,7 @@ import { CustomCursor } from "@/components/ui/CustomCursor";
    03 Intentions ........ quatre portes expansibles
    04 Sélection ......... biens vérifiés, galerie et aperçu natif
    05 Identité .......... le bien et son identifiant unique
-   06 Vérification ...... sept mouvements racontés
+   06 Vérification ...... sept étapes racontées
    07 Écosystème ........ services, sommaire interactif
    08 Magazine .......... l’univers éditorial
    09 Manifeste ......... convictions puis projection finale

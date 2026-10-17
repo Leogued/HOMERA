@@ -61,15 +61,14 @@ export function VerificationProtocol() {
         {" "}
         <SceneHeader
           tone="dark"
+          align="center"
           title={
             <span id="protocole-titre">
-              La confiance se construit.
-              <br />
+              La confiance se construit.{" "}
               <span className="homera-accent text-homera-amber">Une vérification à la fois.</span>
             </span>
           }
-          intro="Le protocole HOMERA : sept mouvements pour rendre un dossier lisible avant d’accorder l’autorisation de publication."
-          className="max-w-3xl"
+          intro="Sept étapes pour examiner un dossier, documenter les vérifications et déterminer si un bien peut être publié sur HOMERA."
         />{" "}
         <div ref={trackRef} className="homera-story-track homera-protocol-track mt-12">
           {" "}

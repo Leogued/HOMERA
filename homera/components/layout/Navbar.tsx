@@ -279,7 +279,7 @@ export function Navbar() {
                         >
                           {" "}
                           <span className="whitespace-nowrap">{child.label}</span>{" "}
-                          {child.hint && <span className="text-caption font-normal text-white/50 group-hover:text-white/75 group-focus-visible:text-white/75">{child.hint}</span>}{" "}
+                          {child.hint && <span className="whitespace-nowrap text-caption font-normal text-white/50 group-hover:text-white/75 group-focus-visible:text-white/75">{child.hint}</span>}{" "}
                         </Link>
                       ))}{" "}
                     </div>{" "}

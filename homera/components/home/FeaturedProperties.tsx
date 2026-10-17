@@ -161,9 +161,9 @@ import { useSearch } from "@/components/providers/SearchProvider";
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         {" "}
         <SceneHeader
+          align="center"
           title={<span id="biens-titre">Des biens qui méritent d’être vus</span>}
           intro="Chaque bien possède son identifiant unique HOMERA et sa fiche de vérification d’identité et de mandat."
-          className="max-w-2xl"
         />{" "}
         {/* Recherche active : ce qui a été demandé, et comment l’élargir */}{" "}
         {isSearching && (

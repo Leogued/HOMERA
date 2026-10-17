@@ -1214,7 +1214,7 @@ export const DOSSIER = {
 } as const;
 
 /* ------------------------------------------------------------------
-   PROTOCOLE DE VÉRIFICATION — 7 mouvements racontés
+   PROTOCOLE DE VÉRIFICATION — 7 étapes racontées
    ------------------------------------------------------------------ */
 
 export type VerificationStep = {
@@ -1316,7 +1316,7 @@ export const SERVICES: Service[] = [
     title: "Maintenance & réparation",
     short: "Plomberie, électricité, entretien préventif",
     description:
-      "Des interventions rapides par des techniciens identifiés, avec un compte rendu simple à suivre pour le propriétaire.",
+      "Des interventions rapides réalisées par des techniciens spécialistes, avec un compte rendu clair pour le commanditaire.",
     bullets: [
       "Diagnostic et devis avant intervention",
       "Plomberie, électricité et petits travaux",
@@ -1473,7 +1473,7 @@ export const EDITORIAL = {
 export const FINAL_CTA = {
   title: "Votre prochain bien est peut-être ici.",
   description:
-    "Recherchez, comparez et demandez une visite : chaque fiche indique ce qui a été vérifié, par qui, et quand.",
+    "Explorez les biens, comparez les possibilités et trouvez celui qui correspond à votre projet.",
   primary: "Explorer HOMERA",
   secondary: "Comprendre la vérification",
   media: "cta-night",
