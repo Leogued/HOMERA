@@ -52,7 +52,7 @@ export function PropertyDossier() {
   const slot = useAutoSlot("dossier", sectionVisible && !reduced);
   /* Lecture automatique (§7.5) : visiteur immobile sur la section, le récit se
      joue seul — les cadres apparaissent un par un — sans déplacer la page.
-     Récit (desktop) : la timeline avance d'elle-même en 9 s. Sans récit
+     Récit (desktop) : la timeline avance d'elle-même en 4,5 s. Sans récit
      (mobile) : la surbrillance tourne entre les cadres visibles. */
   useEffect(() => {
     if (!sectionVisible || !slot || reduced) return;
@@ -92,7 +92,7 @@ export function PropertyDossier() {
         }
         const dt = Math.min(100, time - last);
         last = time;
-        virtual = Math.min(1, virtual + dt / 9000);
+        virtual = Math.min(1, virtual + dt / 4500);
         virtualDriving.current = true;
         update(track, virtual);
         virtualDriving.current = false;
@@ -111,7 +111,7 @@ export function PropertyDossier() {
         fields.forEach((field) => {
           field.dataset.current = String(field === next);
         });
-        nextAt = now + 2600;
+        nextAt = now + 1300;
       };
       timer = window.setTimeout(tick, 500);
     }
