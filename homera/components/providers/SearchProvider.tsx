@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
 import { EMPTY_CRITERIA, hasCriteria, matchesCriteria, type SearchCriteria } from "@/lib/format";
-import { PROPERTIES, type Property } from "@/lib/content";
+import { PROPERTIES, SEARCH_SELECTS, type Property, type SelectOption } from "@/lib/content";
 /* ==================================================================
    HOMERA — ÉTAT PARTAGÉ DU PARCOURS
    ------------------------------------------------------------------
@@ -22,6 +22,8 @@ type SearchContextValue = {
   /** Résultats validés (après soumission) — ce que la page affiche. */ appliedResults: Property[];
   /** true dès qu’une recherche soumise est active. */ isSearching: boolean;
   /** Sélection affichée dans la grille des biens. */ visibleProperties: Property[];
+  /** Options de localisation du catalogue réel (repli statique sinon). */
+  locationOptions: SelectOption[];
 };
 const SearchContext = createContext<SearchContextValue | null>(null);
 /**
@@ -29,8 +31,20 @@ const SearchContext = createContext<SearchContextValue | null>(null);
  * biens réellement publiés dans la base ; à défaut, le catalogue de
  * référence du dépôt est utilisé.
  */
-export function SearchProvider({ children, source }: { children: ReactNode; source?: Property[] }) {
+export function SearchProvider({
+  children,
+  source,
+  locations,
+}: {
+  children: ReactNode;
+  source?: Property[];
+  locations?: SelectOption[];
+}) {
   const catalogue = source ?? PROPERTIES;
+  const locationOptions = useMemo(
+    () => (locations && locations.length > 0 ? locations : [...SEARCH_SELECTS.location]),
+    [locations],
+  );
   const [criteria, setCriteria] = useState<SearchCriteria>(EMPTY_CRITERIA);
   const [applied, setApplied] = useState<SearchCriteria>(EMPTY_CRITERIA);
   const setCriterion = useCallback((field: keyof SearchCriteria, value: string) => {
@@ -67,6 +81,7 @@ export function SearchProvider({ children, source }: { children: ReactNode; sour
       appliedResults,
       isSearching: hasCriteria(applied),
       visibleProperties,
+      locationOptions,
     }),
     [
       criteria,
@@ -77,6 +92,7 @@ export function SearchProvider({ children, source }: { children: ReactNode; sour
       appliedResults,
       applied,
       visibleProperties,
+      locationOptions,
     ],
   );
   return <SearchContext.Provider value={value}>{children}</SearchContext.Provider>;

@@ -18,7 +18,7 @@ import { useSearch } from "@/components/providers/SearchProvider";
   { top: number; left: number; width: number; maxHeight: number };
 const PANEL_MAX_HEIGHT = 304;
 export function SearchModule({ className = "" }: { className?: string }) {
-  const { criteria, setCriterion, resetCriteria } = useSearch();
+  const { criteria, setCriterion, resetCriteria, locationOptions } = useSearch();
   const router = useRouter();
   const mounted = useMounted();
   const [openField, setOpenField] = useState<SearchFieldName | null>(null);
@@ -35,9 +35,10 @@ export function SearchModule({ className = "" }: { className?: string }) {
       if (field === "budget") {
         return criteria.project === "acheter" ? BUDGET_OPTIONS.achat : BUDGET_OPTIONS.periodique;
       }
+      if (field === "location") return [...locationOptions];
       return [...SEARCH_SELECTS[field]];
     },
-    [criteria.project],
+    [criteria.project, locationOptions],
   );
   const closePanel = useCallback((restoreFocus = false) => {
     setOpenField(null);

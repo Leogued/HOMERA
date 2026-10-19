@@ -13,6 +13,7 @@ import { AppDownloadPopup } from "@/components/home/AppDownloadPopup";
 import { Footer } from "@/components/layout/Footer";
 import { SearchProvider } from "@/components/providers/SearchProvider";
 import { listProperties } from "@/lib/server/services/properties";
+import { buildLocationOptions } from "@/lib/properties";
 import { getDb } from "@/lib/server/db/client";
 import { BackToTop, ReadingProgress } from "@/components/ui/ChapterRail";
 import { CustomCursor } from "@/components/ui/CustomCursor";
@@ -38,7 +39,7 @@ export default function Home() {
   // à le voir apparaître ici, sans redéployer.
   const catalogue = listProperties(getDb());
   return (
-    <SearchProvider source={catalogue}>
+    <SearchProvider source={catalogue} locations={buildLocationOptions(catalogue)}>
       {" "}
       <div className="relative flex min-h-screen flex-col justify-between bg-background text-foreground transition-colors duration-300">
         {" "}

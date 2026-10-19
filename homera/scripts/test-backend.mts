@@ -807,6 +807,25 @@ check("un dossier n’est jamais servi", uploads.resolveUpload("/api/uploads/pro
 fs.rmSync(path.join(uploads.uploadRoot(), "properties", uploadId), { recursive: true, force: true });
 
 
+section("10. Recherche : localités construites depuis le catalogue");
+const { buildLocationOptions } = await import("../lib/properties");
+const pubCatalogue = properties.listProperties(db, {});
+const locOptions = buildLocationOptions(pubCatalogue);
+const locValues = locOptions.map((option) => option.value);
+for (const city of [...new Set(pubCatalogue.map((property) => property.city))]) {
+  check(`la ville ${city} propose une option`, locValues.includes(city));
+}
+for (const district of [...new Set(pubCatalogue.map((property) => property.district).filter(Boolean))]) {
+  check(`le quartier ${district} propose une option`, locValues.includes(district as string));
+}
+const extended = buildLocationOptions([...pubCatalogue, { city: "Grand-Popo", district: "Centre-Ville" }]);
+check(
+  "une nouvelle ville apparaît sans toucher au code",
+  extended.some((option) => option.value === "Grand-Popo"),
+);
+const newDistrict = extended.find((option) => option.value === "Centre-Ville");
+check("son quartier apparaît avec la ville en précision", newDistrict?.hint === "Grand-Popo");
+check("aucune fausse localité inventée", extended.every((option) => option.value.length > 0));
 closeDb();
 
 /* ------------------------------------------------------------------

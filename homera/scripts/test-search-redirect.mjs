@@ -18,6 +18,7 @@
      7. Aucun bien (budget 1 000)               -> état vide explicite
      8. Séjour + appartement (pas de rubrique)  -> /sejour + type
      9. Acheter + studio (pas de rubrique)      -> /acheter + type, vide
+    10. Fourchette posée sur place (min+max)     -> servie uniquement
 
    Deux couches vérifiées VRAIMENT :
      A. construction de l’adresse (logique pure, exécutée ici) ;
@@ -103,10 +104,18 @@ const CASES = [
     ignore: ['(HOM-...)'],
     absent: ['HOM-'],
   },
+  {
+    name: '10. prix min+max (fourchette sur place)',
+    criteria: null, // la borne basse se pose sur la page, pas depuis l'accueil
+    url: '/acheter/appartements?ville=Cotonou&prix-min=40000000&prix-max=70000000',
+    present: ['HOM-CTN-000658'],
+    absent: ['HOM-CTN-000671'],
+  },
 ];
 
 await test('recherche : adresses construites exactes (9 cas)', () => {
   for (const entry of CASES) {
+    if (!entry.criteria) continue;
     const built = searchHref(entry.criteria);
     assert.equal(built, entry.url, `${entry.name} : ${built}`);
   }
@@ -124,3 +133,35 @@ for (const entry of CASES) {
     for (const needle of entry.absent) assert.ok(!body.includes(needle), `${entry.name} : présent « ${needle} »`);
   });
 }
+
+await test('recherche : robustesse des critères (§9.6)', () => {
+  const base = { project: 'acheter', location: 'Cotonou', propertyType: 'appartement', budget: '50000000' };
+  const reordered = { budget: '50000000', propertyType: 'appartement', location: 'Cotonou', project: 'acheter' };
+  assert.equal(searchHref(reordered), searchHref(base), 'ordre de sélection indifférent');
+  assert.equal(
+    searchHref({ ...base, propertyType: 'chateau' }),
+    '/acheter?intention=acheter&ville=Cotonou&prix-max=50000000',
+    'type inconnu écarté, projet conservé',
+  );
+  assert.ok(!searchHref({ ...base, location: 'Paris' }).includes('ville='), 'ville inconnue écartée');
+  for (const bad of ['abc', '0', '']) {
+    assert.ok(!searchHref({ ...base, budget: bad }).includes('prix-max'), `budget « ${bad} » ignoré`);
+  }
+  assert.ok(
+    searchHref({ ...base, budget: '-500' }).includes('prix-max=500'),
+    'budget « -500 » assaini comme à la saisie',
+  );
+  assert.ok(
+    searchHref({ ...base, budget: '50\u202f000\u202f000' }).includes('prix-max=50000000'),
+    'montant formaté compris',
+  );
+});
+
+await test('recherche servie : URL partagée déterministe (§9.6)', async () => {
+  const url = new URL('/acheter/appartements?ville=Cotonou&prix-max=50000000', BASE);
+  const refs = async () =>
+    [...(await (await fetch(url, { signal: AbortSignal.timeout(30000) })).text()).matchAll(/HOM-[A-Z]+-\d+/g)]
+      .map((match) => match[0])
+      .sort();
+  assert.deepEqual(await refs(), await refs(), 'deux lectures, mêmes biens');
+});

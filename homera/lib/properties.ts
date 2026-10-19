@@ -1,6 +1,7 @@
 import {
   FEATURE_ORDER,
   PROPERTIES,
+  type SelectOption,
   type LandTitle,
   type Property,
   type PropertyAvailability,
@@ -270,6 +271,32 @@ export function activeFilterCount(query: CatalogQuery): number {
 
 const CITY_NAMES = [...new Set(PROPERTIES.map((property) => property.city))];
 const DISTRICT_NAMES = [...new Set(PROPERTIES.map((property) => property.district))];
+
+/** Options de localisation construites depuis le catalogue réel : déposer un
+    bien dans une nouvelle ville ou un nouveau quartier suffit à l'y voir
+    apparaître, sans toucher au code. Villes d'abord (quartiers en précision),
+    puis quartiers (ville en précision). */
+export function buildLocationOptions(items: Pick<Property, "city" | "district">[]): SelectOption[] {
+  const districtsByCity = new Map<string, Set<string>>();
+  for (const item of items) {
+    if (!item.city) continue;
+    if (!districtsByCity.has(item.city)) districtsByCity.set(item.city, new Set());
+    if (item.district) districtsByCity.get(item.city)!.add(item.district);
+  }
+  const byName = (a: string, b: string) => a.localeCompare(b, "fr");
+  const cities = [...districtsByCity.keys()].sort(byName);
+  const options: SelectOption[] = cities.map((city) => {
+    const districts = [...districtsByCity.get(city)!].sort(byName);
+    const hint = districts.slice(0, 3).join(", ") + (districts.length > 3 ? "…" : "");
+    return { value: city, label: city, hint: hint || undefined };
+  });
+  for (const city of cities) {
+    for (const district of [...districtsByCity.get(city)!].sort(byName)) {
+      options.push({ value: district, label: district, hint: city });
+    }
+  }
+  return options;
+}
 
 export function criteriaToCatalogQuery(criteria: SearchCriteria): CatalogQuery {
   const budget = criteria.budget ? Number(criteria.budget.replace(/[^\d]/g, "")) : Number.NaN;

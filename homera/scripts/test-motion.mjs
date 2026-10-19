@@ -2137,3 +2137,40 @@ await test('HOMERA : accueil — suppressions et libellés du cahier', async () 
   const home = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
   assert.ok(home.includes('<AppDownloadPopup'), 'pop-up : montée sur la page d’accueil');
 });
+
+await test('HOMERA §7 : défilement libre, animations sous contrôle', async () => {
+  const frame = await readFile(new URL('../lib/motion-frame.ts', import.meta.url), 'utf8');
+  assert.equal((frame.match(/window\.addEventListener\("scroll"/g) ?? []).length, 1, '§10 : un seul écouteur de scroll pour toute la page');
+  assert.ok(frame.includes('{ passive: true }'), '§10 : écouteurs passifs, jamais bloquants');
+  const engine = await readFile(new URL('../lib/motion.ts', import.meta.url), 'utf8');
+  assert.doesNotMatch(engine, /scrollIntoView/, '§7.2 : le moteur ne déplace jamais la page');
+  assert.equal((engine.match(/window\.scrollTo\(/g) ?? []).length, 1, '§7.2 : un seul déplacement, sur commande clavier explicite');
+  assert.doesNotMatch(engine, /wheel|touchmove/, '§7.2 : aucun geste intercepté');
+  assert.ok(engine.includes('document.hidden'), '§7.3 : pause quand l’onglet est caché');
+  assert.ok(engine.includes('(prefers-reduced-motion: reduce)'), '§7.8 : mouvement réduit respecté');
+  assert.ok(engine.includes('(min-width: 1024px) and (prefers-reduced-motion: no-preference)'), '§7.8 : scènes épinglées, desktop sans réduction uniquement');
+  const css = await readFile(new URL('../app/globals.css', import.meta.url), 'utf8');
+  assert.ok(css.includes('.homera-story-track { height: 270svh; }'), '§7.8 : épinglage cantonné au CSS conditionnel');
+  const { readdir } = await import('node:fs/promises');
+  const files = (await readdir(new URL('../components/home/', import.meta.url))).filter((name) => name.endsWith('.tsx'));
+  for (const name of files) {
+    const source = await readFile(new URL(`../components/home/${name}`, import.meta.url), 'utf8');
+    assert.doesNotMatch(source, /setInterval\(/, `${name} : aucune progression automatique imposée (§7.3-7.6)`);
+  }
+});
+
+await test('HOMERA §9.3 : localités et types à source unique', async () => {
+  const props = await readFile(new URL('../lib/properties.ts', import.meta.url), 'utf8');
+  assert.ok(props.includes('export function buildLocationOptions'), 'options de lieu construites depuis le catalogue');
+  const provider = await readFile(new URL('../components/providers/SearchProvider.tsx', import.meta.url), 'utf8');
+  assert.ok(provider.includes('locationOptions') && provider.includes('SEARCH_SELECTS.location'), 'contexte : catalogue réel, repli statique');
+  const search = await readFile(new URL('../components/home/SearchModule.tsx', import.meta.url), 'utf8');
+  assert.ok(search.includes('field === "location"') && search.includes('locationOptions'), 'le champ lieu lit les options dynamiques');
+  const home = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
+  assert.ok(home.includes('locations={buildLocationOptions(catalogue)}'), 'la page serveur transmet les localités');
+  assert.deepEqual(
+    [...data.SEARCH_SELECTS.propertyType.map((option) => option.value)].sort(),
+    Object.keys(format.SEARCH_TYPE_TO_PROPERTY_TYPE).sort(),
+    'types proposés = types convertibles, sans dérive',
+  );
+});
