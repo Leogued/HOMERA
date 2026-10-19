@@ -2170,6 +2170,9 @@ await test('HOMERA §7 : défilement libre, animations sous contrôle', async ()
   const globalCss = await readFile(new URL('../app/globals.css', import.meta.url), 'utf8');
   const highlights = globalCss.split('.homera-dossier-field[data-current="true"]').length - 1;
   assert.ok(highlights >= 2, '§7.5 : cadre courant visible avec et sans récit');
+  const dossier = await readFile(new URL('../components/home/PropertyDossier.tsx', import.meta.url), 'utf8');
+  assert.ok(dossier.includes('--scene-progress'), '§7.5 : reprise depuis la progression réelle du scroll');
+  assert.ok(dossier.includes('cancelAnimationFrame'), '§7.5 : boucle de lecture annulée au départ');
 });
 
 await test('HOMERA §9.3 : localités et types à source unique', async () => {

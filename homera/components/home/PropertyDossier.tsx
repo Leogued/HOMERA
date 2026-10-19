@@ -19,14 +19,15 @@ const PLACEMENT: Record<DossierField["position"], string> = {
 const FIELD_ORDER = ["localisation", "statut", "proprietaire", "verification", "agent", "date"];
 const FIELDS = FIELD_ORDER.map(
   (id) => DOSSIER.fields.find((field) => field.id === id)!,
-); /* Signature : le code est d'abord seul. Le scroll lui attache un lieu, un statut, un propriétaire, un mandat et une date. Rien ne remplace le code au centre ; le dossier se construit autour de lui. Quand le visiteur s'attarde sans défiler, le cadre courant avance seul, de haut en bas. */
+); /* Signature : le code est d'abord seul. Le scroll lui attache un lieu, un statut, un propriétaire, un mandat et une date. Rien ne remplace le code au centre ; le dossier se construit autour de lui. Quand le visiteur s'attarde sans défiler, le récit se joue seul : les cadres apparaissent un par un, sans déplacer la page. */
 export function PropertyDossier() {
   const story = useStoryCapable();
   const { reduced } = useMotionPreferences();
   const reference = PROPERTIES[0];
   const progressStamp = useRef(0);
+  const virtualDriving = useRef(false);
   const update = useCallback((element: HTMLDivElement, progress: number) => {
-    progressStamp.current = Date.now();
+    if (!virtualDriving.current) progressStamp.current = Date.now();
     const photo = phase(progress, 0.08, 0.27);
     const core = element.querySelector<HTMLElement>(".homera-dossier-core");
     const code = element.querySelector<HTMLElement>("#dossier-reference");
@@ -49,43 +50,77 @@ export function PropertyDossier() {
   const trackRef = useSceneMotion<HTMLDivElement>(update, { enabled: story, mode: "sticky", response: 65 });
   const { ref: sectionRef, inView: sectionVisible } = useInView<HTMLElement>({ threshold: 0.4, once: false });
   const slot = useAutoSlot("dossier", sectionVisible && !reduced);
-  /* Progression interne (§7.5) : visiteur immobile sur la section, le cadre
-     courant avance seul toutes les 2,6 s, sans jamais déplacer la page. */
+  /* Lecture automatique (§7.5) : visiteur immobile sur la section, le récit se
+     joue seul — les cadres apparaissent un par un — sans déplacer la page.
+     Récit (desktop) : la timeline avance d'elle-même en 9 s. Sans récit
+     (mobile) : la surbrillance tourne entre les cadres visibles. */
   useEffect(() => {
     if (!sectionVisible || !slot || reduced) return;
     const section = sectionRef.current;
     const track = trackRef.current;
     if (!section || !track) return;
     let timer = 0;
+    let raf = 0;
     let nextAt = 0;
+    let virtual: number | null = null;
+    let last = 0;
     const touch = () => {
       progressStamp.current = Date.now();
     };
     const names = ["pointerdown", "keydown", "touchstart", "touchmove", "wheel"] as const;
     for (const name of names) section.addEventListener(name, touch, { passive: true });
-    const tick = () => {
+    if (story) {
+      const frame = (time: number) => {
+        raf = requestAnimationFrame(frame);
+        if (document.hidden) {
+          last = time;
+          return;
+        }
+        if (Date.now() - progressStamp.current < 2500) {
+          virtual = null;
+          last = time;
+          return;
+        }
+        if (virtual === null) {
+          const real = Number(track.style.getPropertyValue("--scene-progress") || 0);
+          if (real >= 0.999) {
+            last = time;
+            return;
+          }
+          virtual = real;
+          last = time;
+        }
+        const dt = Math.min(100, time - last);
+        last = time;
+        virtual = Math.min(1, virtual + dt / 9000);
+        virtualDriving.current = true;
+        update(track, virtual);
+        virtualDriving.current = false;
+      };
+      raf = requestAnimationFrame(frame);
+    } else {
+      const tick = () => {
+        timer = window.setTimeout(tick, 500);
+        if (document.hidden) return;
+        const now = Date.now();
+        if (now - progressStamp.current < 2500 || now < nextAt) return;
+        const fields = [...track.querySelectorAll<HTMLElement>("[data-dossier-field]")];
+        if (fields.length < 2) return;
+        const current = fields.findIndex((field) => field.dataset.current === "true");
+        const next = fields[(current + 1) % fields.length];
+        fields.forEach((field) => {
+          field.dataset.current = String(field === next);
+        });
+        nextAt = now + 2600;
+      };
       timer = window.setTimeout(tick, 500);
-      if (document.hidden) return;
-      const now = Date.now();
-      if (now - progressStamp.current < 2500 || now < nextAt) return;
-      const fields = [...track.querySelectorAll<HTMLElement>("[data-dossier-field]")];
-      const shown = fields.filter(
-        (field) => !story || Number(field.style.getPropertyValue("--field-reveal") || 0) > 0.5,
-      );
-      if (shown.length < 2) return;
-      const current = shown.findIndex((field) => field.dataset.current === "true");
-      const next = shown[(current + 1) % shown.length];
-      fields.forEach((field) => {
-        field.dataset.current = String(field === next);
-      });
-      nextAt = now + 2600;
-    };
-    timer = window.setTimeout(tick, 500);
+    }
     return () => {
       window.clearTimeout(timer);
+      cancelAnimationFrame(raf);
       for (const name of names) section.removeEventListener(name, touch);
     };
-  }, [sectionVisible, slot, reduced, story, sectionRef, trackRef]);
+  }, [sectionVisible, slot, reduced, story, sectionRef, trackRef, update]);
   return (
     <section
       ref={sectionRef}
