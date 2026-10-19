@@ -4,9 +4,12 @@ import { Reveal } from "@/components/ui/Reveal";
 /* ==================================================================
    HOMERA — PIED DE PAGE
    ------------------------------------------------------------------
-   Disposition : colonne de marque, rubriques de liens, contacts sous
-   la rubrique centrale, barre © / liens légaux, puis note en pleine
-   largeur. Contenu et couleurs HOMERA inchangés.
+   Disposition façon référence : colonne de marque, rubriques de liens
+   sans soulignement, contacts sous la rubrique centrale, barre © /
+   liens légaux / réseaux, puis note en pleine largeur.
+   Contenu et couleurs HOMERA inchangés.
+   TODO : brancher les vraies adresses des réseaux sociaux (fournies
+   par le client) — les pastilles restent informatives en attendant.
    Un lien de pied de page ne doit jamais être un cul-de-sac.
    ================================================================== */
 const COLUMNS = [
@@ -49,6 +52,22 @@ const LEGAL = [
   { label: "Conditions générales (CGU)", href: "/legal/conditions-generales" },
   { label: "Mentions légales", href: "/mentions-legales" },
 ];
+/* Pastilles dessinées en pur CSS/SVG : lucide ne fournit plus d'icônes de marques. */
+function InstagramGlyph() {
+  return (
+    <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1.6">
+      <rect x="1.6" y="1.6" width="12.8" height="12.8" rx="4" />
+      <circle cx="8" cy="8" r="3" />
+      <circle cx="12" cy="4.6" r="1.1" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+const SOCIALS = [
+  { label: "LinkedIn", glyph: <span className="text-micro font-extrabold leading-none">in</span> },
+  { label: "X", glyph: <span className="text-caption font-extrabold leading-none">X</span> },
+  { label: "Facebook", glyph: <span className="text-caption font-extrabold leading-none">f</span> },
+  { label: "Instagram", glyph: <InstagramGlyph /> },
+];
 export function Footer() {
   return (
     <footer className="homera-on-dark relative overflow-hidden bg-homera-brown pt-16 pb-12 text-white">
@@ -89,10 +108,7 @@ export function Footer() {
                 <ul className="space-y-2 text-note text-homera-cream-dark">
                   {column.links.map((link) => (
                     <li key={link.href}>
-                      <Link
-                        href={link.href}
-                        className="homera-underline inline-block transition-colors hover:text-white"
-                      >
+                      <Link href={link.href} className="inline-block transition-colors hover:text-white">
                         {link.label}
                       </Link>
                     </li>
@@ -103,11 +119,16 @@ export function Footer() {
             {/* Contacts sous la rubrique centrale, façon « écrivez-nous » */}
             <Reveal delay={320} y={20} className="space-y-2 sm:col-start-2">
               <p className="flex items-center gap-2 text-note text-homera-cream-dark">
-                <Mail className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" /> contact@homera.bj
+                <Mail className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />
+                <a href="mailto:contact@homera.bj" className="transition-colors hover:text-white">
+                  contact@homera.bj
+                </a>
               </p>
               <p className="flex items-center gap-2 text-note text-homera-cream-dark">
                 <Phone className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />
-                <span className="homera-num">+229 01 00 00 00 00</span>
+                <a href="tel:+2290100000000" className="homera-num transition-colors hover:text-white">
+                  +229 01 00 00 00 00
+                </a>
               </p>
               <p className="flex items-center gap-2 text-note text-homera-cream-dark">
                 <MapPin className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" /> Cotonou & Abomey-Calavi
@@ -115,21 +136,33 @@ export function Footer() {
             </Reveal>
           </div>
         </div>
-        {/* Barre © / liens légaux */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-8 text-note text-muted-light lg:flex-row">
+        {/* Barre © / liens légaux / réseaux */}
+        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-note text-muted-light lg:flex-row">
           <p>© {new Date().getFullYear()} HOMERA. Tous droits réservés. République du Bénin.</p>
           <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             {LEGAL.map((item) => (
               <li key={item.href}>
-                <Link href={item.href} className="homera-underline transition-colors hover:text-white">
+                <Link href={item.href} className="transition-colors hover:text-white">
                   {item.label}
                 </Link>
               </li>
             ))}
           </ul>
+          <ul className="flex items-center gap-3" aria-label="Réseaux sociaux — bientôt disponibles">
+            {SOCIALS.map(({ label, glyph }) => (
+              <li key={label}>
+                <span
+                  title={`${label} — bientôt disponible`}
+                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-homera-cream-dark"
+                >
+                  {glyph}
+                </span>
+              </li>
+            ))}
+          </ul>
         </div>
         {/* Note en pleine largeur */}
-        <div className="mt-8 border-t border-white/10 pt-6">
+        <div className="mt-6 border-t border-white/10 pt-6">
           <p className="text-caption leading-relaxed text-muted-light">
             Système pilote : biens et chiffres de démonstration.
           </p>
