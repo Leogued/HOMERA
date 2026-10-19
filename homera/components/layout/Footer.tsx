@@ -116,8 +116,8 @@ export function Footer() {
                 </ul>
               </Reveal>
             ))}
-            {/* Contacts sous la rubrique centrale, façon « écrivez-nous » */}
-            <Reveal delay={320} y={20} className="space-y-2 sm:col-start-2">
+            {/* Contacts sous la rubrique La plateforme, façon « écrivez-nous » */}
+            <Reveal delay={320} y={20} className="space-y-2 sm:col-start-3">
               <p className="flex items-center gap-2 text-note text-homera-cream-dark">
                 <Mail className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />
                 <a href="mailto:contact@homera.bj" className="transition-colors hover:text-white">
