@@ -137,8 +137,8 @@ export function Footer() {
           </div>
         </div>
         {/* Barre © / liens légaux / réseaux */}
-        <div className="mt-12 flex flex-col items-center justify-between gap-4 border-t border-white/10 pt-6 text-note text-muted-light lg:flex-row">
-          <p>© {new Date().getFullYear()} HOMERA. Tous droits réservés. République du Bénin.</p>
+        <div className="mt-10 flex flex-col items-center justify-between gap-3 border-t border-white/10 pt-6 text-caption text-muted-light lg:flex-row">
+          <p className="lg:flex-1">© {new Date().getFullYear()} HOMERA. Tous droits réservés.</p>
           <ul className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
             {LEGAL.map((item) => (
               <li key={item.href}>
@@ -148,12 +148,12 @@ export function Footer() {
               </li>
             ))}
           </ul>
-          <ul className="flex items-center gap-3" aria-label="Réseaux sociaux — bientôt disponibles">
+          <ul className="flex items-center gap-3 lg:flex-1 lg:justify-end" aria-label="Réseaux sociaux — bientôt disponibles">
             {SOCIALS.map(({ label, glyph }) => (
               <li key={label}>
                 <span
                   title={`${label} — bientôt disponible`}
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-homera-cream-dark"
+                  className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-homera-cream-dark"
                 >
                   {glyph}
                 </span>
