@@ -107,6 +107,11 @@ export const HERO_SUBTITLES: string[] = [
   "Louez au mois ou réservez votre séjour : des biens identifiés et des prix affichés.",
 ];
 
+/** Pop-up de téléchargement : ne renseigner l'URL que vers la fiche Play Store
+    officielle, une fois l'application publiée. Vide = bouton « Bientôt »,
+    sans promesse de disponibilité. */
+export const PLAY_STORE_URL = "";
+
 export type SearchFieldName = keyof typeof SEARCH_SELECTS | "budget";
 
 export const SEARCH_FIELD_LABELS: Record<SearchFieldName, string> = {

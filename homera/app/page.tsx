@@ -9,6 +9,7 @@ import { VerificationProtocol } from "@/components/home/VerificationProtocol";
 import { ServicesSection } from "@/components/home/ServicesSection";
 import { EditorialSection } from "@/components/home/EditorialSection";
 import { TrustVisionSection } from "@/components/home/TrustVisionSection";
+import { AppDownloadPopup } from "@/components/home/AppDownloadPopup";
 import { Footer } from "@/components/layout/Footer";
 import { SearchProvider } from "@/components/providers/SearchProvider";
 import { listProperties } from "@/lib/server/services/properties";
@@ -47,6 +48,7 @@ export default function Home() {
           {" "}
           <Hero /> <StatsSection /> <IdentityStatement /> <ExplorerSection /> <FeaturedProperties />{" "}
           <PropertyDossier /> <VerificationProtocol /> <ServicesSection /> <EditorialSection /> <TrustVisionSection />{" "}
+          <AppDownloadPopup />{" "}
         </main>{" "}
         <Footer />{" "}
       </div>{" "}

@@ -2125,4 +2125,15 @@ await test('HOMERA : accueil — suppressions et libellés du cahier', async () 
   assert.ok(editorial.includes('À paraître'), '§8.3 : sujets sans destination identifiés');
   assert.doesNotMatch(editorial, /paraîtront avec l’ouverture/, '§2.2 : texte magazine retiré (rattrapage)');
   assert.ok(subtitles.includes('href?: string'), '§8.3 : destination optionnelle par sujet');
+  assert.ok(subtitles.includes('PLAY_STORE_URL = ""'), 'pop-up : aucun lien Play Store inventé');
+  const popup = await readFile(new URL('../components/home/AppDownloadPopup.tsx', import.meta.url), 'utf8');
+  assert.ok(popup.includes('role="dialog"') && popup.includes('aria-modal'), 'pop-up : dialogue accessible');
+  assert.ok(popup.includes('"Escape"') && popup.includes('Continuer sur le site'), 'pop-up : fermeture Échap, croix, poursuite');
+  assert.ok(popup.includes('localStorage') && popup.includes('QUIET_DAYS'), 'pop-up : période de tranquillité après fermeture');
+  assert.ok(popup.includes('ENGAGE_TIME_MS') && popup.includes('SCROLL_FACTOR'), 'pop-up : jamais à l’arrivée, après exploration');
+  assert.doesNotMatch(popup, /play\.google/, 'pop-up : pas de lien officiel contourné');
+  assert.doesNotMatch(popup, /recevoir des notifications/, 'pop-up : aucune notification promise sans service');
+  assert.ok(popup.includes('Bientôt sur Google Play'), 'pop-up : attente honnête tant que non publiée');
+  const home = await readFile(new URL('../app/page.tsx', import.meta.url), 'utf8');
+  assert.ok(home.includes('<AppDownloadPopup'), 'pop-up : montée sur la page d’accueil');
 });
