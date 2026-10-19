@@ -2174,11 +2174,11 @@ await test('HOMERA §7 : défilement libre, animations sous contrôle', async ()
   assert.ok(dossier.includes('--scene-progress'), '§7.5 : reprise depuis la progression réelle du scroll');
   assert.ok(dossier.includes('cancelAnimationFrame'), '§7.5 : boucle de lecture annulée au départ');
   const gates = [...dossier.matchAll(/progressStamp\.current < (\d+)/g)].map((m) => Number(m[1]));
-  assert.ok(gates.length === 2 && gates.every((g) => g < 1000), '§7.5 : demarrage immediat des la section active');
+  assert.ok(gates.length === 2 && gates.every((g) => g < 500), '§7.5 : demarrage immediat des la section active');
   const storyMs = dossier.match(/virtual \+ dt \/ (\d+)/);
-  assert.ok(storyMs && Number(storyMs[1]) <= 5000, '§7.5 : lecture du recit en 5 s maximum');
+  assert.ok(storyMs && Number(storyMs[1]) <= 2500, '§7.5 : lecture du recit en 2 s');
   const stepMs = dossier.match(/nextAt = now \+ (\d+)/);
-  assert.ok(stepMs && Number(stepMs[1]) <= 1500, '§7.5 : rotation mobile nerveuse');
+  assert.ok(stepMs && Number(stepMs[1]) <= 800, '§7.5 : rotation mobile nerveuse');
   for (const name of ['FeaturedProperties.tsx', 'PropertyDossier.tsx']) {
     const source = await readFile(new URL(`../components/home/${name}`, import.meta.url), 'utf8');
     const at = source.match(/useInView<HTMLElement>\(\{\s*threshold:\s*([\d.]+)/);

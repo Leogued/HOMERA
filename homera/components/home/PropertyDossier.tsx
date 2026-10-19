@@ -52,7 +52,7 @@ export function PropertyDossier() {
   const slot = useAutoSlot("dossier", sectionVisible && !reduced);
   /* Lecture automatique (§7.5) : visiteur immobile sur la section, le récit se
      joue seul — les cadres apparaissent un par un — sans déplacer la page.
-     Récit (desktop) : la timeline avance d'elle-même en 4,5 s. Sans récit
+     Récit (desktop) : la timeline avance d'elle-même en 2 s. Sans récit
      (mobile) : la surbrillance tourne entre les cadres visibles. */
   useEffect(() => {
     if (!sectionVisible || !slot || reduced) return;
@@ -76,7 +76,7 @@ export function PropertyDossier() {
           last = time;
           return;
         }
-        if (Date.now() - progressStamp.current < 350) {
+        if (Date.now() - progressStamp.current < 150) {
           virtual = null;
           last = time;
           return;
@@ -92,7 +92,8 @@ export function PropertyDossier() {
         }
         const dt = Math.min(100, time - last);
         last = time;
-        virtual = Math.min(1, virtual + dt / 4500);
+        const live = Number(track.style.getPropertyValue("--scene-progress") || 0);
+        virtual = Math.min(1, Math.max(virtual + dt / 2000, live));
         virtualDriving.current = true;
         update(track, virtual);
         virtualDriving.current = false;
@@ -103,7 +104,7 @@ export function PropertyDossier() {
         timer = window.setTimeout(tick, 500);
         if (document.hidden) return;
         const now = Date.now();
-        if (now - progressStamp.current < 350 || now < nextAt) return;
+        if (now - progressStamp.current < 150 || now < nextAt) return;
         const fields = [...track.querySelectorAll<HTMLElement>("[data-dossier-field]")];
         if (fields.length < 2) return;
         const current = fields.findIndex((field) => field.dataset.current === "true");
@@ -111,7 +112,7 @@ export function PropertyDossier() {
         fields.forEach((field) => {
           field.dataset.current = String(field === next);
         });
-        nextAt = now + 1300;
+        nextAt = now + 650;
       };
       timer = window.setTimeout(tick, 500);
     }
