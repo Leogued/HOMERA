@@ -19,7 +19,7 @@ const PLACEMENT: Record<DossierField["position"], string> = {
 const FIELD_ORDER = ["localisation", "statut", "proprietaire", "verification", "agent", "date"];
 const FIELDS = FIELD_ORDER.map(
   (id) => DOSSIER.fields.find((field) => field.id === id)!,
-); /* Signature : le code est d'abord seul. Le scroll lui attache un lieu, un statut, un propriétaire, un mandat et une date. Rien ne remplace le code au centre ; le dossier se construit autour de lui. Quand le visiteur s'attarde sans défiler, le récit se joue seul : les cadres apparaissent un par un, sans déplacer la page. */
+); /* Signature : le code est d'abord seul. Le scroll lui attache un lieu, un statut, un propriétaire, un mandat et une date. Rien ne remplace le code au centre ; le dossier se construit autour de lui. Dès que le visiteur s'arrête sur la section, le récit se joue seul : les cadres apparaissent un par un, sans déplacer la page. */
 export function PropertyDossier() {
   const story = useStoryCapable();
   const { reduced } = useMotionPreferences();
@@ -76,7 +76,7 @@ export function PropertyDossier() {
           last = time;
           return;
         }
-        if (Date.now() - progressStamp.current < 2500) {
+        if (Date.now() - progressStamp.current < 350) {
           virtual = null;
           last = time;
           return;
@@ -103,7 +103,7 @@ export function PropertyDossier() {
         timer = window.setTimeout(tick, 500);
         if (document.hidden) return;
         const now = Date.now();
-        if (now - progressStamp.current < 2500 || now < nextAt) return;
+        if (now - progressStamp.current < 350 || now < nextAt) return;
         const fields = [...track.querySelectorAll<HTMLElement>("[data-dossier-field]")];
         if (fields.length < 2) return;
         const current = fields.findIndex((field) => field.dataset.current === "true");
