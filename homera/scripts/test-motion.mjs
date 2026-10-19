@@ -2182,8 +2182,10 @@ await test('HOMERA §7 : défilement libre, animations sous contrôle', async ()
   for (const name of ['FeaturedProperties.tsx', 'PropertyDossier.tsx']) {
     const source = await readFile(new URL(`../components/home/${name}`, import.meta.url), 'utf8');
     const at = source.match(/useInView<HTMLElement>\(\{\s*threshold:\s*([\d.]+)/);
-    assert.ok(at && Number(at[1]) < 0.3, `${name} : seuil de visibilité atteignable (§7.4-7.5)`);
+    const max = name === 'PropertyDossier.tsx' ? 0.05 : 0.3;
+    assert.ok(at && Number(at[1]) <= max, `${name} : declenchement des les premiers pixels (§7.4-7.5)`);
   }
+  assert.ok(engine.includes('wantRef'), '§7.3 : la derniere section activee prend le creneau');
 });
 
 await test('HOMERA §9.3 : localités et types à source unique', async () => {

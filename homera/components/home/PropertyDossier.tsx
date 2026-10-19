@@ -19,7 +19,7 @@ const PLACEMENT: Record<DossierField["position"], string> = {
 const FIELD_ORDER = ["localisation", "statut", "proprietaire", "verification", "agent", "date"];
 const FIELDS = FIELD_ORDER.map(
   (id) => DOSSIER.fields.find((field) => field.id === id)!,
-); /* Signature : le code est d'abord seul. Le scroll lui attache un lieu, un statut, un propriétaire, un mandat et une date. Rien ne remplace le code au centre ; le dossier se construit autour de lui. Dès que le visiteur s'arrête sur la section, le récit se joue seul : les cadres apparaissent un par un, sans déplacer la page. */
+); /* Signature : le code est d'abord seul. Le scroll lui attache un lieu, un statut, un propriétaire, un mandat et une date. Rien ne remplace le code au centre ; le dossier se construit autour de lui. Dès que la section commence à s'afficher, le récit se joue seul : les cadres apparaissent un par un, sans déplacer la page. */
 export function PropertyDossier() {
   const story = useStoryCapable();
   const { reduced } = useMotionPreferences();
@@ -48,7 +48,7 @@ export function PropertyDossier() {
     });
   }, []);
   const trackRef = useSceneMotion<HTMLDivElement>(update, { enabled: story, mode: "sticky", response: 65 });
-  const { ref: sectionRef, inView: sectionVisible } = useInView<HTMLElement>({ threshold: 0.15, once: false });
+  const { ref: sectionRef, inView: sectionVisible } = useInView<HTMLElement>({ threshold: 0, once: false });
   const slot = useAutoSlot("dossier", sectionVisible && !reduced);
   /* Lecture automatique (§7.5) : visiteur immobile sur la section, le récit se
      joue seul — les cadres apparaissent un par un — sans déplacer la page.

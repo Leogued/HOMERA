@@ -432,9 +432,12 @@ function claimAutoSlot(id: string | null) {
 }
 
 /** Vrai quand cette section détient le créneau : les progressions des
-    sections « biens » et « identité » ne tournent jamais ensemble. */
+    sections « biens » et « identité » ne tournent jamais ensemble.
+    La dernière section activée prend le créneau aussitôt, sans attendre
+    que l'autre le libère ; quand il se libère, la section active le reprend. */
 export function useAutoSlot(id: string, want: boolean): boolean {
   const [owner, setOwner] = useState<string | null>(autoOwner);
+  const wantRef = useRef(want);
   useEffect(() => {
     const sync = () => setOwner(autoOwner);
     autoListeners.add(sync);
@@ -443,7 +446,10 @@ export function useAutoSlot(id: string, want: boolean): boolean {
     };
   }, []);
   useEffect(() => {
-    if (want && autoOwner === null) claimAutoSlot(id);
+    const rising = want && !wantRef.current;
+    wantRef.current = want;
+    if (rising) claimAutoSlot(id);
+    else if (want && autoOwner === null) claimAutoSlot(id);
     else if (!want && autoOwner === id) claimAutoSlot(null);
     return () => {
       if (autoOwner === id) claimAutoSlot(null);
