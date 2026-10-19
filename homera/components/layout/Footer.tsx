@@ -161,12 +161,6 @@ export function Footer() {
             ))}
           </ul>
         </div>
-        {/* Note en pleine largeur */}
-        <div className="mt-6 border-t border-white/10 pt-6">
-          <p className="text-caption leading-relaxed text-muted-light">
-            Système pilote : biens et chiffres de démonstration.
-          </p>
-        </div>
       </div>
     </footer>
   );
