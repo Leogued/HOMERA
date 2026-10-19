@@ -1391,6 +1391,10 @@ a {
 .homera-dossier-photo { opacity: 1; }
 .homera-dossier-connector { display: none; }
 .homera-dossier-field { transition: border-color 250ms, background-color 250ms; }
+.homera-dossier-field[data-current="true"] {
+  border-color: color-mix(in oklab, var(--homera-terracotta) 65%, var(--border));
+  background: var(--card);
+}
 .homera-protocol { padding-block: var(--space-section-scene) calc(var(--space-section-scene) + 1rem); background: var(--homera-brown); }
 .homera-protocol-copy-list { display: grid; gap: 2rem; }
 .homera-protocol-copy { border-bottom: 1px solid rgba(250,246,239,.15); padding-bottom: 2rem; }

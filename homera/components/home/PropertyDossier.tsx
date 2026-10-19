@@ -61,7 +61,7 @@ export function PropertyDossier() {
     const touch = () => {
       progressStamp.current = Date.now();
     };
-    const names = ["pointerdown", "keydown", "touchstart"] as const;
+    const names = ["pointerdown", "keydown", "touchstart", "touchmove", "wheel"] as const;
     for (const name of names) section.addEventListener(name, touch, { passive: true });
     const tick = () => {
       timer = window.setTimeout(tick, 500);

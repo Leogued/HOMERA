@@ -2167,6 +2167,9 @@ await test('HOMERA §7 : défilement libre, animations sous contrôle', async ()
   }
   const gallery = await readFile(new URL('../components/home/FeaturedProperties.tsx', import.meta.url), 'utf8');
   assert.ok(gallery.includes('autoplayDelay'), '§7.4 : délai de lecture adapté au contenu');
+  const globalCss = await readFile(new URL('../app/globals.css', import.meta.url), 'utf8');
+  const highlights = globalCss.split('.homera-dossier-field[data-current="true"]').length - 1;
+  assert.ok(highlights >= 2, '§7.5 : cadre courant visible avec et sans récit');
 });
 
 await test('HOMERA §9.3 : localités et types à source unique', async () => {
