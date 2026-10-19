@@ -1,5 +1,5 @@
 "use client";
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { ArrowDown, ShieldCheck } from "lucide-react";
 import { DOSSIER, PROPERTIES, type DossierField } from "@/lib/content";
 import { SceneHeader } from "@/components/ui/Scene";
@@ -7,7 +7,7 @@ import { Visual } from "@/components/ui/Visual";
 import { CopyReference } from "@/components/ui/CopyReference";
 import { TextRoll } from "@/components/ui/TextRoll";
 import { phase } from "@/lib/motion-math";
-import { scrollToStory, useMotionPreferences, useSceneMotion, useStoryCapable } from "@/lib/motion";
+import { scrollToStory, useAutoSlot, useInView, useMotionPreferences, useSceneMotion, useStoryCapable } from "@/lib/motion";
 const PLACEMENT: Record<DossierField["position"], string> = {
   "top-left": "lg:col-start-1 lg:row-start-1",
   "top-right": "lg:col-start-3 lg:row-start-1",
@@ -19,12 +19,14 @@ const PLACEMENT: Record<DossierField["position"], string> = {
 const FIELD_ORDER = ["localisation", "statut", "proprietaire", "verification", "agent", "date"];
 const FIELDS = FIELD_ORDER.map(
   (id) => DOSSIER.fields.find((field) => field.id === id)!,
-); /* Signature : le code est d'abord seul. Le scroll lui attache un lieu, un statut, un propriétaire, un mandat et une date. Rien ne remplace le code au centre ; le dossier se construit autour de lui. */
+); /* Signature : le code est d'abord seul. Le scroll lui attache un lieu, un statut, un propriétaire, un mandat et une date. Rien ne remplace le code au centre ; le dossier se construit autour de lui. Quand le visiteur s'attarde sans défiler, le cadre courant avance seul, de haut en bas. */
 export function PropertyDossier() {
   const story = useStoryCapable();
   const { reduced } = useMotionPreferences();
   const reference = PROPERTIES[0];
+  const progressStamp = useRef(0);
   const update = useCallback((element: HTMLDivElement, progress: number) => {
+    progressStamp.current = Date.now();
     const photo = phase(progress, 0.08, 0.27);
     const core = element.querySelector<HTMLElement>(".homera-dossier-core");
     const code = element.querySelector<HTMLElement>("#dossier-reference");
@@ -45,8 +47,48 @@ export function PropertyDossier() {
     });
   }, []);
   const trackRef = useSceneMotion<HTMLDivElement>(update, { enabled: story, mode: "sticky", response: 65 });
+  const { ref: sectionRef, inView: sectionVisible } = useInView<HTMLElement>({ threshold: 0.4, once: false });
+  const slot = useAutoSlot("dossier", sectionVisible && !reduced);
+  /* Progression interne (§7.5) : visiteur immobile sur la section, le cadre
+     courant avance seul toutes les 2,6 s, sans jamais déplacer la page. */
+  useEffect(() => {
+    if (!sectionVisible || !slot || reduced) return;
+    const section = sectionRef.current;
+    const track = trackRef.current;
+    if (!section || !track) return;
+    let timer = 0;
+    let nextAt = 0;
+    const touch = () => {
+      progressStamp.current = Date.now();
+    };
+    const names = ["pointerdown", "keydown", "touchstart"] as const;
+    for (const name of names) section.addEventListener(name, touch, { passive: true });
+    const tick = () => {
+      timer = window.setTimeout(tick, 500);
+      if (document.hidden) return;
+      const now = Date.now();
+      if (now - progressStamp.current < 2500 || now < nextAt) return;
+      const fields = [...track.querySelectorAll<HTMLElement>("[data-dossier-field]")];
+      const shown = fields.filter(
+        (field) => !story || Number(field.style.getPropertyValue("--field-reveal") || 0) > 0.5,
+      );
+      if (shown.length < 2) return;
+      const current = shown.findIndex((field) => field.dataset.current === "true");
+      const next = shown[(current + 1) % shown.length];
+      fields.forEach((field) => {
+        field.dataset.current = String(field === next);
+      });
+      nextAt = now + 2600;
+    };
+    timer = window.setTimeout(tick, 500);
+    return () => {
+      window.clearTimeout(timer);
+      for (const name of names) section.removeEventListener(name, touch);
+    };
+  }, [sectionVisible, slot, reduced, story, sectionRef, trackRef]);
   return (
     <section
+      ref={sectionRef}
       id="bien-homera"
       className="homera-scene scene-bg-tint-out relative py-[var(--space-section)] sm:py-[var(--space-section-lg)]"
       aria-labelledby="bien-homera-titre"

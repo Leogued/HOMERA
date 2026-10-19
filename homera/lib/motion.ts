@@ -417,3 +417,37 @@ export function useActiveSection(ids: readonly string[], { offset = 0.42 } = {})
 export function cssVars(vars: Record<string, string | number>): CSSProperties {
   return vars as CSSProperties;
 }
+
+/* ------------------------------------------------------------------
+   Créneau de progression automatique — une seule section à la fois
+   ------------------------------------------------------------------ */
+
+let autoOwner: string | null = null;
+const autoListeners = new Set<() => void>();
+
+function claimAutoSlot(id: string | null) {
+  if (autoOwner === id) return;
+  autoOwner = id;
+  for (const listener of autoListeners) listener();
+}
+
+/** Vrai quand cette section détient le créneau : les progressions des
+    sections « biens » et « identité » ne tournent jamais ensemble. */
+export function useAutoSlot(id: string, want: boolean): boolean {
+  const [owner, setOwner] = useState<string | null>(autoOwner);
+  useEffect(() => {
+    const sync = () => setOwner(autoOwner);
+    autoListeners.add(sync);
+    return () => {
+      autoListeners.delete(sync);
+    };
+  }, []);
+  useEffect(() => {
+    if (want && autoOwner === null) claimAutoSlot(id);
+    else if (!want && autoOwner === id) claimAutoSlot(null);
+    return () => {
+      if (autoOwner === id) claimAutoSlot(null);
+    };
+  }, [id, want, owner]);
+  return want && owner === id;
+}

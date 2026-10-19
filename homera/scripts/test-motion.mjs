@@ -2151,12 +2151,22 @@ await test('HOMERA §7 : défilement libre, animations sous contrôle', async ()
   assert.ok(engine.includes('(min-width: 1024px) and (prefers-reduced-motion: no-preference)'), '§7.8 : scènes épinglées, desktop sans réduction uniquement');
   const css = await readFile(new URL('../app/globals.css', import.meta.url), 'utf8');
   assert.ok(css.includes('.homera-story-track { height: 270svh; }'), '§7.8 : épinglage cantonné au CSS conditionnel');
+  assert.ok(engine.includes('useAutoSlot') && engine.includes('autoOwner'), '§7.3 : une seule progression automatique à la fois');
   const { readdir } = await import('node:fs/promises');
   const files = (await readdir(new URL('../components/home/', import.meta.url))).filter((name) => name.endsWith('.tsx'));
   for (const name of files) {
     const source = await readFile(new URL(`../components/home/${name}`, import.meta.url), 'utf8');
-    assert.doesNotMatch(source, /setInterval\(/, `${name} : aucune progression automatique imposée (§7.3-7.6)`);
+    assert.doesNotMatch(source, /setInterval\(/, `${name} : minuteries à coup unique, jamais d'intervalle imposé`);
+    if (name === 'FeaturedProperties.tsx' || name === 'PropertyDossier.tsx') {
+      assert.ok(source.includes('useAutoSlot'), `${name} : créneau partagé (§7.3)`);
+      assert.ok(source.includes('document.hidden'), `${name} : pause onglet caché`);
+      assert.ok(source.includes('clearTimeout'), `${name} : minuteries nettoyées`);
+    } else {
+      assert.doesNotMatch(source, /useAutoSlot/, `${name} : sans progression automatique`);
+    }
   }
+  const gallery = await readFile(new URL('../components/home/FeaturedProperties.tsx', import.meta.url), 'utf8');
+  assert.ok(gallery.includes('autoplayDelay'), '§7.4 : délai de lecture adapté au contenu');
 });
 
 await test('HOMERA §9.3 : localités et types à source unique', async () => {

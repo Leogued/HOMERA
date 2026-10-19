@@ -6,12 +6,12 @@ import { countLabel, INTENT_LABELS, TYPE_LABELS } from "@/lib/format";
 import { SceneHeader } from "@/components/ui/Scene";
 import { Reveal } from "@/components/ui/Reveal";
 import { Button } from "@/components/ui/Button";
-import { requestMotionFrame, useMotionPreferences } from "@/lib/motion";
+import { requestMotionFrame, useAutoSlot, useInView, useMotionPreferences } from "@/lib/motion";
 import { galleryDepth } from "@/lib/motion-math";
 import { PropertyCard } from "@/components/catalog/PropertyCard";
 import { PropertyPreview } from "@/components/home/PropertyPreview";
 import { useSearch } from "@/components/providers/SearchProvider";
-/* ================================================================== HOMERA — DES BIENS QUI MÉRITENT D’ÊTRE VUS ------------------------------------------------------------------ Le carrousel devient tactile, utilisable à la souris, au clavier et au doigt, avec un vrai rythme : chaque carte est un objet photographique, l’information secondaire ne se révèle qu’au survol, et le défilement reste toujours sous contrôle manuel. La sélection répond au module de recherche du hero : les critères choisis plus haut filtrent réellement cette liste. ================================================================== */ export function FeaturedProperties() {
+/* ================================================================== HOMERA — DES BIENS QUI MÉRITENT D’ÊTRE VUS ------------------------------------------------------------------ Le carrousel devient tactile, utilisable à la souris, au clavier et au doigt, avec un vrai rythme : chaque carte est un objet photographique, l’information secondaire ne se révèle qu’au survol, et le défilement manuel reste prioritaire : le carrousel avance seul quand la section est active et le visiteur immobile, et s'efface au moindre geste. La sélection répond aux intentions d'exploration : le projet choisi plus haut filtre réellement cette liste. ================================================================== */ export function FeaturedProperties() {
   const {
     visibleProperties,
     appliedResults,
@@ -31,7 +31,18 @@ import { useSearch } from "@/components/providers/SearchProvider";
     0,
     results.findIndex((property) => property.id === activeId),
   );
-  /* Les prix ne reculent jamais. Seul l'objet photographique prend de la profondeur ; le calcul se fait sur ses dimensions non transformées. */ useEffect(() => {
+  const { ref: sectionRef, inView: sectionVisible } = useInView<HTMLElement>({ threshold: 0.5, once: false });
+  const slot = useAutoSlot("biens", sectionVisible && !reduced && results.length > 1);
+  const lastActivity = useRef(0);
+  const indexRef = useRef(activeIndex);
+  indexRef.current = activeIndex;
+  /* Durée de lecture adaptée au contenu : ~280 ms par mot, entre 4,5 s et 8 s. */
+function autoplayDelay(property: Property): number {
+  const words = `${property.title} ${property.district} ${property.city}`.split(/\s+/).length;
+  return Math.min(8000, Math.max(4500, 2000 + words * 280));
+}
+
+/* Les prix ne reculent jamais. Seul l'objet photographique prend de la profondeur ; le calcul se fait sur ses dimensions non transformées. */ useEffect(() => {
     const track = trackRef.current;
     if (!track) return;
     let cancel: (() => void) | null = null;
@@ -150,9 +161,45 @@ import { useSearch } from "@/components/providers/SearchProvider";
     });
     goTo(nearest);
   };
+  /* Activité manuelle : chaque geste relance le délai d'immobilité. */
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+    const touch = () => {
+      lastActivity.current = Date.now();
+    };
+    const names = ["pointermove", "pointerdown", "keydown", "wheel", "touchstart"] as const;
+    for (const name of names) section.addEventListener(name, touch, { passive: true });
+    return () => {
+      for (const name of names) section.removeEventListener(name, touch);
+    };
+  }, [sectionRef]);
+  /* Carrousel dynamique (§7.4) : avance seul, carte par carte, quand la section
+     est active et le visiteur immobile. Interne à la piste, reprise immédiate. */
+  useEffect(() => {
+    if (!sectionVisible || !slot || reduced || preview || results.length < 2) return;
+    const current = results[activeIndex];
+    if (!current) return;
+    let timer = 0;
+    const tick = () => {
+      if (document.hidden) {
+        timer = window.setTimeout(tick, 1500);
+        return;
+      }
+      const idle = Date.now() - lastActivity.current;
+      if (idle < 2500 || drag.current.active) {
+        timer = window.setTimeout(tick, Math.max(400, 2500 - idle));
+        return;
+      }
+      goTo((indexRef.current + 1) % results.length);
+    };
+    timer = window.setTimeout(tick, autoplayDelay(current));
+    return () => window.clearTimeout(timer);
+  }, [sectionVisible, slot, reduced, preview, results, activeIndex, goTo]);
   const closePreview = useCallback(() => setPreview(null), []);
   return (
     <section
+      ref={sectionRef}
       id="biens"
       className="homera-scene scene-bg-tint relative py-[var(--space-section)] sm:py-[var(--space-section-lg)]"
       aria-labelledby="biens-titre"
