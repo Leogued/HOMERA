@@ -31,7 +31,7 @@ import { useSearch } from "@/components/providers/SearchProvider";
     0,
     results.findIndex((property) => property.id === activeId),
   );
-  const { ref: sectionRef, inView: sectionVisible } = useInView<HTMLElement>({ threshold: 0.5, once: false });
+  const { ref: sectionRef, inView: sectionVisible } = useInView<HTMLElement>({ threshold: 0.25, once: false });
   const slot = useAutoSlot("biens", sectionVisible && !reduced && results.length > 1);
   const lastActivity = useRef(0);
   const indexRef = useRef(activeIndex);

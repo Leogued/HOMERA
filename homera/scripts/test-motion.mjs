@@ -2173,6 +2173,11 @@ await test('HOMERA §7 : défilement libre, animations sous contrôle', async ()
   const dossier = await readFile(new URL('../components/home/PropertyDossier.tsx', import.meta.url), 'utf8');
   assert.ok(dossier.includes('--scene-progress'), '§7.5 : reprise depuis la progression réelle du scroll');
   assert.ok(dossier.includes('cancelAnimationFrame'), '§7.5 : boucle de lecture annulée au départ');
+  for (const name of ['FeaturedProperties.tsx', 'PropertyDossier.tsx']) {
+    const source = await readFile(new URL(`../components/home/${name}`, import.meta.url), 'utf8');
+    const at = source.match(/useInView<HTMLElement>\(\{\s*threshold:\s*([\d.]+)/);
+    assert.ok(at && Number(at[1]) < 0.3, `${name} : seuil de visibilité atteignable (§7.4-7.5)`);
+  }
 });
 
 await test('HOMERA §9.3 : localités et types à source unique', async () => {

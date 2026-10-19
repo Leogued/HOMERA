@@ -48,7 +48,7 @@ export function PropertyDossier() {
     });
   }, []);
   const trackRef = useSceneMotion<HTMLDivElement>(update, { enabled: story, mode: "sticky", response: 65 });
-  const { ref: sectionRef, inView: sectionVisible } = useInView<HTMLElement>({ threshold: 0.4, once: false });
+  const { ref: sectionRef, inView: sectionVisible } = useInView<HTMLElement>({ threshold: 0.15, once: false });
   const slot = useAutoSlot("dossier", sectionVisible && !reduced);
   /* Lecture automatique (§7.5) : visiteur immobile sur la section, le récit se
      joue seul — les cadres apparaissent un par un — sans déplacer la page.
