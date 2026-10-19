@@ -4,8 +4,8 @@ import { Reveal } from "@/components/ui/Reveal";
 /* ==================================================================
    HOMERA — PIED DE PAGE
    ------------------------------------------------------------------
-   Disposition façon référence : colonne de marque, rubriques de liens
-   sans soulignement, contacts sous la rubrique centrale, barre © /
+   Disposition façon référence : colonne de marque avec contacts, rubriques
+   de liens sans soulignement, barre © /
    liens légaux / réseaux, puis note en pleine largeur.
    Contenu et couleurs HOMERA inchangés.
    TODO : brancher les vraies adresses des réseaux sociaux (fournies
@@ -92,10 +92,23 @@ export function Footer() {
                 </span>
               </span>
             </Link>
-            <p className="max-w-sm text-note leading-relaxed text-homera-cream-dark">
-              HOMERA est la plateforme immobilière béninoise qui structure tout le parcours autour du bien — de sa
-              recherche et sa vérification jusqu’à la visite, la location, l’achat et sa gestion.
-            </p>
+            <div className="space-y-2">
+              <p className="flex items-center gap-2 text-note text-homera-cream-dark">
+                <Mail className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />
+                <a href="mailto:contact@homera.bj" className="transition-colors hover:text-white">
+                  contact@homera.bj
+                </a>
+              </p>
+              <p className="flex items-center gap-2 text-note text-homera-cream-dark">
+                <Phone className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />
+                <a href="tel:+2290100000000" className="homera-num transition-colors hover:text-white">
+                  +229 01 00 00 00 00
+                </a>
+              </p>
+              <p className="flex items-center gap-2 text-note text-homera-cream-dark">
+                <MapPin className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" /> Cotonou & Abomey-Calavi
+              </p>
+            </div>
             <p className="flex items-center gap-2 text-note font-medium text-homera-terracotta">
               <ShieldCheck className="h-4 w-4" aria-hidden="true" /> Infrastructure & identifiants numériques uniques
             </p>
@@ -116,24 +129,6 @@ export function Footer() {
                 </ul>
               </Reveal>
             ))}
-            {/* Contacts sous la rubrique La plateforme, façon « écrivez-nous » */}
-            <Reveal delay={320} y={20} className="space-y-2 sm:col-start-3">
-              <p className="flex items-center gap-2 text-note text-homera-cream-dark">
-                <Mail className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />
-                <a href="mailto:contact@homera.bj" className="transition-colors hover:text-white">
-                  contact@homera.bj
-                </a>
-              </p>
-              <p className="flex items-center gap-2 text-note text-homera-cream-dark">
-                <Phone className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />
-                <a href="tel:+2290100000000" className="homera-num transition-colors hover:text-white">
-                  +229 01 00 00 00 00
-                </a>
-              </p>
-              <p className="flex items-center gap-2 text-note text-homera-cream-dark">
-                <MapPin className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" /> Cotonou & Abomey-Calavi
-              </p>
-            </Reveal>
           </div>
         </div>
         {/* Barre © / liens légaux / réseaux */}
