@@ -5,9 +5,8 @@ import { DOSSIER, PROPERTIES, type DossierField } from "@/lib/content";
 import { SceneHeader } from "@/components/ui/Scene";
 import { Visual } from "@/components/ui/Visual";
 import { CopyReference } from "@/components/ui/CopyReference";
-import { TextRoll } from "@/components/ui/TextRoll";
 import { phase } from "@/lib/motion-math";
-import { scrollToStory, useAutoSlot, useInView, useMotionPreferences, useSceneMotion, useStoryCapable } from "@/lib/motion";
+import { useAutoSlot, useInView, useMotionPreferences } from "@/lib/motion";
 const PLACEMENT: Record<DossierField["position"], string> = {
   "top-left": "lg:col-start-1 lg:row-start-1",
   "top-right": "lg:col-start-3 lg:row-start-1",
@@ -19,15 +18,11 @@ const PLACEMENT: Record<DossierField["position"], string> = {
 const FIELD_ORDER = ["localisation", "statut", "proprietaire", "verification", "agent", "date"];
 const FIELDS = FIELD_ORDER.map(
   (id) => DOSSIER.fields.find((field) => field.id === id)!,
-); /* Signature : le code est d'abord seul. Le scroll lui attache un lieu, un statut, un propriétaire, un mandat et une date. Rien ne remplace le code au centre ; le dossier se construit autour de lui. Dès que la section commence à s'afficher, le récit se joue seul : les cadres apparaissent un par un, sans déplacer la page. */
+); /* Signature : le code est d'abord seul, puis l'animation lui attache un lieu, un statut, un propriétaire, un mandat et une date — une seule fois, dès que la section apparaît. Pas de scroll : une animation seulement, figée à la fin. Rien ne remplace le code au centre ; le dossier se construit autour de lui. */
 export function PropertyDossier() {
-  const story = useStoryCapable();
   const { reduced } = useMotionPreferences();
   const reference = PROPERTIES[0];
-  const progressStamp = useRef(0);
-  const virtualDriving = useRef(false);
   const update = useCallback((element: HTMLDivElement, progress: number) => {
-    if (!virtualDriving.current) progressStamp.current = Date.now();
     const photo = phase(progress, 0.08, 0.27);
     const core = element.querySelector<HTMLElement>(".homera-dossier-core");
     const code = element.querySelector<HTMLElement>("#dossier-reference");
@@ -47,81 +42,43 @@ export function PropertyDossier() {
       field.dataset.current = String(index === active);
     });
   }, []);
-  const trackRef = useSceneMotion<HTMLDivElement>(update, { enabled: story, mode: "sticky", response: 65 });
+  const trackRef = useRef<HTMLDivElement>(null);
   const { ref: sectionRef, inView: sectionVisible } = useInView<HTMLElement>({ threshold: 0, once: false });
   const slot = useAutoSlot("dossier", sectionVisible && !reduced);
-  /* Lecture automatique (§7.5) : visiteur immobile sur la section, le récit se
-     joue seul — les cadres apparaissent un par un — sans déplacer la page.
-     Récit (desktop) : la timeline avance d'elle-même en 2 s. Sans récit
-     (mobile) : la surbrillance tourne entre les cadres visibles. */
+  /* Animation pure (§7.5) : dès que la section apparaît, la timeline se joue
+     une seule fois en 2 s — photo puis cadres — puis tout reste figé.
+     Aucun lien avec le scroll : le défilement ne fait que passer. */
+  const played = useRef(false);
   useEffect(() => {
-    if (!sectionVisible || !slot || reduced) return;
-    const section = sectionRef.current;
+    if (!sectionVisible || !slot || reduced || played.current) return;
     const track = trackRef.current;
-    if (!section || !track) return;
-    let timer = 0;
+    if (!track) return;
+    track.dataset.motionReady = "true";
+    track.dataset.playing = "true";
     let raf = 0;
-    let nextAt = 0;
-    let virtual: number | null = null;
+    let elapsed = 0;
     let last = 0;
-    const touch = () => {
-      progressStamp.current = Date.now();
-    };
-    const names = ["pointerdown", "keydown", "touchstart", "touchmove", "wheel"] as const;
-    for (const name of names) section.addEventListener(name, touch, { passive: true });
-    if (story) {
-      const frame = (time: number) => {
-        raf = requestAnimationFrame(frame);
-        if (document.hidden) {
-          last = time;
-          return;
-        }
-        if (Date.now() - progressStamp.current < 150) {
-          virtual = null;
-          last = time;
-          return;
-        }
-        if (virtual === null) {
-          const real = Number(track.style.getPropertyValue("--scene-progress") || 0);
-          if (real >= 0.999) {
-            last = time;
-            return;
-          }
-          virtual = real;
-          last = time;
-        }
-        const dt = Math.min(100, time - last);
-        last = time;
-        const live = Number(track.style.getPropertyValue("--scene-progress") || 0);
-        virtual = Math.min(1, Math.max(virtual + dt / 2000, live));
-        virtualDriving.current = true;
-        update(track, virtual);
-        virtualDriving.current = false;
-      };
+    const DURATION = 2000;
+    const frame = (time: number) => {
       raf = requestAnimationFrame(frame);
-    } else {
-      const tick = () => {
-        timer = window.setTimeout(tick, 500);
-        if (document.hidden) return;
-        const now = Date.now();
-        if (now - progressStamp.current < 150 || now < nextAt) return;
-        const fields = [...track.querySelectorAll<HTMLElement>("[data-dossier-field]")];
-        if (fields.length < 2) return;
-        const current = fields.findIndex((field) => field.dataset.current === "true");
-        const next = fields[(current + 1) % fields.length];
-        fields.forEach((field) => {
-          field.dataset.current = String(field === next);
-        });
-        nextAt = now + 650;
-      };
-      timer = window.setTimeout(tick, 500);
-    }
-    return () => {
-      window.clearTimeout(timer);
-      cancelAnimationFrame(raf);
-      for (const name of names) section.removeEventListener(name, touch);
+      if (document.hidden) {
+        last = time;
+        return;
+      }
+      if (last === 0) last = time;
+      elapsed += Math.min(100, time - last);
+      last = time;
+      const progress = Math.min(1, elapsed / DURATION);
+      update(track, progress);
+      if (progress >= 1) {
+        played.current = true;
+        delete track.dataset.playing;
+        cancelAnimationFrame(raf);
+      }
     };
-  }, [sectionVisible, slot, reduced, story, sectionRef, trackRef, update]);
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  }, [sectionVisible, slot, reduced, trackRef, update]);
   return (
     <section
       ref={sectionRef}
@@ -137,9 +94,9 @@ export function PropertyDossier() {
           title={<span id="bien-homera-titre">Chaque bien possède une identité.</span>}
           intro="Chez HOMERA, un bien n’est pas seulement une annonce. Une référence unique relie le lieu à son dossier."
         />{" "}
-        <div ref={trackRef} className="homera-story-track homera-dossier mt-10">
+        <div ref={trackRef} className="homera-dossier mt-10">
           {" "}
-          <div data-story-sticky className="homera-story-sticky flex flex-col justify-center">
+          <div className="flex flex-col justify-center">
             {" "}
             <div className="homera-dossier-orbit grid gap-5 sm:grid-cols-2 lg:grid-cols-[1fr_1.65fr_1fr] lg:grid-rows-3 lg:gap-x-10 lg:gap-y-5">
               {" "}
@@ -204,20 +161,12 @@ export function PropertyDossier() {
             </div>{" "}
             <div className="homera-story-tools mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 border-t border-border/60 pt-5">
               {" "}
-              {story && (
-                <button
-                  type="button"
-                  onClick={() => scrollToStory(trackRef.current, 0.98, reduced)}
-                  className="homera-underline min-h-10 homera-accent-ink text-caption font-medium"
-                >
-                  <TextRoll>Voir toute la fiche</TextRoll>
-                </button>
-              )}{" "}
+              {/* récit supprimé : animation pure, voir §7.5 */}
               <a
                 href="#protocole"
                 className="homera-underline inline-flex min-h-10 items-center gap-2 text-caption font-medium text-muted"
               >
-                {story ? "Passer le récit" : "Comprendre la méthode"}
+                Comprendre la méthode
                 <ArrowDown className="h-3 w-3" aria-hidden="true" />
               </a>{" "}
             </div>{" "}

@@ -1395,6 +1395,12 @@ a {
   border-color: color-mix(in oklab, var(--homera-terracotta) 65%, var(--border));
   background: var(--card);
 }
+@media (max-width: 1023.98px) {
+  .homera-dossier[data-playing="true"] .homera-dossier-field {
+    opacity: var(--field-reveal, 1);
+    transform: translate3d(0, calc((1 - var(--field-reveal, 1)) * 12px), 0);
+  }
+}
 .homera-protocol { padding-block: var(--space-section-scene) calc(var(--space-section-scene) + 1rem); background: var(--homera-brown); }
 .homera-protocol-copy-list { display: grid; gap: 2rem; }
 .homera-protocol-copy { border-bottom: 1px solid rgba(250,246,239,.15); padding-bottom: 2rem; }

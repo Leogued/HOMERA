@@ -294,7 +294,7 @@ await test('HOMERA : dossier sans note ni mention, projection finale centrée', 
   const dossier = await readFile(new URL('../components/home/PropertyDossier.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(dossier, /DOSSIER\.note/, 'note retirée du dossier d’accueil');
   assert.doesNotMatch(dossier, /Dossier de démonstration/, 'mention de démonstration retirée');
-  assert.ok(dossier.includes('Voir toute la fiche'), 'le bouton du récit reste');
+  assert.doesNotMatch(dossier, /Voir toute la fiche/, 'bouton de récit supprimé avec le scroll (§7.5)');
   assert.ok(dossier.includes('href="#protocole"'), 'le lien vers le protocole reste');
   const content = await readFile(new URL('../lib/content.ts', import.meta.url), 'utf8');
   assert.ok(content.includes('L’identifiant relie le bien'), 'la donnée reste pour la page À propos');
@@ -2160,7 +2160,8 @@ await test('HOMERA §7 : défilement libre, animations sous contrôle', async ()
     if (name === 'FeaturedProperties.tsx' || name === 'PropertyDossier.tsx') {
       assert.ok(source.includes('useAutoSlot'), `${name} : créneau partagé (§7.3)`);
       assert.ok(source.includes('document.hidden'), `${name} : pause onglet caché`);
-      assert.ok(source.includes('clearTimeout'), `${name} : minuteries nettoyées`);
+      const cleanup = name === 'PropertyDossier.tsx' ? 'cancelAnimationFrame' : 'clearTimeout';
+      assert.ok(source.includes(cleanup), `${name} : minuteries nettoyées`);
     } else {
       assert.doesNotMatch(source, /useAutoSlot/, `${name} : sans progression automatique`);
     }
@@ -2171,14 +2172,11 @@ await test('HOMERA §7 : défilement libre, animations sous contrôle', async ()
   const highlights = globalCss.split('.homera-dossier-field[data-current="true"]').length - 1;
   assert.ok(highlights >= 2, '§7.5 : cadre courant visible avec et sans récit');
   const dossier = await readFile(new URL('../components/home/PropertyDossier.tsx', import.meta.url), 'utf8');
-  assert.ok(dossier.includes('--scene-progress'), '§7.5 : reprise depuis la progression réelle du scroll');
   assert.ok(dossier.includes('cancelAnimationFrame'), '§7.5 : boucle de lecture annulée au départ');
-  const gates = [...dossier.matchAll(/progressStamp\.current < (\d+)/g)].map((m) => Number(m[1]));
-  assert.ok(gates.length === 2 && gates.every((g) => g < 500), '§7.5 : demarrage immediat des la section active');
-  const storyMs = dossier.match(/virtual \+ dt \/ (\d+)/);
-  assert.ok(storyMs && Number(storyMs[1]) <= 2500, '§7.5 : lecture du recit en 2 s');
-  const stepMs = dossier.match(/nextAt = now \+ (\d+)/);
-  assert.ok(stepMs && Number(stepMs[1]) <= 800, '§7.5 : rotation mobile nerveuse');
+  assert.ok(globalCss.includes('data-playing'), '§7.5 : apparition des cadres sur mobile');
+  assert.doesNotMatch(dossier, /useSceneMotion|scrollToStory|progressStamp/, '§7.5 : animation pure, plus liee au scroll');
+  const playMs = dossier.match(/const DURATION = (\d+);/);
+  assert.ok(playMs && Number(playMs[1]) <= 2500, '§7.5 : lecture unique en 2 s, puis fige');
   for (const name of ['FeaturedProperties.tsx', 'PropertyDossier.tsx']) {
     const source = await readFile(new URL(`../components/home/${name}`, import.meta.url), 'utf8');
     const at = source.match(/useInView<HTMLElement>\(\{\s*threshold:\s*([\d.]+)/);
