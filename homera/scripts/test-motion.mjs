@@ -302,6 +302,12 @@ await test('HOMERA : dossier sans note ni mention, projection finale centrée', 
   assert.ok(trust.includes('mx-auto w-full max-w-2xl text-center'), 'le bloc final est centré');
   assert.ok(trust.includes('mt-7 flex flex-wrap items-center justify-center gap-3'), 'les deux boutons restent centrés');
 });
+await test('HOMERA : rangée légale courte façon référence', async () => {
+  const footer = await readFile(new URL('../components/layout/Footer.tsx', import.meta.url), 'utf8');
+  const block = footer.match(/const LEGAL = \[(.*?)\];/s);
+  assert.ok(block, 'bloc LEGAL présent');
+  assert.strictEqual(block[1].split('href:').length - 1, 3, '3 liens légaux, pas plus');
+});
 await test('HOMERA : la légende du carrousel est incrustée sur la photo', async () => {
   const card = await readFile(new URL('../components/catalog/PropertyCard.tsx', import.meta.url), 'utf8');
   assert.ok(card.includes('homera-property-caption pointer-events-none absolute inset-x-0 bottom-0'), 'légende ancrée au bas, clics traversants');

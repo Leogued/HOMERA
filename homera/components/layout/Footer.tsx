@@ -45,13 +45,9 @@ const COLUMNS = [
   },
 ];
 const LEGAL = [
-  { label: "Mentions légales", href: "/mentions-legales" },
   { label: "Politique de confidentialité", href: "/legal/confidentialite" },
   { label: "Conditions générales (CGU)", href: "/legal/conditions-generales" },
-  { label: "Cookies", href: "/cookies" },
-  { label: "Règles de visite", href: "/regles-visite" },
-  { label: "Règles de location", href: "/regles-location" },
-  { label: "Vérification HOMERA", href: "/politique-verification" },
+  { label: "Mentions légales", href: "/mentions-legales" },
 ];
 export function Footer() {
   return (
