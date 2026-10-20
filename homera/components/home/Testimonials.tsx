@@ -36,7 +36,7 @@ export function Testimonials() {
                   key={voice.name}
                   delay={index * 90}
                   y={20}
-                  className="rounded-xl border border-border/60 bg-card/50 p-6"
+                  className="rounded-xl border border-border/60 bg-card p-6"
                 >
                   <figure className="flex h-full flex-col">
                     <Quote className="h-5 w-5 text-homera-terracotta" aria-hidden="true" />

@@ -308,6 +308,7 @@ await test('HOMERA : protocole en carrousel manuel, aucune lecture auto', async 
   const protocol = await readFile(new URL('../components/home/VerificationProtocol.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(protocol, /useSceneMotion|scrollToStory|setTimeout|setInterval|requestAnimationFrame/, 'index piloté aux flèches seules');
   assert.ok(protocol.includes('data-offset'), 'positions coverflow');
+  assert.ok(protocol.includes('bg-homera-brown-light'), 'cartes opaques');
   const css = await readFile(new URL('../app/globals.css', import.meta.url), 'utf8');
   assert.ok(css.includes('.homera-protocol-coverflow'), 'scène coverflow compilée');
 });
@@ -315,6 +316,7 @@ await test('HOMERA : témoignages réels uniquement', async () => {
   const section = await readFile(new URL('../components/home/Testimonials.tsx', import.meta.url), 'utf8');
   assert.ok(section.includes('TESTIMONIALS'), 'la section lit la source unique');
   assert.ok(section.includes('TESTIMONIALS.length'), 'état honnête sans récit');
+  assert.doesNotMatch(section, /bg-card\/50/, 'cartes pleines, sans transparence');
   const content = await readFile(new URL('../lib/content.ts', import.meta.url), 'utf8');
   assert.ok(content.includes('zéro faux témoignage'), 'règle éditoriale rappelée');
 });

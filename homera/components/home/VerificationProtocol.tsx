@@ -46,7 +46,7 @@ export function VerificationProtocol() {
                         data-offset={index - active}
                         aria-hidden={active !== index ? true : undefined}
                         inert={active !== index}
-                        className="homera-protocol-card scroll-mt-32 rounded-xl border border-white/20 bg-white/5 p-6 sm:p-8"
+                        className="homera-protocol-card scroll-mt-32 rounded-xl border border-white/20 bg-homera-brown-light p-6 sm:p-8"
                       >
                         {" "}
                         <h3 className="max-w-lg font-serif text-display-fluid text-homera-paper">{step.title}</h3>{" "}
