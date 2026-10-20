@@ -302,6 +302,13 @@ await test('HOMERA : dossier sans note ni mention, projection finale centrée', 
   assert.ok(trust.includes('mx-auto w-full max-w-2xl text-center'), 'le bloc final est centré');
   assert.ok(trust.includes('mt-7 flex flex-wrap items-center justify-center gap-3'), 'les deux boutons restent centrés');
 });
+await test('HOMERA : témoignages réels uniquement', async () => {
+  const section = await readFile(new URL('../components/home/Testimonials.tsx', import.meta.url), 'utf8');
+  assert.ok(section.includes('TESTIMONIALS'), 'la section lit la source unique');
+  assert.ok(section.includes('TESTIMONIALS.length'), 'état honnête sans récit');
+  const content = await readFile(new URL('../lib/content.ts', import.meta.url), 'utf8');
+  assert.ok(content.includes('zéro faux témoignage'), 'règle éditoriale rappelée');
+});
 await test('HOMERA : rangée légale courte façon référence', async () => {
   const footer = await readFile(new URL('../components/layout/Footer.tsx', import.meta.url), 'utf8');
   const block = footer.match(/const LEGAL = \[(.*?)\];/s);

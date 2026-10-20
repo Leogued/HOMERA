@@ -1486,3 +1486,18 @@ export const FINAL_CTA = {
   media: "cta-night",
   alt: "Villa éclairée à la nuit tombante, ouverte sur son jardin et son bassin",
 } as const;
+
+/* ------------------------------------------------------------------
+   TÉMOIGNAGES — uniquement des récits réels
+   Règle éditoriale absolue : zéro faux témoignage. Tant que le client
+   n'a fourni aucun récit vérifié, la liste reste vide et la section
+   affiche un appel à contribution honnête, sans fausse preuve sociale.
+   ------------------------------------------------------------------ */
+
+export type Testimonial = {
+  quote: string;
+  name: string;
+  context: string;
+};
+
+export const TESTIMONIALS: Testimonial[] = [];

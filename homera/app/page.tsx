@@ -8,6 +8,7 @@ import { PropertyDossier } from "@/components/home/PropertyDossier";
 import { VerificationProtocol } from "@/components/home/VerificationProtocol";
 import { ServicesSection } from "@/components/home/ServicesSection";
 import { EditorialSection } from "@/components/home/EditorialSection";
+import { Testimonials } from "@/components/home/Testimonials";
 import { TrustVisionSection } from "@/components/home/TrustVisionSection";
 import { AppDownloadPopup } from "@/components/home/AppDownloadPopup";
 import { Footer } from "@/components/layout/Footer";
@@ -48,7 +49,7 @@ export default function Home() {
         <main className="flex-1">
           {" "}
           <Hero /> <StatsSection /> <IdentityStatement /> <ExplorerSection /> <FeaturedProperties />{" "}
-          <PropertyDossier /> <VerificationProtocol /> <ServicesSection /> <EditorialSection /> <TrustVisionSection />{" "}
+          <PropertyDossier /> <VerificationProtocol /> <ServicesSection /> <EditorialSection /> <Testimonials /> <TrustVisionSection />{" "}
           <AppDownloadPopup />{" "}
         </main>{" "}
         <Footer />{" "}
