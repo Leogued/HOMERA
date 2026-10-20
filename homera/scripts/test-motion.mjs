@@ -284,7 +284,8 @@ await test('HOMERA : la sélection affiche tout, sans boutons de filtre', async 
   assert.doesNotMatch(featured, /Explorer tout le catalogue/, 'appel vers l’explorateur retiré');
   assert.doesNotMatch(featured, /Sélection de démonstration/, 'mention de démonstration retirée');
   assert.ok(featured.includes('aria-label="Choisir un bien"'), 'les pastilles de navigation restent');
-  assert.ok(featured.includes('aria-label="Bien précédent"'), 'les flèches du carrousel restent');
+  assert.doesNotMatch(featured, /aria-label="Bien (précédent|suivant)"/, 'flèches du carrousel retirées');
+  assert.ok(featured.includes('mt-6 flex items-center justify-center'), 'pastilles parfaitement centrées');
   assert.doesNotMatch(featured, /setActiveFilter/, 'plus d’état de filtre rapide');
   assert.ok(featured.includes('isSearching ? appliedResults : visibleProperties'), 'les intentions d’exploration filtrent la sélection (la recherche du hero redirige)');
   const provider = await readFile(new URL('../components/providers/SearchProvider.tsx', import.meta.url), 'utf8');
@@ -320,9 +321,12 @@ await test('HOMERA : vitrine payante 10 emplacements, infini, mention', async ()
   assert.ok(featured.includes('.slice(0, SPOTLIGHT_SPOTS)'), 'vitrine plafonnée à 10');
   assert.ok(featured.includes('((index %'), 'défilement infini');
   assert.ok(featured.includes('Sélection sponsorisée'), 'mention publicitaire honnête');
-  assert.doesNotMatch(featured, /atStart|atEnd/, 'flèches toujours actives');
+  assert.doesNotMatch(featured, /atStart|atEnd/, 'aucun état de fin de piste');
   const content = await readFile(new URL('../lib/content.ts', import.meta.url), 'utf8');
   assert.ok(content.includes('SPOTLIGHT_SPOTS = 10'), '10 emplacements exactement');
+  assert.ok(featured.includes('[0, 1, 2].flatMap'), 'boucle à trois exemplaires');
+  assert.ok(featured.includes('clone={copy !== 1}'), 'exemplaires voisins masqués');
+  assert.ok(featured.includes('normalizeLoop'), 'recalage sans couture');
 });
 await test('HOMERA : témoignages réels uniquement', async () => {
   const section = await readFile(new URL('../components/home/Testimonials.tsx', import.meta.url), 'utf8');

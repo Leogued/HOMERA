@@ -1,6 +1,6 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowLeft, ArrowRight, Eye, RotateCcw } from "lucide-react";
+import { ArrowRight, Eye, RotateCcw } from "lucide-react";
 import { SPOTLIGHT_SPOTS, type Property } from "@/lib/content";
 import { countLabel, INTENT_LABELS, TYPE_LABELS } from "@/lib/format";
 import { SceneHeader } from "@/components/ui/Scene";
@@ -11,7 +11,22 @@ import { galleryDepth } from "@/lib/motion-math";
 import { PropertyCard } from "@/components/catalog/PropertyCard";
 import { PropertyPreview } from "@/components/home/PropertyPreview";
 import { useSearch } from "@/components/providers/SearchProvider";
-/* ================================================================== HOMERA — DES BIENS QUI MÉRITENT D’ÊTRE VUS ------------------------------------------------------------------ Le carrousel devient tactile, utilisable à la souris, au clavier et au doigt, avec un vrai rythme : chaque carte est un objet photographique, l’information secondaire ne se révèle qu’au survol, et le défilement manuel reste prioritaire : le carrousel avance seul quand la section est active et le visiteur immobile, et s'efface au moindre geste. La sélection répond aux intentions d'exploration : le projet choisi plus haut filtre réellement cette liste. Vitrine limitée à 10 emplacements sponsorisés : quand des biens occupent des emplacements actifs, seuls eux s'affichent (mention « sponsorisée ») ; sinon le catalogue filtré prend le relais, toujours plafonné à 10. Défilement infini aux flèches : après le dernier bien, le premier revient. ================================================================== */ export function FeaturedProperties() {
+/* ================================================================== HOMERA — DES BIENS QUI MÉRITENT D’ÊTRE VUS ------------------------------------------------------------------ Le carrousel devient tactile, utilisable à la souris, au clavier et au doigt, avec un vrai rythme : chaque carte est un objet photographique, l’information secondaire ne se révèle qu’au survol, et le défilement manuel reste prioritaire : le carrousel avance seul quand la section est active et le visiteur immobile, et s'efface au moindre geste. La sélection répond aux intentions d'exploration : le projet choisi plus haut filtre réellement cette liste. Vitrine limitée à 10 emplacements sponsorisés : quand des biens occupent des emplacements actifs, seuls eux s'affichent (mention « sponsorisée ») ; sinon le catalogue filtré prend le relais, toujours plafonné à 10. Boucle infinie sans couture : chaque bien existe en trois exemplaires, la piste se recale sans saut visible, les points centrés restent synchronisés. ================================================================== */ /* Boucle sans couture : quand le regard quitte l'exemplaire central,
+   la piste se recale d'une largeur de jeu complète, en pixels identiques. */
+function normalizeLoop(track: HTMLElement, copies: number): void {
+  if (copies === 0) return;
+  const cards = track.querySelectorAll<HTMLElement>("[data-gallery-item]");
+  if (cards.length < copies * 3) return;
+  const middle = cards[copies].offsetLeft;
+  const setWidth = middle - cards[0].offsetLeft;
+  if (setWidth <= 0) return;
+  const low = middle - track.clientWidth / 2;
+  const high = middle + setWidth - track.clientWidth / 2;
+  if (track.scrollLeft < low) track.scrollLeft += setWidth;
+  else if (track.scrollLeft >= high) track.scrollLeft -= setWidth;
+}
+
+export function FeaturedProperties() {
   const {
     visibleProperties,
     appliedResults,
@@ -26,8 +41,12 @@ import { useSearch } from "@/components/providers/SearchProvider";
     .sort((a, b) => (a.spotlightRank ?? 0) - (b.spotlightRank ?? 0));
   const sponsored = slotted.length > 0;
   const results = (sponsored ? slotted : pool).slice(0, SPOTLIGHT_SPOTS);
+  /* Boucle sans couture : trois exemplaires consécutifs, voisins masqués. */
+  const looped = [0, 1, 2].flatMap((copy) =>
+    results.map((property, index) => ({ property, index, copy })),
+  );
   const trackRef = useRef<HTMLDivElement | null>(null);
-  const previousResults = useRef(results);
+  const previousResults = useRef<Property[] | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [preview, setPreview] = useState<Property | null>(null);
   const activeIndex = Math.max(
@@ -51,6 +70,7 @@ function autoplayDelay(property: Property): number {
     let cancel: (() => void) | null = null;
     const measure = () => {
       cancel = null;
+      normalizeLoop(track, results.length);
       const cards = [...track.querySelectorAll<HTMLElement>("[data-gallery-item]")];
       const focus = track.scrollLeft + track.clientWidth / 2;
       let closest = 0;
@@ -68,12 +88,17 @@ function autoplayDelay(property: Property): number {
         card.style.setProperty("--gallery-lift", `${enabled ? depth.lift : 0}px`);
       }
       track.dataset.galleryReady = "true";
-      setActiveId(results[closest]?.id ?? null);
+      setActiveId(results[closest % results.length]?.id ?? null);
     };
     const queue = () => {
       if (!cancel) cancel = requestMotionFrame(measure);
     };
-    if (previousResults.current !== results) track.scrollLeft = 0;
+    if (previousResults.current !== results && results.length > 0) {
+      const laid = [...track.querySelectorAll<HTMLElement>("[data-gallery-item]")];
+      const setWidth =
+        laid.length >= results.length * 3 ? laid[results.length].offsetLeft - laid[0].offsetLeft : 0;
+      track.scrollLeft = Math.max(0, setWidth);
+    }
     previousResults.current = results;
     queue();
     track.addEventListener("scroll", queue, { passive: true });
@@ -91,17 +116,32 @@ function autoplayDelay(property: Property): number {
   const goTo = useCallback(
     (index: number) => {
       const track = trackRef.current;
-      const cards = track?.querySelectorAll<HTMLElement>("[data-gallery-item]");
-      if (!track || !cards?.length) return;
-      const count = cards.length;
-      const card = cards[((index % count) + count) % count];
-      const jumps = index < 0 || index >= count;
+      const copies = results.length;
+      if (!track || copies === 0) return;
+      normalizeLoop(track, copies);
+      const cards = [...track.querySelectorAll<HTMLElement>("[data-gallery-item]")];
+      if (cards.length < copies) return;
+      const bounded = ((index % copies) + copies) % copies;
+      const focus = track.scrollLeft + track.clientWidth / 2;
+      /* Vise l'exemplaire le plus proche du regard : trajet minimal dans les
+         deux sens, y compris du dernier bien vers le premier. */
+      let target = cards[0];
+      let distance = Infinity;
+      for (const [raw, card] of cards.entries()) {
+        if (raw % copies !== bounded) continue;
+        const center = card.offsetLeft + card.offsetWidth / 2;
+        const gap = Math.abs(center - focus);
+        if (gap < distance) {
+          distance = gap;
+          target = card;
+        }
+      }
       track.scrollTo({
-        left: card.offsetLeft + card.offsetWidth / 2 - track.clientWidth / 2,
-        behavior: reduced || jumps ? "auto" : "smooth",
+        left: target.offsetLeft + target.offsetWidth / 2 - track.clientWidth / 2,
+        behavior: reduced ? "auto" : "smooth",
       });
     },
-    [reduced],
+    [reduced, results],
   );
   const slide = (direction: 1 | -1) => goTo(activeIndex + direction);
   const drag = useRef({ active: false, startX: 0, startLeft: 0, moved: false, lastX: 0, lastTime: 0, velocity: 0 });
@@ -317,48 +357,26 @@ function autoplayDelay(property: Property): number {
                 className="homera-property-gallery homera-noscrollbar relative -mx-4 flex gap-6 overflow-x-auto overscroll-x-contain sm:-mx-6 lg:-mx-8 [touch-action:pan-x_pan-y] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-terracotta focus-visible:ring-offset-4 focus-visible:ring-offset-background"
               >
                 {" "}
-                {results.map((property, index) => (
+                {looped.map(({ property, index, copy }) => (
                   <PropertyCard
-                    key={property.id}
+                    key={`${property.id}-vitrine-${copy}`}
                     property={property}
                     layout="gallery"
                     active={index === activeIndex}
+                    clone={copy !== 1}
                     onOpen={() => setPreview(property)}
                     onFocus={() => goTo(index)}
                   />
                 ))}{" "}
               </div>{" "}
-              {/* Commandes */}{" "}
-              <div className="mt-6 flex items-center justify-between gap-6">
+              {/* Points centrés : seule commande visible, synchronisée sur la boucle. */}{" "}
+              <div className="mt-6 flex items-center justify-center">
                 {" "}
-                <div className="flex items-center gap-3">
-                  {" "}
-                  <button
-                    type="button"
-                    onClick={() => slide(-1)}
-                    aria-label="Bien précédent"
-                    className="homera-press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
-                  >
-                    {" "}
-                    <ArrowLeft className="h-4 w-4" aria-hidden="true" />{" "}
-                  </button>{" "}
-                  <button
-                    type="button"
-                    onClick={() => slide(1)}
-                    aria-label="Bien suivant"
-                    className="homera-press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
-                  >
-                    {" "}
-                    <ArrowRight className="h-4 w-4" aria-hidden="true" />{" "}
-                  </button>{" "}
-                </div>{" "}
-                <div className="flex min-w-0 flex-1 items-center justify-end gap-3 sm:gap-4">
-                  {" "}
-                  <div
-                    role="group"
-                    aria-label="Choisir un bien"
-                    className="homera-noscrollbar flex max-w-[45vw] gap-1 overflow-x-auto"
-                  >
+                <div
+                  role="group"
+                  aria-label="Choisir un bien"
+                  className="homera-noscrollbar flex max-w-full justify-center gap-1 overflow-x-auto"
+                >
                     {" "}
                     {results.map((property, index) => (
                       <button
@@ -373,7 +391,6 @@ function autoplayDelay(property: Property): number {
                       </button>
                     ))}{" "}
                   </div>{" "}
-                </div>{" "}
               </div>{" "}
             </div>{" "}
           </>

@@ -41,6 +41,8 @@ export function PropertyCard(props: {
   onOpen?: () => void;
   onFocus?: () => void;
   priority?: boolean;
+  /** Boucle du carrousel : exemplaire voisin, masqué aux lecteurs et au clavier. */
+  clone?: boolean;
 }) {
   const router = useRouter();
   const { property, layout = "grid" } = props;
@@ -155,6 +157,8 @@ export function PropertyCard(props: {
     return (
       <article
         data-gallery-item
+        aria-hidden={props.clone || undefined}
+        inert={props.clone || undefined}
         data-card
         data-active={props.active}
         onFocusCapture={(event) => {
