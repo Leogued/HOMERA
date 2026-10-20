@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useRef, useState } from "react";
+import { useState } from "react";
 import {
   AlertCircle,
   ArrowDown,
@@ -18,8 +18,6 @@ import {
 import { DEMO_DATA, DOSSIER, VERIFICATION_STEPS, type VerificationStep } from "@/lib/content";
 import { SceneHeader } from "@/components/ui/Scene";
 import { Visual } from "@/components/ui/Visual";
-import { scrollToStory, useMotionPreferences, useSceneMotion, useStoryCapable } from "@/lib/motion";
-import { storyIndex, storyPosition } from "@/lib/motion-math";
 const ICONS: Record<VerificationStep["icon"], LucideIcon> = {
   file: FileCheck,
   lock: Lock,
@@ -28,32 +26,16 @@ const ICONS: Record<VerificationStep["icon"], LucideIcon> = {
   shield: ShieldCheck,
   check: CheckCircle,
   award: Award,
-}; /* Un même dossier traverse sept états. La colonne centrale se transforme, la pièce visuelle de droite reste un objet continu. Sur mobile et en mouvement réduit, les sept étapes sont intégralement dépliées. */
+}; /* Un même dossier traverse sept états, au rythme du visiteur : carrousel manuel façon coverflow — carte centrale nette, voisines en retrait, flèches précédent/suivant. Aucune lecture automatique, aucun pilotage par le scroll. */
 export function VerificationProtocol() {
-  const story = useStoryCapable();
-  const { reduced } = useMotionPreferences();
   const [active, setActive] = useState(0);
-  const activeRef = useRef(0);
-  const update = useCallback((element: HTMLDivElement, progress: number) => {
-    const next = storyIndex(progress, VERIFICATION_STEPS.length);
-    if (activeRef.current !== next) {
-      activeRef.current = next;
-      setActive(next);
-    }
-  }, []);
-  const trackRef = useSceneMotion<HTMLDivElement>(update, { enabled: story, mode: "sticky", response: 65 });
   const goTo = (index: number) => {
-    const next = Math.max(0, Math.min(VERIFICATION_STEPS.length - 1, index));
-    if (story) scrollToStory(trackRef.current, storyPosition(next, VERIFICATION_STEPS.length), reduced);
-    else
-      document
-        .getElementById(`protocol-step-${next}`)
-        ?.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" });
+    setActive(Math.max(0, Math.min(VERIFICATION_STEPS.length - 1, index)));
   };
   return (
     <section
       id="protocole"
-      className="homera-scene homera-protocol homera-on-dark relative"
+      className="homera-scene homera-protocol homera-on-dark relative overflow-hidden"
       aria-labelledby="protocole-titre"
     >
       {" "}
@@ -70,15 +52,15 @@ export function VerificationProtocol() {
           }
           intro="Sept étapes pour examiner un dossier, documenter les vérifications et déterminer si un bien peut être publié sur HOMERA."
         />{" "}
-        <div ref={trackRef} className="homera-story-track homera-protocol-track mt-12">
+        <div className="mt-12">
           {" "}
-          <div data-story-sticky className="homera-story-sticky flex flex-col justify-center">
+          <div className="flex flex-col justify-center">
             {" "}
             <div className="homera-protocol-layout grid items-center gap-8 lg:grid-cols-[1.1fr_1fr] lg:gap-12">
               {" "}
               <div className="min-w-0">
                 {" "}
-                <ol className="homera-protocol-copy-list">
+                <ol className="homera-protocol-coverflow" aria-roledescription="carrousel" aria-label="Étapes de vérification">
                   {" "}
                   {VERIFICATION_STEPS.map((step, index) => {
                     return (
@@ -86,9 +68,10 @@ export function VerificationProtocol() {
                         key={step.num}
                         id={`protocol-step-${index}`}
                         data-active={active === index}
-                        aria-hidden={story && active !== index ? true : undefined}
-                        inert={story && active !== index}
-                        className="homera-protocol-copy scroll-mt-32"
+                        data-offset={index - active}
+                        aria-hidden={active !== index ? true : undefined}
+                        inert={active !== index}
+                        className="homera-protocol-card scroll-mt-32 rounded-xl border border-white/20 bg-white/5 p-6 sm:p-8"
                       >
                         {" "}
                         <h3 className="max-w-lg font-serif text-display-fluid text-homera-paper">{step.title}</h3>{" "}
@@ -102,8 +85,7 @@ export function VerificationProtocol() {
                     );
                   })}{" "}
                 </ol>{" "}
-                {story && (
-                  <div className="homera-protocol-arrows mt-7 flex items-center gap-3">
+                <div className="mt-7 flex items-center gap-3">
                     {" "}
                     <button
                       type="button"
@@ -124,11 +106,10 @@ export function VerificationProtocol() {
                       <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </button>{" "}
                   </div>
-                )}{" "}
               </div>{" "}
-              <ProtocolVisual stage={story ? active : 6} />{" "}
+              <ProtocolVisual stage={active} />{" "}
             </div>{" "}
-            <div className="homera-story-tools mt-10 flex items-center justify-between gap-5 border-t border-white/15 pt-5 text-caption text-homera-cream-dark">
+            <div className="mt-10 flex items-center justify-between gap-5 border-t border-white/15 pt-5 text-caption text-homera-cream-dark">
               {" "}
               <p className="inline-flex items-center gap-2">
                 <ShieldCheck className="h-3.5 w-3.5 text-homera-amber" aria-hidden="true" />
@@ -138,7 +119,7 @@ export function VerificationProtocol() {
                 href="#services"
                 className="homera-underline inline-flex min-h-10 items-center gap-2 text-homera-cream-dark"
               >
-                {story ? "Passer le récit" : "Découvrir les services"}
+                Découvrir les services
                 <ArrowDown className="h-3 w-3" aria-hidden="true" />
               </a>{" "}
             </div>{" "}

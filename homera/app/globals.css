@@ -1417,6 +1417,36 @@ a {
 .homera-protocol-agent[data-show="true"] { opacity: 1; transform: none; }
 .homera-protocol-stamp { opacity: 0; transform: translateY(4px) scale(.97); transition: opacity 400ms, transform 550ms var(--homera-ease); }
 .homera-protocol-stamp[data-show="true"] { opacity: 1; transform: none; }
+/* COVERFLOW MANUEL DU PROTOCOLE : carte centrale nette, voisines en retrait
+   de chaque côté. 100 % manuel : seul l'index choisi aux flèches compte. */
+.homera-protocol-coverflow { position: relative; display: grid; }
+.homera-protocol-card {
+  position: relative;
+  grid-area: 1 / 1;
+  will-change: transform, opacity;
+  transition: transform 550ms var(--homera-ease), opacity 450ms var(--homera-ease);
+}
+.homera-protocol-card[data-offset="0"] { opacity: 1; z-index: 3; }
+.homera-protocol-card[data-offset="1"],
+.homera-protocol-card[data-offset="-1"] { opacity: .5; z-index: 2; }
+.homera-protocol-card[data-offset="1"] { transform: translateX(56%) scale(.88); }
+.homera-protocol-card[data-offset="-1"] { transform: translateX(-56%) scale(.88); }
+.homera-protocol-card[data-offset="2"],
+.homera-protocol-card[data-offset="-2"] { opacity: .28; z-index: 1; }
+.homera-protocol-card[data-offset="2"] { transform: translateX(100%) scale(.78); }
+.homera-protocol-card[data-offset="-2"] { transform: translateX(-100%) scale(.78); }
+.homera-protocol-card[data-offset="3"],
+.homera-protocol-card[data-offset="4"],
+.homera-protocol-card[data-offset="5"],
+.homera-protocol-card[data-offset="6"] { opacity: 0; z-index: 0; transform: translateX(130%) scale(.7); }
+.homera-protocol-card[data-offset="-3"],
+.homera-protocol-card[data-offset="-4"],
+.homera-protocol-card[data-offset="-5"],
+.homera-protocol-card[data-offset="-6"] { opacity: 0; z-index: 0; transform: translateX(-130%) scale(.7); }
+.homera-protocol-card:not([data-offset="0"]) { pointer-events: none; }
+@media (prefers-reduced-motion: reduce) {
+  .homera-protocol-card { transition: none; }
+}
 
 @media (min-width: 1024px) and (prefers-reduced-motion: no-preference) {
   .homera-story-track { height: 270svh; }
