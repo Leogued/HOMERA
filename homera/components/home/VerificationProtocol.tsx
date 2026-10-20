@@ -3,11 +3,18 @@ import { useState } from "react";
 import { AlertCircle, ArrowDown, ArrowLeft, ArrowRight, ShieldCheck } from "lucide-react";
 import { DEMO_DATA, VERIFICATION_STEPS } from "@/lib/content";
 import { SceneHeader } from "@/components/ui/Scene";
-/* Un même dossier traverse sept états, au rythme du visiteur : carrousel manuel façon coverflow — carte centrale nette, voisines en retrait, flèches précédent/suivant. Aucune lecture automatique, aucun pilotage par le scroll. Colonne unique centrée, sans visuel latéral. */
+/* Un même dossier traverse sept états, au rythme du visiteur : carrousel manuel façon coverflow — carte centrale nette, voisines en retrait, flèches précédent/suivant. Aucune lecture automatique, aucun pilotage par le scroll. Colonne unique centrée, sans visuel latéral. Cartes toutes opaques, défilement infini : après la dernière étape, la première revient. */
 export function VerificationProtocol() {
   const [active, setActive] = useState(0);
+  const count = VERIFICATION_STEPS.length;
   const goTo = (index: number) => {
-    setActive(Math.max(0, Math.min(VERIFICATION_STEPS.length - 1, index)));
+    setActive(((index % count) + count) % count);
+  };
+  const offsetOf = (index: number) => {
+    let offset = (index - active) % count;
+    if (offset > count / 2) offset -= count;
+    if (offset < -count / 2) offset += count;
+    return offset;
   };
   return (
     <section
@@ -43,7 +50,7 @@ export function VerificationProtocol() {
                         key={step.num}
                         id={`protocol-step-${index}`}
                         data-active={active === index}
-                        data-offset={index - active}
+                        data-offset={offsetOf(index)}
                         aria-hidden={active !== index ? true : undefined}
                         inert={active !== index}
                         className="homera-protocol-card scroll-mt-32 rounded-xl border border-white/20 bg-homera-brown-light p-6 sm:p-8"
@@ -65,18 +72,16 @@ export function VerificationProtocol() {
                     <button
                       type="button"
                       onClick={() => goTo(active - 1)}
-                      disabled={active === 0}
                       aria-label="Étape précédente"
-                      className="homera-press flex h-10 w-10 items-center justify-center rounded-full border border-white/25 text-homera-paper disabled:opacity-30"
+                      className="homera-press flex h-10 w-10 items-center justify-center rounded-full border border-white/25 text-homera-paper"
                     >
                       <ArrowLeft className="h-4 w-4" aria-hidden="true" />
                     </button>{" "}
                     <button
                       type="button"
                       onClick={() => goTo(active + 1)}
-                      disabled={active === VERIFICATION_STEPS.length - 1}
                       aria-label="Étape suivante"
-                      className="homera-press flex h-10 w-10 items-center justify-center rounded-full border border-white/25 text-homera-paper disabled:opacity-30"
+                      className="homera-press flex h-10 w-10 items-center justify-center rounded-full border border-white/25 text-homera-paper"
                     >
                       <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </button>{" "}

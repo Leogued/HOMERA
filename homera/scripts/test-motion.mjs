@@ -308,9 +308,11 @@ await test('HOMERA : protocole en carrousel manuel, aucune lecture auto', async 
   const protocol = await readFile(new URL('../components/home/VerificationProtocol.tsx', import.meta.url), 'utf8');
   assert.doesNotMatch(protocol, /useSceneMotion|scrollToStory|setTimeout|setInterval|requestAnimationFrame/, 'index piloté aux flèches seules');
   assert.ok(protocol.includes('data-offset'), 'positions coverflow');
+  assert.ok(protocol.includes('offsetOf') && protocol.includes('% count'), 'défilement infini');
   assert.ok(protocol.includes('bg-homera-brown-light'), 'cartes opaques');
   const css = await readFile(new URL('../app/globals.css', import.meta.url), 'utf8');
   assert.ok(css.includes('.homera-protocol-coverflow'), 'scène coverflow compilée');
+  assert.doesNotMatch(css, /\.homera-protocol-card\[data-offset[^}]*opacity: \.\d/, 'cartes visibles opaques, texte jamais transparent');
 });
 await test('HOMERA : témoignages réels uniquement', async () => {
   const section = await readFile(new URL('../components/home/Testimonials.tsx', import.meta.url), 'utf8');
