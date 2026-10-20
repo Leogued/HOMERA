@@ -240,7 +240,8 @@ await test('HOMERA : prix immobiles, police d’interface et absence de souris c
 await test('HOMERA : le protocole se navigue aux flèches, sans pastilles numérotées', async () => {
   const source = await readFile(new URL('../components/home/VerificationProtocol.tsx', import.meta.url), 'utf8');
   /* Décision validée : les 7 pastilles « 01 »–« 07 » et le compteur ont été
-     retirés ; seules les flèches précédent/suivant naviguent. */
+     retirés ; seules les flèches précédent/suivant naviguent. Visuel latéral
+     retiré ensuite sur ordre client : colonne unique, sans colonne vide. */
   assert.doesNotMatch(source, /homera-protocol-nav/);
   assert.doesNotMatch(source, /grid-cols-7/);
   assert.doesNotMatch(source, /Mouvement/);
@@ -248,7 +249,8 @@ await test('HOMERA : le protocole se navigue aux flèches, sans pastilles numér
   assert.ok(source.includes('aria-label="Étape précédente"'));
   assert.ok(source.includes('aria-label="Étape suivante"'));
   assert.ok(source.includes('h-10 w-10'), 'cibles tactiles de 40 px minimum');
-  assert.ok(source.includes('lg:grid-cols-[1.1fr_1fr]'), 'plus de colonne vide pour la navigation retirée');
+  assert.ok(source.includes('mx-auto max-w-3xl'), 'colonne unique centrée, sans colonne vide');
+  assert.doesNotMatch(source, /ProtocolVisual/, 'visuel latéral retiré');
 });
 await test('HOMERA : l’accueil n’affiche ni numéro ni sur-titre de chapitre', async () => {
   const home = (name) => readFile(new URL(`../components/home/${name}`, import.meta.url), 'utf8');

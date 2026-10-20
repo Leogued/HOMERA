@@ -1,32 +1,9 @@
 "use client";
 import { useState } from "react";
-import {
-  AlertCircle,
-  ArrowDown,
-  ArrowLeft,
-  ArrowRight,
-  Award,
-  Check,
-  CheckCircle,
-  FileCheck,
-  Lock,
-  Search,
-  ShieldCheck,
-  UserCheck,
-  type LucideIcon,
-} from "lucide-react";
-import { DEMO_DATA, DOSSIER, VERIFICATION_STEPS, type VerificationStep } from "@/lib/content";
+import { AlertCircle, ArrowDown, ArrowLeft, ArrowRight, ShieldCheck } from "lucide-react";
+import { DEMO_DATA, VERIFICATION_STEPS } from "@/lib/content";
 import { SceneHeader } from "@/components/ui/Scene";
-import { Visual } from "@/components/ui/Visual";
-const ICONS: Record<VerificationStep["icon"], LucideIcon> = {
-  file: FileCheck,
-  lock: Lock,
-  search: Search,
-  user: UserCheck,
-  shield: ShieldCheck,
-  check: CheckCircle,
-  award: Award,
-}; /* Un même dossier traverse sept états, au rythme du visiteur : carrousel manuel façon coverflow — carte centrale nette, voisines en retrait, flèches précédent/suivant. Aucune lecture automatique, aucun pilotage par le scroll. */
+/* Un même dossier traverse sept états, au rythme du visiteur : carrousel manuel façon coverflow — carte centrale nette, voisines en retrait, flèches précédent/suivant. Aucune lecture automatique, aucun pilotage par le scroll. Colonne unique centrée, sans visuel latéral. */
 export function VerificationProtocol() {
   const [active, setActive] = useState(0);
   const goTo = (index: number) => {
@@ -56,9 +33,7 @@ export function VerificationProtocol() {
           {" "}
           <div className="flex flex-col justify-center">
             {" "}
-            <div className="homera-protocol-layout grid items-center gap-8 lg:grid-cols-[1.1fr_1fr] lg:gap-12">
-              {" "}
-              <div className="min-w-0">
+            <div className="mx-auto max-w-3xl">
                 {" "}
                 <ol className="homera-protocol-coverflow" aria-roledescription="carrousel" aria-label="Étapes de vérification">
                   {" "}
@@ -85,7 +60,7 @@ export function VerificationProtocol() {
                     );
                   })}{" "}
                 </ol>{" "}
-                <div className="mt-7 flex items-center gap-3">
+                <div className="mt-7 flex items-center justify-center gap-3">
                     {" "}
                     <button
                       type="button"
@@ -106,8 +81,6 @@ export function VerificationProtocol() {
                       <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </button>{" "}
                   </div>
-              </div>{" "}
-              <ProtocolVisual stage={active} />{" "}
             </div>{" "}
             <div className="mt-10 flex items-center justify-between gap-5 border-t border-white/15 pt-5 text-caption text-homera-cream-dark">
               {" "}
@@ -149,91 +122,5 @@ export function VerificationProtocol() {
         </aside>{" "}
       </div>{" "}
     </section>
-  );
-}
-function ProtocolVisual({ stage }: { stage: number }) {
-  const step = VERIFICATION_STEPS[stage];
-  const Icon = ICONS[step.icon];
-  return (
-    <div
-      className="homera-protocol-object relative mx-auto w-full max-w-[27rem]"
-      role="img"
-      aria-label={`Dossier illustratif ${DOSSIER.reference} : ${step.title}`}
-    >
-      {" "}
-      <div
-        aria-hidden="true"
-        className="homera-protocol-paper absolute inset-0 rounded-card border border-white/20 bg-homera-brown-light"
-      />{" "}
-      <div
-        className="homera-protocol-record relative overflow-hidden rounded-card border border-white/25 bg-homera-paper text-homera-brown"
-        data-stage={stage}
-      >
-        {" "}
-        <div className="flex items-center justify-between border-b border-homera-brown/15 px-5 py-4">
-          {" "}
-          <span className="text-micro font-semibold uppercase tracking-[.2em]">Dossier HOMERA</span>{" "}
-          <Icon className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />{" "}
-        </div>{" "}
-        <div className="relative">
-          {" "}
-          <Visual
-            mediaKey="prop-villa"
-            alt=""
-            sizes="(min-width: 1024px) 28vw, 85vw"
-            veil="none"
-            quality={68}
-            className="h-[10rem] w-full"
-          />{" "}
-          <div className="homera-protocol-scan" aria-hidden="true" data-show={stage === 1 || stage === 4} />{" "}
-          <span className="absolute bottom-3 left-4 rounded-full border border-white/30 bg-homera-brown/85 px-3 py-1 text-micro font-medium text-homera-paper">
-            Fidjrossè · Cotonou
-          </span>{" "}
-        </div>{" "}
-        <div className="homera-protocol-body p-5">
-          {" "}
-          <p className="homera-num font-mono text-body-sm font-medium">{DOSSIER.reference}</p>{" "}
-          <div className="mt-5 space-y-3">
-            {" "}
-            {["Informations du bien", "Pièces documentaires", "Identité & mandat"].map((label, index) => (
-              <div key={label} className="flex items-center justify-between gap-3 text-caption">
-                {" "}
-                <span>{label}</span>{" "}
-                <span
-                  className="homera-protocol-check flex h-5 w-5 items-center justify-center rounded-full border border-homera-brown/25"
-                  data-checked={stage >= index + 1}
-                >
-                  {" "}
-                  <Check className="h-3 w-3" aria-hidden="true" />{" "}
-                </span>{" "}
-              </div>
-            ))}{" "}
-          </div>{" "}
-          <div
-            className="homera-protocol-agent mt-5 flex items-center gap-3 border-t border-homera-brown/15 pt-4"
-            data-show={stage >= 3}
-          >
-            {" "}
-            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-homera-brown/8">
-              <UserCheck className="h-4 w-4 text-homera-terracotta" aria-hidden="true" />
-            </span>{" "}
-            <div>
-              <p className="text-micro text-homera-paper-muted">Mandataire habilité</p>
-              <p className="homera-num mt-1 font-mono text-caption">HOM-A-0214</p>
-            </div>{" "}
-          </div>{" "}
-          <div className="mt-5 flex min-h-7 items-center justify-end gap-3 text-micro">
-            {" "}
-            <span
-              className="homera-protocol-stamp inline-flex items-center gap-1.5 rounded-full border border-homera-terracotta/45 bg-homera-terracotta/8 px-2.5 py-1 font-semibold text-homera-brown"
-              data-show={stage >= 4}
-            >
-              <ShieldCheck className="h-3 w-3" aria-hidden="true" />
-              {stage >= 6 ? "Publiable" : "Statut attribué"}
-            </span>{" "}
-          </div>{" "}
-        </div>{" "}
-      </div>{" "}
-    </div>
   );
 }
