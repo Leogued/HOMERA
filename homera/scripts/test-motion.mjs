@@ -314,6 +314,16 @@ await test('HOMERA : protocole en carrousel manuel, aucune lecture auto', async 
   assert.ok(css.includes('.homera-protocol-coverflow'), 'scène coverflow compilée');
   assert.doesNotMatch(css, /\.homera-protocol-card\[data-offset[^}]*opacity: \.\d/, 'cartes visibles opaques, texte jamais transparent');
 });
+await test('HOMERA : vitrine payante 10 emplacements, infini, mention', async () => {
+  const featured = await readFile(new URL('../components/home/FeaturedProperties.tsx', import.meta.url), 'utf8');
+  assert.ok(featured.includes('SPOTLIGHT_SPOTS'), 'plafond partagé');
+  assert.ok(featured.includes('.slice(0, SPOTLIGHT_SPOTS)'), 'vitrine plafonnée à 10');
+  assert.ok(featured.includes('((index %'), 'défilement infini');
+  assert.ok(featured.includes('Sélection sponsorisée'), 'mention publicitaire honnête');
+  assert.doesNotMatch(featured, /atStart|atEnd/, 'flèches toujours actives');
+  const content = await readFile(new URL('../lib/content.ts', import.meta.url), 'utf8');
+  assert.ok(content.includes('SPOTLIGHT_SPOTS = 10'), '10 emplacements exactement');
+});
 await test('HOMERA : témoignages réels uniquement', async () => {
   const section = await readFile(new URL('../components/home/Testimonials.tsx', import.meta.url), 'utf8');
   assert.ok(section.includes('TESTIMONIALS'), 'la section lit la source unique');

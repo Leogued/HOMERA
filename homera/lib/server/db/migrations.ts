@@ -560,6 +560,36 @@ CREATE INDEX IF NOT EXISTS idx_messages_conversation  ON messages(conversation_i
    004 — PHOTOS TÉLÉVERSÉES : nom d’origine, poids, date d’envoi
    ------------------------------------------------------------------ */
 
+const M005 = `
+/* Vitrine payante « Des biens qui méritent d'être vus » : 10 emplacements
+   exactement (CHECK 1-10), un bien par emplacement, un emplacement par bien.
+   until NULL = sans fin ; une ligne expirée n'est plus servie et son
+   emplacement redevient attribuable. */
+CREATE TABLE IF NOT EXISTS spotlight_slots (
+  slot         INTEGER PRIMARY KEY CHECK (slot BETWEEN 1 AND 10),
+  property_id  TEXT NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+  since        TEXT NOT NULL,
+  until        TEXT,
+  note         TEXT NOT NULL DEFAULT '',
+  created_at   TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  UNIQUE (property_id)
+);
+/* Demandes d'emplacement : le paiement reste à brancher (agrégateur
+   Mobile Money à évaluer en bac à sable) ; en attendant, l'approbation
+   manuelle attribue l'emplacement et garde la trace de la décision. */
+CREATE TABLE IF NOT EXISTS spotlight_requests (
+  id            TEXT PRIMARY KEY,
+  property_id   TEXT NOT NULL REFERENCES properties(id) ON DELETE CASCADE,
+  contact       TEXT NOT NULL,
+  status        TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending','approved','rejected','cancelled')),
+  slot          INTEGER NULL REFERENCES spotlight_slots(slot) ON DELETE SET NULL,
+  created_at    TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ','now')),
+  decided_at    TEXT,
+  decision_note TEXT NOT NULL DEFAULT ''
+);
+CREATE INDEX IF NOT EXISTS idx_spotlight_requests_property ON spotlight_requests(property_id);
+CREATE INDEX IF NOT EXISTS idx_spotlight_requests_status ON spotlight_requests(status);
+`;
 const M004 = `
 /* Un visuel de la médiathèque n’a ni fichier ni poids : les trois
    colonnes restent vides, aucune ligne existante n’est modifiée. */
@@ -588,5 +618,10 @@ export const MIGRATIONS: Migration[] = [
     id: "004",
     name: "photos-televersees-nom-poids-date",
     sql: M004,
+  },
+  {
+    id: "005",
+    name: "vitrine-payante-emplacements-demandes",
+    sql: M005,
   },
 ];

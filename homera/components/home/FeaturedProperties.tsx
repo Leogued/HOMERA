@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowLeft, ArrowRight, Eye, RotateCcw } from "lucide-react";
-import type { Property } from "@/lib/content";
+import { SPOTLIGHT_SPOTS, type Property } from "@/lib/content";
 import { countLabel, INTENT_LABELS, TYPE_LABELS } from "@/lib/format";
 import { SceneHeader } from "@/components/ui/Scene";
 import { Reveal } from "@/components/ui/Reveal";
@@ -11,7 +11,7 @@ import { galleryDepth } from "@/lib/motion-math";
 import { PropertyCard } from "@/components/catalog/PropertyCard";
 import { PropertyPreview } from "@/components/home/PropertyPreview";
 import { useSearch } from "@/components/providers/SearchProvider";
-/* ================================================================== HOMERA — DES BIENS QUI MÉRITENT D’ÊTRE VUS ------------------------------------------------------------------ Le carrousel devient tactile, utilisable à la souris, au clavier et au doigt, avec un vrai rythme : chaque carte est un objet photographique, l’information secondaire ne se révèle qu’au survol, et le défilement manuel reste prioritaire : le carrousel avance seul quand la section est active et le visiteur immobile, et s'efface au moindre geste. La sélection répond aux intentions d'exploration : le projet choisi plus haut filtre réellement cette liste. ================================================================== */ export function FeaturedProperties() {
+/* ================================================================== HOMERA — DES BIENS QUI MÉRITENT D’ÊTRE VUS ------------------------------------------------------------------ Le carrousel devient tactile, utilisable à la souris, au clavier et au doigt, avec un vrai rythme : chaque carte est un objet photographique, l’information secondaire ne se révèle qu’au survol, et le défilement manuel reste prioritaire : le carrousel avance seul quand la section est active et le visiteur immobile, et s'efface au moindre geste. La sélection répond aux intentions d'exploration : le projet choisi plus haut filtre réellement cette liste. Vitrine limitée à 10 emplacements sponsorisés : quand des biens occupent des emplacements actifs, seuls eux s'affichent (mention « sponsorisée ») ; sinon le catalogue filtré prend le relais, toujours plafonné à 10. Défilement infini aux flèches : après le dernier bien, le premier revient. ================================================================== */ export function FeaturedProperties() {
   const {
     visibleProperties,
     appliedResults,
@@ -20,11 +20,14 @@ import { useSearch } from "@/components/providers/SearchProvider";
     resetCriteria,
   } = useSearch();
   const { reduced, compact, coarse } = useMotionPreferences();
-  const results = isSearching ? appliedResults : visibleProperties;
+  const pool = isSearching ? appliedResults : visibleProperties;
+  const slotted = pool
+    .filter((property) => property.spotlightRank != null)
+    .sort((a, b) => (a.spotlightRank ?? 0) - (b.spotlightRank ?? 0));
+  const sponsored = slotted.length > 0;
+  const results = (sponsored ? slotted : pool).slice(0, SPOTLIGHT_SPOTS);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const previousResults = useRef(results);
-  const [atStart, setAtStart] = useState(true);
-  const [atEnd, setAtEnd] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [preview, setPreview] = useState<Property | null>(null);
   const activeIndex = Math.max(
@@ -49,7 +52,6 @@ function autoplayDelay(property: Property): number {
     const measure = () => {
       cancel = null;
       const cards = [...track.querySelectorAll<HTMLElement>("[data-gallery-item]")];
-      const max = Math.max(0, track.scrollWidth - track.clientWidth);
       const focus = track.scrollLeft + track.clientWidth / 2;
       let closest = 0;
       let distance = Infinity;
@@ -67,8 +69,6 @@ function autoplayDelay(property: Property): number {
       }
       track.dataset.galleryReady = "true";
       setActiveId(results[closest]?.id ?? null);
-      setAtStart(track.scrollLeft < 4);
-      setAtEnd(max < 4 || track.scrollLeft > max - 4);
     };
     const queue = () => {
       if (!cancel) cancel = requestMotionFrame(measure);
@@ -93,10 +93,12 @@ function autoplayDelay(property: Property): number {
       const track = trackRef.current;
       const cards = track?.querySelectorAll<HTMLElement>("[data-gallery-item]");
       if (!track || !cards?.length) return;
-      const card = cards[Math.max(0, Math.min(cards.length - 1, index))];
+      const count = cards.length;
+      const card = cards[((index % count) + count) % count];
+      const jumps = index < 0 || index >= count;
       track.scrollTo({
         left: card.offsetLeft + card.offsetWidth / 2 - track.clientWidth / 2,
-        behavior: reduced ? "auto" : "smooth",
+        behavior: reduced || jumps ? "auto" : "smooth",
       });
     },
     [reduced],
@@ -212,6 +214,11 @@ function autoplayDelay(property: Property): number {
           title={<span id="biens-titre">Des biens qui méritent d’être vus</span>}
           intro="Chaque bien possède son identifiant unique HOMERA et sa fiche de vérification d’identité et de mandat."
         />{" "}
+        {sponsored && results.length > 0 && (
+          <p className="mt-4 text-center text-micro font-semibold uppercase tracking-[0.18em] text-muted">
+            Sélection sponsorisée
+          </p>
+        )}{" "}
         {/* Recherche active : ce qui a été demandé, et comment l’élargir */}{" "}
         {isSearching && (
           <Reveal y={12} duration={520} className="mt-8">
@@ -329,9 +336,8 @@ function autoplayDelay(property: Property): number {
                   <button
                     type="button"
                     onClick={() => slide(-1)}
-                    disabled={atStart}
                     aria-label="Bien précédent"
-                    className="homera-press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta disabled:opacity-35"
+                    className="homera-press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
                   >
                     {" "}
                     <ArrowLeft className="h-4 w-4" aria-hidden="true" />{" "}
@@ -339,9 +345,8 @@ function autoplayDelay(property: Property): number {
                   <button
                     type="button"
                     onClick={() => slide(1)}
-                    disabled={atEnd}
                     aria-label="Bien suivant"
-                    className="homera-press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta disabled:opacity-35"
+                    className="homera-press flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
                   >
                     {" "}
                     <ArrowRight className="h-4 w-4" aria-hidden="true" />{" "}

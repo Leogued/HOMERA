@@ -34,6 +34,7 @@ const reportReasonsModule = await import("../lib/reports");
 const messaging = await import("../lib/server/services/messaging");
 const applicationsModule = await import("../lib/server/services/applications");
 const contracts = await import("../lib/server/services/contracts");
+const spotlight = await import("../lib/server/services/spotlight");
 const uploads = await import("../lib/server/uploads");
 const passwordModule = await import("../lib/server/security/password");
 const sessionModule = await import("../lib/server/security/session");
@@ -826,6 +827,89 @@ check(
 const newDistrict = extended.find((option) => option.value === "Centre-Ville");
 check("son quartier apparaît avec la ville en précision", newDistrict?.hint === "Grand-Popo");
 check("aucune fausse localité inventée", extended.every((option) => option.value.length > 0));
+section("11. Vitrine payante : 10 emplacements, demandes, expirations");
+const vitrineActor = { id: "HOM-DEMO-ADMIN", label: "admin@homera.demo" };
+const vitrineCatalog = properties.listProperties(db);
+const demoIds = new Set(
+  spotlight.listSpotlight(db, { includeExpired: true }).map((entry) => entry.propertyId),
+);
+const freeIds = vitrineCatalog.map((property) => property.id).filter((id) => !demoIds.has(id));
+const vpid = (i: number) => freeIds[i];
+const vitrineSeeded = spotlight.listSpotlight(db);
+check(
+  "2 emplacements démo actifs à l'amorçage",
+  vitrineSeeded.length === 2 && vitrineSeeded[0].slot === 1 && vitrineSeeded[1].slot === 2,
+);
+check("l'emplacement expiré n'est pas servi", vitrineSeeded.every((entry) => entry.slot !== 5));
+check(
+  "l'expiré reste lisible avec l'option",
+  spotlight.listSpotlight(db, { includeExpired: true }).length === 3,
+);
+const attr3 = spotlight.assignSpotlight(db, vitrineActor, 3, vpid(3), {});
+check("attribution libre acceptée", attr3.ok && attr3.data.entry.slot === 3);
+check("emplacement 0 refusé", !spotlight.assignSpotlight(db, vitrineActor, 0, vpid(4), {}).ok);
+check("emplacement 11 refusé", !spotlight.assignSpotlight(db, vitrineActor, 11, vpid(4), {}).ok);
+check("bien inconnu refusé", !spotlight.assignSpotlight(db, vitrineActor, 4, "bien-inexistant", {}).ok);
+const occupe = spotlight.assignSpotlight(db, vitrineActor, 1, vpid(4), {});
+check("emplacement occupé refusé", !occupe.ok && occupe.code === "occupe");
+const doublon = spotlight.assignSpotlight(db, vitrineActor, 4, vitrineSeeded[0].propertyId, {});
+check("même bien deux fois refusé", !doublon.ok && doublon.code === "doublon");
+const passee = spotlight.assignSpotlight(db, vitrineActor, 4, vpid(4), { until: "2020-01-01" });
+check("fin déjà passée refusée", !passee.ok && passee.code === "fin");
+check("emplacement expiré réattribuable", spotlight.assignSpotlight(db, vitrineActor, 5, vpid(4), {}).ok);
+check(
+  "libération effective",
+  spotlight.releaseSpotlight(db, vitrineActor, 3).ok &&
+    !spotlight.listSpotlight(db).some((entry) => entry.slot === 3),
+);
+check("libération d'un vide refusée", !spotlight.releaseSpotlight(db, vitrineActor, 3).ok);
+const demande = spotlight.requestSpotlight(db, vpid(5), "owner@example.com");
+check("demande créée en attente", demande.ok && demande.data.request.status === "pending");
+check("demande sur bien inconnu refusée", !spotlight.requestSpotlight(db, "bien-inexistant", "x@y.zz").ok);
+check("contact vide refusé", !spotlight.requestSpotlight(db, vpid(6), "  ").ok);
+check(
+  "deuxième attente refusée",
+  !spotlight.requestSpotlight(db, vpid(5), "autre@example.com").ok,
+);
+if (!demande.ok) throw new Error("demande vitrine impossible");
+const approuvee = spotlight.decideSpotlightRequest(db, vitrineActor, demande.data.request.id, "approved", { slot: 4 });
+check(
+  "approbation sur emplacement choisi",
+  approuvee.ok &&
+    approuvee.data.request.slot === 4 &&
+    spotlight.listSpotlight(db).some((entry) => entry.slot === 4),
+);
+const demande2 = spotlight.requestSpotlight(db, vpid(6), "owner2@example.com");
+if (!demande2.ok) throw new Error("deuxième demande vitrine impossible");
+const auto = spotlight.decideSpotlightRequest(db, vitrineActor, demande2.data.request.id, "approved", {});
+check("approbation sans choix prend le premier libre", auto.ok && auto.data.request.slot === 3);
+const demande3 = spotlight.requestSpotlight(db, vpid(7), "owner3@example.com");
+if (!demande3.ok) throw new Error("troisième demande vitrine impossible");
+const refusee = spotlight.decideSpotlightRequest(db, vitrineActor, demande3.data.request.id, "rejected", {});
+check("refus enregistré", refusee.ok && refusee.data.request.status === "rejected");
+check(
+  "demande traitée non rejouable",
+  !spotlight.decideSpotlightRequest(db, vitrineActor, demande3.data.request.id, "approved", {}).ok,
+);
+const demande4 = spotlight.requestSpotlight(db, vpid(8), "owner4@example.com");
+if (!demande4.ok) throw new Error("quatrième demande vitrine impossible");
+check(
+  "annulation possible",
+  spotlight.cancelSpotlightRequest(db, demande4.data.request.id).ok,
+);
+check(
+  "annulation rejouée refusée",
+  !spotlight.cancelSpotlightRequest(db, demande4.data.request.id).ok,
+);
+for (const slot of [6, 7, 8, 9, 10]) {
+  const rempli = spotlight.assignSpotlight(db, vitrineActor, slot, vpid(slot + 5), {});
+  if (!rempli.ok) throw new Error(`remplissage vitrine impossible : ${rempli.message}`);
+}
+const saturee = spotlight.requestSpotlight(db, vpid(20), "owner5@example.com");
+if (!saturee.ok) throw new Error("demande de saturation impossible");
+const sansPlace = spotlight.decideSpotlightRequest(db, vitrineActor, saturee.data.request.id, "approved", {});
+check("vitrine complète : approbation impossible", !sansPlace.ok && sansPlace.code === "complet");
+check("aucun emplacement libre", spotlight.firstFreeSlot(db) === null);
 closeDb();
 
 /* ------------------------------------------------------------------

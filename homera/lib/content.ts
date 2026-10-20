@@ -364,7 +364,13 @@ export type Property = {
    * leur visuel principal.
    */
   gallery?: { mediaKey: string; alt: string }[];
+  /** Vitrine payante « Des biens qui méritent d'être vus » : rang de
+      l'emplacement (1-10). Absent = hors vitrine. Renseigné par le serveur. */
+  spotlightRank?: number | null;
 };
+
+/** La vitrine payante compte exactement 10 emplacements. */
+export const SPOTLIGHT_SPOTS = 10;
 
 export const PROPERTIES: Property[] = [
   {

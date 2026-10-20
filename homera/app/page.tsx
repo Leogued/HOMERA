@@ -14,6 +14,7 @@ import { AppDownloadPopup } from "@/components/home/AppDownloadPopup";
 import { Footer } from "@/components/layout/Footer";
 import { SearchProvider } from "@/components/providers/SearchProvider";
 import { listProperties } from "@/lib/server/services/properties";
+import { listSpotlight } from "@/lib/server/services/spotlight";
 import { buildLocationOptions } from "@/lib/properties";
 import { getDb } from "@/lib/server/db/client";
 import { BackToTop, ReadingProgress } from "@/components/ui/ChapterRail";
@@ -39,8 +40,12 @@ export default function Home() {
   // Les biens affichés viennent de la base HOMERA : publier un bien suffit
   // à le voir apparaître ici, sans redéployer.
   const catalogue = listProperties(getDb());
+  const ranks = new Map(listSpotlight(getDb()).map((entry) => [entry.propertyId, entry.slot]));
+  const showcase = catalogue.map((property) =>
+    ranks.has(property.id) ? { ...property, spotlightRank: ranks.get(property.id) } : property,
+  );
   return (
-    <SearchProvider source={catalogue} locations={buildLocationOptions(catalogue)}>
+    <SearchProvider source={showcase} locations={buildLocationOptions(catalogue)}>
       {" "}
       <div className="relative flex min-h-screen flex-col justify-between bg-background text-foreground transition-colors duration-300">
         {" "}

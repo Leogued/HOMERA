@@ -459,6 +459,20 @@ function seedVisits(db: Db): void {
   void iso;
 }
 
+/* Vitrine payante : 2 emplacements de démonstration actifs, 1 expiré
+   (prouve le filtrage). Aucun annonceur réel tant que le paiement
+   n'est pas branché. */
+function seedSpotlight(db: Db): void {
+  const ids = PROPERTIES.map((property) => property.id);
+  if (ids.length < 3 || !ids[0] || !ids[1] || !ids[2]) return;
+  const insert = db.prepare(
+    "INSERT OR IGNORE INTO spotlight_slots (slot, property_id, since, until, note) VALUES (?, ?, ?, ?, ?)",
+  );
+  insert.run(1, ids[0], "2026-01-05", "2027-12-31", "Emplacement de démonstration");
+  insert.run(2, ids[1], "2026-01-05", null, "Emplacement de démonstration");
+  insert.run(5, ids[2], "2025-01-05", "2025-02-05", "Emplacement expiré (démo)");
+}
+
 export function seedDatabase(db: Db): boolean {
   const existing = queryOne<{ count: number }>("SELECT COUNT(*) AS count FROM properties");
   if (existing && existing.count > 0) return false;
@@ -467,6 +481,7 @@ export function seedDatabase(db: Db): boolean {
     seedLocations(db);
     seedAccounts(db);
     seedProperties(db);
+    seedSpotlight(db);
     seedAuthorizations(db);
     seedVisits(db);
     writeAudit(db, {
