@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useTheme } from "next-themes";
-import { Bell, Globe2, LockKeyhole, Moon, Settings2, ShieldCheck, Sun, Trash2, UserRound } from "lucide-react";
+import { Bell, Globe2, LockKeyhole, Moon, Settings2, ShieldCheck, Sun, Trash2 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useWorkflow } from "@/components/providers/WorkflowProvider";
 import { describeProfile, initials, maskPhone, rolesLabel } from "@/lib/auth";
@@ -16,10 +16,55 @@ export function ProfilePage({ role }: { role: AccountRole }) {
   if (!account) return null;
   const specificLines = describeProfile(role, account.profile);
   const roleLines = specificLines.length > 0 ? specificLines : describeProfile(account.roles, account.profile);
+  const settingsHref = role === "proprietaire" ? "/proprietaire/parametres" : "/client/parametres";
   return <>
     <WorkspaceHeading eyebrow="Compte HOMERA" title="Mon profil" description="Votre identité, vos coordonnées et les informations partagées selon le rôle choisi." />
-    <div className="grid gap-5 xl:grid-cols-[0.85fr_1.15fr]"><WorkspacePanel title={`${account.prenom} ${account.nom}`} description={rolesLabel(account.roles)} icon={UserRound}><div className="flex items-center gap-4"><span className="flex h-16 w-16 items-center justify-center rounded-full bg-homera-cream-dark font-serif text-display-xs text-homera-brown">{initials(account.prenom, account.nom)}</span><div><p className="font-semibold">{account.email}</p><p className="mt-1 text-caption text-muted">{account.telephone ? maskPhone(account.telephone) : "Téléphone non renseigné"}</p><p className="mt-2 inline-flex items-center gap-1.5 text-caption font-semibold"><span className={`h-2 w-2 rounded-full ${account.emailVerified ? "bg-success" : "bg-warning"}`} aria-hidden="true" />{account.emailVerified ? "Adresse confirmée" : "Adresse à confirmer"}</p></div></div><div className="mt-5 flex flex-wrap gap-2">{account.roles.map((entry) => <span key={entry} className="rounded-full border border-border bg-background px-3 py-1.5 text-caption font-semibold">{ROLE_LABELS[entry]}</span>)}</div><p className="mt-4 text-caption leading-relaxed text-muted">Pour modifier vos coordonnées ou ajouter un rôle, utilisez les outils de compte HOMERA : les changements sont enregistrés côté serveur, sur votre compte.</p><Link href={role === "proprietaire" ? "/proprietaire/parametres" : "/client/parametres"} className="mt-4 inline-flex min-h-10 items-center gap-2 text-caption font-semibold text-homera-terracotta hover:underline"><Settings2 className="h-3.5 w-3.5" aria-hidden="true" />Paramètres et sécurité</Link></WorkspacePanel>
-      <WorkspacePanel title={`Informations ${ROLE_LABELS[role].toLowerCase()}`} description="Champs fournis lors de l’inscription ou de l’ajout de rôle." icon={ShieldCheck}>{roleLines.length ? <dl className="grid gap-3 sm:grid-cols-2">{roleLines.map((line) => <div key={line.name} className="rounded-xl border border-border bg-background p-3"><dt className="text-micro font-semibold uppercase tracking-[0.12em] text-muted">{line.label}</dt><dd className="mt-1 text-note font-medium">{line.value}</dd></div>)}</dl> : <div className="rounded-xl border border-dashed border-border p-5 text-note leading-relaxed text-muted">Aucune information complémentaire n’a été enregistrée pour ce rôle. Vous pouvez compléter votre profil depuis le parcours d’inscription.</div>}<p className="mt-4 text-caption text-muted">Compte ouvert le {formatDate(account.createdAt)} · état réel du serveur</p></WorkspacePanel></div>
+    <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-[var(--shadow-card)]">
+      <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center sm:p-8">
+        <span className="flex h-20 w-20 shrink-0 items-center justify-center rounded-3xl bg-homera-terracotta/[0.10] font-serif text-display-sm text-homera-terracotta" aria-hidden="true">
+          {initials(account.prenom, account.nom)}
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-serif text-display-xs text-foreground">{account.prenom} {account.nom}</p>
+          <p className="mt-1 truncate text-body-sm text-muted">{account.email}</p>
+          <p className="mt-0.5 text-caption text-muted">{account.telephone ? maskPhone(account.telephone) : "Téléphone non renseigné"}</p>
+          <p className="mt-2">
+            <span className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-caption font-semibold ${account.emailVerified ? "border-success/25 bg-success/[0.08] text-success" : "border-warning/30 bg-warning/[0.08] text-warning"}`}>
+              <span className={`h-2 w-2 rounded-full ${account.emailVerified ? "bg-success" : "bg-warning"}`} aria-hidden="true" />
+              {account.emailVerified ? "Adresse confirmée" : "Adresse à confirmer"}
+            </span>
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-wrap gap-2">
+          {account.roles.map((entry) => <span key={entry} className="rounded-full border border-border bg-background px-3 py-1.5 text-caption font-semibold">{ROLE_LABELS[entry]}</span>)}
+        </div>
+      </div>
+      <div className="flex flex-col gap-3 border-t border-border bg-background/50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <p className="text-caption text-muted">Compte ouvert le {formatDate(account.createdAt)} · {rolesLabel(account.roles)} · état réel du serveur</p>
+        <Link href={settingsHref} className="inline-flex min-h-10 items-center gap-2 text-caption font-semibold text-homera-terracotta hover:underline">
+          <Settings2 className="h-3.5 w-3.5" aria-hidden="true" />Paramètres et sécurité
+        </Link>
+      </div>
+    </div>
+    <div className="mt-5">
+      <WorkspacePanel title={`Informations ${ROLE_LABELS[role].toLowerCase()}`} description="Champs fournis lors de l’inscription ou de l’ajout de rôle." icon={ShieldCheck}>
+        {roleLines.length ? (
+          <dl className="grid gap-3 sm:grid-cols-2">
+            {roleLines.map((line) => (
+              <div key={line.name} className="rounded-xl border border-border bg-background p-3">
+                <dt className="text-micro font-semibold uppercase tracking-[0.12em] text-muted">{line.label}</dt>
+                <dd className="mt-1 text-note font-medium">{line.value}</dd>
+              </div>
+            ))}
+          </dl>
+        ) : (
+          <div className="rounded-xl border border-dashed border-border p-5 text-note leading-relaxed text-muted">
+            Aucune information complémentaire n’a été enregistrée pour ce rôle. Vous pouvez compléter votre profil depuis le parcours d’inscription.
+          </div>
+        )}
+        <p className="mt-4 text-caption leading-relaxed text-muted">Pour modifier vos coordonnées ou ajouter un rôle, utilisez les outils de compte HOMERA : les changements sont enregistrés côté serveur, sur votre compte.</p>
+      </WorkspacePanel>
+    </div>
     <div className="mt-6"><DemoNotice>La photo de profil, l’édition des coordonnées et le dépôt sécurisé des pièces seront reliés au service de compte avant production.</DemoNotice></div>
   </>;
 }

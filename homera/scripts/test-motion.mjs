@@ -1229,6 +1229,39 @@ await test('HOMERA : la page favoris — maquette, filtres réels, comparateur',
   assert.ok(card.includes('En cours de vérification'), 'pastille honnête pour les biens en vérification');
 });
 
+await test('HOMERA : l’espace client — recherches, recommandations, dossiers suivis', async () => {
+  const shell = await readFile(new URL('../components/workspace/WorkspaceShell.tsx', import.meta.url), 'utf8');
+  for (const entry of ['Recherches récentes', 'Recommandations', '/client/recherches', '/client/recommandations']) {
+    assert.ok(shell.includes(entry), `menu client incomplet : ${entry}`);
+  }
+  const searchesPage = await readFile(new URL('../app/(client)/client/recherches/page.tsx', import.meta.url), 'utf8');
+  const searches = await readFile(new URL('../components/client/ClientSearches.tsx', import.meta.url), 'utf8');
+  assert.ok(searchesPage.includes('robots: { index: false'), 'espace personnel non indexable');
+  for (const heading of ['Recherches récentes', 'Relancer', 'Nouvelle recherche']) {
+    assert.ok(searches.includes(heading), `bloc des recherches absent : ${heading}`);
+  }
+  assert.ok(searches.includes('removeSearch'), 'suppression réelle d’une recherche');
+  assert.ok(!searches.includes('Alerte SMS'), 'aucune alerte SMS simulée');
+  const recoPage = await readFile(new URL('../app/(client)/client/recommandations/page.tsx', import.meta.url), 'utf8');
+  const reco = await readFile(new URL('../components/client/ClientRecommendations.tsx', import.meta.url), 'utf8');
+  assert.ok(recoPage.includes('robots: { index: false'), 'espace personnel non indexable');
+  for (const heading of ['Recommandations', 'Ajuster ma recherche']) {
+    assert.ok(reco.includes(heading), `bloc des recommandations absent : ${heading}`);
+  }
+  assert.ok(reco.includes('recommendationReasons'), 'correspondances expliquées sous chaque bien');
+  assert.ok(!reco.includes('Score IA'), 'aucun score IA simulé');
+  const recommender = await readFile(new URL('../lib/recommendations.ts', import.meta.url), 'utf8');
+  assert.ok(recommender.includes('selectRecommendations'), 'sélection partagée avec le tableau de bord');
+  assert.ok(recommender.includes('Dans votre budget'), 'raison de budget honnête');
+  const applications = await readFile(new URL('../components/workspace/ApplicationSections.tsx', import.meta.url), 'utf8');
+  assert.ok(applications.includes('ApplicationProgress'), 'progression du dossier affichée');
+  assert.ok(applications.includes('la procédure s’arrête ici'), 'dossiers refusés ou annulés explicitement clos');
+  const journeys = await readFile(new URL('../components/workspace/ClientJourneys.tsx', import.meta.url), 'utf8');
+  assert.ok(journeys.includes('Signer le contrat'), 'raccourci de signature depuis la liste des contrats');
+  const visits = await readFile(new URL('../components/workspace/VisitsSections.tsx', import.meta.url), 'utf8');
+  assert.ok(visits.includes('Voir la fiche : '), 'vignette photo vers la fiche du bien visité');
+});
+
 /* ==================================================================
    PHASE 4 (suite) — LES RÔLES SONT CUMULATIFS
    ------------------------------------------------------------------

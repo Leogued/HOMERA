@@ -26,11 +26,10 @@ import { useAuth } from "@/components/providers/AuthProvider";
 import { useVisitor } from "@/components/providers/VisitorProvider";
 import { PropertyCard } from "@/components/catalog/PropertyCard";
 import { Visual } from "@/components/ui/Visual";
-import { PROPERTIES, type Property, type PropertyIntent, type PropertyType } from "@/lib/content";
+import { PROPERTIES, type Property } from "@/lib/content";
 import { CAPABILITIES, initials } from "@/lib/auth";
-import type { PublicAccount } from "@/lib/accounts";
 import { countLabel } from "@/lib/format";
-import { parseCatalogQuery } from "@/lib/properties";
+import { selectRecommendations } from "@/lib/recommendations";
 import { useServerResource } from "@/lib/use-server-resource";
 import { VISIT_LABELS } from "@/components/workspace/VisitsSections";
 import { APPLICATION_STATUS_LABELS } from "@/components/workspace/ApplicationSections";
@@ -40,11 +39,8 @@ import {
   isUpcomingVisit,
   todayISO,
 } from "@/lib/client-badges";
-import type { SavedSearch } from "@/lib/persistence";
 
 const AUTOMATIC_ALERTS_CAPABILITY = CAPABILITIES.find((entry) => entry.id === "alertes");
-const PROPERTY_TYPES: readonly PropertyType[] = ["villa", "appartement", "studio", "terrain", "local"];
-const PROPERTY_INTENTS: readonly PropertyIntent[] = ["acheter", "louer", "sejour"];
 /* Fonds décoratifs du tableau de bord : photos réelles du catalogue. */
 const HERO_MEDIA = PROPERTIES.find((property) => property.type === "villa")?.media ?? "page-cotonou";
 const BANNER_MEDIA =
@@ -861,61 +857,4 @@ function formatRelative(value: string): string {
   const days = Math.floor(hours / 24);
   if (days < 7) return `Il y a ${days} jour${days > 1 ? "s" : ""}`;
   return formatDay(value);
-}
-
-function queryFromSavedSearch(search: SavedSearch | undefined) {
-  if (!search) return null;
-  const question = search.href.indexOf("?");
-  return parseCatalogQuery(question < 0 ? "" : search.href.slice(question + 1));
-}
-
-function budgetLimit(budget: string | undefined): number | null {
-  switch (budget) {
-    case "location-100":
-      return 100_000;
-    case "location-500":
-      return 500_000;
-    case "achat-25":
-      return 25_000_000;
-    case "achat-75":
-      return 75_000_000;
-    default:
-      return null;
-  }
-}
-
-function selectRecommendations(account: PublicAccount, favoriteIds: string[], searches: SavedSearch[]): Property[] {
-  const recentQuery = queryFromSavedSearch(searches[0]);
-  const declaredProject = account.profile.projet;
-  const declaredIntent: PropertyIntent | null =
-    declaredProject === "investir"
-      ? "acheter"
-      : PROPERTY_INTENTS.includes(declaredProject as PropertyIntent)
-        ? (declaredProject as PropertyIntent)
-        : null;
-  const preferredIntent = declaredIntent ?? recentQuery?.intent ?? null;
-  const declaredType = account.profile.bienRecherche;
-  const preferredTypes: PropertyType[] = PROPERTY_TYPES.includes(declaredType as PropertyType)
-    ? [declaredType as PropertyType]
-    : recentQuery?.types ?? [];
-  const preferredCity = recentQuery?.cities[0] ?? "";
-  const maxPrice = budgetLimit(account.profile.budget);
-
-  return PROPERTIES.filter((property) => !favoriteIds.includes(property.id))
-    .map((property) => {
-      let score = 0;
-      if (preferredIntent && property.intent === preferredIntent) score += 6;
-      if (preferredTypes.includes(property.type)) score += 4;
-      if (preferredCity && property.city === preferredCity) score += 2;
-      if (maxPrice !== null) score += property.price <= maxPrice ? 1 : -1;
-      return { property, score };
-    })
-    .sort(
-      (first, second) =>
-        second.score - first.score ||
-        second.property.publishedAt.localeCompare(first.property.publishedAt) ||
-        first.property.title.localeCompare(second.property.title, "fr"),
-    )
-    .slice(0, 4)
-    .map(({ property }) => property);
 }

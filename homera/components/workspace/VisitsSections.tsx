@@ -5,6 +5,8 @@ import Link from "next/link";
 import { ArrowRight, CalendarDays, Clock, Loader2, MapPin, RefreshCw, Users, XCircle } from "lucide-react";
 import { apiPost, messageOf } from "@/lib/api-client";
 import { useServerResource } from "@/lib/use-server-resource";
+import { Visual } from "@/components/ui/Visual";
+import { PROPERTIES } from "@/lib/content";
 import {
   BUTTON_PRIMARY, BUTTON_SECONDARY, EmptyPanel, WorkspaceHeading, WorkspacePanel,
 } from "@/components/workspace/Primitives";
@@ -159,14 +161,23 @@ export function VisitsList({ viewpoint, title, description }: { viewpoint: "clie
         />
       ) : (
         <div className="space-y-4">
-          {list.map((visit) => (
+          {list.map((visit) => {
+            const property = PROPERTIES.find((entry) => entry.id === visit.propertyId) ?? null;
+            return (
             <WorkspacePanel key={visit.id} title={visit.propertyTitle} description={`${visit.reference} · ${visit.propertyReference}`} icon={CalendarDays} action={<VisitBadge status={visit.status} />}>
-              <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="flex flex-col gap-4 sm:flex-row">
+                {property?.media && (
+                  <Link href={`/biens/${visit.propertyId}`} className="relative block h-28 w-full shrink-0 overflow-hidden rounded-2xl border border-border sm:h-auto sm:min-h-28 sm:w-36" aria-label={`Voir la fiche : ${visit.propertyTitle}`}>
+                    <Visual mediaKey={property.media} alt={property.alt ?? visit.propertyTitle} sizes="150px" veil="none" quality={68} className="absolute inset-0 h-full w-full" />
+                  </Link>
+                )}
+                <dl className="grid min-w-0 flex-1 gap-3 sm:grid-cols-2">
                 <InfoCell label="Date" value={`${formatDay(visit.date)} · ${visit.time}`} />
                 <InfoCell label="Durée" value={`${visit.durationMin} min`} />
                 <InfoCell label={viewpoint === "client" ? "Votre interlocuteur" : "Demandeur"} value={viewpoint === "client" ? (visit.agentName ?? visit.ownerName ?? "HOMERA") : visit.clientName} />
                 <InfoCell label="Demandée le" value={formatDay(visit.createdAt)} />
-              </dl>
+                </dl>
+              </div>
               {visit.message && <p className="mt-4 rounded-xl border border-border bg-background p-3 text-caption leading-relaxed text-muted">« {visit.message} »</p>}
               {visit.decisionNote && (
                 <p className="mt-3 rounded-xl border border-border bg-background p-3 text-caption leading-relaxed text-muted">
@@ -215,7 +226,8 @@ export function VisitsList({ viewpoint, title, description }: { viewpoint: "clie
                 </div>
               )}
             </WorkspacePanel>
-          ))}
+            );
+          })}
         </div>
       )}
     </>

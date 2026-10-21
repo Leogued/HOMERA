@@ -11,8 +11,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Activity, ArrowLeft, ArrowRight, Bell, CalendarDays, CheckCheck, ChevronDown,
-  ClipboardCheck, ClipboardList, FileBadge, FileText, Heart, HelpCircle, House, LayoutDashboard,
-  LogOut, Menu, MessageCircle, Plus, Search, Settings2, ShieldCheck, UserRound,
+  ClipboardCheck, ClipboardList, FileBadge, FileText, Heart, HelpCircle, History, House, LayoutDashboard,
+  LogOut, Menu, MessageCircle, Plus, Search, Settings2, ShieldCheck, Sparkles, UserRound,
   Users, WalletCards, X, type LucideIcon,
 } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
@@ -55,10 +55,12 @@ const NAV: Record<Exclude<WorkspaceRole, "any">, NavigationGroup[]> = {
     { label: "Navigation principale", items: [
       { id: "dashboard", label: "Tableau de bord", href: "/client", icon: LayoutDashboard },
       { id: "favoris", label: "Mes favoris", href: "/client/favoris", icon: Heart },
+      { id: "recherches", label: "Recherches récentes", href: "/client/recherches", icon: History },
       { id: "visites", label: "Mes visites", href: "/client/visites", icon: CalendarDays },
       { id: "demandes", label: "Mes demandes", href: "/client/demandes", icon: ClipboardList },
       { id: "contrats", label: "Mes locations", href: "/client/contrats", icon: House },
       { id: "paiements", label: "Mes paiements", href: "/client/paiements", icon: WalletCards },
+      { id: "recommandations", label: "Recommandations", href: "/client/recommandations", icon: Sparkles },
     ] },
     { label: "Échanges", items: [
       { id: "messages", label: "Messages", href: "/messages", icon: MessageCircle },

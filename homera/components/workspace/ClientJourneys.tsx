@@ -5,9 +5,10 @@ import Link from "next/link";
 import {
   ArrowLeft, ArrowRight, CalendarCheck2, CalendarDays, Check,
   CheckCircle2, ClipboardCheck, Clock3,
-  FileText, Home, Loader2, MapPin,
+  FileText, Home, KeyRound, Loader2, MapPin,
 } from "lucide-react";
 import { Visual } from "@/components/ui/Visual";
+import { PROPERTIES } from "@/lib/content";
 import {
   BUTTON_PRIMARY, BUTTON_SECONDARY, EmptyPanel, FormField,
   INPUT_CLASS, WorkspaceHeading, WorkspacePanel,
@@ -187,6 +188,15 @@ function contractStatusLabel(status: string): string {
   return CONTRACT_STATUS_LABELS[status] ?? status;
 }
 
+
+const CONTRACT_TONE: Record<string, string> = {
+  brouillon: "border-border bg-background text-muted",
+  envoye: "border-info/30 bg-info/[0.07] text-info",
+  "a-signer": "border-warning/30 bg-warning/[0.08] text-warning",
+  signe: "border-success/30 bg-success/[0.07] text-success",
+  annule: "border-border bg-background text-muted",
+};
+
 export function ClientContracts() {
   const { data, loading, error } = useServerResource<{ contracts: ServerContract[] }>("/api/contracts");
   const contracts = data?.contracts ?? [];
@@ -204,28 +214,49 @@ export function ClientContracts() {
       </p>
     ) : contracts.length ? (
       <ul className="mb-8 grid gap-4 md:grid-cols-2">
-        {contracts.map((contract) => (
+        {contracts.map((contract) => {
+          const property = PROPERTIES.find((entry) => entry.id === contract.propertyId) ?? null;
+          return (
           <li key={contract.id}>
             <WorkspacePanel
               title={contract.propertyTitle}
               description={`${contract.reference} · ${contract.duration}`}
-              icon={FileText}
-              action={<span className="inline-flex items-center rounded-full border border-border px-2.5 py-1 text-micro font-semibold uppercase tracking-[0.1em] text-muted">{contractStatusLabel(contract.status)}</span>}
+              icon={contract.status === "signe" ? KeyRound : FileText}
+              action={<span className={`inline-flex items-center rounded-full border px-2.5 py-1 text-micro font-semibold uppercase tracking-[0.1em] ${CONTRACT_TONE[contract.status] ?? "border-border bg-background text-muted"}`}>{contractStatusLabel(contract.status)}</span>}
             >
-              <p className="text-caption text-muted">
-                Loyer mensuel <strong className="homera-num text-foreground">{formatMoney(contract.rent)} FCFA</strong> · dépôt de garantie{" "}
-                <strong className="homera-num text-foreground">{formatMoney(contract.deposit)} FCFA</strong>
-              </p>
-              <p className="mt-1 text-caption text-muted">
-                Du {formatDay(contract.startDate)} au {formatDay(contract.endDate)}
-                {contract.signedAt ? ` · signé le ${formatDay(contract.signedAt)}` : ""}
-              </p>
-              <Link href={`/client/contrats/${contract.id}`} className="mt-4 inline-flex min-h-10 items-center gap-2 text-note font-semibold text-homera-terracotta hover:underline">
-                Ouvrir le contrat<ArrowRight className="h-4 w-4" aria-hidden="true" />
-              </Link>
+              <div className="flex flex-col gap-4 sm:flex-row">
+                {property?.media && (
+                  <Link href={`/client/contrats/${contract.id}`} className="relative block h-24 w-full shrink-0 overflow-hidden rounded-2xl border border-border sm:w-28" aria-label={`Ouvrir le contrat : ${contract.propertyTitle}`}>
+                    <Visual mediaKey={property.media} alt={property.alt ?? contract.propertyTitle} sizes="120px" veil="none" quality={68} className="absolute inset-0 h-full w-full" />
+                  </Link>
+                )}
+                <dl className="grid min-w-0 flex-1 gap-2 sm:grid-cols-3">
+                  <div className="rounded-xl border border-border bg-background p-2.5">
+                    <dt className="text-micro font-semibold uppercase tracking-[0.1em] text-muted">Loyer</dt>
+                    <dd className="homera-num mt-0.5 text-caption font-bold text-foreground">{formatMoney(contract.rent)} FCFA</dd>
+                  </div>
+                  <div className="rounded-xl border border-border bg-background p-2.5">
+                    <dt className="text-micro font-semibold uppercase tracking-[0.1em] text-muted">Dépôt</dt>
+                    <dd className="homera-num mt-0.5 text-caption font-bold text-foreground">{formatMoney(contract.deposit)} FCFA</dd>
+                  </div>
+                  <div className="rounded-xl border border-border bg-background p-2.5">
+                    <dt className="text-micro font-semibold uppercase tracking-[0.1em] text-muted">Période</dt>
+                    <dd className="mt-0.5 text-caption font-semibold text-foreground">Du {formatDay(contract.startDate)} au {formatDay(contract.endDate)}</dd>
+                  </div>
+                </dl>
+              </div>
+              {contract.signedAt && (
+                <p className="mt-3 text-caption text-muted">Signé le {formatDay(contract.signedAt)}.</p>
+              )}
+              <div className="mt-4">
+                <Link href={`/client/contrats/${contract.id}`} className={contract.canSign ? BUTTON_PRIMARY : BUTTON_SECONDARY}>
+                  {contract.canSign ? "Signer le contrat" : "Ouvrir le contrat"}<ArrowRight className="h-4 w-4" aria-hidden="true" />
+                </Link>
+              </div>
             </WorkspacePanel>
           </li>
-        ))}
+          );
+        })}
       </ul>
     ) : (
       <div className="mb-8">

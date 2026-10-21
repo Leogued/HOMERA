@@ -71,6 +71,36 @@ function ApplicationBadge({ status }: { status: string }) {
   );
 }
 
+/* Progression déduite du statut réel : envoyée → en cours → acceptée.
+   Un dossier refusé ou annulé n’avance plus : on l’affiche comme tel. */
+const APPLICATION_STEPS = ["envoyee", "en-cours", "acceptee"];
+
+function ApplicationProgress({ status }: { status: string }) {
+  const terminal = status === "refusee" || status === "annulee";
+  if (terminal) {
+    return (
+      <p className="mt-4 rounded-xl border border-border bg-background px-4 py-3 text-caption leading-relaxed text-muted">
+        Dossier {status === "refusee" ? "refusé" : "annulé"} : la procédure s’arrête ici. Aucune autre étape n’est attendue.
+      </p>
+    );
+  }
+  const current = Math.max(0, APPLICATION_STEPS.indexOf(status));
+  return (
+    <div className="mt-4">
+      <div className="h-2 overflow-hidden rounded-full bg-border/60" role="progressbar" aria-valuenow={current + 1} aria-valuemin={1} aria-valuemax={APPLICATION_STEPS.length} aria-label={`Étape ${current + 1} sur ${APPLICATION_STEPS.length} : ${APPLICATION_STATUS_LABELS[APPLICATION_STEPS[current]] ?? status}`}>
+        <div className="h-full rounded-full bg-homera-terracotta transition-all" style={{ width: `${((current + 1) / APPLICATION_STEPS.length) * 100}%` }} />
+      </div>
+      <ol className="mt-2 grid grid-cols-3 gap-1 text-center">
+        {APPLICATION_STEPS.map((step, index) => (
+          <li key={step} aria-current={index === current ? "step" : undefined} className={`text-micro font-semibold ${index <= current ? "text-homera-terracotta" : "text-muted-light"}`}>
+            {index + 1}. {APPLICATION_STATUS_LABELS[step] ?? step}
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 /* ==================================================================
    DÉPÔT — CÔTÉ CANDIDAT
    ================================================================== */
@@ -276,6 +306,8 @@ export function ApplicationsList({ viewpoint, title, description }: { viewpoint:
                   <strong className="text-foreground">Motif :</strong> {application.decisionNote}
                 </p>
               )}
+
+              <ApplicationProgress status={application.status} />
 
               {(application.canDecide || application.canWithdraw) && (
                 <div className="mt-4 rounded-xl border border-border bg-background p-4">

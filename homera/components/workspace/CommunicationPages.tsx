@@ -336,11 +336,12 @@ export function MessagesPage({ initialPropertyId = "" }: { initialPropertyId?: s
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
-                        <span className="block truncate text-note font-semibold">{thread.propertyTitle}</span>
+                        <span className="block min-w-0 flex-1 truncate text-note font-semibold">{thread.propertyTitle}</span>
                         {thread.unreadCount > 0 && (
                           <span className="shrink-0 rounded-full bg-homera-terracotta px-2 text-micro font-semibold text-white">{thread.unreadCount}</span>
                         )}
                       </span>
+                      <span className="mt-0.5 block text-micro text-muted-light">{formatDate(thread.lastMessageAt)}</span>
                       <span className="mt-1 block truncate text-caption text-muted">{thread.lastMessagePreview || "Aucun message"}</span>
                       <span className="mt-1 block font-mono text-micro text-muted-light">{thread.propertyReference || "—"}</span>
                     </span>

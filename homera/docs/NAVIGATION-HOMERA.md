@@ -18,7 +18,7 @@ d’entrée y mène.
 
 | Élément | Avant | Après |
 | --- | --- | --- |
-| Barre latérale du tableau de bord client | `#accueil`, `#favoris`, `#visites`, `#demandes`, `#locations`, `#notifications`, `#messages`, `#profil`, `#parametres` + état local | routes `/client`, `/client/favoris`, `/client/visites`, `/client/demandes`, `/client/contrats`, `/notifications`, `/messages`, `/client/profil`, `/client/parametres` |
+| Barre latérale du tableau de bord client | `#accueil`, `#favoris`, `#visites`, `#demandes`, `#locations`, `#notifications`, `#messages`, `#profil`, `#parametres` + état local | routes `/client`, `/client/favoris`, `/client/recherches`, `/client/visites`, `/client/demandes`, `/client/contrats`, `/client/paiements`, `/client/recommandations`, `/notifications`, `/messages`, `/client/profil`, `/client/parametres` |
 | Icône d’en-tête du tableau de bord client | `#profil` | `/client/profil` |
 | Cloche d’en-tête (client) | `#notifications` | `/notifications` |
 | Quatre indicateurs du tableau de bord client | `#favoris`, `#recherches`, `#profil`, `#notifications` | `/client/favoris`, `/client/favoris`, `/client/profil`, `/notifications` |
