@@ -1,29 +1,23 @@
 "use client";
 
-import { useMemo, type ReactNode } from "react";
+import { useId, useMemo, type ReactNode } from "react";
 import Link from "next/link";
-import { useTheme } from "next-themes";
 import {
   ArrowRight,
-  ArrowUpRight,
   Bell,
-  BellRing,
-  Building2,
   CalendarDays,
   CheckCircle2,
+  ChevronRight,
   ClipboardList,
+  Headphones,
   Heart,
   House,
   Info,
   LayoutDashboard,
   MailCheck,
   MessageCircle,
-  Moon,
   Search,
   Settings2,
-  ShieldCheck,
-  Sparkles,
-  Sun,
   UserRound,
   WalletCards,
   type LucideIcon,
@@ -31,20 +25,30 @@ import {
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useVisitor } from "@/components/providers/VisitorProvider";
 import { PropertyCard } from "@/components/catalog/PropertyCard";
+import { Visual } from "@/components/ui/Visual";
 import { PROPERTIES, type Property, type PropertyIntent, type PropertyType } from "@/lib/content";
-import { CAPABILITIES, describeProfile, initials, maskPhone, roleDefinition, rolesLabel } from "@/lib/auth";
+import { CAPABILITIES, initials } from "@/lib/auth";
 import type { PublicAccount } from "@/lib/accounts";
-import { countLabel, formatFCFA } from "@/lib/format";
+import { countLabel } from "@/lib/format";
 import { parseCatalogQuery } from "@/lib/properties";
 import { useServerResource } from "@/lib/use-server-resource";
 import { VISIT_LABELS } from "@/components/workspace/VisitsSections";
 import { APPLICATION_STATUS_LABELS } from "@/components/workspace/ApplicationSections";
 import { WorkspaceShell } from "@/components/workspace/WorkspaceShell";
+import {
+  isActiveApplication,
+  isUpcomingVisit,
+  todayISO,
+} from "@/lib/client-badges";
 import type { SavedSearch } from "@/lib/persistence";
 
 const AUTOMATIC_ALERTS_CAPABILITY = CAPABILITIES.find((entry) => entry.id === "alertes");
 const PROPERTY_TYPES: readonly PropertyType[] = ["villa", "appartement", "studio", "terrain", "local"];
 const PROPERTY_INTENTS: readonly PropertyIntent[] = ["acheter", "louer", "sejour"];
+/* Fonds décoratifs du tableau de bord : photos réelles du catalogue. */
+const HERO_MEDIA = PROPERTIES.find((property) => property.type === "villa")?.media ?? "page-cotonou";
+const BANNER_MEDIA =
+  PROPERTIES.find((property) => property.type === "appartement")?.media ?? HERO_MEDIA;
 
 type ServerVisit = {
   id: string;
@@ -98,13 +102,13 @@ type ClientNavGroup = {
 export const CLIENT_NAV: ClientNavGroup[] = [
   {
     label: "Espace personnel",
-    items: [{ id: "accueil", label: "Accueil", href: "/client", icon: LayoutDashboard }],
+    items: [{ id: "accueil", label: "Tableau de bord", href: "/client", icon: LayoutDashboard }],
   },
   {
     label: "Découvrir",
     items: [
       { id: "explorer", label: "Explorer", href: "/explorer", icon: Search },
-      { id: "favoris", label: "Favoris", href: "/client/favoris", icon: Heart },
+      { id: "favoris", label: "Mes favoris", href: "/client/favoris", icon: Heart },
     ],
   },
   {
@@ -113,7 +117,7 @@ export const CLIENT_NAV: ClientNavGroup[] = [
       { id: "visites", label: "Mes visites", href: "/client/visites", icon: CalendarDays },
       { id: "demandes", label: "Mes demandes", href: "/client/demandes", icon: ClipboardList },
       { id: "locations", label: "Mes locations", href: "/client/contrats", icon: House },
-      { id: "paiements", label: "Moyens de paiement", href: "/client/paiements", icon: WalletCards },
+      { id: "paiements", label: "Mes paiements", href: "/client/paiements", icon: WalletCards },
     ],
   },
   {
@@ -132,6 +136,35 @@ export const CLIENT_NAV: ClientNavGroup[] = [
   },
 ];
 
+const SHORTCUTS: { id?: string; label: string; href: string; icon: LucideIcon }[] = [
+  { label: "Rechercher un bien", href: "/explorer", icon: Search },
+  { label: "Déposer une demande", href: "/client/demandes/nouvelle", icon: ClipboardList },
+  { label: "Mes favoris", href: "/client/favoris", icon: Heart },
+  { id: "locations", label: "Mes locations", href: "/client/contrats", icon: House },
+  { label: "Contacter un conseiller", href: "/contact", icon: Headphones },
+  { id: "parametres", label: "Paramètres", href: "/client/parametres", icon: Settings2 },
+];
+
+const VISIT_TONE: Record<string, string> = {
+  confirmee: "border-success/30 bg-success/[0.08] text-success",
+  reprogrammee: "border-info/30 bg-info/[0.08] text-info",
+  demandee: "border-warning/30 bg-warning/[0.08] text-warning",
+  "en-attente": "border-warning/30 bg-warning/[0.08] text-warning",
+  effectuee: "border-border bg-background text-muted",
+  annulee: "border-error/25 bg-error/[0.06] text-error",
+  refusee: "border-error/25 bg-error/[0.06] text-error",
+  absence: "border-error/25 bg-error/[0.06] text-error",
+};
+
+type ActivityItem = {
+  id: string;
+  kind: "notification" | "message" | "demande";
+  title: string;
+  subtitle: string;
+  at: string;
+  href: string;
+};
+
 export function ClientDashboard() {
   return (
     <WorkspaceShell role="client" section="dashboard">
@@ -143,7 +176,6 @@ export function ClientDashboard() {
 function ClientDashboardContent() {
   const { account } = useAuth();
   const visitor = useVisitor();
-  const { resolvedTheme, setTheme } = useTheme();
 
   const favoriteProperties = useMemo(
     () => visitor.favorites.map((id) => PROPERTIES.find((property) => property.id === id)).filter(isProperty),
@@ -156,641 +188,588 @@ function ClientDashboardContent() {
         : [],
     [account, visitor.favorites, visitor.ready, visitor.searches],
   );
-  const profileLines = useMemo(
-    () => (account ? describeProfile(account.roles, account.profile) : []),
-    [account],
-  );
-  /* Visites, candidatures, locations, messages et notifications viennent du
-     serveur, comme sur les pages dédiées : le tableau de bord ne montre
-     jamais une copie locale qui pourrait contredire /client/visites. */
+  /* Visites, candidatures, messages et notifications viennent du serveur,
+     comme sur les pages dédiées : le tableau de bord ne montre jamais une
+     copie locale qui pourrait contredire /client/visites. */
   const serverVisits = useServerResource<{ visits: ServerVisit[] }>("/api/visits");
   const serverApplications = useServerResource<{ applications: ServerApplication[] }>("/api/applications");
   const serverMessages = useServerResource<{ conversations: ServerConversation[] }>("/api/messages");
   const serverNotifications = useServerResource<{ items: ServerNotification[]; unread: number }>("/api/notifications");
-  const recentVisits = useMemo(
-    () => [...(serverVisits.data?.visits ?? [])].sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`)).slice(0, 3),
-    [serverVisits.data],
+  const today = todayISO();
+  const upcomingVisits = useMemo(
+    () =>
+      [...(serverVisits.data?.visits ?? [])]
+        .filter((visit) => isUpcomingVisit(visit, today))
+        .sort((a, b) => `${a.date} ${a.time}`.localeCompare(`${b.date} ${b.time}`))
+        .slice(0, 2),
+    [serverVisits.data, today],
   );
-  const recentApplications = useMemo(
-    () => [...(serverApplications.data?.applications ?? [])].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 3),
+  const activeApplications = useMemo(
+    () => (serverApplications.data?.applications ?? []).filter(isActiveApplication),
     [serverApplications.data],
   );
-  /* Sommes réellement dues : celles qu’un contrat signé écrit. Rien n’est
-     réclamé pour une visite, et aucun historique de paiement local n’est
-     affiché puisqu’HOMERA n’encaisse rien depuis cette page. */
-  const serverContracts = useServerResource<{
-    contracts: {
-      id: string;
-      reference: string;
-      propertyTitle: string;
-      propertyReference: string;
-      status: string;
-      rent: number;
-      deposit: number;
-      duration: string;
-    }[];
-  }>("/api/contracts");
-  const payableWorkflowItems = (serverContracts.data?.contracts ?? [])
-    .filter((contract) => contract.status === "signe")
-    .map((contract) => ({
-      id: `${contract.id}-loyer`,
-      label: `${contract.reference} · loyer ${formatFCFA(contract.rent)} + caution ${formatFCFA(contract.deposit)}`,
-      title: contract.propertyTitle,
-      href: `/client/contrats/${contract.id}`,
-    }));
-  const activeRentals = (serverContracts.data?.contracts ?? []).filter((contract) => contract.status === "signe");
-  const recentMessages = useMemo(
-    () => [...(serverMessages.data?.conversations ?? [])].sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt)).slice(0, 3),
+  const unreadMessages = useMemo(
+    () => (serverMessages.data?.conversations ?? []).reduce((total, thread) => total + (thread.unreadCount ?? 0), 0),
     [serverMessages.data],
   );
   const unreadNotifications = useMemo(
     () => (serverNotifications.data?.items ?? []).filter((entry) => !entry.read_at),
     [serverNotifications.data],
   );
-  const pendingActions = (account && !account.emailVerified ? 1 : 0) + (serverNotifications.data?.unread ?? 0);
-  const currentThemeIsDark = resolvedTheme === "dark";
+  /* Activité récente : les faits datés du compte (notifications, messages,
+     demandes), triés du plus frais au plus ancien. Rien d'inventé. */
+  const activityItems = useMemo<ActivityItem[]>(() => {
+    const items: ActivityItem[] = [
+      ...(serverNotifications.data?.items ?? []).map((entry) => ({
+        id: `notification-${entry.id}`,
+        kind: "notification" as const,
+        title: entry.title,
+        subtitle: entry.body,
+        at: entry.created_at,
+        href: entry.link || "/notifications",
+      })),
+      ...(serverMessages.data?.conversations ?? []).map((thread) => ({
+        id: `message-${thread.id}`,
+        kind: "message" as const,
+        title: "Message reçu",
+        subtitle: thread.lastMessagePreview || thread.propertyTitle,
+        at: thread.lastMessageAt,
+        href: "/messages",
+      })),
+      ...(serverApplications.data?.applications ?? []).map((application) => ({
+        id: `demande-${application.id}`,
+        kind: "demande" as const,
+        title: `Demande ${application.reference}`,
+        subtitle: `${application.propertyTitle} · ${APPLICATION_STATUS_LABELS[application.status] ?? application.status}`,
+        at: application.createdAt,
+        href: "/client/demandes",
+      })),
+    ];
+    return items.sort((a, b) => b.at.localeCompare(a.at)).slice(0, 4);
+  }, [serverNotifications.data, serverMessages.data, serverApplications.data]);
+  const activityLoading =
+    serverNotifications.loading || serverMessages.loading || serverApplications.loading;
 
   if (!account) return null;
 
   return (
     <div>
+      {!account.emailVerified && (
+        <div className="mb-5 flex items-start gap-3 rounded-2xl border border-warning/30 bg-warning/[0.08] px-4 py-3.5 text-note leading-relaxed text-foreground">
+          <MailCheck className="mt-0.5 h-4 w-4 shrink-0 text-warning" aria-hidden="true" />
+          <p>
+            <span className="font-semibold">Confirmez votre adresse e-mail.</span> Le code de
+            vérification du pilote s’affiche dans votre espace de confirmation — aucun e-mail
+            automatique n’est envoyé.{" "}
+            <Link href="/verification-email" className="homera-underline font-semibold homera-accent-ink">
+              Saisir le code
+            </Link>
+          </p>
+        </div>
+      )}
+
+      <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_19rem]">
+        <div className="grid min-w-0 content-start gap-5">
           <section
             id="accueil"
             aria-labelledby="client-welcome-title"
-            className="scroll-mt-24 overflow-hidden rounded-3xl bg-homera-night text-white"
+            className="relative overflow-hidden rounded-3xl bg-homera-night text-white"
           >
-            <div className="relative isolate">
-              <div
-                aria-hidden="true"
-                className="absolute inset-0 -z-10 bg-[radial-gradient(circle_at_85%_14%,rgba(224,164,94,.22),transparent_25%),radial-gradient(circle_at_70%_100%,rgba(179,80,44,.42),transparent_36%),linear-gradient(120deg,var(--homera-night)_0%,var(--homera-night-soft)_68%,var(--homera-brown)_100%)]"
+            <div aria-hidden="true" className="absolute inset-0">
+              <Visual
+                mediaKey={HERO_MEDIA}
+                alt=""
+                sizes="(min-width: 1280px) 60rem, 100vw"
+                veil="none"
+                priority
+                className="h-full w-full"
+                imageClassName="h-full w-full object-cover"
               />
-              <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[minmax(0,1fr)_18rem] lg:items-center lg:p-10">
-                <div>
-                  <p className="inline-flex items-center gap-2 text-caption font-semibold uppercase tracking-[0.2em] text-homera-amber">
-                    <span className="h-1.5 w-1.5 rounded-full bg-homera-amber" aria-hidden="true" />
-                    Votre espace personnel
-                  </p>
-                  <h1 id="client-welcome-title" className="mt-4 max-w-2xl font-serif text-display-lg text-white sm:text-display-xl">
-                    Bonjour, {account.prenom}.
-                  </h1>
-                  <p className="mt-3 max-w-2xl text-body-sm leading-relaxed text-white/75 sm:text-body">
-                    Vos recherches, vos biens favoris et les prochaines étapes de votre projet immobilier, réunis au même endroit.
-                  </p>
-                  <div className="mt-6 flex flex-wrap gap-3">
-                    <Link
-                      href="/explorer"
-                      className="homera-press inline-flex min-h-11 items-center gap-2 rounded-btn homera-cta-night px-4 text-note font-semibold text-white"
-                    >
-                      Explorer les biens
-                      <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                    </Link>
-                    <Link
-                      href="/client/favoris"
-                      className="inline-flex min-h-11 items-center gap-2 rounded-btn border border-white/20 bg-white/[0.06] px-4 text-note font-medium text-white transition-colors hover:bg-white/[0.12]"
-                    >
-                      <Heart className="h-4 w-4 text-homera-amber" aria-hidden="true" />
-                      Voir mes favoris
-                    </Link>
-                  </div>
-                </div>
-
-                <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-white/[0.06] p-5 backdrop-blur-sm">
-                  <div className="flex items-start justify-between gap-4">
-                    <div>
-                      <p className="text-caption font-semibold uppercase tracking-[0.16em] text-white/60">Votre projet</p>
-                      <p className="mt-2 font-serif text-display-xs text-white">
-                        {projectLabel(account.profile.projet) || "À préciser"}
-                      </p>
-                    </div>
-                    <span className="flex h-10 w-10 items-center justify-center rounded-full bg-homera-amber/15 text-homera-amber">
-                      <Sparkles className="h-5 w-5" aria-hidden="true" />
-                    </span>
-                  </div>
-                  <div className="mt-5 flex items-center gap-2 border-t border-white/10 pt-4 text-caption text-white/75">
-                    {account.emailVerified ? (
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-homera-amber" aria-hidden="true" />
-                    ) : (
-                      <MailCheck className="h-4 w-4 shrink-0 text-homera-amber" aria-hidden="true" />
-                    )}
-                    <span>{account.emailVerified ? "Adresse e-mail confirmée" : "Adresse e-mail à confirmer"}</span>
-                  </div>
-                </div>
-              </div>
+              <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(20,12,8,.85)_25%,rgba(20,12,8,.45)_60%,rgba(20,12,8,.15))]" />
+            </div>
+            <div className="relative p-6 sm:p-8">
+              <p className="text-caption font-semibold uppercase tracking-[0.2em] text-homera-amber">
+                Bonjour, {account.prenom}{" "}
+                <span aria-hidden="true">👋</span>
+              </p>
+              <h1 id="client-welcome-title" className="mt-3 max-w-xl font-serif text-display-md text-white sm:text-display-lg">
+                Bienvenue sur votre espace client
+              </h1>
+              <p className="mt-2 max-w-xl text-body-sm leading-relaxed text-white/80">
+                Suivez votre projet immobilier et accédez à toutes vos informations au même endroit.
+              </p>
+              <Link
+                href="/explorer"
+                className="homera-press mt-5 inline-flex min-h-11 items-center gap-2 rounded-btn bg-homera-amber px-5 text-note font-semibold text-homera-night transition-colors hover:bg-homera-amber/90"
+              >
+                <Search className="h-4 w-4" aria-hidden="true" />
+                Rechercher un bien
+              </Link>
             </div>
           </section>
 
-          <div className="mt-5 flex items-start gap-3 rounded-2xl border border-info/20 bg-info/[0.06] px-4 py-3.5 text-note leading-relaxed text-foreground">
-            <Info className="mt-0.5 h-4 w-4 shrink-0 text-info" aria-hidden="true" />
-            <p>
-              <span className="font-semibold">Ce que vous voyez est servi par HOMERA.</span> Votre compte, vos rôles, vos favoris, vos visites, vos candidatures, vos contrats, vos messages et vos notifications viennent du serveur : vous retrouvez la même liste sur tous vos appareils, et dans les pages dédiées. Deux limites, annoncées partout : HOMERA n’envoie pas encore d’e-mail (les codes s’affichent à l’écran) et n’encaisse aucun paiement en ligne.
-            </p>
-          </div>
-
-          <div className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
-            <OverviewMetric
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <StatCard
+              id="favoris"
               href="/client/favoris"
               icon={Heart}
-              label="Biens favoris"
+              label="Favoris"
               value={visitor.ready ? String(favoriteProperties.length) : "—"}
-              hint="Dans votre compte"
+              linkLabel="Voir mes favoris"
+              tone={{ chip: "bg-error/[0.08] text-error", link: "text-error" }}
             />
-            <OverviewMetric
-              href="/client/favoris"
-              icon={Search}
-              label="Recherches récentes"
-              value={visitor.ready ? String(visitor.searches.length) : "—"}
-              hint="Sur cet appareil"
+            <StatCard
+              href="/client/visites"
+              icon={CalendarDays}
+              label="Visites à venir"
+              value={serverVisits.loading ? "—" : String(countUpcoming(serverVisits.data?.visits ?? [], today))}
+              linkLabel="Voir mon calendrier"
+              tone={{ chip: "bg-info/[0.08] text-info", link: "text-info" }}
             />
-            <OverviewMetric
-              href="/client/profil"
-              icon={ShieldCheck}
-              label="État du compte"
-              value={account.emailVerified ? "Confirmé" : "À vérifier"}
-              hint={rolesLabel(account.roles)}
+            <StatCard
+              id="demandes"
+              href="/client/demandes"
+              icon={ClipboardList}
+              label="Demandes actives"
+              value={serverApplications.loading ? "—" : String(activeApplications.length)}
+              linkLabel="Voir mes demandes"
+              tone={{ chip: "bg-success/[0.08] text-success", link: "text-success" }}
             />
-            <OverviewMetric
-              href="/notifications"
-              icon={BellRing}
-              label="Notifications"
-              value={pendingActions > 0 ? `${pendingActions} non lue${pendingActions > 1 ? "s" : ""}` : "À venir"}
-              hint={
-                !account.emailVerified
-                  ? "Confirmez votre adresse"
-                  : (serverNotifications.data?.unread ?? 0) > 0
-                    ? "Activité de votre espace"
-                    : "Alertes automatiques non actives"
-              }
+            <StatCard
+              id="messages"
+              href="/messages"
+              icon={MessageCircle}
+              label="Messages non lus"
+              value={serverMessages.loading ? "—" : String(unreadMessages)}
+              linkLabel="Voir mes messages"
+              tone={{ chip: "bg-homera-terracotta/[0.10] text-homera-terracotta", link: "text-homera-terracotta" }}
             />
           </div>
 
-          <div className="mt-7 grid gap-5 xl:grid-cols-12">
-            <DashboardPanel
-              id="recherches"
-              icon={Search}
-              eyebrow="À reprendre"
-              title="Recherches récentes"
-              description="Retrouvez les critères que vous avez enregistrés."
-              action={{ href: "/explorer", label: "Explorer", external: true }}
-              className="xl:col-span-7"
+          <Panel
+            title="Biens recommandés pour vous"
+            subtitle="Des biens sélectionnés selon vos critères et votre historique de recherche."
+            action={{ href: "/explorer", label: "Voir tous les biens" }}
+          >
+            {!visitor.ready ? (
+              <PanelLoading label="Préparation de vos recommandations…" />
+            ) : recommendations.length === 0 ? (
+              <EmptyState
+                icon={Heart}
+                title="Votre sélection est complète"
+                description="Tous les biens du catalogue sont déjà dans vos favoris. Revenez explorer les nouvelles annonces dès leur publication."
+                action={{ href: "/explorer", label: "Revoir le catalogue" }}
+              />
+            ) : (
+              <div className="homera-noscrollbar -mx-1 flex snap-x gap-4 overflow-x-auto px-1 pb-1">
+                {recommendations.map((property) => (
+                  <div key={property.id} className="w-60 shrink-0 snap-start sm:w-64">
+                    <PropertyCard property={property} layout="grid" />
+                  </div>
+                ))}
+              </div>
+            )}
+          </Panel>
+
+          <div className="grid items-start gap-5 lg:grid-cols-2">
+            <Panel
+              id="visites"
+              title="Prochaines visites"
+              action={{ href: "/client/visites", label: "Voir tout" }}
             >
-              {!visitor.ready ? (
-                <PanelLoading label="Lecture de vos recherches…" />
-              ) : visitor.searches.length === 0 ? (
+              {serverVisits.loading ? (
+                <PanelLoading label="Lecture de votre agenda…" />
+              ) : upcomingVisits.length === 0 ? (
                 <EmptyState
-                  icon={Search}
-                  title="Aucune recherche enregistrée"
-                  description="Lancez une recherche dans le catalogue, puis enregistrez vos critères pour les retrouver ici."
-                  action={{ href: "/explorer", label: "Commencer une recherche" }}
+                  icon={CalendarDays}
+                  title="Aucune visite à venir"
+                  description="Demandez une date et un créneau, puis suivez la réponse de l’agent dans votre agenda."
+                  action={{ href: "/client/visites/nouvelle", label: "Demander une visite" }}
                 />
               ) : (
-                <ul className="space-y-2.5">
-                  {visitor.searches.slice(0, 3).map((search) => (
-                    <li key={search.id}>
+                <ul className="space-y-3">
+                  {upcomingVisits.map((visit) => {
+                    const property = PROPERTIES.find((entry) => entry.id === visit.propertyId);
+                    return (
+                      <li key={visit.id}>
+                        <Link
+                          href="/client/visites"
+                          className="group flex items-center gap-3 rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/35"
+                        >
+                          {property ? (
+                            <span aria-hidden="true" className="block h-14 w-14 shrink-0 overflow-hidden rounded-xl">
+                              <Visual
+                                mediaKey={property.media}
+                                alt=""
+                                sizes="56px"
+                                veil="none"
+                                className="h-full w-full"
+                                imageClassName="h-full w-full object-cover"
+                              />
+                            </span>
+                          ) : (
+                            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-homera-cream text-homera-brown">
+                              <CalendarDays className="h-5 w-5" aria-hidden="true" />
+                            </span>
+                          )}
+                          <span className="min-w-0 flex-1">
+                            <span className="block text-caption text-muted">
+                              {formatVisitSlot(visit.date, visit.time)}
+                            </span>
+                            <span className="block truncate text-note font-semibold text-foreground">
+                              {visit.propertyTitle}
+                            </span>
+                            <span className="mt-0.5 block truncate text-caption text-muted">
+                              {property ? `${property.city} - ${property.district}` : visit.reference}
+                            </span>
+                          </span>
+                          <span
+                            className={`hidden shrink-0 rounded-full border px-2.5 py-1 text-micro font-semibold sm:inline-flex ${VISIT_TONE[visit.status] ?? "border-border bg-background text-muted"}`}
+                          >
+                            {VISIT_LABELS[visit.status] ?? visit.status}
+                          </span>
+                          <ChevronRight className="h-4 w-4 shrink-0 text-muted transition-colors group-hover:text-homera-terracotta" aria-hidden="true" />
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </Panel>
+
+            <Panel title="Activité récente">
+              {activityLoading ? (
+                <PanelLoading label="Lecture de votre activité…" />
+              ) : activityItems.length === 0 ? (
+                <EmptyState
+                  icon={Bell}
+                  title="Aucune activité récente"
+                  description="Vos demandes, vos messages et vos notifications apparaîtront ici, du plus frais au plus ancien."
+                  action={{ href: "/explorer", label: "Découvrir les biens" }}
+                />
+              ) : (
+                <ul className="space-y-1">
+                  {activityItems.map((item) => (
+                    <li key={item.id}>
                       <Link
-                        href={search.href}
-                        className="group flex min-h-[4.5rem] items-center gap-3 rounded-2xl border border-border bg-background/65 px-3.5 py-3 transition-colors hover:border-homera-terracotta/40 hover:bg-surface-hover sm:px-4"
+                        href={item.href}
+                        className="group flex items-center gap-3 rounded-2xl px-2 py-2.5 transition-colors hover:bg-surface-hover"
                       >
-                        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-homera-terracotta/[0.08] text-homera-terracotta">
-                          <Search className="h-4 w-4" aria-hidden="true" />
-                        </span>
+                        <ActivityIcon kind={item.kind} />
                         <span className="min-w-0 flex-1">
-                          <span className="block truncate text-note font-semibold text-foreground">{search.label}</span>
-                          <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-caption text-muted">
-                            <span>{countLabel(safeCount(search.count))}</span>
-                            {search.savedAt && <span>· Enregistrée le {formatDay(search.savedAt)}</span>}
+                          <span className="block truncate text-note font-semibold text-foreground">
+                            {item.title}
+                          </span>
+                          <span className="mt-0.5 block truncate text-caption text-muted">
+                            {item.subtitle}
                           </span>
                         </span>
-                        <ArrowUpRight className="h-4 w-4 shrink-0 text-muted transition-colors group-hover:text-homera-terracotta" aria-hidden="true" />
+                        <span className="shrink-0 text-micro text-muted">{formatRelative(item.at)}</span>
                       </Link>
                     </li>
                   ))}
                 </ul>
               )}
-            </DashboardPanel>
+            </Panel>
+          </div>
 
-            <DashboardPanel
-              id="notifications"
-              icon={BellRing}
-              eyebrow="Centre de notifications"
-              title="Notifications"
-              description={pendingActions > 0 ? `${pendingActions} action à traiter sur votre compte.` : "Votre point de contact pour les alertes HOMERA."}
-              action={{ href: "/client/parametres", label: "Préférences" }}
-              className="xl:col-span-5"
-            >
-              <div className="space-y-3">
-                {!account.emailVerified && (
-                  <div className="rounded-2xl border border-warning/30 bg-warning/[0.08] p-4">
-                    <div className="flex items-start gap-3">
-                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-warning/10 text-warning">
-                        <MailCheck className="h-4 w-4" aria-hidden="true" />
-                      </span>
-                      <div className="min-w-0">
-                        <p className="text-note font-semibold text-foreground">Adresse e-mail à confirmer</p>
-                        <p className="mt-1 text-caption leading-relaxed text-muted">
-                          Le code de vérification du pilote s’affiche dans votre espace de confirmation — aucun e-mail automatique n’est envoyé.
-                        </p>
-                        <Link
-                          href="/verification-email"
-                          className="homera-underline mt-2 inline-flex min-h-8 items-center gap-1.5 text-caption font-semibold homera-accent-ink"
-                        >
-                          Saisir le code <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {unreadNotifications.slice(0, 2).map((notification) => (
-                  <Link
-                    key={notification.id}
-                    href={notification.link || "/notifications"}
-                    className="block rounded-2xl border border-homera-terracotta/25 bg-homera-terracotta/[0.05] p-3.5 transition-colors hover:border-homera-terracotta/45"
-                  >
-                    <p className="text-note font-semibold text-foreground">{notification.title}</p>
-                    <p className="mt-1 text-caption leading-relaxed text-muted">{notification.body}</p>
-                  </Link>
-                ))}
-
-                <div className="rounded-2xl border border-border bg-background/60 p-4">
-                  <div className="flex items-start gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-info/[0.08] text-info">
-                      <Info className="h-4 w-4" aria-hidden="true" />
-                    </span>
-                    <div>
-                      <p className="text-note font-semibold text-foreground">
-                        {AUTOMATIC_ALERTS_CAPABILITY?.available ? "Alertes automatiques" : "Alertes automatiques à venir"}
-                      </p>
-                      <p className="mt-1 text-caption leading-relaxed text-muted">
-                        {AUTOMATIC_ALERTS_CAPABILITY?.detail ?? "Les alertes de nouvelles annonces seront disponibles avec l’API."}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3 text-caption">
-                  <span className="text-muted">Votre préférence à l’inscription</span>
-                  <span className="font-semibold text-foreground">
-                    {account.notify ? "Accord donné pour les alertes" : "Alertes non demandées"}
-                  </span>
-                </div>
-              </div>
-            </DashboardPanel>
-
-            <DashboardPanel
-              id="favoris"
-              icon={Heart}
-              eyebrow="Votre sélection"
-              title="Biens favoris"
-              description="Les biens mis de côté pendant votre exploration."
-              action={{ href: "/client/favoris", label: "Tout voir", external: true }}
-              className="xl:col-span-7"
-            >
-              {!visitor.ready ? (
-                <PanelLoading label="Lecture de vos favoris…" />
-              ) : favoriteProperties.length === 0 ? (
-                <EmptyState
-                  icon={Heart}
-                  title="Votre sélection est encore vide"
-                  description="Ajoutez un bien à vos favoris avec le cœur sur sa fiche ou sa carte."
-                  action={{ href: "/explorer", label: "Découvrir les biens" }}
-                />
-              ) : (
-                <div className="grid gap-4 md:grid-cols-2">
-                  {favoriteProperties.slice(0, 2).map((property) => (
-                    <PropertyCard key={property.id} property={property} layout="grid" />
-                  ))}
-                </div>
-              )}
-            </DashboardPanel>
-
-            <DashboardPanel
-              id="visites"
-              icon={CalendarDays}
-              eyebrow="Votre agenda"
-              title="Prochaines visites"
-              description="Les rendez-vous liés à votre projet immobilier."
-
-              className="xl:col-span-5"
-            >
-              {serverVisits.loading ? <PanelLoading label="Lecture de votre agenda…" /> : recentVisits.length === 0 ? (
-                <EmptyState
-                  icon={CalendarDays}
-                  title="Aucune visite programmée"
-                  description="Demandez une date et un créneau, puis suivez la réponse de l’agent dans votre agenda."
-                  action={{ href: "/client/visites/nouvelle", label: "Demander une visite" }}
-                />
-              ) : <div className="space-y-3">{recentVisits.map((visit) => <Link key={visit.id} href="/client/visites" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/35"><span className="min-w-0"><span className="block truncate text-note font-semibold text-foreground">{visit.propertyTitle}</span><span className="mt-1 block text-caption text-muted">{formatDay(visit.date)} · {visit.time} · {visit.reference}</span></span><span className="shrink-0 rounded-full border border-border bg-card px-2.5 py-1 text-micro font-semibold text-muted">{VISIT_LABELS[visit.status] ?? visit.status}</span></Link>)}<Link href="/client/visites" className="inline-flex min-h-9 items-center text-caption font-semibold text-homera-terracotta hover:underline">Toutes mes visites <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" /></Link></div>}
-            </DashboardPanel>
-
-            <DashboardPanel
-              id="demandes"
-              icon={ClipboardList}
-              eyebrow="En cours de traitement"
-              title="Mes demandes"
-              description="Demandes d’information et dossiers rattachés à votre compte."
-
-              className="xl:col-span-6"
-            >
-              {serverApplications.loading ? <PanelLoading label="Lecture de vos demandes…" /> : recentApplications.length === 0 ? (
-                <EmptyState
-                  icon={ClipboardList}
-                  title="Aucune demande en cours"
-                  description="Après une visite terminée, déposez une candidature et suivez l’étude du dossier jusqu’à la remise des clés."
-                  action={{ href: "/client/demandes", label: "Mes demandes" }}
-                />
-              ) : <div className="space-y-3">{recentApplications.map((application) => <Link key={application.id} href="/client/demandes" className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/35"><span className="min-w-0"><span className="block truncate text-note font-semibold text-foreground">{application.propertyTitle}</span><span className="mt-1 block text-caption text-muted">Dossier {application.reference} · {formatDay(application.createdAt)}</span></span><span className="shrink-0 rounded-full border border-border bg-card px-2.5 py-1 text-micro font-semibold text-muted">{APPLICATION_STATUS_LABELS[application.status] ?? application.status}</span></Link>)}<Link href="/client/demandes" className="inline-flex min-h-9 items-center text-caption font-semibold text-homera-terracotta hover:underline">Toutes mes demandes <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" /></Link></div>}
-            </DashboardPanel>
-
-            <DashboardPanel
-              id="locations"
-              icon={House}
-              eyebrow="Mon logement"
-              title="Location active & paiements"
-              description="Contrat signé, montants prévus et marche à suivre pour le règlement."
-              action={{ href: "/client/paiements", label: "Paiements" }}
-              className="xl:col-span-6"
-            >
-              {serverContracts.loading ? (
-                <PanelLoading label="Lecture de vos contrats…" />
-              ) : activeRentals.length === 0 ? (
-                <EmptyState
-                  icon={Building2}
-                  title="Aucune location active ni échéance due"
-                  description="Aucun paiement n’est demandé avant la signature d’un contrat. Une visite ne coûte rien."
-                  action={{ href: "/client/contrats", label: "Mes contrats" }}
-                />
-              ) : (
-                <div className="space-y-3">
-                  {payableWorkflowItems.map((item) => (
+          <Panel
+            id="recherches"
+            title="Recherches récentes"
+            subtitle="Retrouvez les critères que vous avez enregistrés."
+            action={{ href: "/explorer", label: "Explorer" }}
+          >
+            {!visitor.ready ? (
+              <PanelLoading label="Lecture de vos recherches…" />
+            ) : visitor.searches.length === 0 ? (
+              <EmptyState
+                icon={Search}
+                title="Aucune recherche enregistrée"
+                description="Lancez une recherche dans le catalogue, puis enregistrez vos critères pour les retrouver ici."
+                action={{ href: "/explorer", label: "Commencer une recherche" }}
+              />
+            ) : (
+              <ul className="space-y-2.5">
+                {visitor.searches.slice(0, 3).map((search) => (
+                  <li key={search.id}>
                     <Link
-                      key={item.id}
-                      href={item.href}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-homera-terracotta/30 bg-homera-terracotta/[0.06] p-3.5 transition-colors hover:border-homera-terracotta/55"
+                      href={search.href}
+                      className="group flex min-h-[4.5rem] items-center gap-3 rounded-2xl border border-border bg-background/65 px-3.5 py-3 transition-colors hover:border-homera-terracotta/40 hover:bg-surface-hover sm:px-4"
                     >
-                      <span className="min-w-0">
-                        <span className="block truncate text-note font-semibold text-foreground">{item.title}</span>
-                        <span className="mt-0.5 block text-caption font-semibold text-homera-terracotta">{item.label}</span>
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-homera-terracotta/[0.08] text-homera-terracotta">
+                        <Search className="h-4 w-4" aria-hidden="true" />
                       </span>
-                      <ArrowRight className="h-4 w-4 shrink-0 text-homera-terracotta" aria-hidden="true" />
-                    </Link>
-                  ))}
-                  {activeRentals.map((contract) => (
-                    <Link
-                      key={contract.id}
-                      href={`/client/contrats/${contract.id}`}
-                      className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-background/60 p-3.5 transition-colors hover:border-homera-terracotta/35"
-                    >
-                      <span className="min-w-0">
-                        <span className="block truncate text-note font-semibold text-foreground">{contract.propertyTitle}</span>
-                        <span className="mt-1 block text-caption text-muted">
-                          {contract.reference} · {formatFCFA(contract.rent)} / mois
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-note font-semibold text-foreground">{search.label}</span>
+                        <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-caption text-muted">
+                          <span>{countLabel(safeCount(search.count))}</span>
+                          {search.savedAt && <span>· Enregistrée le {formatDay(search.savedAt)}</span>}
                         </span>
                       </span>
-                      <span className="shrink-0 rounded-full border border-success/30 bg-success/[0.07] px-2.5 py-1 text-micro font-semibold text-success">Signé</span>
+                      <ArrowRight className="h-4 w-4 shrink-0 text-muted transition-colors group-hover:text-homera-terracotta" aria-hidden="true" />
                     </Link>
-                  ))}
-                </div>
-              )}
-            </DashboardPanel>
-
-            <DashboardPanel
-              id="recommandations"
-              icon={Sparkles}
-              eyebrow="Sélection HOMERA"
-              title="Recommandations pour vous"
-              description="Une sélection du catalogue selon votre projet déclaré, vos recherches récentes et vos favoris."
-              action={{ href: "/explorer", label: "Tout explorer", external: true }}
-              className="xl:col-span-12"
-            >
-              {!visitor.ready ? (
-                <PanelLoading label="Préparation de vos recommandations…" />
-              ) : recommendations.length === 0 ? (
-                <EmptyState
-                  icon={Sparkles}
-                  title="Votre sélection est complète"
-                  description="Tous les biens du catalogue sont déjà dans vos favoris. Revenez explorer les nouvelles annonces dès leur publication."
-                  action={{ href: "/explorer", label: "Revoir le catalogue" }}
-                />
-              ) : (
-                <ul className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                  {recommendations.map((property) => (
-                    <li key={property.id} className="h-full">
-                      <PropertyCard property={property} layout="grid" />
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </DashboardPanel>
-
-            <DashboardPanel
-              id="messages"
-              icon={MessageCircle}
-              eyebrow="Échanges"
-              title="Messages"
-              description="Retrouvez ici les échanges liés à vos biens et à vos demandes."
-
-              className="xl:col-span-5"
-            >
-              {serverMessages.loading ? <PanelLoading label="Lecture de vos échanges…" /> : recentMessages.length === 0 ? (
-                <EmptyState
-                  icon={MessageCircle}
-                  title="Aucun échange dans cet espace"
-                  description="Écrivez depuis la fiche d’un bien : la conversation est rattachée à sa référence HOMERA et au professionnel qui le suit."
-                  action={{ href: "/messages", label: "Ouvrir la messagerie" }}
-                />
-              ) : <div className="space-y-2">{recentMessages.map((thread) => <Link key={thread.id} href="/messages" className="block rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/35"><span className="flex items-center justify-between gap-3"><span className="truncate text-note font-semibold text-foreground">{thread.propertyTitle}</span><span className="shrink-0 text-micro text-muted">{formatDay(thread.lastMessageAt)}</span></span><span className="mt-1 block truncate text-caption text-muted">{thread.lastMessagePreview || "Conversation ouverte"}</span></Link>)}<Link href="/messages" className="inline-flex min-h-9 items-center text-caption font-semibold text-homera-terracotta hover:underline">Ouvrir la messagerie <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" /></Link></div>}
-            </DashboardPanel>
-
-            <DashboardPanel
-              id="profil"
-              icon={UserRound}
-              eyebrow="Identité et projet"
-              title="Mon profil"
-              description="Les informations détenues par HOMERA sur ce compte."
-              action={{ href: "/client/profil", label: "Modifier mon profil", external: true }}
-              className="xl:col-span-7"
-            >
-              <div className="flex flex-wrap items-center gap-3 rounded-2xl border border-border bg-background/60 p-4">
-                <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full homera-cta font-serif text-display-xs text-white">
-                  {initials(account.prenom, account.nom)}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-body-sm font-semibold text-foreground">
-                    {account.prenom} {account.nom}
-                  </p>
-                  <p className="mt-0.5 truncate text-caption text-muted">{account.email}</p>
-                </div>
-                <span
-                  className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-caption font-semibold ${
-                    account.emailVerified
-                      ? "border-success/25 bg-success/[0.08] text-success"
-                      : "border-warning/30 bg-warning/[0.08] text-warning"
-                  }`}
-                >
-                  {account.emailVerified ? <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" /> : <MailCheck className="h-3.5 w-3.5" aria-hidden="true" />}
-                  {account.emailVerified ? "Adresse confirmée" : "À confirmer"}
-                </span>
-              </div>
-
-              <dl className="mt-4 grid gap-x-6 gap-y-4 sm:grid-cols-2">
-                <ProfileItem label="Téléphone" value={maskPhone(account.telephone)} />
-                <ProfileItem label="Rôles du compte" value={rolesLabel(account.roles)} />
-                <ProfileItem label="Rôle principal" value={roleDefinition(account.role).label} />
-                {profileLines.map((line) => (
-                  <ProfileItem key={line.name} label={line.label} value={line.value} />
+                  </li>
                 ))}
-              </dl>
-              <p className="mt-4 border-t border-border pt-3 text-caption leading-relaxed text-muted">
-                Compte créé le {formatDay(account.createdAt)}. Les changements de profil seront éditables depuis cet espace avec l’API.
-              </p>
-            </DashboardPanel>
+              </ul>
+            )}
+          </Panel>
+        </div>
 
-            <DashboardPanel
-              id="parametres"
-              icon={Settings2}
-              eyebrow="Préférences"
-              title="Paramètres"
-              description="Quelques réglages disponibles dès maintenant dans le pilote."
-              className="xl:col-span-12"
+        <div className="grid min-w-0 content-start gap-5">
+          <section
+            id="profil"
+            aria-labelledby="profil-title"
+            className="rounded-2xl border border-border bg-card p-5"
+          >
+            <div className="flex items-center gap-3">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-homera-terracotta/[0.10] font-serif text-display-xs text-homera-terracotta">
+                {initials(account.prenom, account.nom)}
+              </span>
+              <span className="min-w-0 text-left">
+                <span id="profil-title" className="block truncate text-body-sm font-semibold text-foreground">
+                  {account.prenom} {account.nom}
+                </span>
+                <span className="block truncate text-caption text-muted">{account.email}</span>
+              </span>
+            </div>
+            <p className="mt-3">
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-caption font-semibold ${
+                  account.emailVerified
+                    ? "border-success/25 bg-success/[0.08] text-success"
+                    : "border-warning/30 bg-warning/[0.08] text-warning"
+                }`}
+              >
+                {account.emailVerified ? (
+                  <CheckCircle2 className="h-3.5 w-3.5" aria-hidden="true" />
+                ) : (
+                  <MailCheck className="h-3.5 w-3.5" aria-hidden="true" />
+                )}
+                {account.emailVerified ? "Client actif" : "Adresse à confirmer"}
+              </span>
+            </p>
+            <Link
+              href="/client/profil"
+              className="mt-3 flex min-h-10 items-center justify-center gap-1.5 rounded-btn border border-border px-3 text-note font-semibold text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
             >
-              <div className="grid gap-3 md:grid-cols-3">
-                <div className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-background/60 p-4">
-                  <div>
-                    <p className="text-note font-semibold text-foreground">Thème d’affichage</p>
-                    <p className="mt-1 text-caption text-muted">
-                      {resolvedTheme ? (currentThemeIsDark ? "Mode sombre" : "Mode clair") : "Thème du système"}
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setTheme(currentThemeIsDark ? "light" : "dark")}
-                    aria-label={currentThemeIsDark ? "Passer au mode clair" : "Passer au mode sombre"}
-                    aria-pressed={currentThemeIsDark}
-                    className="homera-press inline-flex h-10 shrink-0 items-center gap-2 rounded-full border border-border bg-card px-3 text-caption font-semibold text-foreground hover:border-homera-terracotta hover:text-homera-terracotta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-terracotta"
-                  >
-                    {currentThemeIsDark ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
-                    {currentThemeIsDark ? "Clair" : "Sombre"}
-                  </button>
-                </div>
+              Voir mon profil <ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </section>
 
-                <div className="rounded-2xl border border-border bg-background/60 p-4">
-                  <p className="text-note font-semibold text-foreground">Alertes de nouvelles annonces</p>
-                  <p className="mt-1 text-caption leading-relaxed text-muted">
-                    {account.notify
-                      ? "Vous avez donné votre accord à l’inscription. Les envois automatiques ne sont pas actifs dans le pilote."
-                      : "Vous n’avez pas demandé d’alertes à l’inscription. Leur gestion sera disponible avec l’API."}
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-border bg-background/60 p-4">
-                  <p className="text-note font-semibold text-foreground">Données et confidentialité</p>
-                  <p className="mt-1 text-caption leading-relaxed text-muted">
-                    Le compte et ses rôles sont tenus par le serveur HOMERA. Les favoris et les recherches restent sur cet appareil, sans synchronisation.
-                  </p>
-                  <Link
-                    href="/legal"
-                    className="homera-underline mt-2 inline-flex min-h-8 items-center gap-1.5 text-caption font-semibold homera-accent-ink"
-                  >
-                    Lire les informations légales <ArrowUpRight className="h-3.5 w-3.5" aria-hidden="true" />
-                  </Link>
-                </div>
+          <Panel
+            id="notifications"
+            title="Notifications"
+            action={{ href: "/notifications", label: "Voir tout" }}
+          >
+            {serverNotifications.loading ? (
+              <PanelLoading label="Lecture de vos notifications…" />
+            ) : unreadNotifications.length === 0 ? (
+              <div>
+                <p className="text-note leading-relaxed text-muted">Aucune notification non lue.</p>
+                <Link
+                  href="/notifications"
+                  className="homera-underline mt-2 inline-flex min-h-8 items-center gap-1.5 text-caption font-semibold homera-accent-ink"
+                >
+                  Voir les notifications <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                </Link>
               </div>
-            </DashboardPanel>
-          </div>
+            ) : (
+              <ul className="space-y-1">
+                {unreadNotifications.slice(0, 3).map((notification) => (
+                  <li key={notification.id}>
+                    <Link
+                      href={notification.link || "/notifications"}
+                      className="group flex items-start gap-3 rounded-2xl px-2 py-2.5 transition-colors hover:bg-surface-hover"
+                    >
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-info/[0.08] text-info">
+                        <Bell className="h-4 w-4" aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-note font-semibold text-foreground">
+                          {notification.title}
+                        </span>
+                        <span className="mt-0.5 line-clamp-2 block text-caption leading-relaxed text-muted">
+                          {notification.body}
+                        </span>
+                        <span className="mt-1 block text-micro text-muted">
+                          {formatRelative(notification.created_at)}
+                        </span>
+                      </span>
+                      <ChevronRight className="mt-1 h-4 w-4 shrink-0 text-muted transition-colors group-hover:text-homera-terracotta" aria-hidden="true" />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="mt-3 rounded-2xl bg-background/60 p-3 text-caption leading-relaxed text-muted">
+              <span className="flex items-start gap-2">
+                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-info" aria-hidden="true" />
+                {AUTOMATIC_ALERTS_CAPABILITY?.available
+                  ? "Alertes automatiques activées sur ce compte."
+                  : "Alertes automatiques à venir : seules les notifications de votre espace sont actives."}
+              </span>
+            </div>
+          </Panel>
+
+          <Panel id="raccourcis" title="Raccourcis">
+            <ul className="grid grid-cols-2 gap-3">
+              {SHORTCUTS.map((shortcut) => (
+                <li key={shortcut.href + shortcut.label} id={shortcut.id}>
+                  <Link
+                    href={shortcut.href}
+                    className="flex h-full min-h-[4.5rem] items-center gap-2.5 rounded-2xl border border-border bg-background/60 p-3 transition-colors hover:border-homera-terracotta/40 hover:bg-surface-hover"
+                  >
+                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-homera-terracotta/[0.08] text-homera-terracotta">
+                      <shortcut.icon className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <span className="text-caption font-semibold leading-tight text-foreground">
+                      {shortcut.label}
+                    </span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </Panel>
+
+          <section
+            aria-labelledby="confier-title"
+            className="relative overflow-hidden rounded-2xl bg-homera-night text-white"
+          >
+            <div aria-hidden="true" className="absolute inset-0">
+              <Visual
+                mediaKey={BANNER_MEDIA}
+                alt=""
+                sizes="(min-width: 1280px) 20rem, 100vw"
+                veil="none"
+                className="h-full w-full"
+                imageClassName="h-full w-full object-cover"
+              />
+              <div className="absolute inset-0 bg-homera-night/72" />
+            </div>
+            <div className="relative p-5">
+              <h2 id="confier-title" className="font-serif text-display-xs text-white">
+                Vous avez un bien à vendre ou à louer ?
+              </h2>
+              <p className="mt-2 text-caption leading-relaxed text-white/80">
+                Confiez-le à HOMERA et touchez plus d’acheteurs et de locataires.
+              </p>
+              <Link
+                href="/contact"
+                className="homera-press mt-4 inline-flex min-h-10 items-center rounded-btn bg-homera-amber px-4 text-note font-semibold text-homera-night transition-colors hover:bg-homera-amber/90"
+              >
+                En savoir plus
+              </Link>
+            </div>
+          </section>
+        </div>
+      </div>
+
+      <span role="status" className="sr-only">
+        {favoriteProperties.length} favoris · {upcomingVisits.length} visites à venir ·{" "}
+        {activeApplications.length} demandes actives.
+      </span>
     </div>
   );
 }
 
-function OverviewMetric({
+function StatCard({
+  id,
   href,
   icon: Icon,
   label,
   value,
-  hint,
+  linkLabel,
+  tone,
 }: {
+  id?: string;
   href: string;
   icon: LucideIcon;
   label: string;
   value: string;
-  hint: string;
+  linkLabel: string;
+  tone: { chip: string; link: string };
 }) {
   return (
-    <Link
-      href={href}
-      className="group min-h-[7.2rem] rounded-2xl border border-border bg-card p-4 transition-colors hover:border-homera-terracotta/35 sm:p-5"
-    >
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-caption font-medium text-muted">{label}</span>
-        <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-homera-terracotta/[0.08] text-homera-terracotta transition-colors group-hover:bg-homera-terracotta group-hover:text-white">
-          <Icon className="h-4 w-4" aria-hidden="true" />
+    <div id={id} className="rounded-2xl border border-border bg-card p-5">
+      <div className="flex items-center gap-3">
+        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${tone.chip}`}>
+          <Icon className="h-5 w-5" aria-hidden="true" />
         </span>
+        <p className="text-note font-medium text-muted">{label}</p>
       </div>
-      <p className="mt-2 truncate font-serif text-display-xs text-foreground sm:text-display-sm">{value}</p>
-      <p className="mt-0.5 truncate text-micro text-muted sm:text-caption">{hint}</p>
-    </Link>
+      <p className="mt-3 font-serif text-display-md text-foreground">{value}</p>
+      <Link
+        href={href}
+        className={`mt-1 inline-flex min-h-8 items-center gap-1 text-caption font-semibold ${tone.link}`}
+      >
+        {linkLabel} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+      </Link>
+    </div>
   );
 }
 
-function DashboardPanel({
+function Panel({
   id,
-  icon: Icon,
-  eyebrow,
   title,
-  description,
+  subtitle,
   action,
-  badge,
-  className = "",
   children,
 }: {
-  id: string;
-  icon: LucideIcon;
-  eyebrow: string;
+  id?: string;
   title: string;
-  description: string;
-  action?: { href: string; label: string; external?: boolean };
-  badge?: ReactNode;
-  className?: string;
+  subtitle?: string;
+  action?: { href: string; label: string };
   children: ReactNode;
 }) {
+  const titleId = useId();
   return (
     <section
       id={id}
-      aria-labelledby={`${id}-title`}
-      className={`scroll-mt-24 min-w-0 rounded-card border border-border bg-card p-4 shadow-[0_4px_18px_rgba(62,36,24,0.035)] sm:p-5 xl:p-6 ${className}`}
+      aria-labelledby={titleId}
+      className="min-w-0 rounded-2xl border border-border bg-card p-5 sm:p-6"
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-start gap-3">
-          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-homera-terracotta/[0.08] text-homera-terracotta">
-            <Icon className="h-4.5 w-4.5" aria-hidden="true" />
-          </span>
-          <div className="min-w-0">
-            <p className="text-micro font-semibold uppercase tracking-[0.17em] homera-accent-ink">{eyebrow}</p>
-            <div className="mt-0.5 flex flex-wrap items-center gap-2">
-              <h2 id={`${id}-title`} className="font-serif text-display-xs text-foreground">{title}</h2>
-              {badge}
-            </div>
-            <p className="mt-1 text-caption leading-relaxed text-muted">{description}</p>
-          </div>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div className="min-w-0">
+          <h2 id={titleId} className="text-body font-semibold text-foreground">
+            {title}
+          </h2>
+          {subtitle && <p className="mt-1 text-caption leading-relaxed text-muted">{subtitle}</p>}
         </div>
         {action && (
           <Link
             href={action.href}
-            aria-label={action.label}
-            className="homera-press inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border border-border px-3 text-caption font-semibold text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
+            className="inline-flex min-h-8 shrink-0 items-center gap-1 text-caption font-semibold text-homera-terracotta hover:underline"
           >
-            <span className="hidden sm:inline">{action.label}</span>
-            <span className="sm:hidden" aria-hidden="true">{action.external ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowRight className="h-3.5 w-3.5" />}</span>
-            <span className="hidden sm:inline" aria-hidden="true">
-              {action.external ? <ArrowUpRight className="h-3.5 w-3.5" /> : <ArrowRight className="h-3.5 w-3.5" />}
-            </span>
+            {action.label} <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
         )}
       </div>
-      <div className="mt-5">{children}</div>
+      <div className="mt-4">{children}</div>
     </section>
   );
 }
 
+function ActivityIcon({ kind }: { kind: ActivityItem["kind"] }) {
+  if (kind === "message") {
+    return (
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-homera-terracotta/[0.10] text-homera-terracotta">
+        <MessageCircle className="h-4 w-4" aria-hidden="true" />
+      </span>
+    );
+  }
+  if (kind === "demande") {
+    return (
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-success/[0.08] text-success">
+        <ClipboardList className="h-4 w-4" aria-hidden="true" />
+      </span>
+    );
+  }
+  return (
+    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-info/[0.08] text-info">
+      <Bell className="h-4 w-4" aria-hidden="true" />
+    </span>
+  );
+}
 
 function EmptyState({
   icon: Icon,
@@ -834,21 +813,16 @@ function PanelLoading({ label }: { label: string }) {
   );
 }
 
-function ProfileItem({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0">
-      <dt className="text-micro font-semibold uppercase tracking-[0.15em] text-muted">{label}</dt>
-      <dd className="mt-1 break-words text-note font-medium text-foreground">{value}</dd>
-    </div>
-  );
-}
-
 function isProperty(property: Property | undefined): property is Property {
   return Boolean(property);
 }
 
 function safeCount(value: number): number {
   return Number.isFinite(value) && value > 0 ? Math.floor(value) : 0;
+}
+
+function countUpcoming(visits: ServerVisit[], today: string): number {
+  return visits.filter((visit) => isUpcomingVisit(visit, today)).length;
 }
 
 function formatDay(value: string): string {
@@ -863,12 +837,30 @@ function formatDay(value: string): string {
   });
 }
 
-function projectLabel(value: string | undefined): string {
-  if (value === "investir") return "Investir";
-  if (value === "acheter" || value === "louer" || value === "sejour") {
-    return value === "sejour" ? "Séjourner" : value[0].toUpperCase() + value.slice(1);
-  }
-  return "";
+/** « jeu. 22 oct. 2026 · 10h00 » : le créneau tel que le serveur l'a enregistré. */
+function formatVisitSlot(date: string, time: string): string {
+  const day = new Date(`${date.slice(0, 10)}T00:00:00Z`);
+  const weekday = Number.isNaN(day.getTime())
+    ? ""
+    : `${day.toLocaleDateString("fr-FR", { weekday: "short", timeZone: "UTC" })} `;
+  const hour = time.includes(":") ? time.replace(":", "h") : time;
+  return `${weekday}${formatDay(date)} · ${hour}`;
+}
+
+/** « Il y a 2 heures » : l'âge réel d'un fait daté du compte. */
+function formatRelative(value: string): string {
+  const time = new Date(value).getTime();
+  if (Number.isNaN(time)) return formatDay(value);
+  const elapsed = Date.now() - time;
+  if (elapsed < 0) return formatDay(value);
+  const minutes = Math.floor(elapsed / 60000);
+  if (minutes < 1) return "À l’instant";
+  if (minutes < 60) return `Il y a ${minutes} min`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Il y a ${hours} heure${hours > 1 ? "s" : ""}`;
+  const days = Math.floor(hours / 24);
+  if (days < 7) return `Il y a ${days} jour${days > 1 ? "s" : ""}`;
+  return formatDay(value);
 }
 
 function queryFromSavedSearch(search: SavedSearch | undefined) {
@@ -924,6 +916,6 @@ function selectRecommendations(account: PublicAccount, favoriteIds: string[], se
         second.property.publishedAt.localeCompare(first.property.publishedAt) ||
         first.property.title.localeCompare(second.property.title, "fr"),
     )
-    .slice(0, 3)
+    .slice(0, 4)
     .map(({ property }) => property);
 }

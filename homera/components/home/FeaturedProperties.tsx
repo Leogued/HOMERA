@@ -57,7 +57,10 @@ export function FeaturedProperties() {
   const slot = useAutoSlot("biens", sectionVisible && !reduced && results.length > 1);
   const lastActivity = useRef(0);
   const indexRef = useRef(activeIndex);
-  indexRef.current = activeIndex;
+  /* L'avance automatique lit l'index courant : synchronisé après rendu. */
+  useEffect(() => {
+    indexRef.current = activeIndex;
+  });
   /* Durée de lecture adaptée au contenu : ~280 ms par mot, entre 4,5 s et 8 s. */
 function autoplayDelay(property: Property): number {
   const words = `${property.title} ${property.district} ${property.city}`.split(/\s+/).length;
@@ -238,7 +241,7 @@ function autoplayDelay(property: Property): number {
     timer = window.setTimeout(tick, autoplayDelay(current));
     return () => window.clearTimeout(timer);
   }, [sectionVisible, slot, reduced, preview, results, activeIndex, goTo]);
-  const closePreview = useCallback(() => setPreview(null), []);
+  const closePreview = useCallback(() => setPreview(null), [setPreview]);
   return (
     <section
       ref={sectionRef}

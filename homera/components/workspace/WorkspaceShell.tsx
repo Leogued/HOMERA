@@ -2,10 +2,15 @@
 
 import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useServerResource } from "@/lib/use-server-resource";
+import {
+  countActiveApplications,
+  countUnreadMessages,
+  countUpcomingVisits,
+} from "@/lib/client-badges";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Activity, ArrowLeft, ArrowRight, Bell, CalendarDays, CheckCheck,
+  Activity, ArrowLeft, ArrowRight, Bell, CalendarDays, CheckCheck, ChevronDown,
   ClipboardCheck, ClipboardList, FileBadge, FileText, Heart, HelpCircle, House, LayoutDashboard,
   LogOut, Menu, MessageCircle, Plus, Search, Settings2, ShieldCheck, UserRound,
   Users, WalletCards, X, type LucideIcon,
@@ -48,16 +53,14 @@ function getCurrentLocalUrl() {
 const NAV: Record<Exclude<WorkspaceRole, "any">, NavigationGroup[]> = {
   client: [
     { label: "Navigation principale", items: [
-      { id: "dashboard", label: "Accueil", href: "/client", icon: LayoutDashboard },
-      { id: "explorer", label: "Explorer", href: "/explorer", icon: Search },
-      { id: "favoris", label: "Favoris", href: "/client/favoris", icon: Heart },
+      { id: "dashboard", label: "Tableau de bord", href: "/client", icon: LayoutDashboard },
+      { id: "favoris", label: "Mes favoris", href: "/client/favoris", icon: Heart },
       { id: "visites", label: "Mes visites", href: "/client/visites", icon: CalendarDays },
       { id: "demandes", label: "Mes demandes", href: "/client/demandes", icon: ClipboardList },
-      { id: "contrats", label: "Mes locations", href: "/client/contrats", icon: FileText },
-      { id: "paiements", label: "Moyens de paiement", href: "/client/paiements", icon: WalletCards },
+      { id: "contrats", label: "Mes locations", href: "/client/contrats", icon: House },
+      { id: "paiements", label: "Mes paiements", href: "/client/paiements", icon: WalletCards },
     ] },
     { label: "Échanges", items: [
-      { id: "notifications", label: "Notifications", href: "/notifications", icon: Bell, badge: true },
       { id: "messages", label: "Messages", href: "/messages", icon: MessageCircle },
     ] },
   ],
@@ -160,6 +163,17 @@ export function WorkspaceShell({
     : role;
   const navGroups = NAV[activeWorkspaceId];
   const currentHref = pathname || "/";
+  /* Espace client : habillage clair, et pastilles comptées depuis les mêmes
+     API que le tableau de bord. Les autres espaces gardent le thème sombre. */
+  const light = activeWorkspaceId === "client";
+  const badgeVisits = useServerResource<{ visits: { date: string; status: string }[] }>(light ? "/api/visits" : null);
+  const badgeApplications = useServerResource<{ applications: { status: string }[] }>(light ? "/api/applications" : null);
+  const badgeMessages = useServerResource<{ conversations: { unreadCount: number }[] }>(light ? "/api/messages" : null);
+  const badgeCounts: Record<string, number> = {
+    visites: countUpcomingVisits(badgeVisits.data?.visits ?? []),
+    demandes: countActiveApplications(badgeApplications.data?.applications ?? []),
+    messages: countUnreadMessages(badgeMessages.data?.conversations ?? []),
+  };
 
   useEffect(() => {
     if (!mobileOpen && !notificationsOpen) return;
@@ -213,7 +227,7 @@ export function WorkspaceShell({
       {/* Switch d’espace : espaces auxquels l’utilisateur possède réellement accès */}
       {canSwitchWorkspaces && (
         <div>
-          <p className="px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] text-homera-amber">
+          <p className={`px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] ${light ? "text-homera-terracotta" : "text-homera-amber"}`}>
             Switch d’espace
           </p>
           <ul className="space-y-1">
@@ -227,18 +241,24 @@ export function WorkspaceShell({
                     aria-current={isCurrentSpace ? "page" : undefined}
                     className={`flex min-h-10 items-center justify-between gap-2 rounded-xl px-3 py-2 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${
                       isCurrentSpace
-                        ? "border border-homera-amber/35 bg-homera-amber/15 font-semibold text-white"
-                        : "text-white/70 hover:bg-white/[0.06] hover:text-white"
+                        ? light
+                          ? "border border-homera-terracotta/30 bg-homera-terracotta/[0.08] font-semibold text-homera-terracotta"
+                          : "border border-homera-amber/35 bg-homera-amber/15 font-semibold text-white"
+                        : light
+                          ? "text-muted hover:bg-surface-hover hover:text-foreground"
+                          : "text-white/70 hover:bg-white/[0.06] hover:text-white"
                     }`}
                   >
                     <span className="min-w-0 flex-1">
                       <span className="block truncate">{space.label}</span>
-                      <span className="block truncate text-micro text-white/50">{space.description}</span>
+                      <span className={`block truncate text-micro ${light ? "text-muted" : "text-white/50"}`}>{space.description}</span>
                     </span>
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-micro font-semibold ${
                       isCurrentSpace
                         ? "bg-homera-amber text-homera-night"
-                        : "border border-white/15 text-white/65"
+                        : light
+                          ? "border border-border text-muted"
+                          : "border border-white/15 text-white/65"
                     }`}>
                       {isCurrentSpace ? "Actif" : "Ouvrir"}
                     </span>
@@ -253,7 +273,7 @@ export function WorkspaceShell({
       {/* Navigation principale : pages principales de l’espace actif */}
       {navGroups.map((group) => (
         <div key={group.label}>
-          <p className="px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] text-white/45">{group.label}</p>
+          <p className={`px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] ${light ? "text-muted" : "text-white/45"}`}>{group.label}</p>
           <ul className="space-y-1">
             {group.items.map((item) => {
               const active = item.href === "/client" || item.href === "/proprietaire" || item.href === "/agent" || item.href === "/admin"
@@ -265,11 +285,12 @@ export function WorkspaceShell({
                     href={item.href}
                     onClick={() => setMobileOpen(false)}
                     aria-current={active ? "page" : undefined}
-                    className={`group flex min-h-10 items-center gap-3 rounded-xl px-3 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${active ? "bg-white/10 font-semibold text-white" : "text-white/70 hover:bg-white/[0.06] hover:text-white"}`}
+                    className={`group flex min-h-10 items-center gap-3 rounded-xl px-3 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${active ? light ? "bg-homera-terracotta/[0.10] font-semibold text-homera-terracotta" : "bg-white/10 font-semibold text-white" : light ? "text-muted hover:bg-surface-hover hover:text-foreground" : "text-white/70 hover:bg-white/[0.06] hover:text-white"}`}
                   >
-                    <item.icon className={`h-[17px] w-[17px] shrink-0 ${active ? "text-homera-amber" : "text-white/55 group-hover:text-white"}`} aria-hidden="true" />
+                    <item.icon className={`h-[17px] w-[17px] shrink-0 ${active ? light ? "text-homera-terracotta" : "text-homera-amber" : light ? "text-muted group-hover:text-foreground" : "text-white/55 group-hover:text-white"}`} aria-hidden="true" />
                     <span className="min-w-0 flex-1 truncate">{item.label}</span>
-                    {item.id === "favoris" && favoriteCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-white/15 px-1.5 text-micro font-semibold text-white">{favoriteCount}</span>}
+                    {item.id === "favoris" && favoriteCount > 0 && <span className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-micro font-semibold ${light ? "bg-homera-terracotta/[0.12] text-homera-terracotta" : "bg-white/15 text-white"}`}>{favoriteCount}</span>}
+                    {(item.id === "visites" || item.id === "demandes" || item.id === "messages") && (badgeCounts[item.id] ?? 0) > 0 && <span className={`flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-micro font-semibold ${light ? "bg-homera-terracotta/[0.12] text-homera-terracotta" : "bg-white/15 text-white"}`}>{badgeCounts[item.id]}</span>}
                     {item.badge && item.id !== "verifications" && unread > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-homera-terracotta px-1.5 text-micro font-semibold text-white">{unread}</span>}
                     {item.id === "verifications" && activeWorkspaceId === "admin" && openVerificationCount > 0 && <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-homera-amber px-1.5 text-micro font-semibold text-homera-night">{openVerificationCount}</span>}
                   </Link>
@@ -282,7 +303,7 @@ export function WorkspaceShell({
 
       {/* Actions secondaires : Profil, paramètres, aide, retour au site, déconnexion (sans duplication, dans le même flux défilant) */}
       <div>
-        <p className="px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] text-white/45">Actions secondaires</p>
+        <p className={`px-3 pb-2 text-micro font-semibold uppercase tracking-[0.19em] ${light ? "text-muted" : "text-white/45"}`}>Actions secondaires</p>
         <ul className="space-y-1">
           <li>
             <Link
@@ -290,10 +311,10 @@ export function WorkspaceShell({
               onClick={() => setMobileOpen(false)}
               aria-current={currentHref === secondaryProfileHref ? "page" : undefined}
               className={`group flex min-h-10 items-center gap-3 rounded-xl px-3 py-2 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${
-                currentHref === secondaryProfileHref ? "bg-white/10 font-semibold text-white" : "text-white/70 hover:bg-white/[0.06] hover:text-white"
+                currentHref === secondaryProfileHref ? light ? "bg-homera-terracotta/[0.10] font-semibold text-homera-terracotta" : "bg-white/10 font-semibold text-white" : light ? "text-muted hover:bg-surface-hover hover:text-foreground" : "text-white/70 hover:bg-white/[0.06] hover:text-white"
               }`}
             >
-              <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-white/12 font-serif text-micro text-homera-amber" aria-hidden="true">
+              <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full font-serif text-micro ${light ? "bg-homera-terracotta/[0.12] text-homera-terracotta" : "bg-white/12 text-homera-amber"}`} aria-hidden="true">
                 {initials(account.prenom, account.nom)}
               </span>
               <span className="min-w-0 flex-1 truncate">
@@ -307,10 +328,10 @@ export function WorkspaceShell({
               onClick={() => setMobileOpen(false)}
               aria-current={currentHref === secondarySettingsHref ? "page" : undefined}
               className={`group flex min-h-10 items-center gap-3 rounded-xl px-3 text-note transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber ${
-                currentHref === secondarySettingsHref ? "bg-white/10 font-semibold text-white" : "text-white/70 hover:bg-white/[0.06] hover:text-white"
+                currentHref === secondarySettingsHref ? light ? "bg-homera-terracotta/[0.10] font-semibold text-homera-terracotta" : "bg-white/10 font-semibold text-white" : light ? "text-muted hover:bg-surface-hover hover:text-foreground" : "text-white/70 hover:bg-white/[0.06] hover:text-white"
               }`}
             >
-              <Settings2 className={`h-[17px] w-[17px] shrink-0 ${currentHref === secondarySettingsHref ? "text-homera-amber" : "text-white/55 group-hover:text-white"}`} aria-hidden="true" />
+              <Settings2 className={`h-[17px] w-[17px] shrink-0 ${currentHref === secondarySettingsHref ? light ? "text-homera-terracotta" : "text-homera-amber" : light ? "text-muted group-hover:text-foreground" : "text-white/55 group-hover:text-white"}`} aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate">Paramètres</span>
             </Link>
           </li>
@@ -318,9 +339,9 @@ export function WorkspaceShell({
             <Link
               href="/contact"
               onClick={() => setMobileOpen(false)}
-              className="group flex min-h-10 items-center gap-3 rounded-xl px-3 text-note text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
+              className={`group flex min-h-10 items-center gap-3 rounded-xl px-3 text-note ${light ? "text-muted transition-colors hover:bg-surface-hover hover:text-foreground" : "text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber`}
             >
-              <HelpCircle className="h-[17px] w-[17px] shrink-0 text-white/55 group-hover:text-white" aria-hidden="true" />
+              <HelpCircle className={`h-[17px] w-[17px] shrink-0 ${light ? "text-muted group-hover:text-foreground" : "text-white/55 group-hover:text-white"}`} aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate">Aide & assistance</span>
             </Link>
           </li>
@@ -328,9 +349,9 @@ export function WorkspaceShell({
             <Link
               href="/"
               onClick={() => setMobileOpen(false)}
-              className="group flex min-h-10 items-center gap-3 rounded-xl px-3 text-note text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
+              className={`group flex min-h-10 items-center gap-3 rounded-xl px-3 text-note ${light ? "text-muted transition-colors hover:bg-surface-hover hover:text-foreground" : "text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber`}
             >
-              <ArrowLeft className="h-[17px] w-[17px] shrink-0 text-white/55 group-hover:text-white" aria-hidden="true" />
+              <ArrowLeft className={`h-[17px] w-[17px] shrink-0 ${light ? "text-muted group-hover:text-foreground" : "text-white/55 group-hover:text-white"}`} aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate">Retour au site</span>
             </Link>
           </li>
@@ -341,24 +362,40 @@ export function WorkspaceShell({
                 setMobileOpen(false);
                 signOut();
               }}
-              className="group flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-left text-note text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber"
+              className={`group flex min-h-10 w-full items-center gap-3 rounded-xl px-3 text-left text-note ${light ? "text-muted transition-colors hover:bg-surface-hover hover:text-foreground" : "text-white/70 transition-colors hover:bg-white/[0.06] hover:text-white"} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-homera-amber`}
             >
-              <LogOut className="h-[17px] w-[17px] shrink-0 text-white/55 group-hover:text-white" aria-hidden="true" />
+              <LogOut className={`h-[17px] w-[17px] shrink-0 ${light ? "text-muted group-hover:text-foreground" : "text-white/55 group-hover:text-white"}`} aria-hidden="true" />
               <span className="min-w-0 flex-1 truncate">Se déconnecter</span>
             </button>
           </li>
         </ul>
       </div>
+      {light && (
+        <div className="rounded-2xl border border-border bg-surface-hover p-4">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-homera-night text-homera-amber">
+            <HelpCircle className="h-4 w-4" aria-hidden="true" />
+          </span>
+          <p className="mt-3 text-note font-semibold text-foreground">Besoin d’aide ?</p>
+          <p className="mt-1 text-caption leading-relaxed text-muted">Notre équipe est là pour vous.</p>
+          <Link
+            href="/contact"
+            onClick={() => setMobileOpen(false)}
+            className="mt-3 flex min-h-10 items-center justify-center rounded-btn border border-border bg-card px-3 text-caption font-semibold text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
+          >
+            Contacter le support
+          </Link>
+        </div>
+      )}
     </nav>
   );
 
   return (
     <div className="workspace-shell min-h-svh bg-background text-foreground">
-      <aside className="homera-nav-scroll fixed inset-y-0 left-0 z-40 hidden w-[268px] flex-col bg-homera-night text-homera-paper lg:flex">
+      <aside className={`homera-nav-scroll fixed inset-y-0 left-0 z-40 hidden w-[268px] flex-col lg:flex ${light ? "border-r border-border bg-card text-foreground" : "bg-homera-night text-homera-paper"}`}>
         <div className="px-6 pb-3 pt-7">
           <Link href="/" className="inline-flex flex-col" aria-label="HOMERA, accueil public">
-            <span className="homera-brand text-brand text-white">Homera</span>
-            <span className="mt-1 text-micro font-semibold uppercase tracking-[0.2em] text-homera-amber">{ROLE_LABEL[activeWorkspaceId]}</span>
+            <span className={`homera-brand text-brand ${light ? "text-foreground" : "text-white"}`}>Homera</span>
+            <span className={`mt-1 text-micro font-semibold uppercase tracking-[0.2em] ${light ? "text-homera-terracotta" : "text-homera-amber"}`}>{ROLE_LABEL[activeWorkspaceId]}</span>
           </Link>
         </div>
         {renderedNavigation}
@@ -372,10 +409,25 @@ export function WorkspaceShell({
                 {mobileOpen ? <X className="h-4 w-4" aria-hidden="true" /> : <Menu className="h-4 w-4" aria-hidden="true" />}
               </button>
               <Link href="/" className="flex flex-col lg:hidden" aria-label="HOMERA, accueil"><span className="homera-brand text-brand-sm text-foreground">Homera</span><span className="-mt-0.5 text-micro font-semibold uppercase tracking-[0.15em] text-homera-terracotta">{ROLE_LABEL[activeWorkspaceId]}</span></Link>
-              <div className="hidden min-w-0 lg:block">
-                <p className="text-caption font-semibold uppercase tracking-[0.17em] text-muted">{ROLE_LABEL[activeWorkspaceId]}</p>
-                <p className="mt-0.5 truncate text-note text-foreground">{title} <span className="px-1 text-muted-light">/</span> {account.prenom}</p>
-              </div>
+              {light ? (
+                <form role="search" action="/explorer" method="get" className="hidden min-w-0 flex-1 max-w-md lg:block">
+                  <div className="relative">
+                    <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
+                    <input
+                      type="search"
+                      name="q"
+                      placeholder="Rechercher un bien, une ville, un quartier…"
+                      aria-label="Rechercher un bien, une ville, un quartier"
+                      className="h-10 w-full rounded-full border border-border bg-card pl-10 pr-4 text-note text-foreground placeholder:text-muted focus:border-homera-terracotta focus:outline-none"
+                    />
+                  </div>
+                </form>
+              ) : (
+                <div className="hidden min-w-0 lg:block">
+                  <p className="text-caption font-semibold uppercase tracking-[0.17em] text-muted">{ROLE_LABEL[activeWorkspaceId]}</p>
+                  <p className="mt-0.5 truncate text-note text-foreground">{title} <span className="px-1 text-muted-light">/</span> {account.prenom}</p>
+                </div>
+              )}
             </div>
             <div className="flex shrink-0 items-center gap-2 sm:gap-3">
               {canSwitchWorkspaces && (
@@ -400,7 +452,7 @@ export function WorkspaceShell({
                 </nav>
               )}
               {activeWorkspaceId === "admin" && <span className="hidden rounded-full border border-warning/30 bg-warning/[0.08] px-3 py-1.5 text-caption font-semibold text-warning xl:inline-flex">Aperçu pilote</span>}
-              <Link href="/explorer" className="hidden min-h-10 items-center gap-2 rounded-btn homera-cta px-3.5 text-note font-medium text-white sm:inline-flex"><Search className="h-3.5 w-3.5" aria-hidden="true" />Explorer</Link>
+              {!light && <Link href="/explorer" className="hidden min-h-10 items-center gap-2 rounded-btn homera-cta px-3.5 text-note font-medium text-white sm:inline-flex"><Search className="h-3.5 w-3.5" aria-hidden="true" />Explorer</Link>}
               <div ref={notificationsContainerRef} className="relative">
                 <button ref={notificationsButtonRef} type="button" aria-label={unread ? `Notifications, ${unread} non lues` : "Notifications"} aria-expanded={notificationsOpen} aria-controls={notificationsOpen ? "workspace-notifications-menu" : undefined} onClick={() => setNotificationsOpen((open) => !open)} className="relative flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground hover:border-homera-terracotta hover:text-homera-terracotta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
                   <Bell className="h-4.5 w-4.5" aria-hidden="true" />
@@ -412,12 +464,33 @@ export function WorkspaceShell({
                   <Link href="/notifications" onClick={() => setNotificationsOpen(false)} className="mt-2 flex min-h-10 items-center justify-between rounded-xl px-2 text-note font-semibold text-homera-terracotta hover:bg-surface-hover">Voir toutes les notifications<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
                 </div>}
               </div>
-              <div className="hidden items-center gap-2.5 sm:flex"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-homera-cream-dark text-note font-semibold text-homera-brown">{initials(account.prenom, account.nom)}</span><span className="hidden max-w-28 truncate text-note font-semibold md:block">{account.prenom}</span></div>
+              {light && (
+                <Link
+                  href="/messages"
+                  aria-label={(badgeCounts.messages ?? 0) > 0 ? `Messages, ${badgeCounts.messages} non lus` : "Messages"}
+                  className="relative flex h-10 w-10 items-center justify-center rounded-full border border-border bg-card text-foreground hover:border-homera-terracotta hover:text-homera-terracotta focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <MessageCircle className="h-4.5 w-4.5" aria-hidden="true" />
+                  {(badgeCounts.messages ?? 0) > 0 && <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-homera-terracotta px-1 text-micro font-semibold text-white">{badgeCounts.messages}</span>}
+                </Link>
+              )}
+              {light ? (
+                <Link href={secondaryProfileHref} className="hidden items-center gap-2.5 rounded-full border border-border bg-card py-1 pl-1 pr-2.5 sm:flex">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-homera-cream-dark text-caption font-semibold text-homera-brown">{initials(account.prenom, account.nom)}</span>
+                  <span className="hidden max-w-28 leading-tight md:block">
+                    <span className="block truncate text-note font-semibold text-foreground">{account.prenom} {account.nom}</span>
+                    <span className="block text-micro text-muted">Client</span>
+                  </span>
+                  <ChevronDown className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
+                </Link>
+              ) : (
+                <div className="hidden items-center gap-2.5 sm:flex"><span className="flex h-9 w-9 items-center justify-center rounded-full bg-homera-cream-dark text-note font-semibold text-homera-brown">{initials(account.prenom, account.nom)}</span><span className="hidden max-w-28 truncate text-note font-semibold md:block">{account.prenom}</span></div>
+              )}
             </div>
           </div>
         </header>
 
-        {mobileOpen && <><button type="button" aria-label="Fermer la navigation" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-40 bg-homera-night/40 lg:hidden" /><div id="workspace-mobile-nav" className="homera-nav-scroll fixed inset-x-3 top-[4.75rem] z-50 flex max-h-[calc(100svh-5.25rem)] flex-col rounded-2xl border border-border bg-homera-night text-white shadow-[var(--shadow-card-hover)] lg:hidden"><div className="flex items-center justify-between px-4 pb-2 pt-3.5"><span className="text-caption font-semibold uppercase tracking-[0.15em] text-homera-amber">{ROLE_LABEL[activeWorkspaceId]}</span><button type="button" onClick={() => setMobileOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full text-white/70 hover:bg-white/10" aria-label="Fermer"><X className="h-4 w-4" aria-hidden="true" /></button></div>{renderedNavigation}</div></>}
+        {mobileOpen && <><button type="button" aria-label="Fermer la navigation" onClick={() => setMobileOpen(false)} className="fixed inset-0 z-40 bg-homera-night/40 lg:hidden" /><div id="workspace-mobile-nav" className={`homera-nav-scroll fixed inset-x-3 top-[4.75rem] z-50 flex max-h-[calc(100svh-5.25rem)] flex-col rounded-2xl border border-border shadow-[var(--shadow-card-hover)] lg:hidden ${light ? "bg-card text-foreground" : "bg-homera-night text-white"}`}><div className="flex items-center justify-between px-4 pb-2 pt-3.5"><span className={`text-caption font-semibold uppercase tracking-[0.15em] ${light ? "text-homera-terracotta" : "text-homera-amber"}`}>{ROLE_LABEL[activeWorkspaceId]}</span><button type="button" onClick={() => setMobileOpen(false)} className={`flex h-9 w-9 items-center justify-center rounded-full ${light ? "text-muted hover:bg-surface-hover" : "text-white/70 hover:bg-white/10"}`} aria-label="Fermer"><X className="h-4 w-4" aria-hidden="true" /></button></div>{renderedNavigation}</div></>}
 
         <main id="workspace-main" className="mx-auto max-w-[1600px] px-4 py-7 sm:px-6 sm:py-9 xl:px-9">
           {offline && <div className="mb-5 rounded-2xl border border-warning/30 bg-warning/[0.08] px-4 py-3 text-note text-foreground" role="status"><strong>Connexion perdue.</strong> Le prototype utilise vos données locales ; toute fonctionnalité serveur sera indisponible hors ligne.</div>}

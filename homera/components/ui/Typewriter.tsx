@@ -24,11 +24,16 @@ export function Typewriter({ phrases, className = "" }: { phrases: string[]; cla
   const [text, setText] = useState("");
   const timers = useRef<number[]>([]);
   useEffect(() => {
-    if (reduced || phrases.length === 0) {
-      setText(phrases[0] ?? "");
-      return;
-    }
     let alive = true;
+    if (reduced || phrases.length === 0) {
+      const still = window.setTimeout(() => {
+        if (alive) setText(phrases[0] ?? "");
+      }, 0);
+      return () => {
+        alive = false;
+        window.clearTimeout(still);
+      };
+    }
     let phrase = 0;
     let char = 0;
     let erasing = false;

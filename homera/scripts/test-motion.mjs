@@ -1185,19 +1185,32 @@ await test('HOMERA : le tableau de bord client expose chaque espace et les notif
   assert.ok(page.includes('robots: { index: false'), 'espace personnel non indexable');
 
   for (const label of [
-    'Accueil', 'Explorer', 'Favoris', 'Mes visites', 'Mes demandes', 'Mes locations',
-    'Notifications', 'Messages', 'Profil', 'Paramètres',
+    'Tableau de bord', 'Explorer', 'Mes favoris', 'Mes visites', 'Mes demandes', 'Mes locations',
+    'Mes paiements', 'Notifications', 'Messages', 'Profil', 'Paramètres',
   ]) {
     assert.ok(dashboard.includes(`label: "${label}"`), `entrée de navigation absente : ${label}`);
   }
-  for (const section of ['accueil', 'favoris', 'visites', 'demandes', 'locations', 'notifications', 'messages', 'profil', 'parametres']) {
+  for (const section of ['accueil', 'favoris', 'visites', 'demandes', 'notifications', 'messages', 'profil']) {
     assert.ok(dashboard.includes(`id="${section}"`), `section du tableau de bord absente : ${section}`);
   }
-  for (const heading of ['Recherches récentes', 'Biens favoris', 'Prochaines visites', 'Location active', 'Recommandations pour vous']) {
+  for (const section of ['locations', 'parametres']) {
+    assert.ok(
+      dashboard.includes(`id: "${section}"`) && dashboard.includes('id={shortcut.id}'),
+      `ancre portée par les raccourcis absente : ${section}`,
+    );
+  }
+  for (const heading of ['Recherches récentes', 'Prochaines visites', 'Biens recommandés pour vous', 'Activité récente', 'Notifications', 'Raccourcis', 'Bienvenue sur votre espace client']) {
     assert.ok(dashboard.includes(heading), `bloc du tableau de bord absent : ${heading}`);
   }
   assert.ok(dashboard.includes('Alertes automatiques à venir'), 'centre de notifications explicite');
   assert.ok(dashboard.includes('verification-email'), 'action de confirmation d’adresse accessible');
+  assert.ok(dashboard.includes('Voir mon profil'), 'carte de profil avec accès direct');
+  assert.ok(dashboard.includes('/client/demandes/nouvelle'), 'raccourci de dépôt de demande');
+  assert.ok(dashboard.includes('Vous avez un bien à vendre ou à louer'), 'appel à confier son bien');
+  const shell = await readFile(new URL('../components/workspace/WorkspaceShell.tsx', import.meta.url), 'utf8');
+  assert.ok(shell.includes('const light = activeWorkspaceId === "client"'), 'habillage clair réservé à l’espace client');
+  assert.ok(shell.includes('action="/explorer"'), 'recherche réelle depuis l’en-tête client');
+  assert.ok(shell.includes('Contacter le support'), 'carte d’aide dans la barre latérale client');
 });
 
 /* ==================================================================
