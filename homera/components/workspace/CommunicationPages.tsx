@@ -3,15 +3,19 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import {
-  ArrowRight, Bell, CheckCheck, Home, Loader2, Mail, MessageCircle,
-  MessageSquareText, Plus, Send, ShieldCheck, SlidersHorizontal,
+  ArrowRight, Bell, CalendarDays, CheckCheck, ClipboardList, FileBadge, Flag, Home, Loader2, LockKeyhole, Mail, MessageCircle,
+  MessageSquareText, Plus, Send, ShieldCheck, SlidersHorizontal, UserRound, Users,
+  type LucideIcon,
 } from "lucide-react";
 import { apiPatch, apiPost } from "@/lib/api-client";
 import { useServerResource } from "@/lib/use-server-resource";
+import { Visual } from "@/components/ui/Visual";
+import { PROPERTIES } from "@/lib/content";
 import {
   BUTTON_PRIMARY, BUTTON_SECONDARY, EmptyPanel, FormField,
   INPUT_CLASS, WorkspaceHeading, WorkspacePanel,
 } from "@/components/workspace/Primitives";
+import { ClientHero } from "@/components/client/ClientHero";
 
 /* ==================================================================
    HOMERA — MESSAGES ET NOTIFICATIONS, DEUX OBJETS DIFFÉRENTS
@@ -71,6 +75,20 @@ const TYPE_LABELS: Record<string, string> = {
   systeme: "Système",
 };
 
+const TYPE_ICONS: Record<string, LucideIcon> = {
+  message: MessageCircle,
+  visite: CalendarDays,
+  candidature: ClipboardList,
+  verification: ShieldCheck,
+  publication: Home,
+  signalement: Flag,
+  mandat: FileBadge,
+  compte: UserRound,
+  securite: LockKeyhole,
+  agent: Users,
+  systeme: Bell,
+};
+
 const ENTITY_LABELS: Record<string, string> = {
   bien: "un bien",
   visite: "une visite",
@@ -83,6 +101,20 @@ const ENTITY_LABELS: Record<string, string> = {
 
 function typeLabel(type: string): string {
   return TYPE_LABELS[type] ?? type;
+}
+
+
+function NotificationIcon({ type, read }: { type: string; read: boolean }) {
+  const Icon = TYPE_ICONS[type] ?? Bell;
+  return (
+    <span
+      className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${read ? "bg-background text-muted" : "bg-homera-terracotta/[0.09] text-homera-terracotta"}`}
+      aria-label={read ? "Lue" : "Non lue"}
+      role="img"
+    >
+      <Icon className="h-4 w-4" aria-hidden="true" />
+    </span>
+  );
 }
 
 function formatDate(value: string): string {
@@ -119,28 +151,17 @@ export function NotificationsPage() {
   );
 
   return <>
-    <WorkspaceHeading
+    <ClientHero
       eyebrow="Centre de notifications"
       title="Vos notifications"
-      description="Confirmations, décisions et rappels envoyés par la plateforme. Rien n’est fabriqué à l’écran : chaque ligne provient du serveur."
+      description="Confirmations, décisions et rappels envoyés par la plateforme. Rien n’est fabriqué à l’écran : chaque ligne provient du serveur, avec sa date et son contexte."
+      stats={loading ? [] : [{ icon: Bell, value: String(unread), label: unread === 1 ? "Notification non lue" : "Notifications non lues" }]}
       actions={
         <button type="button" onClick={() => void mark()} disabled={!unread || busy} className={`${BUTTON_SECONDARY} disabled:cursor-not-allowed disabled:opacity-45`}>
           <CheckCheck className="h-4 w-4" aria-hidden="true" />Tout marquer comme lu
         </button>
       }
     />
-    <div className="mb-5 flex items-start gap-3 rounded-2xl border border-border bg-card p-4">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-homera-terracotta/[0.08] text-homera-terracotta">
-        <Bell className="h-4 w-4" aria-hidden="true" />
-      </span>
-      <p className="text-caption leading-relaxed text-muted">
-        {loading
-          ? "Lecture de vos notifications…"
-          : unread
-            ? <><strong className="text-foreground">{unread} notification{unread === 1 ? "" : "s"} non lue{unread === 1 ? "" : "s"}.</strong> Les décisions prises sur vos dossiers apparaissent ici, avec leur date et leur contexte.</>
-            : "Vous êtes à jour. Les prochaines décisions apparaîtront dans cet historique."}
-      </p>
-    </div>
     <div className="mb-5 flex gap-2 overflow-x-auto pb-2" role="tablist" aria-label="Filtrer les notifications">
       {NOTIFICATION_FILTERS.map((entry) => (
         <button
@@ -171,8 +192,8 @@ export function NotificationsPage() {
       <WorkspacePanel title="Historique" description={`${visible.length} élément${visible.length === 1 ? "" : "s"}`} icon={SlidersHorizontal}>
         <ul className="divide-y divide-border">
           {visible.map((entry) => (
-            <li key={entry.id} className={`flex items-start gap-3 py-4 first:pt-0 last:pb-0 ${entry.read_at ? "opacity-80" : ""}`}>
-              <span className={`mt-2 h-2.5 w-2.5 shrink-0 rounded-full ${entry.read_at ? "bg-border" : "bg-homera-terracotta"}`} aria-label={entry.read_at ? "Lue" : "Non lue"} />
+            <li key={entry.id} className={`flex items-start gap-3 py-4 first:pt-0 last:pb-0 ${entry.read_at ? "opacity-75" : ""}`}>
+              <NotificationIcon type={entry.type} read={Boolean(entry.read_at)} />
               <div className="min-w-0 flex-1">
                 <p className="text-note font-semibold">{entry.title}</p>
                 {entry.body && <p className="mt-1 text-caption leading-relaxed text-muted">{entry.body}</p>}
@@ -322,18 +343,27 @@ export function MessagesPage({ initialPropertyId = "" }: { initialPropertyId?: s
           <p className="flex items-center gap-2 text-caption text-muted"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />Chargement…</p>
         ) : conversations.length ? (
           <ul className="space-y-1">
-            {conversations.map((thread) => (
+            {conversations.map((thread) => {
+              const property = PROPERTIES.find((entry) => entry.id === thread.propertyId) ?? null;
+              return (
               <li key={thread.id}>
                 <button
                   type="button"
                   onClick={() => { setSelectedId(thread.id); setComposeOpen(false); }}
                   aria-pressed={selectedIdOrFirst === thread.id}
-                  className={`w-full rounded-xl border p-3 text-left transition-colors ${selectedIdOrFirst === thread.id ? "border-homera-terracotta/35 bg-homera-terracotta/[0.06]" : "border-transparent hover:bg-background"}`}
+                  aria-label={`Ouvrir la conversation : ${thread.propertyTitle}`}
+                  className={`w-full rounded-2xl border p-3 text-left transition-colors ${selectedIdOrFirst === thread.id ? "border-homera-terracotta/35 bg-homera-terracotta/[0.06]" : "border-transparent hover:bg-background"}`}
                 >
                   <span className="flex items-start gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-background text-homera-terracotta">
-                      <Home className="h-4 w-4" aria-hidden="true" />
-                    </span>
+                    {property?.media ? (
+                      <span className="relative block h-11 w-11 shrink-0 overflow-hidden rounded-xl border border-border" aria-hidden="true">
+                        <Visual mediaKey={property.media} alt="" sizes="50px" veil="none" quality={60} className="absolute inset-0 h-full w-full" />
+                      </span>
+                    ) : (
+                      <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-background text-homera-terracotta">
+                        <Home className="h-4 w-4" aria-hidden="true" />
+                      </span>
+                    )}
                     <span className="min-w-0 flex-1">
                       <span className="flex items-center gap-2">
                         <span className="block min-w-0 flex-1 truncate text-note font-semibold">{thread.propertyTitle}</span>
@@ -348,7 +378,8 @@ export function MessagesPage({ initialPropertyId = "" }: { initialPropertyId?: s
                   </span>
                 </button>
               </li>
-            ))}
+              );
+            })}
           </ul>
         ) : (
           <p className="rounded-xl border border-dashed border-border p-4 text-caption leading-relaxed text-muted">
@@ -357,7 +388,7 @@ export function MessagesPage({ initialPropertyId = "" }: { initialPropertyId?: s
         )}
       </WorkspacePanel>
 
-      <div className="min-h-[420px] rounded-card border border-border bg-card p-4 shadow-[var(--shadow-card)] sm:p-6">
+      <div className="min-h-[420px] rounded-3xl border border-border bg-card p-4 shadow-[var(--shadow-card)] sm:p-6">
         {composeOpen ? (
           <form onSubmit={openThread} className="space-y-5">
             <div className="flex items-center gap-3">

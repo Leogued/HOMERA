@@ -1231,6 +1231,7 @@ await test('HOMERA : la page favoris — maquette, filtres réels, comparateur',
 
 await test('HOMERA : l’espace client — recherches, recommandations, dossiers suivis', async () => {
   const shell = await readFile(new URL('../components/workspace/WorkspaceShell.tsx', import.meta.url), 'utf8');
+  const profileSettings = await readFile(new URL('../components/workspace/ProfileSettings.tsx', import.meta.url), 'utf8');
   for (const entry of ['Recherches récentes', 'Recommandations', '/client/recherches', '/client/recommandations']) {
     assert.ok(shell.includes(entry), `menu client incomplet : ${entry}`);
   }
@@ -1260,6 +1261,18 @@ await test('HOMERA : l’espace client — recherches, recommandations, dossiers
   assert.ok(journeys.includes('Signer le contrat'), 'raccourci de signature depuis la liste des contrats');
   const visits = await readFile(new URL('../components/workspace/VisitsSections.tsx', import.meta.url), 'utf8');
   assert.ok(visits.includes('Voir la fiche : '), 'vignette photo vers la fiche du bien visité');
+  const payments = await readFile(new URL('../components/workspace/PaymentMethodsPanel.tsx', import.meta.url), 'utf8');
+  assert.ok(payments.includes('Ce que vous devez régler'), 'titre des paiements conservé');
+  assert.ok(payments.includes('ClientHero'), 'hero commun sur les paiements');
+  assert.ok(payments.includes('Aucun paiement, encaissement ou retrait n’est possible'), 'avertissement honnête conservé');
+  assert.ok(payments.includes('Canaux de règlement prévus'), 'canaux annoncés conservés');
+  const communication = await readFile(new URL('../components/workspace/CommunicationPages.tsx', import.meta.url), 'utf8');
+  assert.ok(communication.includes('Ouvrir la conversation'), 'conversations étiquetées pour l’accès direct');
+  assert.ok(communication.includes('TYPE_ICONS'), 'icônes par type de notification');
+  assert.ok(communication.includes('Tout marquer comme lu'), 'action de lecture globale conservée');
+  assert.ok(profileSettings.includes('Alertes activées'), 'compteur d’alertes réel dans les paramètres');
+  assert.ok(profileSettings.includes('Supprimer le compte · indisponible'), 'suppression impossible dite explicitement');
+  assert.ok(shell.includes('Retour au site'), 'retour au site public depuis la barre latérale');
 });
 
 /* ==================================================================

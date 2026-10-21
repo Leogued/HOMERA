@@ -5,7 +5,8 @@ import { ArrowRight, CreditCard, Info, Landmark, Receipt, ShieldCheck, Smartphon
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useServerResource } from "@/lib/use-server-resource";
 import { CLIENT_PAYMENT_PROVIDERS, PAYOUT_RECEPTION_PROVIDERS } from "@/lib/workflow";
-import { BUTTON_SECONDARY, WorkspaceHeading, WorkspacePanel } from "@/components/workspace/Primitives";
+import { BUTTON_SECONDARY, EmptyPanel, WorkspacePanel } from "@/components/workspace/Primitives";
+import { ClientHero } from "@/components/client/ClientHero";
 
 /* ==================================================================
    HOMERA — PAIEMENTS : CE QUI EST DÛ, RIEN DE PLUS
@@ -91,7 +92,17 @@ export function PaymentMethodsWorkspace({
   return (
     <div className="space-y-6">
       {!embedded && (
-        <WorkspaceHeading eyebrow={heading.eyebrow} title={heading.title} description={heading.description} />
+        <ClientHero
+          eyebrow={heading.eyebrow}
+          title={heading.title}
+          description={heading.description}
+          stats={contracts.loading ? [] : [{ icon: Receipt, value: String(signed.length), label: signed.length === 1 ? "Contrat signé suivi" : "Contrats signés suivis" }]}
+          actions={
+            <Link href={isPayoutContext ? "/proprietaire/contrats" : "/client/contrats"} className={BUTTON_SECONDARY}>
+              Voir mes contrats<ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          }
+        />
       )}
 
       <p className="flex items-start gap-2 rounded-2xl border border-info/25 bg-info/[0.06] px-4 py-3 text-caption leading-relaxed text-muted">
@@ -112,20 +123,18 @@ export function PaymentMethodsWorkspace({
           {contracts.error}
         </p>
       ) : signed.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border bg-background/60 p-6">
-          <p className="text-note font-semibold text-foreground">Aucune somme à régler pour le moment</p>
-          <p className="mt-1 max-w-2xl text-caption leading-relaxed text-muted">
-            {isPayoutContext
-              ? "Aucun contrat signé n’est rattaché à vos biens ou à vos mandats : il n’y a donc aucun loyer, aucune caution ni aucune commission à suivre."
-              : "Dans HOMERA, le règlement suit l’avancement réel du dossier : recherche → visite → demande de location → signature du contrat. Aucune somme n’est due avant la signature."}
-          </p>
-          <div className="mt-4 flex flex-wrap gap-2">
+        <EmptyPanel
+          icon={Receipt}
+          title="Aucune somme à régler pour le moment"
+          description={isPayoutContext
+            ? "Aucun contrat signé n’est rattaché à vos biens ou à vos mandats : il n’y a donc aucun loyer, aucune caution ni aucune commission à suivre."
+            : "Dans HOMERA, le règlement suit l’avancement réel du dossier : recherche → visite → demande de location → signature du contrat. Aucune somme n’est due avant la signature."}
+          action={
             <Link href={isPayoutContext ? "/proprietaire/contrats" : "/client/contrats"} className={BUTTON_SECONDARY}>
-              Voir mes contrats
-              <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              Voir mes contrats<ArrowRight className="h-4 w-4" aria-hidden="true" />
             </Link>
-          </div>
-        </div>
+          }
+        />
       ) : (
         <WorkspacePanel
           title={isPayoutContext ? "Montants prévus par vos contrats signés" : "Montants prévus par vos contrats"}
@@ -156,21 +165,21 @@ export function PaymentMethodsWorkspace({
                   </span>
                 </div>
                 <dl className="mt-4 grid gap-3 border-t border-border pt-4 sm:grid-cols-3">
-                  <div>
-                    <dt className="text-caption text-muted">Loyer</dt>
-                    <dd className="homera-num text-note font-bold text-foreground">
+                  <div className="rounded-xl border border-border bg-card p-3">
+                    <dt className="text-micro font-semibold uppercase tracking-[0.1em] text-muted">Loyer mensuel</dt>
+                    <dd className="homera-num mt-1 font-serif text-display-xs text-homera-terracotta">
                       {formatMoney(contract.rent)} FCFA
                     </dd>
                   </div>
-                  <div>
-                    <dt className="text-caption text-muted">Dépôt de garantie</dt>
-                    <dd className="homera-num text-note font-bold text-foreground">
+                  <div className="rounded-xl border border-border bg-card p-3">
+                    <dt className="text-micro font-semibold uppercase tracking-[0.1em] text-muted">Dépôt de garantie</dt>
+                    <dd className="homera-num mt-1 font-serif text-display-xs text-foreground">
                       {formatMoney(contract.deposit)} FCFA
                     </dd>
                   </div>
-                  <div>
-                    <dt className="text-caption text-muted">Échéance</dt>
-                    <dd className="text-note font-semibold text-foreground">Jusqu’au {frenchDate(contract.endDate)}</dd>
+                  <div className="rounded-xl border border-border bg-card p-3">
+                    <dt className="text-micro font-semibold uppercase tracking-[0.1em] text-muted">Échéance</dt>
+                    <dd className="mt-1 text-note font-semibold text-foreground">Jusqu’au {frenchDate(contract.endDate)}</dd>
                   </div>
                 </dl>
                 <div className="mt-4 flex flex-wrap gap-2">

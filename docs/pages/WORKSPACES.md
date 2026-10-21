@@ -16,7 +16,7 @@ Depuis les LOTS 3 à 5, les espaces lisent et écrivent **en base** via `/api/**
 - **`/client/demandes` & `/client/demandes/nouvelle`** (`ApplicationSections.tsx`) : candidatures servies par `/api/applications`. Une candidature n'existe qu'après une visite **effectuée**, une seule par visite, jamais sur un bien qui n'est pas à louer : c'est le serveur qui refuse, pas le formulaire. Chaque dossier affiche sa progression réelle (envoyée → en cours → acceptée ; refusé/annulé explicitement clos) et le retrait reste possible tant que le dossier n’est pas accepté.
 - **`/client/contrats` & `/client/contrats/[id]`** (`ClientJourneys.tsx`) : baux rédigés après acceptation (`/api/contracts`) — loyer, dépôt, période, statut en couleur, raccourci « Signer le contrat » quand la signature est ouverte ; lecteur avec signature électronique simple (nom, date, heure, IP journalisés). Aucun encaissement ni reçu sur le pilote.
 - **`/client/paiements`** (`PaymentMethodsPanel.tsx`) : uniquement les montants prévus par les contrats signés (loyer, dépôt), marche à suivre et lien « Organiser le règlement » vers le contact ; aucun encaissement, solde, reçu ni bouton de règlement (canaux béninois annoncés, non raccordés).
-- **`/client/profil` & `/client/parametres`** (`ProfileSettings.tsx`) : Fiche complète du compte et préférences (notifications, thème clair/sombre/système, langue) sans duplication du panneau financier.
+- **`/client/profil` & `/client/parametres`** (`ProfileSettings.tsx`) : Fiche complète du compte et préférences (notifications avec compteur d’alertes activées, thème clair/sombre/système, langue) sans duplication du panneau financier.
 
 ## 2. Espace Propriétaire (`/proprietaire/*`)
 - **`/proprietaire`** (`OwnerServerSections.tsx`) : indicateurs calculés par `/api/owner/properties` — portefeuille réel, annonces publiées, dossiers en contrôle, brouillons à reprendre, mandats en attente.
@@ -44,5 +44,5 @@ Depuis les LOTS 3 à 5, les espaces lisent et écrivent **en base** via `/api/**
 - **`/admin/statistiques`** : uniquement ce que la base sait compter. HOMERA n'a pas encore de module de facturation : **aucun revenu, commission ou retrait n'est affiché** plutôt que d'être simulé.
 
 ## 5. Échanges Transverses (`/notifications` & `/messages`)
-- **`/notifications`** (`CommunicationPages.tsx`) : Centre de notifications filtrable par catégorie (*Toutes*, *Non lues*, *Visites*, *Demandes*, *Contrats*, *Vérifications*, *Agents*, *Biens*, *Système*).
-- **`/messages`** (`CommunicationPages.tsx`) : Messagerie par bien et par interlocuteur (*Agent autorisé* ou *Propriétaire*) avec accès direct à la fiche du bien concerné (`/biens/[id]`).
+- **`/notifications`** (`CommunicationPages.tsx`) : Centre de notifications filtrable par catégorie (*Toutes*, *Non lues*, *Visites*, *Demandes*, *Contrats*, *Vérifications*, *Agents*, *Biens*, *Système*), icônes par type et compteur de non lues.
+- **`/messages`** (`CommunicationPages.tsx`) : Messagerie par bien et par interlocuteur (*Agent autorisé* ou *Propriétaire*), vignettes photo des biens et accès direct à la fiche concernée (`/biens/[id]`).
