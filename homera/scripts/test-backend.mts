@@ -35,6 +35,7 @@ const messaging = await import("../lib/server/services/messaging");
 const applicationsModule = await import("../lib/server/services/applications");
 const contracts = await import("../lib/server/services/contracts");
 const spotlight = await import("../lib/server/services/spotlight");
+const favorites = await import("../lib/server/services/favorites");
 const uploads = await import("../lib/server/uploads");
 const passwordModule = await import("../lib/server/security/password");
 const sessionModule = await import("../lib/server/security/session");
@@ -910,6 +911,43 @@ if (!saturee.ok) throw new Error("demande de saturation impossible");
 const sansPlace = spotlight.decideSpotlightRequest(db, vitrineActor, saturee.data.request.id, "approved", {});
 check("vitrine complète : approbation impossible", !sansPlace.ok && sansPlace.code === "complet");
 check("aucun emplacement libre", spotlight.firstFreeSlot(db) === null);
+section("12. Favoris : ordre d'ajout, idempotence, isolation");
+const favUser = "HOM-DEMO-USER";
+const favOther = "HOM-DEMO-AGENT";
+db.prepare("DELETE FROM favorites WHERE user_id IN (?, ?)").run(favUser, favOther);
+const favIds = properties.listProperties(db).map((property) => property.id);
+const favA = favIds[0];
+const favB = favIds[1];
+check("ajout accepté", favorites.addFavorite(db, favUser, favA).ok);
+check("ajout inconnu refusé", !favorites.addFavorite(db, favUser, "bien-inexistant").ok);
+check("second ajout accepté", favorites.addFavorite(db, favUser, favB).ok);
+check("ajout répété sans doublon", favorites.addFavorite(db, favUser, favA).ok);
+db.prepare("UPDATE favorites SET created_at = '2026-01-01T00:00:00.000Z' WHERE user_id = ? AND property_id = ?").run(
+  favUser,
+  favA,
+);
+const favList = favorites.listFavorites(db, favUser);
+check("liste sans doublon", favList.ids.length === 2);
+check(
+  "le plus récent d'abord",
+  favList.ids[0] === favB && favList.ids[1] === favA,
+);
+check(
+  "les fiches suivent le même ordre",
+  favList.items.map((property) => property.id).join(",") === favList.ids.join(","),
+);
+check("retrait effectif", favorites.removeFavorite(db, favUser, favA).ok);
+check(
+  "retrait visible en liste",
+  favorites.listFavorites(db, favUser).ids.join(",") === favB,
+);
+check("retrait rejoué sans erreur", favorites.removeFavorite(db, favUser, favA).ok);
+check("ajout pour un second compte", favorites.addFavorite(db, favOther, favA).ok);
+check(
+  "listes isolées par compte",
+  favorites.listFavorites(db, favOther).ids.join(",") === favA &&
+    favorites.listFavorites(db, favUser).ids.join(",") === favB,
+);
 closeDb();
 
 /* ------------------------------------------------------------------

@@ -2,7 +2,7 @@
 import Link from "next/link";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Bath, Bed, CalendarCheck, MapPin, Maximize, ShieldCheck } from "lucide-react";
+import { ArrowRight, Bath, Bed, CalendarCheck, Clock, MapPin, Maximize, ShieldCheck } from "lucide-react";
 import type { Property } from "@/lib/content";
 import { FEATURE_LABELS, INTENT_LABELS, TYPE_LABELS, formatPropertyPrice, formatSurface } from "@/lib/format";
 import { Reveal } from "@/components/ui/Reveal";
@@ -57,10 +57,17 @@ export function PropertyCard(props: {
         </span>
         {property.availabilityStatus === "indisponible" && <span className="rounded-full border border-white/35 bg-error/85 px-3 py-1.5 font-semibold">Indisponible</span>}
       </span>
-      <span className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-homera-brown/70 px-3 py-1.5">
-        <ShieldCheck className="h-3.5 w-3.5 text-homera-amber" aria-hidden="true" />
-        Vérifié HOMERA
-      </span>
+      {property.verificationStatus === "en-verification" ? (
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-homera-amber/50 bg-homera-night/70 px-3 py-1.5 text-homera-amber">
+          <Clock className="h-3.5 w-3.5" aria-hidden="true" />
+          En cours de vérification
+        </span>
+      ) : (
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-homera-brown/70 px-3 py-1.5">
+          <ShieldCheck className="h-3.5 w-3.5 text-homera-amber" aria-hidden="true" />
+          Vérifié HOMERA
+        </span>
+      )}
     </div>
   );
 
@@ -218,7 +225,7 @@ export function PropertyCard(props: {
           </div>
           <p className="homera-property-secondary mt-1.5 flex items-center gap-2 text-micro text-homera-cream/75">
             <CalendarCheck className="h-3.5 w-3.5 shrink-0 text-homera-amber" aria-hidden="true" />
-            Vérifié le {property.verifiedOn} · Mandat valide
+            {property.verificationStatus === "en-verification" ? "Vérification en cours" : <>Vérifié le {property.verifiedOn} · Mandat valide</>}
           </p>
           {/* Même action que la photo : affordance souris, sans second arrêt clavier. */}
           <button
@@ -296,7 +303,7 @@ export function PropertyCard(props: {
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="flex items-center gap-2 text-caption text-muted">
               <CalendarCheck className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />
-              Vérifié le {property.verifiedOn}
+              {property.verificationStatus === "en-verification" ? "Vérification en cours" : <>Vérifié le {property.verifiedOn}</>}
             </p>
             <span className="homera-underline inline-flex min-h-10 items-center gap-2 homera-accent-ink text-note font-medium">
               <TextRoll>Voir la fiche</TextRoll>

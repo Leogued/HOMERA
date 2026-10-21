@@ -1,104 +1,487 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, FolderHeart, Heart, Plus, Trash2 } from "lucide-react";
+import { ArrowRight, Bell, Bookmark, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import { useAuth } from "@/components/providers/AuthProvider";
 import { useVisitor } from "@/components/providers/VisitorProvider";
 import { PropertyCard } from "@/components/catalog/PropertyCard";
 import { PropertyComparison } from "@/components/catalog/PropertyComparison";
-import type { Property } from "@/lib/content";
+import { Visual } from "@/components/ui/Visual";
+import { PROPERTIES, type Property, type PropertyIntent, type PropertyType } from "@/lib/content";
 import { useServerResource } from "@/lib/use-server-resource";
-import { BUTTON_PRIMARY, BUTTON_SECONDARY, DemoNotice, EmptyPanel, INPUT_CLASS, WorkspaceHeading } from "@/components/workspace/Primitives";
+import { BUTTON_PRIMARY, BUTTON_SECONDARY, DemoNotice, EmptyPanel, INPUT_CLASS } from "@/components/workspace/Primitives";
 
-type FavoriteFolders = { folders: string[]; assignment: Record<string, string> };
-const DEFAULT_FOLDERS = ["À étudier", "À visiter"];
+const PAGE_SIZE = 9;
+const TYPE_ORDER: PropertyType[] = ["villa", "appartement", "studio", "terrain", "local"];
+const TYPE_PLURALS: Record<PropertyType, string> = {
+  villa: "Maisons",
+  appartement: "Appartements",
+  studio: "Studios",
+  terrain: "Terrains",
+  local: "Locaux commerciaux",
+};
+const INTENT_ORDER: PropertyIntent[] = ["acheter", "louer", "sejour"];
+const INTENT_SHORT: Record<PropertyIntent, string> = {
+  acheter: "À vendre",
+  louer: "À louer",
+  sejour: "Séjours",
+};
+const PRICE_BUCKETS = [
+  { id: "tous", label: "Tous les prix", test: (price: number) => price >= 0 },
+  { id: "moins-1m", label: "Moins de 1 000 000 FCFA", test: (price: number) => price < 1_000_000 },
+  {
+    id: "1m-50m",
+    label: "De 1 à 50 millions FCFA",
+    test: (price: number) => price >= 1_000_000 && price <= 50_000_000,
+  },
+  { id: "plus-50m", label: "Plus de 50 millions FCFA", test: (price: number) => price > 50_000_000 },
+] as const;
+type PriceBucketId = (typeof PRICE_BUCKETS)[number]["id"];
+const SORTS = [
+  { id: "recent", label: "Plus récents" },
+  { id: "ancien", label: "Plus anciens" },
+  { id: "prix-croissant", label: "Prix croissant" },
+  { id: "prix-decroissant", label: "Prix décroissant" },
+  { id: "surface", label: "Surface décroissante" },
+  { id: "titre", label: "Titre A–Z" },
+] as const;
+type SortId = (typeof SORTS)[number]["id"];
+const HERO_MEDIA =
+  PROPERTIES.filter((property) => property.type === "villa")[1]?.media ??
+  PROPERTIES.find((property) => property.type === "villa")?.media ??
+  "page-cotonou";
+
+type Filters = {
+  types: PropertyType[];
+  city: string;
+  price: PriceBucketId;
+  intents: PropertyIntent[];
+};
+const EMPTY_FILTERS: Filters = { types: [], city: "toutes", price: "tous", intents: [] };
 
 export function ClientFavorites() {
   const { account } = useAuth();
   const visitor = useVisitor();
-  const [folders, setFolders] = useState<string[]>(DEFAULT_FOLDERS);
-  const [assignment, setAssignment] = useState<Record<string, string>>({});
-  const [activeFolder, setActiveFolder] = useState("Tous");
-  const [newFolder, setNewFolder] = useState("");
-  const [folderError, setFolderError] = useState("");
-  const storageKey = `homera.favorite-folders.v1.${account?.id ?? "invite"}`;
-  /* Les favoris sont lus sur le compte : le cœur d’une fiche et cette page
-     montrent donc exactement la même liste, sur le même appareil ou un autre. */
-  const accountFavorites = useServerResource<{ items: Property[]; ids: string[] }>(account ? "/api/favorites" : null);
-  const favorites = useMemo(() => {
+  const [sort, setSort] = useState<SortId>("recent");
+  const [applied, setApplied] = useState<Filters>(EMPTY_FILTERS);
+  const [draft, setDraft] = useState<Filters>(EMPTY_FILTERS);
+  const [page, setPage] = useState(1);
+  /* Les favoris sont lus sur le compte : le cœur d'une fiche et cette page
+     montrent donc exactement la même liste, sur le même appareil ou un autre.
+     Le serveur les rend le plus récemment ajouté d'abord. */
+  const accountFavorites = useServerResource<{ items: Property[]; ids: string[] }>(
+    account ? "/api/favorites" : null,
+  );
+  const favorites = useMemo<Property[]>(() => {
     if (account) return accountFavorites.data?.items ?? [];
     return visitor.favorites
-      .map((id) => (accountFavorites.data?.items ?? []).find((property) => property.id === id))
+      .map((id) => PROPERTIES.find((property) => property.id === id))
       .filter(isProperty);
   }, [account, accountFavorites.data, visitor.favorites]);
+  const loading = !visitor.ready || (account != null && accountFavorites.loading);
 
-  /* Lecture nécessaire après montage : évite de rendre le localStorage côté serveur. */
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    try {
-      const raw = window.localStorage.getItem(storageKey);
-      if (!raw) {
-        setFolders(DEFAULT_FOLDERS);
-        setAssignment({});
-        return;
-      }
-      const value = JSON.parse(raw) as Partial<FavoriteFolders>;
-      setFolders(Array.isArray(value.folders) && value.folders.every((entry) => typeof entry === "string") && value.folders.length ? value.folders : DEFAULT_FOLDERS);
-      setAssignment(value.assignment && typeof value.assignment === "object" ? value.assignment : {});
-    } catch {
-      setFolders(DEFAULT_FOLDERS);
-      setAssignment({});
-      setFolderError("Impossible de lire les dossiers locaux. Vous pouvez continuer sans classement.");
+  const typeCounts = useMemo(() => {
+    const counts = { villa: 0, appartement: 0, studio: 0, terrain: 0, local: 0 } as Record<PropertyType, number>;
+    for (const property of favorites) counts[property.type] += 1;
+    return counts;
+  }, [favorites]);
+  const intentCounts = useMemo(() => {
+    const counts = { acheter: 0, louer: 0, sejour: 0 } as Record<PropertyIntent, number>;
+    for (const property of favorites) counts[property.intent] += 1;
+    return counts;
+  }, [favorites]);
+  const cities = useMemo(
+    () => [...new Set(favorites.map((property) => property.city))].sort((a, b) => a.localeCompare(b, "fr")),
+    [favorites],
+  );
+  const filtered = useMemo(() => {
+    const bucket = PRICE_BUCKETS.find((entry) => entry.id === applied.price) ?? PRICE_BUCKETS[0];
+    return favorites.filter(
+      (property) =>
+        (applied.types.length === 0 || applied.types.includes(property.type)) &&
+        (applied.city === "toutes" || property.city === applied.city) &&
+        bucket.test(property.price) &&
+        (applied.intents.length === 0 || applied.intents.includes(property.intent)),
+    );
+  }, [favorites, applied]);
+  const sorted = useMemo(() => {
+    if (sort === "recent") return filtered;
+    const list = [...filtered];
+    switch (sort) {
+      case "ancien":
+        return list.reverse();
+      case "prix-croissant":
+        return list.sort((a, b) => a.price - b.price);
+      case "prix-decroissant":
+        return list.sort((a, b) => b.price - a.price);
+      case "surface":
+        return list.sort((a, b) => b.surface - a.surface);
+      case "titre":
+        return list.sort((a, b) => a.title.localeCompare(b.title, "fr"));
     }
-  }, [storageKey]);
-  /* eslint-enable react-hooks/set-state-in-effect */
+  }, [filtered, sort]);
+  const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
+  const safePage = Math.min(page, totalPages);
+  const pageItems = sorted.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
 
-  const persist = (nextFolders: string[], nextAssignment: Record<string, string>) => {
-    setFolders(nextFolders);
-    setAssignment(nextAssignment);
-    try { window.localStorage.setItem(storageKey, JSON.stringify({ folders: nextFolders, assignment: nextAssignment })); }
-    catch { setFolderError("Le navigateur n’a pas autorisé la sauvegarde du classement."); }
+  const applyFilters = () => {
+    setApplied(draft);
+    setPage(1);
+  };
+  const resetFilters = () => {
+    setApplied(EMPTY_FILTERS);
+    setDraft(EMPTY_FILTERS);
+    setSort("recent");
+    setPage(1);
+  };
+  const chipType = (type: PropertyType | null) => {
+    const types = type ? [type] : [];
+    setApplied((current) => ({ ...current, types }));
+    setDraft((current) => ({ ...current, types }));
+    setPage(1);
+  };
+  const toggleDraft = (kind: "types" | "intents", value: PropertyType | PropertyIntent) => {
+    setDraft((current) => {
+      const list = (current[kind] as string[]).includes(value)
+        ? (current[kind] as string[]).filter((entry) => entry !== value)
+        : [...(current[kind] as string[]), value];
+      return { ...current, [kind]: list };
+    });
   };
 
-  const createFolder = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const name = newFolder.trim();
-    if (!name) { setFolderError("Donnez un nom à ce dossier."); return; }
-    if (folders.some((folder) => folder.toLocaleLowerCase("fr") === name.toLocaleLowerCase("fr"))) { setFolderError("Ce dossier existe déjà."); return; }
-    if (folders.length >= 8) { setFolderError("Vous pouvez créer jusqu’à huit dossiers dans ce pilote."); return; }
-    persist([...folders, name], assignment);
-    setNewFolder(""); setFolderError(""); setActiveFolder(name);
-  };
+  return (
+    <div className="grid items-start gap-5 xl:grid-cols-[minmax(0,1fr)_16rem]">
+      <div className="grid min-w-0 content-start gap-5">
+        <section
+          aria-labelledby="favoris-title"
+          className="relative overflow-hidden rounded-3xl bg-homera-night text-white"
+        >
+          <div aria-hidden="true" className="absolute inset-0">
+            <Visual
+              mediaKey={HERO_MEDIA}
+              alt=""
+              sizes="(min-width: 1280px) 60rem, 100vw"
+              veil="none"
+              priority
+              className="h-full w-full"
+              imageClassName="h-full w-full object-cover"
+            />
+            <div className="absolute inset-0 bg-[linear-gradient(100deg,rgba(20,12,8,.85)_25%,rgba(20,12,8,.45)_60%,rgba(20,12,8,.15))]" />
+          </div>
+          <div className="relative flex flex-wrap items-center justify-between gap-5 p-6 sm:p-8">
+            <div className="flex min-w-0 items-start gap-4">
+              <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-homera-amber/60 bg-homera-amber/15 text-homera-amber">
+                <Heart className="h-5 w-5" aria-hidden="true" />
+              </span>
+              <div className="min-w-0">
+                <h1 id="favoris-title" className="font-serif text-display-md text-white sm:text-display-lg">
+                  Mes favoris
+                </h1>
+                <p className="mt-2 max-w-md text-body-sm leading-relaxed text-white/80">
+                  Retrouvez ici tous les biens que vous avez enregistrés pour les consulter plus tard.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-3 rounded-2xl bg-homera-cream/95 px-5 py-4">
+              <Bookmark className="h-5 w-5 shrink-0 text-homera-terracotta" aria-hidden="true" />
+              <p className="text-caption leading-snug text-homera-night">
+                <span className="block text-muted">Vous avez</span>
+                <span className="block font-serif text-display-xs">{favoriteLabel(favorites.length)}</span>
+                <span className="block text-muted">Continuez à explorer pour en découvrir plus.</span>
+              </p>
+            </div>
+          </div>
+        </section>
 
-  const removeFolder = (name: string) => {
-    if (DEFAULT_FOLDERS.includes(name)) { setFolderError("Les dossiers par défaut ne peuvent pas être supprimés."); return; }
-    const nextAssignment = Object.fromEntries(Object.entries(assignment).map(([id, folder]) => [id, folder === name ? "À étudier" : folder]));
-    persist(folders.filter((entry) => entry !== name), nextAssignment);
-    if (activeFolder === name) setActiveFolder("Tous");
-    setFolderError("");
-  };
+        {loading ? (
+          <div aria-busy="true" aria-live="polite" className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            <span className="sr-only">Lecture de vos favoris…</span>
+            <div className="homera-skeleton h-72" />
+            <div className="homera-skeleton h-72" />
+            <div className="homera-skeleton hidden h-72 xl:block" />
+          </div>
+        ) : favorites.length === 0 ? (
+          <EmptyPanel
+            icon={Heart}
+            title="Votre sélection est vide"
+            description="Ajoutez un bien avec le bouton cœur depuis les résultats ou sa fiche : la sélection est enregistrée sur votre compte."
+            action={
+              <Link href="/explorer" className={BUTTON_PRIMARY}>
+                Voir les biens <ArrowRight className="h-4 w-4" aria-hidden="true" />
+              </Link>
+            }
+          />
+        ) : (
+          <>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrer par type de bien">
+                <FilterChip
+                  active={applied.types.length === 0}
+                  onClick={() => chipType(null)}
+                  label={`Tous (${favorites.length})`}
+                />
+                {TYPE_ORDER.filter((type) => typeCounts[type] > 0).map((type) => (
+                  <FilterChip
+                    key={type}
+                    active={applied.types.length === 1 && applied.types[0] === type}
+                    onClick={() => chipType(type)}
+                    label={`${TYPE_PLURALS[type]} (${typeCounts[type]})`}
+                  />
+                ))}
+              </div>
+              <label className="inline-flex items-center gap-2 text-caption font-semibold text-muted">
+                Trier par :
+                <select
+                  value={sort}
+                  onChange={(event) => {
+                    setSort(event.target.value as SortId);
+                    setPage(1);
+                  }}
+                  aria-label="Trier les favoris"
+                  className="min-h-10 rounded-full border border-border bg-card px-3 text-note font-semibold text-foreground focus:border-homera-terracotta focus:outline-none"
+                >
+                  {SORTS.map((entry) => (
+                    <option key={entry.id} value={entry.id}>
+                      {entry.label}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
 
-  const assignTo = (propertyId: string, folder: string) => {
-    const next = { ...assignment, [propertyId]: folder };
-    persist(folders, next);
-  };
-  const visible = activeFolder === "Tous" ? favorites : favorites.filter((property) => (assignment[property.id] ?? "À étudier") === activeFolder);
-  const countFor = (folder: string) => favorites.filter((property) => (assignment[property.id] ?? "À étudier") === folder).length;
+            {filtered.length === 0 ? (
+              <EmptyPanel
+                icon={Heart}
+                title="Aucun favori ne correspond à ces filtres"
+                description="Élargissez les critères ou réinitialisez pour retrouver toute la sélection."
+                action={
+                  <button type="button" onClick={resetFilters} className={BUTTON_SECONDARY}>
+                    Réinitialiser les filtres
+                  </button>
+                }
+              />
+            ) : (
+              <>
+                <ul className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
+                  {pageItems.map((property) => (
+                    <li key={property.id} className="min-w-0">
+                      <PropertyCard property={property} layout="grid" />
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-caption text-muted">{totalLabel(sorted.length)}</p>
+                  <nav aria-label="Pages des favoris" className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => setPage(Math.max(1, safePage - 1))}
+                      disabled={safePage <= 1}
+                      aria-label="Page précédente"
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ChevronLeft className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                    {Array.from({ length: totalPages }, (_, index) => index + 1).map((number) => (
+                      <button
+                        key={number}
+                        type="button"
+                        onClick={() => setPage(number)}
+                        aria-label={`Page ${number}`}
+                        aria-current={number === safePage ? "page" : undefined}
+                        className={`flex h-9 min-w-9 items-center justify-center rounded-full px-2 text-note font-semibold transition-colors ${
+                          number === safePage
+                            ? "bg-homera-night text-white"
+                            : "border border-border bg-card text-foreground hover:border-homera-terracotta hover:text-homera-terracotta"
+                        }`}
+                      >
+                        {number}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      onClick={() => setPage(Math.min(totalPages, safePage + 1))}
+                      disabled={safePage >= totalPages}
+                      aria-label="Page suivante"
+                      className="flex h-9 w-9 items-center justify-center rounded-full border border-border bg-card text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta disabled:cursor-not-allowed disabled:opacity-40"
+                    >
+                      <ChevronRight className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                  </nav>
+                </div>
+              </>
+            )}
 
-  return <>
-    <WorkspaceHeading eyebrow="Votre sélection" title="Favoris" description="Retrouvez les biens gardés de côté, rangez-les par dossier et reprenez la comparaison depuis leur fiche." actions={<Link href="/explorer" className={BUTTON_PRIMARY}>Explorer les biens<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} />
-    {visitor.ready && favorites.length === 0 ? <EmptyPanel icon={Heart} title="Votre sélection est vide" description="Ajoutez un bien avec le bouton cœur depuis les résultats ou sa fiche : la sélection est enregistrée sur votre compte." action={<Link href="/explorer" className={BUTTON_PRIMARY}>Voir les biens<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} /> : <>
-      <section className="rounded-card border border-border bg-card p-4 shadow-[var(--shadow-card)] sm:p-5" aria-label="Organiser les favoris"><div className="flex flex-wrap items-center justify-between gap-3"><div><p className="text-note font-semibold">Organiser ma sélection</p><p className="mt-1 text-caption text-muted">{favorites.length} bien{favorites.length === 1 ? "" : "s"} · {account ? "enregistrés sur votre compte" : "dossiers privés à ce navigateur"}</p></div><span className="flex h-10 w-10 items-center justify-center rounded-xl bg-homera-terracotta/[0.08] text-homera-terracotta"><FolderHeart className="h-5 w-5" aria-hidden="true" /></span></div>
-        <div className="mt-4 flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Filtrer par dossier"><button type="button" role="tab" aria-selected={activeFolder === "Tous"} onClick={() => setActiveFolder("Tous")} className={`min-h-10 shrink-0 rounded-full border px-4 text-caption font-semibold ${activeFolder === "Tous" ? "border-homera-brown bg-homera-brown text-white" : "border-border text-muted hover:text-foreground"}`}>Tous · {favorites.length}</button>{folders.map((folder) => <span key={folder} className="inline-flex shrink-0 items-center rounded-full border border-border"><button type="button" role="tab" aria-selected={activeFolder === folder} onClick={() => setActiveFolder(folder)} className={`min-h-10 rounded-l-full px-4 text-caption font-semibold ${activeFolder === folder ? "bg-homera-terracotta/[0.08] text-homera-terracotta" : "text-muted hover:text-foreground"}`}>{folder} · {countFor(folder)}</button>{!DEFAULT_FOLDERS.includes(folder) && <button type="button" onClick={() => removeFolder(folder)} aria-label={`Supprimer le dossier ${folder}`} className="flex h-9 w-9 items-center justify-center rounded-r-full text-muted hover:text-error"><Trash2 className="h-3.5 w-3.5" aria-hidden="true" /></button>}</span>)}</div>
-        <form onSubmit={createFolder} className="mt-4 flex flex-col gap-2 sm:flex-row"><label className="sr-only" htmlFor="new-favorite-folder">Nom du nouveau dossier</label><input id="new-favorite-folder" value={newFolder} maxLength={32} onChange={(event) => setNewFolder(event.target.value)} placeholder="Créer un dossier (ex. Pour la famille)" className={`${INPUT_CLASS} sm:max-w-sm`} /><button type="submit" className={BUTTON_SECONDARY}><Plus className="h-4 w-4" aria-hidden="true" />Créer un dossier</button></form>
-        {folderError && <p role="alert" className="mt-2 text-caption text-error">{folderError}</p>}
-      </section>
-      {!visible.length ? <div className="mt-5"><EmptyPanel icon={FolderHeart} title={`Le dossier « ${activeFolder} » est vide`} description="Déplacez un bien vers ce dossier depuis son menu sous la carte." action={<button type="button" onClick={() => setActiveFolder("Tous")} className={BUTTON_SECONDARY}>Voir tous les favoris</button>} /></div> : <ul className="mt-6 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">{visible.map((property) => <li key={property.id} className="flex min-w-0 flex-col gap-2"><PropertyCard property={property} layout="grid" /><label htmlFor={`folder-${property.id}`} className="text-caption font-semibold text-muted">Ranger dans</label><select id={`folder-${property.id}`} value={assignment[property.id] ?? "À étudier"} onChange={(event) => assignTo(property.id, event.target.value)} className={`${INPUT_CLASS} min-h-10 text-caption`} aria-label={`Ranger ${property.title}`}><option value="À étudier">À étudier</option>{folders.filter((folder) => folder !== "À étudier").map((folder) => <option key={folder} value={folder}>{folder}</option>)}</select></li>)}</ul>}
-      {visible.length >= 2 && <div className="mt-7"><PropertyComparison properties={visible} /></div>}
-    </>}
-    <div className="mt-6"><DemoNotice>Les favoris sont partagés avec la page publique /favoris. Leur classement est lié à ce compte dans ce navigateur; rien n’est envoyé au serveur.</DemoNotice></div>
-  </>;
+            {filtered.length >= 2 && (
+              <div>
+                <PropertyComparison properties={filtered} />
+              </div>
+            )}
+          </>
+        )}
+
+        <div>
+          <DemoNotice>Les favoris sont partagés avec la page publique /favoris.</DemoNotice>
+        </div>
+      </div>
+
+      <div className="grid min-w-0 content-start gap-5">
+        {favorites.length > 0 && (
+          <section
+            aria-labelledby="filtres-title"
+            className="rounded-2xl border border-border bg-card p-5"
+          >
+            <h2 id="filtres-title" className="text-body font-semibold text-foreground">
+              Filtres
+            </h2>
+            <div className="mt-4 space-y-5">
+              <fieldset>
+                <legend className="text-note font-semibold text-foreground">Type de bien</legend>
+                <ul className="mt-2 space-y-1.5">
+                  {TYPE_ORDER.map((type) => (
+                    <li key={type}>
+                      <label className="flex cursor-pointer items-center gap-2.5 text-note text-foreground">
+                        <input
+                          type="checkbox"
+                          checked={draft.types.includes(type)}
+                          onChange={() => toggleDraft("types", type)}
+                          className="h-4 w-4 shrink-0 accent-homera-terracotta"
+                        />
+                        <span className="flex-1">{TYPE_PLURALS[type]}</span>
+                        <span className="text-caption text-muted">{typeCounts[type]}</span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </fieldset>
+              <div>
+                <label htmlFor="favoris-ville" className="text-note font-semibold text-foreground">
+                  Localisation
+                </label>
+                <select
+                  id="favoris-ville"
+                  value={draft.city}
+                  onChange={(event) => setDraft((current) => ({ ...current, city: event.target.value }))}
+                  className={`${INPUT_CLASS} mt-2`}
+                >
+                  <option value="toutes">Toutes les villes</option>
+                  {cities.map((city) => (
+                    <option key={city} value={city}>
+                      {city}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="favoris-prix" className="text-note font-semibold text-foreground">
+                  Prix
+                </label>
+                <select
+                  id="favoris-prix"
+                  value={draft.price}
+                  onChange={(event) =>
+                    setDraft((current) => ({ ...current, price: event.target.value as PriceBucketId }))
+                  }
+                  className={`${INPUT_CLASS} mt-2`}
+                >
+                  {PRICE_BUCKETS.map((bucket) => (
+                    <option key={bucket.id} value={bucket.id}>
+                      {bucket.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <fieldset>
+                <legend className="text-note font-semibold text-foreground">Statut</legend>
+                <ul className="mt-2 space-y-1.5">
+                  {INTENT_ORDER.map((intent) => (
+                    <li key={intent}>
+                      <label className="flex cursor-pointer items-center gap-2.5 text-note text-foreground">
+                        <input
+                          type="checkbox"
+                          checked={draft.intents.includes(intent)}
+                          onChange={() => toggleDraft("intents", intent)}
+                          className="h-4 w-4 shrink-0 accent-homera-terracotta"
+                        />
+                        <span className="flex-1">{INTENT_SHORT[intent]}</span>
+                        <span className="text-caption text-muted">{intentCounts[intent]}</span>
+                      </label>
+                    </li>
+                  ))}
+                </ul>
+              </fieldset>
+              <button
+                type="button"
+                onClick={applyFilters}
+                className="homera-press flex min-h-11 w-full items-center justify-center rounded-btn bg-homera-night px-4 text-note font-semibold text-white transition-colors hover:bg-homera-night/90"
+              >
+                Appliquer les filtres
+              </button>
+            </div>
+          </section>
+        )}
+
+        <section
+          aria-labelledby="alerte-title"
+          className="rounded-2xl border border-homera-terracotta/20 bg-homera-terracotta/[0.05] p-5"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-homera-terracotta/[0.10] text-homera-terracotta">
+            <Heart className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <h2 id="alerte-title" className="mt-3 text-body font-semibold text-foreground">
+            Vous n’avez pas trouvé ce que vous cherchez ?
+          </h2>
+          <p className="mt-1 text-caption leading-relaxed text-muted">
+            Les alertes automatiques ne sont pas actives dans le pilote. Réglez les notifications de
+            votre espace.
+          </p>
+          <Link
+            href="/client/parametres"
+            className="homera-press mt-4 inline-flex min-h-10 items-center gap-2 rounded-btn bg-homera-amber px-4 text-note font-semibold text-homera-night transition-colors hover:bg-homera-amber/90"
+          >
+            <Bell className="h-4 w-4" aria-hidden="true" />
+            Voir mes préférences
+          </Link>
+        </section>
+      </div>
+    </div>
+  );
 }
 
-function isProperty(value: Property | undefined): value is Property { return Boolean(value); }
+function FilterChip({
+  active,
+  onClick,
+  label,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`homera-press min-h-10 rounded-full px-4 text-note font-semibold transition-colors ${
+        active
+          ? "bg-homera-night text-white"
+          : "border border-border bg-card text-foreground hover:border-homera-terracotta hover:text-homera-terracotta"
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function isProperty(value: Property | undefined): value is Property {
+  return Boolean(value);
+}
+
+function favoriteLabel(count: number): string {
+  if (count === 0) return "Aucun bien favori";
+  return `${count} bien${count > 1 ? "s" : ""} favori${count > 1 ? "s" : ""}`;
+}
+
+function totalLabel(count: number): string {
+  return `${count} bien${count > 1 ? "s" : ""} au total`;
+}

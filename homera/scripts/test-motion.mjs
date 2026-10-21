@@ -1213,6 +1213,22 @@ await test('HOMERA : le tableau de bord client expose chaque espace et les notif
   assert.ok(shell.includes('Contacter le support'), 'carte d’aide dans la barre latérale client');
 });
 
+await test('HOMERA : la page favoris — maquette, filtres réels, comparateur', async () => {
+  const page = await readFile(new URL('../app/(client)/client/favoris/page.tsx', import.meta.url), 'utf8');
+  const favorites = await readFile(new URL('../components/workspace/ClientFavorites.tsx', import.meta.url), 'utf8');
+  assert.ok(page.includes('robots: { index: false'), 'espace personnel non indexable');
+  for (const heading of ['Mes favoris', 'Filtres', 'Appliquer les filtres', 'Trier par', 'Pages des favoris', 'Vous n’avez pas trouvé ce que vous cherchez']) {
+    assert.ok(favorites.includes(heading), `bloc des favoris absent : ${heading}`);
+  }
+  assert.ok(favorites.includes('"/api/favorites"'), 'favoris lus sur le compte');
+  assert.ok(favorites.includes('PropertyComparison'), 'comparateur conservé');
+  assert.ok(!favorites.includes('À étudier'), 'dossiers remplacés par les filtres maquette');
+  const service = await readFile(new URL('../lib/server/services/favorites.ts', import.meta.url), 'utf8');
+  assert.ok(service.includes('ORDER BY created_at DESC'), 'ordre d’ajout garanti côté serveur');
+  const card = await readFile(new URL('../components/catalog/PropertyCard.tsx', import.meta.url), 'utf8');
+  assert.ok(card.includes('En cours de vérification'), 'pastille honnête pour les biens en vérification');
+});
+
 /* ==================================================================
    PHASE 4 (suite) — LES RÔLES SONT CUMULATIFS
    ------------------------------------------------------------------
