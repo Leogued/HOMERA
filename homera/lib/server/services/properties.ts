@@ -66,6 +66,7 @@ export type PropertyRow = {
   availability_note: string;
   publication_status: string;
   verification_status: string;
+  rental_mode: string;
   verified_on: string | null;
   owner_id: string | null;
   agency_id: string | null;
@@ -144,6 +145,7 @@ export function toProperty(row: PropertyRow, photos: PhotoRow[], features: Prope
     description: row.description || undefined,
     availabilityStatus: availability,
     verificationStatus: verification,
+    rentalMode: row.rental_mode === "direct" ? "direct" : "visite",
     verifiedOn: frenchDate(row.verified_on),
     publishedAt: (row.published_at ?? row.created_at).slice(0, 10),
     media: main?.media_key ?? "",

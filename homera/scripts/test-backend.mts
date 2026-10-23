@@ -969,6 +969,170 @@ check(
   favorites.listFavorites(db, favOther).ids.join(",") === favA &&
     favorites.listFavorites(db, favUser).ids.join(",") === favB,
 );
+
+/* ==================================================================
+   13. PARCOURS DE LOCATION : réservation directe ou visite préalable
+   ================================================================== */
+
+section("13. Location : réservation directe ou visite préalable obligatoire");
+
+const directBien = "espace-evenementiel-cadjehoun";
+const directRow = db.prepare<[string], { rental_mode: string }>("SELECT rental_mode FROM properties WHERE id = ?").get(directBien);
+check("l’espace événementiel est déclaré réservable sans visite", directRow?.rental_mode === "direct");
+const visitRow = db.prepare<[string], { rental_mode: string }>("SELECT rental_mode FROM properties WHERE id = ?").get(propertyId);
+check("la visite préalable reste le parcours par défaut", visitRow?.rental_mode === "visite");
+
+/* --- Réservation directe : sans visite, avec ou sans période --- */
+const directClient = user(await makeUser("client", "direct.test@homera.demo", { prenom: "Direct", nom: "Client" }));
+const directBooking = applicationsModule.createApplication(db, directClient, {
+  propertyId: directBien,
+  message: "Mariage en plein air.",
+  monthlyIncome: 0,
+  desiredStart: isoDate(60),
+  desiredEnd: isoDate(62),
+});
+check("un bien éligible se réserve sans visite", directBooking.ok, directBooking.ok ? "" : directBooking.message);
+const directView = directBooking.ok ? directBooking.data.application : null;
+check("la réservation directe ne porte aucune visite", directView?.visitId === null);
+check(
+  "la période souhaitée est conservée",
+  directView?.desiredStart === isoDate(60) && directView?.desiredEnd === isoDate(62),
+);
+const directClient2 = user(await makeUser("client", "direct2.test@homera.demo", { prenom: "Directe", nom: "Seconde" }));
+const directNoDates = applicationsModule.createApplication(db, directClient2, { propertyId: directBien });
+check("la période souhaitée reste facultative", directNoDates.ok, directNoDates.ok ? "" : directNoDates.message);
+
+/* --- Gardes du parcours direct : aucun contournement par requête --- */
+const doNotBypass = applicationsModule.createApplication(db, directClient2, { propertyId: propertyId });
+check("un bien à visite préalable refuse la réservation directe", !doNotBypass.ok);
+const freshClient = user(await makeUser("client", "frais.test@homera.demo", { prenom: "Frais", nom: "Client" }));
+const halfPeriod = applicationsModule.createApplication(db, freshClient, {
+  propertyId: directBien,
+  desiredStart: isoDate(70),
+});
+check("une période incomplète est refusée", !halfPeriod.ok);
+const incoherent = applicationsModule.createApplication(db, freshClient, {
+  propertyId: directBien,
+  desiredStart: isoDate(72),
+  desiredEnd: isoDate(70),
+});
+check("une période incohérente est refusée", !incoherent.ok);
+const bothPaths = applicationsModule.createApplication(db, freshClient, { propertyId: directBien, visitId: "VIS-XXX" });
+check("les deux parcours à la fois sont refusés", !bothPaths.ok);
+const noPath = applicationsModule.createApplication(db, freshClient, {});
+check("aucun parcours désigné est refusé", !noPath.ok);
+const forged = applicationsModule.createApplication(db, freshClient, { visitId: "VIS-QUI-NEXISTE-PAS" });
+check("une visite forgée est refusée", !forged.ok);
+const duplicate = applicationsModule.createApplication(db, directClient2, { propertyId: directBien });
+check("une seconde demande ouverte sur le même bien est refusée", !duplicate.ok);
+
+/* --- Visite préalable : seule la visite effectuée ouvre le dossier --- */
+const journeyClient = user(await makeUser("client", "parcours.test@homera.demo", { prenom: "Parcours", nom: "Client" }));
+const ask = (day: number) => visits.requestVisit(db, journeyClient, { propertyId, date: isoDate(day), time: "10:00" });
+const vDemandee = ask(71);
+const vConfirmee = ask(72);
+if (vConfirmee.ok) visits.decideVisit(db, owner, vConfirmee.data.visit.id, { action: "confirmer" });
+const vReprogrammee = ask(73);
+if (vReprogrammee.ok) {
+  visits.decideVisit(db, journeyClient, vReprogrammee.data.visit.id, { action: "reprogrammer", date: isoDate(74), time: "11:00" });
+}
+const vRefusee = ask(75);
+if (vRefusee.ok) visits.decideVisit(db, owner, vRefusee.data.visit.id, { action: "refuser", reason: "Créneau déjà pris." });
+const vAnnulee = ask(76);
+if (vAnnulee.ok) visits.decideVisit(db, journeyClient, vAnnulee.data.visit.id, { action: "annuler" });
+const vAbsence = ask(77);
+if (vAbsence.ok) {
+  visits.decideVisit(db, owner, vAbsence.data.visit.id, { action: "confirmer" });
+  visits.decideVisit(db, owner, vAbsence.data.visit.id, { action: "absence", reason: "Client absent." });
+}
+const pendingVisits = [
+  ["demandée", vDemandee],
+  ["confirmée", vConfirmee],
+  ["reprogrammée", vReprogrammee],
+  ["refusée", vRefusee],
+  ["annulée", vAnnulee],
+  ["absence constatée", vAbsence],
+] as const;
+for (const [label, request] of pendingVisits) {
+  const id = request.ok ? request.data.visit.id : "";
+  const attempt = applicationsModule.createApplication(db, journeyClient, { visitId: id });
+  check(`une visite ${label} ne permet pas de louer`, !attempt.ok);
+}
+const vEffectuee = ask(78);
+if (vEffectuee.ok) {
+  visits.decideVisit(db, owner, vEffectuee.data.visit.id, { action: "confirmer" });
+  visits.decideVisit(db, owner, vEffectuee.data.visit.id, { action: "effectuer", reason: "Visite réalisée." });
+}
+const afterVisit = applicationsModule.createApplication(db, journeyClient, {
+  visitId: vEffectuee.ok ? vEffectuee.data.visit.id : "",
+  message: "Dossier complet.",
+});
+check("une visite effectuée ouvre la demande de location", afterVisit.ok, afterVisit.ok ? "" : afterVisit.message);
+check(
+  "la demande après visite ne porte aucune période",
+  afterVisit.ok && afterVisit.data.application.desiredStart === null,
+);
+
+/* --- Isolation entre clients --- */
+const intruder = user(await makeUser("client", "intrus.test@homera.demo", { prenom: "Intrus", nom: "Test" }));
+const stolen = applicationsModule.createApplication(db, intruder, {
+  visitId: vEffectuee.ok ? vEffectuee.data.visit.id : "",
+});
+check("la visite d’un autre client ne permet pas de louer", !stolen.ok);
+
+/* --- Disponibilité et publication : vérifiées par le serveur --- */
+db.prepare("UPDATE properties SET availability = 'indisponible' WHERE id = ?").run(propertyId);
+const blockedVisit = visits.requestVisit(db, intruder, { propertyId, date: isoDate(79), time: "10:00" });
+if (blockedVisit.ok) {
+  visits.decideVisit(db, owner, blockedVisit.data.visit.id, { action: "confirmer" });
+  visits.decideVisit(db, owner, blockedVisit.data.visit.id, { action: "effectuer" });
+}
+const onUnavailable = applicationsModule.createApplication(db, intruder, {
+  visitId: blockedVisit.ok ? blockedVisit.data.visit.id : "",
+});
+check("un bien indisponible ne reçoit aucune demande", !onUnavailable.ok);
+db.prepare("UPDATE properties SET availability = 'disponible' WHERE id = ?").run(propertyId);
+db.prepare("UPDATE properties SET availability = 'indisponible' WHERE id = ?").run(directBien);
+const directBlocked = applicationsModule.createApplication(db, intruder, { propertyId: directBien });
+check("un bien direct indisponible ne se réserve pas", !directBlocked.ok);
+db.prepare("UPDATE properties SET availability = 'disponible' WHERE id = ?").run(directBien);
+db.prepare("UPDATE properties SET publication_status = 'suspendu' WHERE id = ?").run(directBien);
+const unpublished = applicationsModule.createApplication(db, intruder, { propertyId: directBien });
+check("un bien sorti du catalogue ne se réserve pas", !unpublished.ok);
+db.prepare("UPDATE properties SET publication_status = 'publie' WHERE id = ?").run(directBien);
+
+/* --- Chevauchement avec une indisponibilité déclarée --- */
+db.prepare(
+  "INSERT INTO property_availability (id, property_id, start_date, end_date, kind, reason, created_by, created_at) VALUES (?, ?, ?, ?, 'indisponible', ?, ?, ?)",
+).run("TEST-INDISPO-1", directBien, isoDate(90), isoDate(92), "Travaux.", owner.id, new Date().toISOString());
+const overlapClient = user(await makeUser("client", "chevauche.test@homera.demo", { prenom: "Chevauche", nom: "Test" }));
+const overlap = applicationsModule.createApplication(db, overlapClient, {
+  propertyId: directBien,
+  desiredStart: isoDate(91),
+  desiredEnd: isoDate(93),
+});
+check("une période incompatible avec une indisponibilité est refusée", !overlap.ok);
+const aside = applicationsModule.createApplication(db, overlapClient, {
+  propertyId: directBien,
+  desiredStart: isoDate(95),
+  desiredEnd: isoDate(96),
+});
+check("une période compatible reste réservable", aside.ok, aside.ok ? "" : aside.message);
+db.prepare("DELETE FROM property_availability WHERE id = ?").run("TEST-INDISPO-1");
+
+/* --- Bien non louable --- */
+const saleOwnerRow = db.prepare<[string], { owner_id: string }>("SELECT owner_id FROM properties WHERE id = ?").get("maison-calavi");
+const saleOwner = saleOwnerRow ? user(saleOwnerRow.owner_id) : owner;
+const saleClient = user(await makeUser("client", "achat.test@homera.demo", { prenom: "Achat", nom: "Test" }));
+const saleVisit = visits.requestVisit(db, saleClient, { propertyId: "maison-calavi", date: isoDate(80), time: "10:00" });
+if (saleVisit.ok) {
+  visits.decideVisit(db, saleOwner, saleVisit.data.visit.id, { action: "confirmer" });
+  visits.decideVisit(db, saleOwner, saleVisit.data.visit.id, { action: "effectuer" });
+}
+const onSale = applicationsModule.createApplication(db, saleClient, {
+  visitId: saleVisit.ok ? saleVisit.data.visit.id : "",
+});
+check("un bien à vendre ne reçoit aucune demande de location", !onSale.ok);
 closeDb();
 
 /* ------------------------------------------------------------------

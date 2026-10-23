@@ -729,6 +729,37 @@ CREATE INDEX IF NOT EXISTS idx_properties_owner ON properties(owner_id);
 CREATE INDEX IF NOT EXISTS idx_properties_intent ON properties(intent, type);
 `;
 
+/* ------------------------------------------------------------------
+   008 — PARCOURS DE LOCATION : réservation directe ou visite préalable
+   ------------------------------------------------------------------
+   Deux biens à louer ne suivent pas forcément le même parcours :
+
+   • `properties.rental_mode = 'visite'` (défaut) : le client doit
+     d’abord effectuer une visite, enregistrée « effectuée », avant de
+     pouvoir déposer une demande de location ;
+   • `properties.rental_mode = 'direct'` : le bien est explicitement
+     déclaré réservable sans visite préalable — la réservation directe
+     n’est jamais accordée par défaut.
+
+   `rental_applications.desired_start/desired_end` portent la période
+   souhaitée déclarée par le client lors d’une réservation directe. Ils
+   restent NULL pour les demandes déposées après visite : l’origine du
+   dossier se déduit donc sans nouveau statut (`visit_id IS NULL` =
+   réservation directe).
+
+   L’espace événementiel de Cadjèhoun (tarif journalier, usage
+   ponctuel) est le premier bien déclaré éligible à la réservation
+   directe. Les bases neuves reçoivent la même valeur via l’amorçage.
+   ------------------------------------------------------------------ */
+
+const M008 = `
+ALTER TABLE properties ADD COLUMN rental_mode TEXT NOT NULL DEFAULT 'visite'
+  CHECK (rental_mode IN ('visite', 'direct'));
+ALTER TABLE rental_applications ADD COLUMN desired_start TEXT;
+ALTER TABLE rental_applications ADD COLUMN desired_end TEXT;
+UPDATE properties SET rental_mode = 'direct' WHERE id = 'espace-evenementiel-cadjehoun';
+`;
+
 export const MIGRATIONS: Migration[] = [
   {
     id: "001",
@@ -764,5 +795,10 @@ export const MIGRATIONS: Migration[] = [
     id: "007",
     name: "taxonomie-salle-espace",
     sql: M007,
+  },
+  {
+    id: "008",
+    name: "parcours-location-reservation-directe",
+    sql: M008,
   },
 ];

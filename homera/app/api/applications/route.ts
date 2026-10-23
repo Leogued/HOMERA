@@ -13,7 +13,7 @@ export async function GET() {
   return ok({ applications: listApplications(getDb(), user) });
 }
 
-/** Dépôt d’un dossier de location, obligatoirement rattaché à une visite effectuée. */
+/** Dépôt d’un dossier : visite effectuée exigée, sauf bien explicitement réservable sans visite (vérifié par le serveur). */
 export async function POST(request: Request) {
   const user = await currentUser();
   if (!user) return fail("Connectez-vous pour déposer une demande de location.", 401, { code: "non-authentifie" });

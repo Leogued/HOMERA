@@ -216,7 +216,7 @@ explicite (`ServiceResult`), jamais d’exception, jamais d’état inventé.
 | `verifications.ts` | dossier de vérification et ses 8 étapes |
 | `admin.ts` | indicateurs, comptes, signalements, journal |
 | `documents.ts` | pièces déclarées d’un bien |
-| `applications.ts` | candidatures de location : dépôt après visite effectuée, instruction motivée |
+| `applications.ts` | candidatures : visite effectuée exigée, ou réservation directe sur bien explicitement éligible (`rental_mode = 'direct'`) ; disponibilité, période souhaitée et doublons vérifiés ; instruction motivée |
 | `contracts.ts` | contrats : référence `CTR-<année>-<n>`, rédaction après acceptation, signature par le locataire désigné |
 | `messaging.ts` | conversations adossées à un bien, lecture, envoi, marquage comme lu, compteur de non-lus |
 
@@ -292,8 +292,12 @@ démarré :
 | Accès aux pièces d’un bien par un agent **non** mandaté | `403` — la fuite constatée a été corrigée dans la route |
 | Agent mandaté, propriétaire, administration | `200` sur les mêmes pièces |
 | Demande de visite → confirmation → « effectuée » | statuts réels, conflits de créneaux détectés par le serveur |
-| Candidature déposée sans visite effectuée | refusée |
+| Candidature sans visite effectuée (bien à visite préalable) | refusée |
 | Deux candidatures sur la même visite | la seconde est refusée |
+| Réservation directe sur un bien non éligible | refusée — visite préalable exigée |
+| Période souhaitée chevauchant une indisponibilité déclarée | refusée |
+| Seconde demande ouverte (même candidat, même bien) | refusée |
+| Demande sur un bien indisponible ou non publié | refusée |
 | Refus d’une candidature sans motif | refusé — le motif est transmis au candidat |
 | Candidat ou agent non mandaté qui tente d’instruire | refusé |
 | Mandat : acceptation par l’agent | le bien apparaît dans `/api/agent/properties`, le propriétaire est notifié |
@@ -356,12 +360,14 @@ le fichier.
 | 4 | Visite : demande, conflit, confirmation, reprogrammation, annulation | créneau déjà réservé refusé ; refus sans motif refusé ; annulation motivée acceptée ; client notifié |
 | 5 | Candidature → contrat → signature | candidature impossible avant visite effectuée, contrat impossible avant acceptation, signature refusée à l’administration et avec un nom trop court, contrat signé non annulable |
 | 6 | Explorateur | `meuble=1` restreint et chaque bien déclare l’équipement ; `departement=` filtre et restreint les communes ; pagination sans doublon |
-| 7 | Favoris et fiche | ajout et retrait réellement écrits ; la fiche expose un retour valide sans JavaScript |
+| 7 | Favoris et fiche | ajout et retrait réellement écrits ; la fiche ne porte aucune navigation |
 | 8 | Messagerie | conversation ouverte sur un bien, message vide refusé, bien inexistant refusé |
 | 9 | Contrôle public d’un mandat | actif / expiré / inconnu, jamais de réponse inventée |
 | 10 | Historique public | étapes réelles du journal, `404` sur une référence inconnue |
 | 11 | Paiements | aucune route d’encaissement (`404`/`405`), aucun état de paiement sur les contrats |
 | 12 | Contexte de recherche | recherche filtrée servie et partageable, résultat vide rend une liste vide |
+| 13 | Photo propriétaire | vrai fichier accepté, texte déguisé refusé, retrait effectif |
+| 14 | Parcours de location | la fiche propose « Réserver » ou « Demander une visite » selon le bien, jamais les deux |
 | Agent mandaté (portée « location ») sur un dossier | `canDecide = true`, « étudier » puis « accepter » → dossier `acceptee`, motif conservé, candidat notifié |
 | Agent mandaté (portée « visite ») | confirme puis constate la visite ; le client peut alors déposer son dossier |
 | Second dépôt sur un créneau déjà réservé | `409` — « Ce créneau vient d’être réservé. » (incrément atomique) |

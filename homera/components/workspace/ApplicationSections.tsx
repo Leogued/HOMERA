@@ -6,6 +6,7 @@ import { ArrowLeft, ArrowRight, ClipboardList, FileText, Home, Loader2, MapPin, 
 import { apiPost, messageOf } from "@/lib/api-client";
 import { useServerResource } from "@/lib/use-server-resource";
 import { formatFCFA } from "@/lib/format";
+import type { Property } from "@/lib/content";
 import {
   BUTTON_PRIMARY, BUTTON_SECONDARY, EmptyPanel, FormField, INPUT_CLASS, StatusBadge,
   WorkspaceHeading, WorkspacePanel,
@@ -36,6 +37,9 @@ export type ServerApplication = {
   visitId: string | null;
   visitReference: string | null;
   visitDate: string | null;
+  /** Période souhaitée (réservation directe) : absente après une visite. */
+  desiredStart: string | null;
+  desiredEnd: string | null;
   status: string;
   message: string;
   monthlyIncome: number;
@@ -67,6 +71,17 @@ function ApplicationBadge({ status }: { status: string }) {
   return (
     <span className={`inline-flex min-h-7 items-center rounded-full border px-3 text-caption font-semibold ${APPLICATION_TONE[status] ?? "border-border bg-background text-muted"}`}>
       {APPLICATION_STATUS_LABELS[status] ?? status}
+    </span>
+  );
+}
+
+/* Origine déduite du dossier lui-même : sans visite rattachée, c’est une
+   réservation directe sur bien explicitement éligible. */
+function OriginBadge({ visitId }: { visitId: string | null }) {
+  const direct = !visitId;
+  return (
+    <span className={`inline-flex min-h-7 items-center rounded-full border px-3 text-caption font-semibold ${direct ? "border-homera-terracotta/30 bg-homera-terracotta/[0.07] text-homera-terracotta" : "border-border bg-background text-muted"}`}>
+      {direct ? "Réservation directe" : "Après visite"}
     </span>
   );
 }
@@ -105,7 +120,16 @@ function ApplicationProgress({ status }: { status: string }) {
    DÉPÔT — CÔTÉ CANDIDAT
    ================================================================== */
 
-export function RentalRequestForm({ initialVisitId = "" }: { initialVisitId?: string }) {
+export function RentalRequestForm({ initialVisitId = "", initialPropertyId = "" }: { initialVisitId?: string; initialPropertyId?: string }) {
+  /* Parcours « réservation directe » : le bien est désigné sans visite.
+     L’éligibilité réelle est vérifiée par le serveur au dépôt. */
+  if (!initialVisitId && initialPropertyId) {
+    return <DirectBookingForm propertyId={initialPropertyId} />;
+  }
+  return <VisitBasedRequestForm initialVisitId={initialVisitId} />;
+}
+
+function VisitBasedRequestForm({ initialVisitId = "" }: { initialVisitId?: string }) {
   const visits = useServerResource<{ visits: ServerVisit[] }>("/api/visits");
   const applications = useServerResource<{ applications: ServerApplication[] }>("/api/applications");
   const [visitId, setVisitId] = useState(initialVisitId);
@@ -222,6 +246,139 @@ export function RentalRequestForm({ initialVisitId = "" }: { initialVisitId?: st
 }
 
 /* ==================================================================
+   DÉPÔT — RÉSERVATION DIRECTE (bien explicitement éligible, sans visite)
+   ------------------------------------------------------------------
+   Le formulaire lit le bien sur le serveur et guide vers la visite
+   préalable quand le parcours du bien l’exige. Le dépôt reste validé
+   par le serveur : éligibilité, disponibilité, période souhaitée et
+   absence de doublon. Aucun paiement n’est demandé ni prétendu ici :
+   la demande est « envoyée », jamais « confirmée » par cet écran.
+   ================================================================== */
+
+function DirectBookingForm({ propertyId }: { propertyId: string }) {
+  const property = useServerResource<{ property: Property }>(
+    `/api/properties/${encodeURIComponent(propertyId)}`,
+  );
+  const applications = useServerResource<{ applications: ServerApplication[] }>("/api/applications");
+  const [start, setStart] = useState("");
+  const [end, setEnd] = useState("");
+  const [income, setIncome] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [created, setCreated] = useState<ServerApplication | null>(null);
+
+  const bien = property.data?.property ?? null;
+  const bienId = bien?.id ?? propertyId;
+  const open = (applications.data?.applications ?? []).find(
+    (entry) => entry.propertyId === bienId && (entry.status === "envoyee" || entry.status === "en-cours"),
+  );
+  const today = new Date().toISOString().slice(0, 10);
+
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError("");
+    if ((start && !end) || (!start && end)) {
+      setError("Indiquez la période souhaitée complète (début et fin), ou laissez les deux dates vides.");
+      return;
+    }
+    if (start && end && end < start) {
+      setError("La fin de la période souhaitée doit suivre son début.");
+      return;
+    }
+    setBusy(true);
+    const result = await apiPost<{ application: ServerApplication }>("/api/applications", {
+      propertyId: bienId,
+      desiredStart: start || undefined,
+      desiredEnd: end || undefined,
+      message,
+      monthlyIncome: Number(income.replace(/\D/g, "")) || 0,
+    });
+    setBusy(false);
+    if (!result.ok) {
+      setError(messageOf(result));
+      return;
+    }
+    setCreated(result.data.application);
+  };
+
+  if (created) {
+    return (
+      <div className="mx-auto max-w-3xl rounded-card border border-success/25 bg-card p-7 text-center shadow-[var(--shadow-card)] sm:p-10" role="status" aria-live="polite">
+        <p className="text-caption font-semibold uppercase tracking-[0.16em] text-success">Demande enregistrée</p>
+        <h1 className="mt-2 font-serif text-display-sm">Votre réservation est en cours d’étude</h1>
+        <p className="mx-auto mt-3 max-w-xl text-body-sm leading-relaxed text-muted">
+          Référence <strong className="font-mono">{created.reference}</strong>. Le propriétaire ou l’agent mandaté en est notifié ; l’acceptation de votre demande apparaîtra dans « Mes demandes ». Aucun paiement ne vous est demandé à ce stade.
+        </p>
+        <Link href="/client/demandes" className={`${BUTTON_PRIMARY} mt-6`}>Suivre ma demande<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mx-auto max-w-4xl">
+      <WorkspaceHeading eyebrow="Réservation directe" title="Réserver ce bien" description="Ce bien est réservable sans visite préalable. Votre demande est étudiée par le propriétaire ou l’agent mandaté." actions={<Link href={bien ? `/biens/${bien.id}` : "/explorer"} className={BUTTON_SECONDARY}><ArrowLeft className="h-4 w-4" aria-hidden="true" />Fiche du bien</Link>} />
+      {property.loading || applications.loading ? (
+        <p className="flex items-center gap-2 text-note text-muted" role="status"><Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />Lecture du bien…</p>
+      ) : property.error || !bien ? (
+        <EmptyPanel icon={ClipboardList} title="Bien introuvable" description={property.error ?? "Ce bien n’existe pas ou n’est plus accessible."} action={<Link href="/louer" className={BUTTON_PRIMARY}>Voir les biens à louer<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} />
+      ) : bien.rentalMode !== "direct" ? (
+        <EmptyPanel icon={ClipboardList} title="Visite préalable exigée" description="Ce bien ne se réserve pas directement : effectuez d’abord une visite, enregistrée comme terminée, puis déposez votre demande." action={<Link href={`/client/visites/nouvelle?bien=${bien.id}`} className={BUTTON_PRIMARY}>Demander une visite<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} />
+      ) : open ? (
+        <EmptyPanel icon={ClipboardList} title="Demande déjà en cours" description={`Le dossier ${open.reference} est déjà enregistré pour ce bien. Retrouvez son statut dans votre espace demandes.`} action={<Link href="/client/demandes" className={BUTTON_PRIMARY}>Suivre ma demande<ArrowRight className="h-4 w-4" aria-hidden="true" /></Link>} />
+      ) : (
+        <form onSubmit={(event) => void submit(event)} className="space-y-5">
+          <WorkspacePanel title="Le bien réservé" description="Lu sur le serveur : titre, référence et tarif ne sont pas modifiables depuis cette page." icon={Home}>
+            <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <InfoCell label="Bien" value={bien.title} />
+              <InfoCell label="Référence" value={bien.homeraId} />
+              <InfoCell label="Ville" value={`${bien.district}, ${bien.city}`} />
+              <InfoCell label="Tarif" value={`${formatFCFA(bien.price)}${bien.pricePeriod ? ` ${bien.pricePeriod}` : ""}`} />
+            </dl>
+            <Link href={`/biens/${bien.id}#fiche-conditions`} className="mt-4 inline-flex min-h-9 items-center gap-1.5 text-caption font-semibold text-homera-terracotta hover:underline">
+              <FileText className="h-3.5 w-3.5" aria-hidden="true" />Consulter les conditions applicables
+            </Link>
+          </WorkspacePanel>
+
+          <WorkspacePanel title="Période souhaitée" description="Facultative : confrontée aux indisponibilités déclarées par le propriétaire." icon={ClipboardList}>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <FormField label="Début souhaité" name="booking-start">
+                <input id="booking-start" type="date" min={today} value={start} onChange={(event) => { setStart(event.target.value); setError(""); }} className={INPUT_CLASS} />
+              </FormField>
+              <FormField label="Fin souhaitée" name="booking-end">
+                <input id="booking-end" type="date" min={start || today} value={end} onChange={(event) => { setEnd(event.target.value); setError(""); }} className={INPUT_CLASS} />
+              </FormField>
+            </div>
+          </WorkspacePanel>
+
+          <WorkspacePanel title="Votre dossier" description="Ces éléments sont transmis au propriétaire ou à l’agent qui instruit la demande." icon={FileText}>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <FormField label="Revenu mensuel net (FCFA)" name="booking-income">
+                <input id="booking-income" type="text" inputMode="numeric" value={income} onChange={(event) => setIncome(event.target.value.replace(/[^\d\s]/g, ""))} placeholder="Ex. 450 000" className={INPUT_CLASS} />
+              </FormField>
+              <FormField label="Pièces à préparer" name="booking-documents" hint="Identité, justificatifs de revenus et références vous seront demandés pendant l’étude.">
+                <input id="booking-documents" value="À fournir après étude" readOnly className={`${INPUT_CLASS} opacity-75`} />
+              </FormField>
+            </div>
+            <label htmlFor="booking-message" className="mt-5 block text-note font-semibold">Un mot pour le propriétaire <span className="font-normal text-muted">(facultatif)</span></label>
+            <textarea id="booking-message" rows={4} maxLength={800} value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Présentez brièvement votre projet…" className={`${INPUT_CLASS} mt-1 resize-y py-3`} />
+          </WorkspacePanel>
+
+          {error && <p role="alert" className="rounded-xl border border-error/25 bg-error/[0.06] px-4 py-3 text-note text-error">{error}</p>}
+
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="max-w-xl text-caption leading-relaxed text-muted">Votre demande est enregistrée sur les serveurs HOMERA et notifiée au propriétaire ou à l’agent mandaté du bien. Aucun paiement ne vous est demandé à ce stade.</p>
+            <button type="submit" disabled={busy} className={`${BUTTON_PRIMARY} disabled:cursor-not-allowed disabled:opacity-45`}>
+              {busy && <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />}Confirmer ma réservation<ArrowRight className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
+        </form>
+      )}
+    </div>
+  );
+}
+
+/* ==================================================================
    LISTE — CANDIDAT, PROPRIÉTAIRE, AGENT
    ================================================================== */
 
@@ -291,12 +448,15 @@ export function ApplicationsList({ viewpoint, title, description }: { viewpoint:
       ) : (
         <div className="space-y-4">
           {list.map((application) => (
-            <WorkspacePanel key={application.id} title={viewpoint === "client" ? application.propertyTitle : application.clientName} description={`${application.reference} · ${viewpoint === "client" ? "" : `${application.propertyTitle} · `}${application.propertyCity}`} icon={FileText} action={<ApplicationBadge status={application.status} />}>
+            <WorkspacePanel key={application.id} title={viewpoint === "client" ? application.propertyTitle : application.clientName} description={`${application.reference} · ${viewpoint === "client" ? "" : `${application.propertyTitle} · `}${application.propertyCity}`} icon={FileText} action={<span className="flex flex-wrap items-center justify-end gap-2"><OriginBadge visitId={application.visitId} /><ApplicationBadge status={application.status} /></span>}>
               <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <InfoCell label="Bien" value={application.propertyTitle} />
                 <InfoCell label="Référence bien" value={application.propertyReference} />
-                <InfoCell label="Visite" value={application.visitDate ? `${formatDay(application.visitDate)}${application.visitReference ? ` · ${application.visitReference}` : ""}` : "—"} />
+                <InfoCell label="Visite" value={application.visitDate ? `${formatDay(application.visitDate)}${application.visitReference ? ` · ${application.visitReference}` : ""}` : application.visitId ? "—" : "Sans visite (réservation directe)"} />
                 <InfoCell label="Déposée le" value={formatDay(application.createdAt)} />
+                {application.desiredStart && application.desiredEnd && (
+                  <InfoCell label="Période souhaitée" value={`${formatDay(application.desiredStart)} → ${formatDay(application.desiredEnd)}`} />
+                )}
                 {viewpoint !== "client" && <InfoCell label="Revenu mensuel déclaré" value={application.monthlyIncome > 0 ? formatFCFA(application.monthlyIncome) : "non renseigné"} />}
                 {application.decidedAt && <InfoCell label="Décision" value={formatDay(application.decidedAt)} />}
               </dl>

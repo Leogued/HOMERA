@@ -131,6 +131,8 @@ export function PropertyDetail({
   const fresh = daysBetween(property.publishedAt, LATEST_PUBLISHED_AT);
   const verified = property.verificationStatus !== "en-verification";
   const unavailable = property.availabilityStatus === "indisponible";
+  /* Parcours imposé par le bien : une seule voie, jamais les deux boutons à la fois. */
+  const directBooking = !unavailable && property.rentalMode === "direct";
   const features = property.features ?? [];
   const priceEyebrow = property.pricePeriod ? (PERIOD_EYEBROW[property.pricePeriod] ?? "Tarif") : "Prix de vente";
   /* Chaque ligne reprend les montants du cadre économique : rien n’est dû
@@ -784,13 +786,23 @@ export function PropertyDetail({
                       Voir les biens disponibles <ArrowRight className="h-4 w-4" aria-hidden="true" />
                     </Link>
                   </>
+                ) : directBooking ? (
+                  <Link
+                    href={`/client/demandes/nouvelle?bien=${property.id}`}
+                    className="homera-press inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-btn homera-cta px-5 text-body-sm font-medium text-white"
+                  >
+                    Réserver <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                  </Link>
                 ) : (
                   <Link
                     href={`/client/visites/nouvelle?bien=${property.id}`}
                     className="homera-press inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-btn homera-cta px-5 text-body-sm font-medium text-white"
                   >
-                    Organiser une visite <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    Demander une visite <ArrowRight className="h-4 w-4" aria-hidden="true" />
                   </Link>
+                )}
+                {availability.note && (
+                  <p className="mt-3 text-caption leading-relaxed text-muted">{availability.note}</p>
                 )}
                 <div className="mt-3 flex items-stretch gap-3">
                   <AskQuestionLink
@@ -880,10 +892,10 @@ export function PropertyDetail({
             </p>
           </div>
           <Link
-            href={`/client/visites/nouvelle?bien=${property.id}`}
+            href={directBooking ? `/client/demandes/nouvelle?bien=${property.id}` : `/client/visites/nouvelle?bien=${property.id}`}
             className="homera-cta inline-flex min-h-11 shrink-0 items-center gap-2 rounded-btn px-4 py-2.5 text-caption font-semibold"
           >
-            Planifier une visite
+            {directBooking ? "Réserver" : "Planifier une visite"}
             <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
         </div>

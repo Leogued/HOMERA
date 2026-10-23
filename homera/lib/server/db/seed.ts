@@ -199,10 +199,10 @@ function seedProperties(db: Db): void {
     `INSERT OR IGNORE INTO properties (id, reference, title, type, intent, price, price_period, country, department,
        commune, city, district, address, bedrooms, bathrooms, surface, rooms, floor, land_title, min_nights,
        description, conditions, furnished, availability, unavailable_until, availability_note, publication_status,
-       verification_status, verified_on, owner_id, agency_id, main_photo_id, latitude, longitude, published_at,
+       verification_status, rental_mode, verified_on, owner_id, agency_id, main_photo_id, latitude, longitude, published_at,
        created_at, updated_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, 'Bénin', ?, ?, ?, ?, '', ?, ?, ?, ?, ?, ?, ?, ?, '', ?, 'disponible', NULL, '',
-             ?, ?, ?, ?, NULL, NULL, ?, ?, ?, ?, ?)`,
+             ?, ?, ?, ?, ?, NULL, NULL, ?, ?, ?, ?, ?)`,
   );
   const insertFeature = db.prepare("INSERT OR IGNORE INTO property_features (property_id, feature) VALUES (?, ?)");
   const insertPhoto = db.prepare(
@@ -240,6 +240,7 @@ function seedProperties(db: Db): void {
       (property.features ?? []).includes("meuble") ? 1 : 0,
       verified ? "publie" : "en-verification",
       verified ? "verifie" : "en-cours",
+      property.rentalMode === "direct" ? "direct" : "visite",
       verifiedOn,
       owner,
       property.coordinates?.lat ?? null,

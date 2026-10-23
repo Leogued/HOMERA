@@ -26,7 +26,7 @@ export function OwnerWorkspace({ section }: { section: string }) {
     case "dashboard": return <OwnerDashboard />;
     case "biens": return <OwnerListings />;
     case "demandes":
-      return <ApplicationsList viewpoint="proprietaire" title="Candidatures de location" description="Candidatures déposées après visite sur vos biens. Acceptez ou refusez : le motif d’un refus est transmis au candidat et conservé." />;
+      return <ApplicationsList viewpoint="proprietaire" title="Candidatures de location" description="Candidatures après visite et réservations directes déposées sur vos biens. Acceptez ou refusez : le motif d’un refus est transmis au candidat et conservé." />;
     case "visites":
       return <VisitsList viewpoint="proprietaire" title="Visites de vos biens" description="Confirmez, reprogrammez ou refusez les créneaux demandés. Chaque réponse est consignée et notifiée au client." />;
     case "locations": return <OwnerRentalPipeline />;

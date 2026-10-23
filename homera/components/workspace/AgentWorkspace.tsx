@@ -94,7 +94,7 @@ export function AgentWorkspace({ section }: { section: string }) {
       return <VisitsList viewpoint="agent" title="Visites de vos mandats" description="Seules les visites des biens couverts par un mandat actif sont présentées. Confirmez, reprogrammez ou signalez une absence." />;
     case "clients": return <AgentClients />;
     case "demandes":
-      return <ApplicationsList viewpoint="agent" title="Candidatures sur vos mandats" description="Candidatures déposées après visite sur les biens que votre mandat couvre. Vous ne voyez que celles-ci." />;
+      return <ApplicationsList viewpoint="agent" title="Candidatures sur vos mandats" description="Candidatures après visite et réservations directes sur les biens que votre mandat couvre. Vous ne voyez que celles-ci." />;
     case "autorisations": return <AgentAuthorizations />;
     case "documents": return <AgentDocuments />;
     case "profil": return <AgentProfile />;

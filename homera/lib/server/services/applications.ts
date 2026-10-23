@@ -8,18 +8,30 @@ import { PROPERTY_COLUMNS, type PropertyRow } from "./properties";
 import { activeAuthorizationFor } from "./authorizations";
 
 /* ==================================================================
-   HOMERA — DEMANDES DE LOCATION
+   HOMERA — DEMANDES DE LOCATION ET RÉSERVATIONS DIRECTES
    ------------------------------------------------------------------
-   Une candidature n’existe qu’au bout d’un parcours réel : il faut
-   avoir visité le bien. Le serveur refuse donc toute demande qui ne
-   s’appuie pas sur une visite « effectuée », sur un bien réellement
-   proposé à la location, et dont le dossier n’a pas déjà été déposé.
+   Deux parcours, jamais confondus, vérifiés par le serveur :
 
-   Statuts : envoyée → en cours → acceptée | refusée | annulée
+   • « visite préalable » (défaut) : la demande naît d’une visite
+     « effectuée », appartenant au candidat, sur un bien louable,
+     disponible et publié. Une visite demandée, confirmée,
+     reprogrammée, refusée, annulée ou manquée (absence) ne suffit
+     jamais ;
+   • « réservation directe » : uniquement pour un bien explicitement
+     déclaré `rental_mode = 'direct'`. Le client désigne le bien (pas
+     de visite), avec une période souhaitée confrontée aux
+     indisponibilités déclarées par le propriétaire.
+
+   Statuts : envoyée → en cours → acceptée | refusée | annulée.
+   L’origine se déduit sans nouveau statut : `visit_id IS NULL` =
+   réservation directe.
 
    Règles tenues par le serveur (jamais par l’écran) :
    • une visite ne peut ouvrir qu’une seule candidature ;
    • la candidature porte le bien de la visite, jamais celui de l’URL ;
+   • un seul dossier ouvert par candidat et par bien, quel que soit le
+     parcours : pas de double réservation incompatible ;
+   • un bien indisponible ou non publié ne reçoit aucune demande ;
    • seuls le propriétaire, l’agent mandaté « location » ou
      l’administration peuvent instruire le dossier ;
    • un refus exige un motif, conservé et transmis ;
@@ -45,6 +57,8 @@ export type ApplicationRow = {
   status: ApplicationStatus;
   message: string;
   monthly_income: number;
+  desired_start: string | null;
+  desired_end: string | null;
   decision_note: string;
   decided_at: string | null;
   decided_by: string | null;
@@ -64,6 +78,9 @@ export type ApplicationView = {
   visitId: string | null;
   visitReference: string | null;
   visitDate: string | null;
+  /** Période souhaitée (réservation directe) : NULL après une visite. */
+  desiredStart: string | null;
+  desiredEnd: string | null;
   status: ApplicationStatus;
   message: string;
   monthlyIncome: number;
@@ -135,6 +152,8 @@ function toView(db: Db, row: JoinedRow, actor: UserContext): ApplicationView {
     visitId: row.visit_id,
     visitReference: row.visit_reference,
     visitDate: row.visit_date,
+    desiredStart: row.desired_start ?? null,
+    desiredEnd: row.desired_end ?? null,
     status: row.status,
     message: row.message ?? "",
     monthlyIncome: row.monthly_income ?? 0,
@@ -190,9 +209,15 @@ export function getApplication(db: Db, id: string, actor: UserContext): Applicat
    ================================================================== */
 
 export type ApplicationDraft = {
-  visitId: string;
+  /** Parcours « visite préalable » : visite effectuée ouvrant le dossier. */
+  visitId?: string;
+  /** Parcours « réservation directe » : bien explicitement éligible, sans visite. */
+  propertyId?: string;
   message?: string;
   monthlyIncome?: number;
+  /** Période souhaitée (réservation directe, AAAA-MM-JJ). */
+  desiredStart?: string;
+  desiredEnd?: string;
 };
 
 export function createApplication(
@@ -201,63 +226,153 @@ export function createApplication(
   input: ApplicationDraft,
   meta: { ip?: string } = {},
 ): ServiceResult<{ application: ApplicationView }> {
-  const visit = queryOne<{
+  const visitId = (input.visitId ?? "").trim();
+  const directPropertyId = (input.propertyId ?? "").trim();
+  if ((visitId && directPropertyId) || (!visitId && !directPropertyId)) {
+    return {
+      ok: false,
+      message: "Désignez soit une visite effectuée, soit un bien éligible à la réservation directe.",
+    };
+  }
+
+  let visit: {
     id: string;
     reference: string;
     property_id: string;
     client_id: string;
     status: string;
     requested_date: string;
-  }>("SELECT id, reference, property_id, client_id, status, requested_date FROM visits WHERE id = ? OR reference = ?", [
-    input.visitId,
-    input.visitId,
-  ]);
-  if (!visit) return { ok: false, message: "Visite introuvable." };
-  /* La visite doit appartenir au candidat : personne ne dépose un dossier
-     sur le rendez-vous d’un autre en devinant un identifiant. */
-  if (visit.client_id !== actor.id) {
-    return { ok: false, message: "Cette visite ne vous appartient pas." };
-  }
-  if (visit.status !== "effectuee") {
-    return { ok: false, message: "Une visite effectuée est nécessaire avant de déposer votre dossier." };
+  } | null = null;
+  let property: PropertyRow | null = null;
+
+  if (visitId) {
+    /* ---------------- Parcours « visite préalable » ---------------- */
+    visit = queryOne<{
+      id: string;
+      reference: string;
+      property_id: string;
+      client_id: string;
+      status: string;
+      requested_date: string;
+    }>(
+      "SELECT id, reference, property_id, client_id, status, requested_date FROM visits WHERE id = ? OR reference = ?",
+      [visitId, visitId],
+    );
+    if (!visit) return { ok: false, message: "Visite introuvable." };
+    /* La visite doit appartenir au candidat : personne ne dépose un dossier
+       sur le rendez-vous d’un autre en devinant un identifiant. */
+    if (visit.client_id !== actor.id) {
+      return { ok: false, message: "Cette visite ne vous appartient pas." };
+    }
+    /* Seule une visite réellement terminée ouvre le dossier : ni la demande,
+       ni la confirmation, ni la reprogrammation, ni l’absence ne suffisent. */
+    if (visit.status !== "effectuee") {
+      return { ok: false, message: "Une visite effectuée est nécessaire avant de déposer votre dossier." };
+    }
+
+    property = queryOne<PropertyRow>(`${PROPERTY_COLUMNS} WHERE id = ?`, [visit.property_id]);
+    if (!property) return { ok: false, message: "Bien introuvable." };
+
+    const existing = queryOne<{ id: string }>("SELECT id FROM rental_applications WHERE visit_id = ?", [visit.id]);
+    if (existing) {
+      return { ok: false, message: "Une demande est déjà liée à cette visite." };
+    }
+  } else {
+    /* ---------------- Parcours « réservation directe » ---------------- */
+    property = queryOne<PropertyRow>(`${PROPERTY_COLUMNS} WHERE id = ? OR reference = ?`, [
+      directPropertyId,
+      directPropertyId,
+    ]);
+    if (!property) return { ok: false, message: "Bien introuvable." };
+    /* La réservation directe n’est jamais accordée par défaut : seuls les
+       biens explicitement déclarés éligibles l’ouvrent. */
+    if (property.rental_mode !== "direct") {
+      return {
+        ok: false,
+        message:
+          "Ce bien exige une visite préalable : effectuez d’abord une visite, enregistrée comme terminée, avant de déposer votre dossier.",
+      };
+    }
+    const desiredStart = (input.desiredStart ?? "").trim();
+    const desiredEnd = (input.desiredEnd ?? "").trim();
+    if ((desiredStart && !desiredEnd) || (!desiredStart && desiredEnd)) {
+      return { ok: false, message: "Indiquez la période souhaitée complète (début et fin)." };
+    }
+    if (desiredStart && desiredEnd && desiredEnd < desiredStart) {
+      return { ok: false, message: "La fin de la période souhaitée doit suivre son début." };
+    }
+    if (desiredStart && desiredEnd) {
+      const clash = queryOne<{ id: string }>(
+        `SELECT id FROM property_availability
+          WHERE property_id = ? AND kind = 'indisponible' AND start_date <= ? AND end_date >= ?`,
+        [property.id, desiredEnd, desiredStart],
+      );
+      if (clash) {
+        return {
+          ok: false,
+          message: "La période souhaitée chevauche une indisponibilité déclarée par le propriétaire.",
+        };
+      }
+    }
   }
 
-  const property = queryOne<PropertyRow>(`${PROPERTY_COLUMNS} WHERE id = ?`, [visit.property_id]);
-  if (!property) return { ok: false, message: "Bien introuvable." };
   if (property.intent !== "louer") {
     return { ok: false, message: "Ce bien n’est pas proposé à la location." };
   }
+  /* Un bien indisponible ou sorti du catalogue ne reçoit aucune demande,
+     quel que soit le parcours : la disponibilité se vérifie ici, pas sur
+     l’écran. */
+  if (property.availability !== "disponible") {
+    return { ok: false, message: "Ce bien est actuellement indisponible : aucune demande ne peut être déposée." };
+  }
+  if (property.publication_status !== "publie") {
+    return { ok: false, message: "Ce bien n’est pas publié au catalogue : aucune demande ne peut être déposée." };
+  }
 
-  const existing = queryOne<{ id: string }>("SELECT id FROM rental_applications WHERE visit_id = ?", [visit.id]);
-  if (existing) {
-    return { ok: false, message: "Une demande est déjà liée à cette visite." };
+  /* Un seul dossier ouvert par candidat et par bien, quel que soit le
+     parcours : les doubles réservations incompatibles sont refusées. */
+  const open = queryOne<{ id: string }>(
+    `SELECT id FROM rental_applications
+      WHERE property_id = ? AND client_id = ? AND status IN ('envoyee', 'en-cours')`,
+    [property.id, actor.id],
+  );
+  if (open) {
+    return { ok: false, message: "Vous avez déjà une demande en cours pour ce bien." };
   }
 
   const at = nowIso();
   const id = newId("CAND");
   const reference = `CAND-${at.slice(0, 10).replace(/-/g, "")}-${id.slice(-4).toUpperCase()}`;
+  const desiredStart = visit ? null : (input.desiredStart ?? "").trim() || null;
+  const desiredEnd = visit ? null : (input.desiredEnd ?? "").trim() || null;
 
   db.prepare(
     `INSERT INTO rental_applications
-       (id, reference, property_id, client_id, visit_id, status, message, monthly_income, decision_note, decided_at, decided_by, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, 'envoyee', ?, ?, '', NULL, NULL, ?, ?)`,
+       (id, reference, property_id, client_id, visit_id, status, message, monthly_income, desired_start, desired_end,
+        decision_note, decided_at, decided_by, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, 'envoyee', ?, ?, ?, ?, '', NULL, NULL, ?, ?)`,
   ).run(
     id,
     reference,
     property.id,
     actor.id,
-    visit.id,
+    visit ? visit.id : null,
     (input.message ?? "").trim().slice(0, 1000),
     Math.max(0, Math.min(100_000_000, Math.round(input.monthlyIncome ?? 0))),
+    desiredStart,
+    desiredEnd,
     at,
     at,
   );
 
+  const direct = !visit;
   notify(db, {
     userIds: [property.owner_id, mandatedAgent(db, property.id)],
     type: "candidature",
-    title: "Nouvelle candidature de location",
-    body: `${actor.prenom} ${actor.nom} a déposé un dossier pour « ${property.title} » (${reference}).`,
+    title: direct ? "Nouvelle réservation directe" : "Nouvelle candidature de location",
+    body: direct
+      ? `${actor.prenom} ${actor.nom} a déposé une réservation directe pour « ${property.title} » (${reference}).`
+      : `${actor.prenom} ${actor.nom} a déposé un dossier pour « ${property.title} » (${reference}).`,
     link: "/proprietaire/demandes",
     entityType: "candidature",
     entityId: id,
@@ -268,7 +383,14 @@ export function createApplication(
     action: "candidature.depot",
     entityType: "rental_application",
     entityId: id,
-    detail: { reference, propertyId: property.id, visitId: visit.id },
+    detail: {
+      reference,
+      propertyId: property.id,
+      origin: direct ? "reservation-directe" : "visite",
+      visitId: visit ? visit.id : null,
+      desiredStart,
+      desiredEnd,
+    },
     ip: meta.ip ?? "",
   });
 

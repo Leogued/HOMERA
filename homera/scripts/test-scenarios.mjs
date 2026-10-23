@@ -673,3 +673,31 @@ await test("13. le propriétaire envoie une vraie photo, et rien qu’une photo"
   const gone = await call(null, uploaded.media_key);
   assert.equal(gone.status, 404, "le fichier disparaît avec la ligne de base");
 });
+
+/* ------------------------------------------------------------------ */
+/* 14. Parcours de location : le bouton suit le bien                   */
+/* ------------------------------------------------------------------ */
+await test("14. la fiche propose le parcours du bien (réservation directe ou visite préalable)", async () => {
+  const direct = await call(null, "/biens/espace-evenementiel-cadjehoun");
+  assert.equal(direct.status, 200, "la fiche du bien réservable est servie");
+  assert.ok(direct.text.includes(">Réserver"), "le bien éligible propose « Réserver »");
+  assert.ok(
+    direct.text.includes("/client/demandes/nouvelle?bien=espace-evenementiel-cadjehoun"),
+    "« Réserver » ouvre le parcours de réservation du bien",
+  );
+  assert.ok(!direct.text.includes("Demander une visite"), "jamais les deux parcours à la fois");
+  assert.ok(!direct.text.includes("Planifier une visite"), "la barre mobile suit le parcours direct");
+
+  const visit = await call(null, "/biens/villa-fidjrosse");
+  assert.equal(visit.status, 200, "la fiche du bien à visiter est servie");
+  assert.ok(visit.text.includes("Demander une visite"), "le bien exigeant une visite le dit");
+  assert.ok(
+    visit.text.includes("/client/visites/nouvelle?bien=villa-fidjrosse"),
+    "« Demander une visite » ouvre le parcours de visite du bien",
+  );
+  assert.ok(!visit.text.includes(">Réserver"), "aucune réservation directe sur un bien à visite préalable");
+  assert.ok(
+    !visit.text.includes("/client/demandes/nouvelle?bien="),
+    "aucun accès direct au dépôt de dossier depuis cette fiche",
+  );
+});

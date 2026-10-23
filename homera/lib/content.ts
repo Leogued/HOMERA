@@ -335,6 +335,8 @@ export type Property = {
   availabilityStatus?: PropertyAvailability;
   /** État documentaire : seuls les biens contrôlés apparaissent dans le catalogue public. */
   verificationStatus?: PropertyVerificationStatus;
+  /** Parcours de location : « direct » = réservable sans visite préalable (activation explicite) ; absent = visite préalable. */
+  rentalMode?: "visite" | "direct";
   /** « / mois », « / nuitée »… absent pour une vente. */
   pricePeriod?: string;
   city: string;
@@ -1191,6 +1193,7 @@ export const PROPERTIES: Property[] = [
     title: "Espace extérieur clôturé pour événements",
     type: "espace",
     intent: "louer",
+    rentalMode: "direct",
     price: 150_000,
     pricePeriod: "/ jour",
     city: "Cotonou",

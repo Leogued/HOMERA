@@ -75,10 +75,21 @@ export const visitRequestSchema = z.object({
   durationMin: z.coerce.number().int().min(15).max(240).optional().default(45),
 });
 
+const desiredDateSchema = z
+  .string()
+  .trim()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, "Indiquez une date au format AAAA-MM-JJ.")
+  .optional();
 export const applicationDraftSchema = z.object({
-  visitId: z.string().trim().min(1, "Rattachez votre dossier à une visite effectuée."),
+  /* Parcours « visite préalable » : le dossier naît d’une visite effectuée. */
+  visitId: z.string().trim().min(1, "Rattachez votre dossier à une visite effectuée.").optional(),
+  /* Parcours « réservation directe » : le bien est désigné sans visite. Le serveur vérifie son éligibilité. */
+  propertyId: z.string().trim().min(1, "Désignez le bien à réserver.").optional(),
   message: z.string().trim().max(1000).optional().default(""),
   monthlyIncome: z.coerce.number().int().min(0).max(100_000_000).optional().default(0),
+  /* Période souhaitée (réservation directe) : validée et confrontée aux indisponibilités déclarées. */
+  desiredStart: desiredDateSchema,
+  desiredEnd: desiredDateSchema,
 });
 export const applicationDecisionSchema = z.object({
   action: z.enum(["accepter", "refuser", "etudier", "annuler"]),

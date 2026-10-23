@@ -9,8 +9,10 @@ export default async function NewRentalRequestPage({ searchParams }: { searchPar
   const params = await searchParams;
   const visitValue = params.visite;
   const visitId = Array.isArray(visitValue) ? visitValue[0] ?? "" : visitValue ?? "";
+  const propertyValue = params.bien;
+  const propertyId = Array.isArray(propertyValue) ? propertyValue[0] ?? "" : propertyValue ?? "";
   const gate = await guardWorkspace("client", "/client/demandes/nouvelle");
   if (gate.status === "signin") redirect(signinHref(gate.returnTo));
   if (gate.status === "denied") return <WorkspaceRefusal role="client" />;
-  return <WorkspaceShell role="client" section="demandes"><RentalRequestForm initialVisitId={visitId} /></WorkspaceShell>;
+  return <WorkspaceShell role="client" section="demandes"><RentalRequestForm initialVisitId={visitId} initialPropertyId={propertyId} /></WorkspaceShell>;
 }

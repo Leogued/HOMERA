@@ -519,6 +519,22 @@ await test('HOMERA : la fiche ne porte aucune navigation (ni fil d’Ariane ni r
   }
 });
 
+await test('HOMERA : la fiche suit le parcours du bien (réservation directe ou visite préalable)', async () => {
+  const detail = await readFile(new URL('../components/catalog/PropertyDetail.tsx', import.meta.url), 'utf8');
+  for (const marker of ['rentalMode', 'Réserver', 'Demander une visite', '/client/demandes/nouvelle?bien=', '/client/visites/nouvelle?bien=']) {
+    assert.ok(detail.includes(marker), `parcours de location absent de la fiche : ${marker}`);
+  }
+  assert.ok(!detail.includes('Organiser une visite'), 'ancien libellé de visite conservé sur la fiche');
+  const service = await readFile(new URL('../lib/server/services/applications.ts', import.meta.url), 'utf8');
+  for (const marker of ['rental_mode', 'desired_start', 'effectuee', 'indisponible']) {
+    assert.ok(service.includes(marker), `garde métier absente du serveur : ${marker}`);
+  }
+  const journey = await readFile(new URL('../components/workspace/ApplicationSections.tsx', import.meta.url), 'utf8');
+  for (const marker of ['DirectBookingForm', 'Réservation directe', 'Après visite']) {
+    assert.ok(journey.includes(marker), `parcours direct absent de l’espace client : ${marker}`);
+  }
+});
+
 await test('HOMERA : données de fiche cohérentes (références, prix, dates, médias)', () => {
   const ids = new Set();
   const references = new Set();

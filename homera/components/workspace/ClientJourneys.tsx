@@ -140,8 +140,8 @@ export function ClientVisits() {
   );
 }
 
-export function RentalRequestForm({ initialVisitId = "" }: { initialVisitId?: string }) {
-  return <ServerRentalRequestForm initialVisitId={initialVisitId} />;
+export function RentalRequestForm({ initialVisitId = "", initialPropertyId = "" }: { initialVisitId?: string; initialPropertyId?: string }) {
+  return <ServerRentalRequestForm initialVisitId={initialVisitId} initialPropertyId={initialPropertyId} />;
 }
 
 export function ClientApplications() {
