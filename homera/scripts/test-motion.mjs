@@ -506,7 +506,7 @@ await test('HOMERA : taxonomie (boutique, immeuble, chambre, salle, espace) et p
 
 await test('HOMERA : la fiche ne porte que le bouton « Retour » (ni fil d’Ariane ni liens annexes)', async () => {
   const detail = await readFile(new URL('../components/catalog/PropertyDetail.tsx', import.meta.url), 'utf8');
-  for (const marker of ['BackToResults', 'fallbackHref={PROJECT_HREF[property.intent]}', 'lg:grid-cols-[minmax(0,1fr)_22rem]', 'PropertyGallery']) {
+  for (const marker of ['BackToResults', 'fallbackHref={PROJECT_HREF[property.intent]}', 'lg:grid-cols-[minmax(0,2.25fr)_minmax(18rem,0.9fr)]', 'PropertyGallery']) {
     assert.ok(detail.includes(marker), `bouton de retour absent de la fiche : ${marker}`);
   }
   for (const marker of ['Breadcrumbs', 'Fil d’Ariane']) {
@@ -523,6 +523,25 @@ await test('HOMERA : la fiche ne porte que le bouton « Retour » (ni fil d’Ar
   for (const marker of ['communes', 'history.back']) {
     assert.ok(!memory.includes(marker), `mémorisation fautive : ${marker}`);
   }
+});
+
+await test('HOMERA : fiche responsive — galerie, statut prouvé, localisation prudente et parcours réel', async () => {
+  const detail = await readFile(new URL('../components/catalog/PropertyDetail.tsx', import.meta.url), 'utf8');
+  const panels = await readFile(new URL('../components/catalog/PropertySidePanels.tsx', import.meta.url), 'utf8');
+  const requests = await readFile(new URL('../components/workspace/ApplicationSections.tsx', import.meta.url), 'utf8');
+  const route = await readFile(new URL('../app/(client)/client/demandes/nouvelle/page.tsx', import.meta.url), 'utf8');
+  const communeMap = await readFile(new URL('../lib/commune-map-data.ts', import.meta.url), 'utf8');
+  assert.ok(detail.includes('property.verificationStatus === "verifie"'), 'le statut vérifié exige la preuve explicite');
+  assert.doesNotMatch(detail, /<dt className="text-muted">Projet<\/dt>/, 'la ligne « Projet » est supprimée de la carte tarifaire');
+  assert.ok(detail.includes('bedroomsApplicable') && detail.includes('roomsApplicable'), 'les caractéristiques non applicables aux terrains sont masquées');
+  assert.ok(panels.includes('<dialog') && panels.includes('onKeyDown') && panels.includes('Voir les photos'), 'la galerie offre une visionneuse navigable et fermable');
+  assert.ok(panels.includes('Repère communal approximatif') && panels.includes('adresse exacte n’est pas affichée'), 'la carte n’expose pas une précision inexistante');
+  assert.ok(panels.includes('/explorer?ville=') && panels.includes('&quartier='), 'le lien quartier réutilise les paramètres réels du catalogue');
+  assert.ok(communeMap.includes('ne sont pas des coordonnées de bien'), 'les repères schématiques ne sont pas présentés comme des coordonnées');
+  assert.ok(detail.includes('Caution et frais éventuels non précisés') && detail.includes('Frais de transaction et honoraires non précisés'), 'les cautions et frais non fournis ne sont pas inventés');
+  assert.ok(detail.includes('name="debut"') && detail.includes('name="fin"') && route.includes('initialDesiredStart') && requests.includes('initialDesiredEnd'), 'la réservation transmet les dates au vrai formulaire serveur');
+  assert.ok(detail.includes('aria-label="Biens similaires, faites défiler horizontalement'), 'les annonces comparables restent accessibles au clavier et au toucher');
+  assert.doesNotMatch(detail, /aucun frais caché|Frais de service inclus|Caution \$\{formatFCFA\(property\.price\)\}/, 'aucun frais ou dépôt n’est déduit du prix');
 });
 
 await test('HOMERA : la fiche suit le parcours du bien (réservation directe ou visite préalable)', async () => {
@@ -2208,7 +2227,7 @@ await test('HOMERA : cohérence fonctionnelle et accessibilité des espaces (pro
 
   assert.ok(ownerWorkspace.includes('PaymentMethodsWorkspace') && agentWorkspace.includes('PaymentMethodsWorkspace') && !profileSettings.includes('PaymentMethodsWorkspace'), 'PaymentMethodsWorkspace est intégré par rôle chez les bénéficiaires, sans doublon dans ProfileSettings');
   assert.ok(adminSections.includes('aucun revenu, commission ou retrait n’est affiché'), 'les statistiques admin n’affichent aucun flux financier simulé');
-  assert.ok(propertyDetail.includes('Cadre économique HOMERA') && propertyDetail.includes('Loyer mensuel') && propertyDetail.includes('Total séjour') && propertyDetail.includes('Frais notariés'), 'PropertyDetail affiche le cadre économique HOMERA adapté au projet (louer, séjour, acheter)');
+  assert.ok(propertyDetail.includes('Cadre économique HOMERA') && propertyDetail.includes('Loyer mensuel') && propertyDetail.includes('Sous-total indicatif') && propertyDetail.includes('À confirmer avec le notaire'), 'PropertyDetail affiche des repères économiques adaptés sans inventer de frais (louer, séjour, acheter)');
 });
 
 await test('HOMERA : le titre et l’accroche du hero restent immobiles', async () => {

@@ -1,9 +1,18 @@
 # CURRENT_STATE — État Actuel & Journal d'Audit HOMERA
 
-> **Dernière mise à jour** : 2026-10-13 (LOT 8 livré)
+> **Dernière mise à jour** : 2026-10-23 (LOT 9 — fiche `/biens/[id]`)
 > **Branche active** : `arena/87b15d6d-homera`
-> **Statut global** : `QUALITY_GATE.md` 100 % validé (Fonctionnel, Design System, UX, Accessibilité/Technique, Custom Design & Creative Quality)
+> **Statut global** : implémentation et contrôles statiques à jour ; validation visuelle manuelle non automatisée.
 
+> ### 🟢 Ce qui change au 23 octobre 2026 (LOT 9)
+>
+> | Sujet | État | Référence |
+> |---|---|---|
+> | Fiche `/biens/[id]` | grille desktop ~70/30, galerie/visionneuse navigable, statut de contrôle strict, coûts non documentés signalés comme tels, map schématique, comparables en rail | `components/catalog/PropertyDetail.tsx` |
+> | Parcours | réservation directe transmet les dates optionnelles au formulaire réel ; visite reste dirigée vers le planificateur existant | `components/workspace/ApplicationSections.tsx` |
+> | Localisation | carte commune partagée avec l’explorateur, sans géolocalisation précise du logement | `lib/commune-map-data.ts` |
+> | Vérifications | `npm test`, `npx tsc --noEmit`, `npm run lint`, `npm run quality:gate` réussis ; `npm run build` réussi avant les derniers ajustements ; audit HTTP de l’accueil/catalogue exécuté | scripts documentés |
+>
 > ### 🟢 Ce qui change au 13 octobre 2026 (LOT 8)
 >
 > | Sujet | État | Référence |

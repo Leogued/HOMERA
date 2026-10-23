@@ -4,51 +4,8 @@ import { useMemo } from "react";
 import { Compass, MapPin, RotateCcw } from "lucide-react";
 import { PROPERTIES } from "@/lib/content";
 import { countLabel } from "@/lib/format";
+import { COMMUNE_MAP_NODES as COMMUNES } from "@/lib/commune-map-data";
 import type { CatalogFacets, CatalogQuery } from "@/lib/properties";
-
-type CommuneMeta = {
-  name: string;
-  axis: string;
-  summary: string;
-  x: number;
-  y: number;
-  labelAlign: "start" | "middle" | "end";
-};
-
-const COMMUNES: CommuneMeta[] = [
-  {
-    name: "Ouidah",
-    axis: "Côte Ouest · Route des Pêches",
-    summary: "Résidences côtières, villas de séjour et parcelles proches du littoral historique.",
-    x: 108,
-    y: 162,
-    labelAlign: "middle",
-  },
-  {
-    name: "Abomey-Calavi",
-    axis: "Plateau Nord · Grand Nokoué",
-    summary: "Pôle résidentiel en forte croissance : parcelles titrées, villas familiales et studios.",
-    x: 286,
-    y: 78,
-    labelAlign: "middle",
-  },
-  {
-    name: "Cotonou",
-    axis: "Cœur économique · Littoral",
-    summary: "Quartiers d’affaires et résidentiels prisés : Fidjrossè, Haie Vive, Ganhi, Cadjèhoun, Akpakpa.",
-    x: 334,
-    y: 158,
-    labelAlign: "middle",
-  },
-  {
-    name: "Porto-Novo",
-    axis: "Est lagunaire · Capitale",
-    summary: "Cadre résidentiel calme autour de la lagune : maisons familiales, terrains et locaux.",
-    x: 498,
-    y: 112,
-    labelAlign: "middle",
-  },
-];
 
 export function CommuneMapExplorer({
   query,

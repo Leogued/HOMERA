@@ -22,10 +22,10 @@
 - **`PropertyCard.tsx`** :
   - **Contrat strict** : Un seul lien `<Link href="/biens/...">` par carte (`data-card`), clic sur toute la carte, ouverture sur `Entrée` ou `Espace`, bouton `FavoriteButton` (`aria-pressed`) hors du lien, référence et date de vérification toujours visibles sans survol.
 - **`CatalogExplorer.tsx`, `CatalogFilters.tsx` & `CommuneMapExplorer.tsx`** :
-  - Synchronisation bidirectionnelle avec l'URL (`replaceState`), facettes comptées en temps réel, tiroir de filtres plein écran sur mobile avec fermeture `Escape`, et **carte vectorielle interactive du corridor littoral sud-béninois** (`CommuneMapExplorer.tsx` : Ouidah, Abomey-Calavi, Cotonou, Porto-Novo + quartiers vérifiés).
+  - Synchronisation bidirectionnelle avec l'URL (`replaceState`), facettes comptées en temps réel, tiroir de filtres plein écran sur mobile avec fermeture `Escape`, et **carte vectorielle interactive du corridor littoral sud-béninois** (`CommuneMapExplorer.tsx` : Ouidah, Abomey-Calavi, Cotonou, Porto-Novo + quartiers vérifiés). Les repères communaux partagés sont définis dans `lib/commune-map-data.ts` et ne représentent pas des coordonnées de bien.
 - **`PropertyComparison.tsx`** :
   - Comparateur côte à côte sur mesure (jusqu'à 3 biens) intégré dans `/favoris` (`FavoritesView.tsx`) et `/client/favoris` (`ClientFavorites.tsx`) dès que 2 biens sont mis en favoris (prix, prix au m², surface, configuration, foncier, date de contrôle HOMERA, disponibilité, équipements).
 - **`PropertyDetail.tsx`** :
-  - Fiche complète d'un bien : faits clés, équipements, statut de disponibilité, copie de référence, lien vers `/historique/[reference]`, demande de visite et biens proches.
+  - Fiche responsive du catalogue : galerie et visionneuse `<dialog>`, faits et équipements filtrés selon le type, vérification explicite, prix/frais sans invention, actions de réservation directe ou demande de visite vers les vrais parcours, favoris/questions, localisation schématique prudente et biens comparables. Le contrat détaillé est décrit dans `docs/pages/PUBLIC_SITE.md`.
 - **`PageHero.tsx`** :
   - En-tête éditorial réutilisé sur toutes les pages intérieures publiques (fil d'Ariane, surtitre, `h1`, introduction, faits clés, actions).

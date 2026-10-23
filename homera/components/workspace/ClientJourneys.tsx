@@ -140,8 +140,8 @@ export function ClientVisits() {
   );
 }
 
-export function RentalRequestForm({ initialVisitId = "", initialPropertyId = "" }: { initialVisitId?: string; initialPropertyId?: string }) {
-  return <ServerRentalRequestForm initialVisitId={initialVisitId} initialPropertyId={initialPropertyId} />;
+export function RentalRequestForm({ initialVisitId = "", initialPropertyId = "", initialDesiredStart = "", initialDesiredEnd = "" }: { initialVisitId?: string; initialPropertyId?: string; initialDesiredStart?: string; initialDesiredEnd?: string }) {
+  return <ServerRentalRequestForm initialVisitId={initialVisitId} initialPropertyId={initialPropertyId} initialDesiredStart={initialDesiredStart} initialDesiredEnd={initialDesiredEnd} />;
 }
 
 export function ClientApplications() {

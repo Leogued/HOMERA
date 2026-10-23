@@ -7,7 +7,7 @@ import {
   Building2,
   CalendarCheck,
   Car,
-  Check,
+  Info,
   Clock,
   Droplets,
   Fence,
@@ -49,8 +49,13 @@ import {
 import { LATEST_PUBLISHED_AT } from "@/lib/properties";
 import { BackToResults } from "@/components/catalog/BackToResults";
 import {
-  PropertyAvailability, PropertyGallery, ReportListing, VerifiedOwnerCard,
-  type AvailabilityWindow, type VerifiedOwner,
+  PropertyAvailability,
+  PropertyGallery,
+  PropertyLocationCard,
+  ReportListing,
+  VerifiedOwnerCard,
+  type AvailabilityWindow,
+  type VerifiedOwner,
 } from "@/components/catalog/PropertySidePanels";
 import { CopyReference } from "@/components/ui/CopyReference";
 import { AskQuestionLink } from "@/components/catalog/AskQuestionLink";
@@ -102,6 +107,8 @@ export function PropertyDetail({
   /** Mandat d’agent réellement opposable sur ce bien, ou `null`. */
   mandate?: { agentId: string; agentName: string; matricule: string | null; mandateType: string; expiresAt: string } | null;
 }) {
+  const bedroomsApplicable = ["villa", "appartement", "studio", "chambre"].includes(property.type);
+  const roomsApplicable = property.type !== "terrain";
   const facts = [
     { label: "Type de bien", value: TYPE_LABELS[property.type], icon: Building2 },
     {
@@ -109,9 +116,9 @@ export function PropertyDetail({
       value: formatSurface(property.surface),
       icon: Maximize,
     },
-    ...(property.rooms ? [{ label: "Pièces", value: `${property.rooms}`, icon: Layers }] : []),
-    ...(property.bedrooms > 0 ? [{ label: "Chambres", value: `${property.bedrooms}`, icon: Bed }] : []),
-    ...(property.bathrooms > 0 ? [{ label: "Salles d’eau", value: `${property.bathrooms}`, icon: Bath }] : []),
+    ...(roomsApplicable && property.rooms ? [{ label: "Pièces", value: `${property.rooms}`, icon: Layers }] : []),
+    ...(bedroomsApplicable && property.bedrooms > 0 ? [{ label: "Chambres", value: `${property.bedrooms}`, icon: Bed }] : []),
+    ...(bedroomsApplicable && property.bathrooms > 0 ? [{ label: "Salles d’eau", value: `${property.bathrooms}`, icon: Bath }] : []),
     ...(property.floor ? [{ label: "Niveau", value: property.floor, icon: Ruler }] : []),
     ...(property.landTitle
       ? [{ label: "Situation foncière", value: LAND_TITLE_LABELS[property.landTitle], icon: FileText }]
@@ -130,20 +137,17 @@ export function PropertyDetail({
     ...(property.availabilityStatus === "indisponible" ? [{ label: "Disponibilité", value: "Indisponible", icon: CalendarCheck }] : []),
   ];
   const fresh = daysBetween(property.publishedAt, LATEST_PUBLISHED_AT);
-  const verified = property.verificationStatus !== "en-verification";
+  const verified = property.verificationStatus === "verifie";
   const unavailable = property.availabilityStatus === "indisponible";
   /* Parcours imposé par le bien : une seule voie, jamais les deux boutons à la fois. */
   const directBooking = !unavailable && property.rentalMode === "direct";
   const features = property.features ?? [];
   const priceEyebrow = property.pricePeriod ? (PERIOD_EYEBROW[property.pricePeriod] ?? "Tarif") : "Prix de vente";
-  /* Chaque ligne reprend les montants du cadre économique : rien n’est dû
-     en dehors de ce qui est écrit ici et dans l’onglet « Conditions ». */
-  const feeLine =
-    property.intent === "louer"
-      ? `Caution ${formatFCFA(property.price)} · aucun frais caché`
-      : property.intent === "sejour"
-        ? "Frais de service inclus · aucun frais caché"
-        : "Commission selon mandat vérifié · frais notariés séparés";
+  /* Aucun champ tarifaire ne documente les cautions ou frais annexes.
+     On affiche les conditions réellement saisies, sans déduire de montant. */
+  const feeLine = property.intent === "acheter"
+    ? "Frais de transaction et honoraires non précisés dans cette fiche."
+    : "Caution et frais éventuels non précisés dans cette fiche.";
   const editorialParagraphs = buildPropertyEditorialSynthesis(property);
   const neighborhood = getNeighborhoodContext(property.city, property.district);
   const commitmentGuide = getPropertyCommitmentGuide(property);
@@ -152,13 +156,13 @@ export function PropertyDetail({
       <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" /> HOMERA vérifié
     </span>
   ) : (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-homera-amber/50 bg-homera-amber/10 px-3 py-1.5 text-caption font-semibold text-homera-night">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-homera-amber/50 bg-homera-amber/10 px-3 py-1.5 text-caption font-semibold text-homera-amber">
       <Clock className="h-3.5 w-3.5" aria-hidden="true" /> En cours de vérification
     </span>
   );
   return (
     <article className="bg-background text-foreground">
-      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-[90rem] px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
         {/* Le retour est une vraie action visible avant la fiche ; la grille
             commence ensuite avec galerie et tarif alignés sur la même ligne. */}
         <div className="mb-6">
@@ -167,7 +171,7 @@ export function PropertyDetail({
             label={`Retour aux résultats ${INTENT_LABELS[property.intent].toLowerCase()}`}
           />
         </div>
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-10">
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,2.25fr)_minmax(18rem,0.9fr)] lg:gap-8 xl:gap-10">
           <div className="min-w-0">
             {/* ---------------- Galerie ---------------- */}
             <Reveal y={0} blur={0} clip clipRadius={24} duration={900} immediate>
@@ -208,19 +212,19 @@ export function PropertyDetail({
             <li className="flex items-center gap-1.5">
               <Maximize className="h-4 w-4" aria-hidden="true" /> {formatSurface(property.surface)}
             </li>
-            {property.rooms ? (
+            {roomsApplicable && property.rooms ? (
               <li className="flex items-center gap-1.5">
                 <Layers className="h-4 w-4" aria-hidden="true" /> {property.rooms} pièce
                 {property.rooms > 1 ? "s" : ""}
               </li>
             ) : null}
-            {property.bedrooms > 0 && (
+            {bedroomsApplicable && property.bedrooms > 0 && (
               <li className="flex items-center gap-1.5">
                 <Bed className="h-4 w-4" aria-hidden="true" /> {property.bedrooms} chambre
                 {property.bedrooms > 1 ? "s" : ""}
               </li>
             )}
-            {property.bathrooms > 0 && (
+            {bedroomsApplicable && property.bathrooms > 0 && (
               <li className="flex items-center gap-1.5">
                 <Bath className="h-4 w-4" aria-hidden="true" /> {property.bathrooms} salle
                 {property.bathrooms > 1 ? "s" : ""} d’eau
@@ -237,43 +241,29 @@ export function PropertyDetail({
           </ul>
         </div>
             {/* ---------------- Garanties ---------------- */}
-            {verified ? (
-          <dl className="mt-6 grid grid-cols-1 gap-4 rounded-card border border-border bg-card p-5 sm:grid-cols-3 sm:p-6">
-            <div className="flex items-start gap-3 sm:border-l sm:border-border sm:pl-5 sm:first:border-l-0 sm:first:pl-0">
-              <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-homera-terracotta" aria-hidden="true" />
-              <div>
-                <dt className="text-body-sm font-semibold text-foreground">Dossier contrôlé</dt>
-                <dd className="mt-0.5 text-caption leading-relaxed text-muted">Documents et informations vérifiés</dd>
-              </div>
+            <dl className="mt-5 grid grid-cols-1 gap-4 rounded-card border border-border bg-card p-4 sm:grid-cols-3 sm:p-5">
+          <div className="flex items-start gap-3 sm:border-l sm:border-border sm:pl-4 sm:first:border-l-0 sm:first:pl-0">
+            {verified ? <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-success" aria-hidden="true" /> : <Clock className="mt-0.5 h-5 w-5 shrink-0 text-homera-amber" aria-hidden="true" />}
+            <div>
+              <dt className="text-body-sm font-semibold text-foreground">{verified ? "Dossier contrôlé" : "Contrôle en cours"}</dt>
+              <dd className="mt-0.5 text-caption leading-relaxed text-muted">{verified ? "Pièces examinées au dossier HOMERA" : "Les pièces n’ont pas encore été validées"}</dd>
             </div>
-            <div className="flex items-start gap-3 sm:border-l sm:border-border sm:pl-5 sm:first:border-l-0 sm:first:pl-0">
-              <Users className="mt-0.5 h-5 w-5 shrink-0 text-homera-terracotta" aria-hidden="true" />
-              <div>
-                <dt className="text-body-sm font-semibold text-foreground">
-                  {mandate ? "Mandat vérifié" : "Propriétaire identifié"}
-                </dt>
-                <dd className="mt-0.5 text-caption leading-relaxed text-muted">
-                  {mandate ? mandate.agentName : "Titulaire identifié au dossier"}
-                </dd>
-              </div>
+          </div>
+          <div className="flex items-start gap-3 sm:border-l sm:border-border sm:pl-4 sm:first:border-l-0 sm:first:pl-0">
+            <Users className={`mt-0.5 h-5 w-5 shrink-0 ${verified ? "text-homera-terracotta" : "text-muted"}`} aria-hidden="true" />
+            <div>
+              <dt className="text-body-sm font-semibold text-foreground">{verified ? (mandate ? "Mandat vérifié" : "Propriétaire identifié") : "Interlocuteur au dossier"}</dt>
+              <dd className="mt-0.5 text-caption leading-relaxed text-muted">{mandate ? mandate.agentName : owner?.name ?? "Identité renseignée au dossier"}</dd>
             </div>
-            <div className="flex items-start gap-3 sm:border-l sm:border-border sm:pl-5 sm:first:border-l-0 sm:first:pl-0">
-              <CalendarCheck className="mt-0.5 h-5 w-5 shrink-0 text-homera-terracotta" aria-hidden="true" />
-              <div>
-                <dt className="text-body-sm font-semibold text-foreground">Contrôle daté</dt>
-                <dd className="homera-num mt-0.5 text-caption leading-relaxed text-muted">
-                  Dernière vérification : {property.verifiedOn}
-                </dd>
-              </div>
+          </div>
+          <div className="flex items-start gap-3 sm:border-l sm:border-border sm:pl-4 sm:first:border-l-0 sm:first:pl-0">
+            <CalendarCheck className={`mt-0.5 h-5 w-5 shrink-0 ${verified ? "text-homera-terracotta" : "text-muted"}`} aria-hidden="true" />
+            <div>
+              <dt className="text-body-sm font-semibold text-foreground">{verified ? "Contrôle daté" : "Date de contrôle"}</dt>
+              <dd className="homera-num mt-0.5 text-caption leading-relaxed text-muted">{verified && property.verifiedOn ? property.verifiedOn : "À confirmer"}</dd>
             </div>
-          </dl>
-        ) : (
-          <p className="mt-6 flex items-start gap-3 rounded-card border border-homera-amber/50 bg-homera-amber/10 p-5 text-body-sm text-homera-night">
-            <Clock className="mt-0.5 h-5 w-5 shrink-0" aria-hidden="true" />
-            Vérification en cours : ce dossier n’a pas encore été contrôlé. Les garanties ci-dessous s’appliqueront
-            une fois le contrôle terminé.
-          </p>
-        )}
+          </div>
+        </dl>
             <div className="mt-10">
           <div>
             <PropertyDetailTabs
@@ -293,6 +283,7 @@ export function PropertyDetail({
                           ))}
                         </div>
                         {features.length > 0 && (
+                          <>
                           <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
                             {features.slice(0, 4).map((feature) => {
                               const Icon = FEATURE_ICONS[feature];
@@ -311,6 +302,12 @@ export function PropertyDetail({
                               );
                             })}
                           </ul>
+                          {features.length > 4 && (
+                            <a href="#fiche-equipements" className="homera-underline mt-4 inline-flex min-h-9 items-center gap-2 text-caption font-semibold homera-accent-ink">
+                              Voir tous les équipements <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
+                            </a>
+                          )}
+                          </>
                         )}
                       </div>
                       <div className="space-y-6">
@@ -637,18 +634,15 @@ export function PropertyDetail({
                               </div>
                               <div className="flex items-center justify-between gap-3">
                                 <dt className="text-muted">Caution / garantie</dt>
-                                <dd className="homera-num font-semibold text-foreground">
-                                  {formatFCFA(property.price)}
-                                </dd>
+                                <dd className="text-caption font-semibold text-foreground">Non précisée</dd>
                               </div>
                               <div className="flex items-center justify-between gap-3 border-t border-border pt-2.5">
-                                <dt className="text-muted">Frais cachés client</dt>
-                                <dd className="homera-num font-semibold text-success">0 FCFA</dd>
+                                <dt className="text-muted">Frais complémentaires</dt>
+                                <dd className="text-caption font-semibold text-foreground">Non précisés</dd>
                               </div>
                             </dl>
                             <p className="mt-3 text-caption leading-relaxed text-muted">
-                              Aucun paiement de loyer ou de caution n’est demandé avant la visite terminée,
-                              l’acceptation du dossier et la signature du contrat de location.
+                              Le loyer est celui déclaré par le propriétaire. Caution et frais complémentaires doivent être confirmés dans les conditions avant tout engagement.
                             </p>
                           </>
                         )}
@@ -668,12 +662,12 @@ export function PropertyDetail({
                                 </dd>
                               </div>
                               <div className="flex items-center justify-between gap-3">
-                                <dt className="text-muted">Frais de service HOMERA</dt>
-                                <dd className="text-caption font-semibold text-success">Inclus dans le tarif</dd>
+                                <dt className="text-muted">Frais complémentaires</dt>
+                                <dd className="text-caption font-semibold text-foreground">Non précisés</dd>
                               </div>
                               <div className="flex items-center justify-between gap-3 border-t border-border pt-2.5">
                                 <dt className="font-semibold text-foreground">
-                                  Total séjour ({property.minNights ?? 2} nuits)
+                                  Sous-total indicatif ({property.minNights ?? 2} nuits)
                                 </dt>
                                 <dd className="homera-num font-serif text-body-sm text-homera-terracotta">
                                   {formatFCFA(property.price * (property.minNights ?? 2))}
@@ -681,7 +675,7 @@ export function PropertyDetail({
                               </div>
                             </dl>
                             <p className="mt-3 text-caption leading-relaxed text-muted">
-                              Le paiement intervient uniquement au moment de la confirmation de la réservation.
+                              Calcul basé sur le tarif affiché et la durée minimale, hors frais complémentaires non renseignés.
                             </p>
                           </>
                         )}
@@ -696,11 +690,11 @@ export function PropertyDetail({
                               </div>
                               <div className="flex items-center justify-between gap-3">
                                 <dt className="text-muted">Commission HOMERA</dt>
-                                <dd className="text-caption font-semibold text-foreground">Selon mandat vérifié</dd>
+                                <dd className="text-caption font-semibold text-foreground">Selon conditions du mandat</dd>
                               </div>
                               <div className="flex items-center justify-between gap-3 border-t border-border pt-2.5">
                                 <dt className="text-muted">Frais notariés &amp; ANDF</dt>
-                                <dd className="text-caption font-semibold text-foreground">Séparés (étude notariale)</dd>
+                                <dd className="text-caption font-semibold text-foreground">À confirmer avec le notaire</dd>
                               </div>
                             </dl>
                             <p className="mt-3 text-caption leading-relaxed text-muted">
@@ -732,8 +726,12 @@ export function PropertyDetail({
               <p className="homera-num mt-2 font-serif text-display-sm">{formatPropertyPrice(property)}</p>
               <p className="mt-1 text-caption text-muted">Prix affiché par le propriétaire</p>
               <p className="mt-3 flex items-start gap-2 border-t border-border pt-3 text-caption leading-relaxed text-muted">
-                <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" aria-hidden="true" /> {feeLine}
+                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0 text-homera-terracotta" aria-hidden="true" /> {feeLine}
               </p>
+              <div className="mt-4 flex items-center justify-between gap-3 border-t border-border pt-4">
+                <span className="text-caption font-medium text-foreground">{TYPE_LABELS[property.type]}</span>
+                <span className="text-caption text-muted">{verified ? "Vérifié" : "Vérification en cours"}</span>
+              </div>
               <dl className="mt-4 space-y-2.5 border-t border-border pt-4 text-note">
                 <div className="flex items-center justify-between gap-3">
                   <dt className="text-muted">Référence</dt>
@@ -741,7 +739,7 @@ export function PropertyDetail({
                     {property.homeraId}
                   </dd>
                 </div>
-                {verified ? (
+                {verified && property.verifiedOn ? (
                   <div className="flex items-center justify-between gap-3">
                     <dt className="text-muted">Vérifié le</dt>
                     <dd className="homera-num text-foreground">{property.verifiedOn}</dd>
@@ -749,16 +747,12 @@ export function PropertyDetail({
                 ) : (
                   <div className="flex items-center justify-between gap-3">
                     <dt className="text-muted">Contrôle</dt>
-                    <dd className="text-foreground">En cours</dd>
+                    <dd className="text-foreground">{verified ? "Date non renseignée" : "En cours"}</dd>
                   </div>
                 )}
                 <div className="flex items-center justify-between gap-3">
                   <dt className="text-muted">Mis en ligne</dt>
                   <dd className="text-foreground">{recencyLabel(property.publishedAt, LATEST_PUBLISHED_AT)}</dd>
-                </div>
-                <div className="flex items-center justify-between gap-3">
-                  <dt className="text-muted">Projet</dt>
-                  <dd className="text-foreground">{INTENT_LABELS[property.intent]}</dd>
                 </div>
               </dl>
               <div className="mt-3">
@@ -783,12 +777,24 @@ export function PropertyDetail({
                     </Link>
                   </>
                 ) : directBooking ? (
-                  <Link
-                    href={`/client/demandes/nouvelle?bien=${property.id}`}
-                    className="homera-press inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-btn homera-cta px-5 text-body-sm font-medium text-white"
-                  >
-                    Réserver <ArrowRight className="h-4 w-4" aria-hidden="true" />
-                  </Link>
+                  <form action="/client/demandes/nouvelle" method="get" className="space-y-3">
+                    <input type="hidden" name="bien" value={property.id} />
+                    <p className="text-caption font-medium text-foreground">Période souhaitée <span className="font-normal text-muted">(facultative)</span></p>
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <label className="min-w-0 text-micro text-muted">
+                        Arrivée
+                        <input type="date" name="debut" min={new Date().toISOString().slice(0, 10)} className="mt-1 min-h-10 w-full min-w-0 rounded-input border border-border bg-background px-2 text-caption text-foreground outline-none focus:border-homera-terracotta focus:ring-2 focus:ring-homera-terracotta/20" />
+                      </label>
+                      <label className="min-w-0 text-micro text-muted">
+                        Départ
+                        <input type="date" name="fin" min={new Date().toISOString().slice(0, 10)} className="mt-1 min-h-10 w-full min-w-0 rounded-input border border-border bg-background px-2 text-caption text-foreground outline-none focus:border-homera-terracotta focus:ring-2 focus:ring-homera-terracotta/20" />
+                      </label>
+                    </div>
+                    <button type="submit" className="homera-press inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-btn homera-cta px-5 text-body-sm font-medium text-white">
+                      Réserver <ArrowRight className="h-4 w-4" aria-hidden="true" />
+                    </button>
+                    <p className="text-micro leading-relaxed text-muted">La demande sera traitée dans votre espace client, sans paiement sur cette fiche.</p>
+                  </form>
                 ) : (
                   <Link
                     href={`/client/visites/nouvelle?bien=${property.id}`}
@@ -818,45 +824,22 @@ export function PropertyDetail({
                 constituent pas une offre commerciale.
               </p>
             )}
-            <section
-              aria-labelledby="detail-location-card"
-              className="rounded-card border border-border bg-card p-6"
-            >
-              <div className="flex items-start gap-3">
-                <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-homera-terracotta" aria-hidden="true" />
-                <div>
-                  <h2 id="detail-location-card" className="text-body-sm font-semibold text-foreground">
-                    {property.district}, {property.city}
-                  </h2>
-                  <p className="mt-0.5 text-caption leading-relaxed text-muted">{neighborhood.vibe}</p>
-                </div>
-              </div>
-              <dl className="mt-4 space-y-3 border-t border-border pt-4">
-                {neighborhood.highlights.slice(0, 2).map((item) => (
-                  <div key={item.label}>
-                    <dt className="text-micro font-semibold uppercase tracking-[0.14em] text-homera-terracotta">
-                      {item.label}
-                    </dt>
-                    <dd className="mt-1 text-caption leading-relaxed text-muted">{item.detail}</dd>
-                  </div>
-                ))}
-              </dl>
-              <a
-                href="#fiche-localisation"
-                className="homera-underline mt-4 inline-flex min-h-10 items-center gap-2 text-note font-medium homera-accent-ink"
-              >
-                Voir la localisation <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-              </a>
-            </section>
+            <PropertyLocationCard
+              city={property.city}
+              district={property.district}
+              description={neighborhood.vibe}
+              highlights={neighborhood.highlights}
+            />
           </aside>
         </div>
         {/* ---------------- Biens comparables ---------------- */}
         {similar.length > 0 && (
           <section aria-labelledby="detail-similar" className="mt-20">
             <div className="flex flex-wrap items-end justify-between gap-4">
-              <h2 id="detail-similar" className="font-serif text-display-sm">
-                {TYPE_LABELS[property.type]}s disponibles {INTENT_LABELS[property.intent].toLowerCase()}
-              </h2>
+              <div>
+                <h2 id="detail-similar" className="font-serif text-display-sm">Biens similaires</h2>
+                <p className="mt-1 text-caption text-muted">Annonces comparables issues du catalogue HOMERA</p>
+              </div>
               <Link
                 href={PROJECT_HREF[property.intent]}
                 className="homera-underline inline-flex min-h-10 items-center gap-2 text-note font-medium homera-accent-ink"
@@ -865,13 +848,15 @@ export function PropertyDetail({
                 <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
               </Link>
             </div>
-            <ul className="mt-8 grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
-              {similar.map((entry) => (
-                <li key={entry.id} className="h-full">
-                  <PropertyCard property={entry} layout="grid" />
-                </li>
-              ))}
-            </ul>
+            <div className="mt-6 overflow-x-auto pb-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring" tabIndex={0} role="region" aria-label="Biens similaires, faites défiler horizontalement pour parcourir les annonces">
+              <ul className="flex snap-x snap-mandatory gap-5">
+                {similar.map((entry) => (
+                  <li key={entry.id} className="w-[min(84vw,21rem)] shrink-0 snap-start sm:w-[21rem] xl:w-[calc((100%-4rem)/3)]">
+                    <PropertyCard property={entry} layout="grid" />
+                  </li>
+                ))}
+              </ul>
+            </div>
           </section>
         )}
       </div>

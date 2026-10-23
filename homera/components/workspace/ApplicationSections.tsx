@@ -120,11 +120,11 @@ function ApplicationProgress({ status }: { status: string }) {
    DÉPÔT — CÔTÉ CANDIDAT
    ================================================================== */
 
-export function RentalRequestForm({ initialVisitId = "", initialPropertyId = "" }: { initialVisitId?: string; initialPropertyId?: string }) {
+export function RentalRequestForm({ initialVisitId = "", initialPropertyId = "", initialDesiredStart = "", initialDesiredEnd = "" }: { initialVisitId?: string; initialPropertyId?: string; initialDesiredStart?: string; initialDesiredEnd?: string }) {
   /* Parcours « réservation directe » : le bien est désigné sans visite.
      L’éligibilité réelle est vérifiée par le serveur au dépôt. */
   if (!initialVisitId && initialPropertyId) {
-    return <DirectBookingForm propertyId={initialPropertyId} />;
+    return <DirectBookingForm propertyId={initialPropertyId} initialDesiredStart={initialDesiredStart} initialDesiredEnd={initialDesiredEnd} />;
   }
   return <VisitBasedRequestForm initialVisitId={initialVisitId} />;
 }
@@ -255,13 +255,13 @@ function VisitBasedRequestForm({ initialVisitId = "" }: { initialVisitId?: strin
    la demande est « envoyée », jamais « confirmée » par cet écran.
    ================================================================== */
 
-function DirectBookingForm({ propertyId }: { propertyId: string }) {
+function DirectBookingForm({ propertyId, initialDesiredStart = "", initialDesiredEnd = "" }: { propertyId: string; initialDesiredStart?: string; initialDesiredEnd?: string }) {
   const property = useServerResource<{ property: Property }>(
     `/api/properties/${encodeURIComponent(propertyId)}`,
   );
   const applications = useServerResource<{ applications: ServerApplication[] }>("/api/applications");
-  const [start, setStart] = useState("");
-  const [end, setEnd] = useState("");
+  const [start, setStart] = useState(initialDesiredStart);
+  const [end, setEnd] = useState(initialDesiredEnd);
   const [income, setIncome] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);

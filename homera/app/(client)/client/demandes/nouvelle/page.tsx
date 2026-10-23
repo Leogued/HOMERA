@@ -11,8 +11,12 @@ export default async function NewRentalRequestPage({ searchParams }: { searchPar
   const visitId = Array.isArray(visitValue) ? visitValue[0] ?? "" : visitValue ?? "";
   const propertyValue = params.bien;
   const propertyId = Array.isArray(propertyValue) ? propertyValue[0] ?? "" : propertyValue ?? "";
+  const startValue = params.debut;
+  const initialDesiredStart = Array.isArray(startValue) ? startValue[0] ?? "" : startValue ?? "";
+  const endValue = params.fin;
+  const initialDesiredEnd = Array.isArray(endValue) ? endValue[0] ?? "" : endValue ?? "";
   const gate = await guardWorkspace("client", "/client/demandes/nouvelle");
   if (gate.status === "signin") redirect(signinHref(gate.returnTo));
   if (gate.status === "denied") return <WorkspaceRefusal role="client" />;
-  return <WorkspaceShell role="client" section="demandes"><RentalRequestForm initialVisitId={visitId} initialPropertyId={propertyId} /></WorkspaceShell>;
+  return <WorkspaceShell role="client" section="demandes"><RentalRequestForm initialVisitId={visitId} initialPropertyId={propertyId} initialDesiredStart={initialDesiredStart} initialDesiredEnd={initialDesiredEnd} /></WorkspaceShell>;
 }
