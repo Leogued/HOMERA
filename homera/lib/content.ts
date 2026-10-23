@@ -97,6 +97,8 @@ export const SEARCH_SELECTS = {
     { value: "terrain", label: "Terrain nu", hint: "Parcelle, lotissement" },
     { value: "parcelle", label: "Parcelle", hint: "Avec titre ou ACD" },
     { value: "boutique", label: "Boutique", hint: "Vitrine, pas-de-porte" },
+    { value: "salle", label: "Salle de fête", hint: "Cérémonies, réceptions" },
+    { value: "espace", label: "Espace louable", hint: "Événementiel, activités" },
   ] satisfies SelectOption[],
 } as const;
 
@@ -267,7 +269,7 @@ export const INTENTS: Intent[] = [
    BIENS — jeu de démonstration de la sélection certifiée
    ------------------------------------------------------------------ */
 
-export type PropertyType = "villa" | "appartement" | "studio" | "chambre" | "immeuble" | "terrain" | "boutique";
+export type PropertyType = "villa" | "appartement" | "studio" | "chambre" | "immeuble" | "terrain" | "boutique" | "salle" | "espace";
 export type PropertyIntent = "acheter" | "louer" | "sejour";
 export type PropertyAvailability = "disponible" | "indisponible";
 export type PropertyVerificationStatus = "verifie" | "en-verification";
@@ -1161,6 +1163,48 @@ export const PROPERTIES: Property[] = [
     publishedAt: "2026-09-20",
     media: "prop-villa",
     alt: "Maison de bord de mer avec grande terrasse, jardin planté et lumière rasante",
+  },
+  {
+    id: "salle-fete-akpakpa",
+    homeraId: "HOM-CTN-000821",
+    title: "Salle de fête climatisée, 300 places assises",
+    type: "salle",
+    intent: "louer",
+    price: 350_000,
+    pricePeriod: "/ jour",
+    city: "Cotonou",
+    district: "Akpakpa",
+    bedrooms: 0,
+    bathrooms: 2,
+    surface: 450,
+    features: ["climatisation", "parking", "groupe"],
+    description:
+      "Salle de réception avec cuisine traiteur, loge et cour de stationnement : sonorisation sur place, groupe de secours et gardiennage pendant l’événement.",
+    verifiedOn: "18/10/2026",
+    publishedAt: "2026-10-18",
+    media: "prop-immeuble-bureaux",
+    alt: "Grande salle de réception avec tables dressées pour une cérémonie",
+  },
+  {
+    id: "espace-evenementiel-cadjehoun",
+    homeraId: "HOM-CTN-000822",
+    title: "Espace extérieur clôturé pour événements",
+    type: "espace",
+    intent: "louer",
+    price: 150_000,
+    pricePeriod: "/ jour",
+    city: "Cotonou",
+    district: "Cadjèhoun",
+    bedrooms: 0,
+    bathrooms: 1,
+    surface: 1200,
+    features: ["cloture", "acces-routier", "eau-courante"],
+    description:
+      "Terrain plat et clôturé, accessible aux camions, avec point d’eau et branchement électrique : mariages, concerts et manifestations en plein air.",
+    verifiedOn: "18/10/2026",
+    publishedAt: "2026-10-18",
+    media: "prop-terrain",
+    alt: "Grand terrain plat et clôturé préparé pour un événement en plein air",
   },
 ];
 

@@ -228,7 +228,8 @@ export function buildPropertyEditorialSynthesis(property: Property): string[] {
   }
 
   const typeLabel = TYPE_LABELS[property.type].toLowerCase();
-  const article = property.type === "boutique" || property.type === "chambre" ? "cette" : property.type === "immeuble" ? "cet" : "ce";
+  const article = property.type === "boutique" || property.type === "chambre" || property.type === "salle" ? "cette" : property.type === "immeuble" || property.type === "espace" ? "cet" : "ce";
+  const implante = property.type === "boutique" || property.type === "salle" ? "implantée" : "implanté";
   const intentLabel = INTENT_LABELS[property.intent].toLowerCase();
   const featureList = (property.features ?? []).map((f) => FEATURE_LABELS[f].toLowerCase());
 
@@ -241,9 +242,9 @@ export function buildPropertyEditorialSynthesis(property: Property): string[] {
           : "Sa configuration régulière permet d’envisager une construction résidentielle ou patrimoniale après validation technique."
       }`,
     );
-  } else if (property.type === "boutique" || property.type === "immeuble") {
+  } else if (property.type === "boutique" || property.type === "immeuble" || property.type === "salle" || property.type === "espace") {
     paragraphs.push(
-      `D’une surface utile de ${property.surface} m²${property.floor ? ` (${property.floor})` : ""}, ${article} ${typeLabel} implanté à ${property.district} (${property.city}) répond aux besoins d’une activité professionnelle, commerciale ou de services recherchant une adresse lisible et facilement repérable par la clientèle.`,
+      `D’une surface utile de ${property.surface} m²${property.floor ? ` (${property.floor})` : ""}, ${article} ${typeLabel} ${implante} à ${property.district} (${property.city}) répond aux besoins d’une activité professionnelle, commerciale ou de services recherchant une adresse lisible et facilement repérable par la clientèle.`,
     );
   } else {
     const roomsPart = property.rooms ? `${property.rooms} pièce${property.rooms > 1 ? "s" : ""}` : `${property.surface} m²`;

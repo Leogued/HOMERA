@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import {
   BedDouble, BedSingle, Building, Building2, ChevronDown, Coins, House, LandPlot,
-  MapPin, RotateCcw, Search, Settings2, SlidersHorizontal, Store, Tag,
+  MapPin, PartyPopper, RotateCcw, Search, Settings2, SlidersHorizontal, Store, Tag, Warehouse,
   type LucideIcon,
 } from "lucide-react";
 import { FEATURE_LABELS, TYPE_LABELS } from "@/lib/format";
@@ -15,8 +15,9 @@ import type { CatalogFacets } from "@/lib/use-catalog";
 /* ==================================================================
    HOMERA — FILTRES DE L’EXPLORATEUR
    ------------------------------------------------------------------
-   Quatre critères, comme sur la maquette : le type de bien (pastilles
-   à icônes), la ville (liste unique), le budget (minimum et maximum)
+   Quatre critères : le type de bien et les équipements (menus
+   déroulants à cases à cocher, choix multiples), la ville (liste
+   unique) et le budget (minimum et maximum)
    et les équipements (menu déroulant à cases à cocher, choix
    multiples). Le bouton
    brouillon : tant qu’on n’a pas appliqué, l’adresse et les résultats
@@ -37,6 +38,8 @@ const TYPE_ICONS: Record<PropertyType, LucideIcon> = {
   immeuble: Building,
   terrain: LandPlot,
   boutique: Store,
+  salle: PartyPopper,
+  espace: Warehouse,
 };
 
 type Patch = Partial<CatalogQuery>;
@@ -93,6 +96,10 @@ export function CatalogFilters({
   };
 
   const typeValues = query.intent ? TYPES_BY_INTENT[query.intent] : (Object.keys(TYPE_LABELS) as PropertyType[]);
+  const typeOptions: PropertyType[] = [...typeValues];
+  for (const kept of [...draft.types].reverse()) {
+    if (!typeOptions.includes(kept)) typeOptions.unshift(kept);
+  }
   const budgetUnit = query.intent === "louer" ? "/ mois" : query.intent === "sejour" ? "/ nuit" : "";
 
   const cityOptions = facets?.cities.map((entry) => entry.value) ?? [];
@@ -120,24 +127,17 @@ export function CatalogFilters({
       <div className="space-y-6 p-5">
         {!hidden.includes("types") && (
           <Group label="Type de bien" icon={Tag}>
-            <div className="flex flex-wrap gap-1.5">
-              {typeValues.map((type) => {
-                const active = draft.types.includes(type);
-                const Icon = TYPE_ICONS[type];
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    aria-pressed={active}
-                    onClick={() => setDraft((current) => ({ ...current, types: toggle(current.types, type) }))}
-                    className={chipClass(active)}
-                  >
-                    <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                    {TYPE_LABELS[type]}
-                  </button>
-                );
-              })}
-            </div>
+            <MultiDrop
+              id={`${panelId}-types`}
+              options={typeOptions}
+              values={draft.types}
+              labels={TYPE_LABELS}
+              icons={TYPE_ICONS}
+              allLabel="Tous les types"
+              unitOne="type choisi"
+              unitMany="types choisis"
+              onToggle={(type) => setDraft((current) => ({ ...current, types: toggle(current.types, type) }))}
+            />
           </Group>
         )}
 
@@ -183,8 +183,12 @@ export function CatalogFilters({
           ) : (
             <MultiDrop
               id={`${panelId}-equipements`}
-              options={featureOptions}
+              options={featureOptions as PropertyFeature[]}
               values={draft.features}
+              labels={FEATURE_LABELS}
+              allLabel="Tous les équipements"
+              unitOne="équipement choisi"
+              unitMany="équipements choisis"
               onToggle={(feature) => setDraft((current) => ({ ...current, features: toggle(current.features, feature) }))}
             />
           )}
@@ -207,21 +211,26 @@ export function CatalogFilters({
    BRIQUES
    ================================================================== */
 
-function chipClass(active: boolean): string {
-  return `inline-flex min-h-9 items-center gap-1.5 rounded-xl border px-2.5 py-1 text-caption font-semibold transition-colors ${active ? "border-homera-terracotta bg-homera-terracotta/[0.10] text-homera-terracotta" : "border-border bg-background text-muted hover:text-foreground"}`;
-}
-
-
-function MultiDrop({
+function MultiDrop<T extends string>({
   id,
   options,
   values,
+  labels,
+  icons,
+  allLabel,
+  unitOne,
+  unitMany,
   onToggle,
 }: {
   id: string;
-  options: string[];
-  values: PropertyFeature[];
-  onToggle: (feature: PropertyFeature) => void;
+  options: T[];
+  values: T[];
+  labels: Record<string, string>;
+  icons?: Record<string, LucideIcon>;
+  allLabel: string;
+  unitOne: string;
+  unitMany: string;
+  onToggle: (value: T) => void;
 }) {
   const [open, setOpen] = useState(false);
   const boxRef = useRef<HTMLDivElement>(null);
@@ -242,11 +251,7 @@ function MultiDrop({
     };
   }, [open ]);
   const summary =
-    values.length === 0
-      ? "Tous les équipements"
-      : values.length === 1
-        ? "1 équipement choisi"
-        : `${values.length} équipements choisis`;
+    values.length === 0 ? allLabel : values.length === 1 ? `1 ${unitOne}` : `${values.length} ${unitMany}`;
   return (
     <div ref={boxRef} className="relative">
       <button
@@ -263,8 +268,8 @@ function MultiDrop({
       {open && (
         <div role="listbox" aria-multiselectable="true" aria-labelledby={id} className="absolute inset-x-0 top-full z-20 mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-border bg-card p-1.5 shadow-[var(--shadow-card)]">
           {options.map((option) => {
-            const feature = option as PropertyFeature;
-            const checked = values.includes(feature);
+            const checked = values.includes(option);
+            const Icon = icons?.[option];
             return (
               <label
                 key={option}
@@ -275,10 +280,11 @@ function MultiDrop({
                 <input
                   type="checkbox"
                   checked={checked}
-                  onChange={() => onToggle(feature)}
+                  onChange={() => onToggle(option)}
                   className="h-4 w-4 shrink-0 accent-homera-terracotta"
                 />
-                {FEATURE_LABELS[feature] ?? option}
+                {Icon && <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />}
+                {labels[option] ?? option}
               </label>
             );
           })}

@@ -37,6 +37,7 @@ const PROPERTY_TYPES: { id: PropertyType; label: string }[] = [
   { id: "studio", label: "Studio" }, { id: "chambre", label: "Chambre meublée" },
   { id: "immeuble", label: "Immeuble" }, { id: "terrain", label: "Terrain / parcelle" },
   { id: "boutique", label: "Boutique" },
+  { id: "salle", label: "Salle de fête" }, { id: "espace", label: "Espace louable" },
 ];
 
 const INTENTS: { id: PropertyIntent; label: string }[] = [

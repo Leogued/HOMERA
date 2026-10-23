@@ -71,14 +71,14 @@ const CASES = [
     name: '5. Louer, critères vides',
     criteria: { project: 'louer', location: '', propertyType: '', budget: '' },
     url: '/louer?intention=louer',
-    present: ['14 biens'],
+    present: ['16 biens'],
     absent: ['Aucun bien ne correspond à ces critères</h2>'],
   },
   {
     name: '6. Sans projet -> explorateur global',
     criteria: { project: '', location: 'Cotonou', propertyType: '', budget: '' },
     url: '/explorer?ville=Cotonou',
-    present: ['21 biens'],
+    present: ['23 biens'],
     absent: ['intention='],
   },
   {

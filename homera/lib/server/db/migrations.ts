@@ -146,7 +146,7 @@ CREATE TABLE IF NOT EXISTS properties (
   reference           TEXT NOT NULL UNIQUE,
   title               TEXT NOT NULL,
   type                TEXT NOT NULL
-                      CHECK (type IN ('villa', 'appartement', 'studio', 'chambre', 'immeuble', 'terrain', 'boutique')),
+                      CHECK (type IN ('villa', 'appartement', 'studio', 'chambre', 'immeuble', 'terrain', 'boutique', 'salle', 'espace')),
   intent              TEXT NOT NULL CHECK (intent IN ('acheter', 'louer', 'sejour')),
   price               INTEGER NOT NULL DEFAULT 0,
   price_period        TEXT NOT NULL DEFAULT '',
@@ -672,6 +672,63 @@ CREATE INDEX IF NOT EXISTS idx_properties_owner ON properties(owner_id);
 CREATE INDEX IF NOT EXISTS idx_properties_intent ON properties(intent, type);
 `;
 
+
+const M007 = `
+/* Taxonomie des biens : « salle » (salle de fête) et « espace » (espace
+   louable) rejoignent les types louables. SQLite ne sait pas modifier
+   une contrainte : on reconstruit la table, sans retypage (toutes les
+   valeurs existantes restent valides). */
+CREATE TABLE properties_new (
+  id                  TEXT PRIMARY KEY,
+  reference           TEXT NOT NULL UNIQUE,
+  title               TEXT NOT NULL,
+  type                TEXT NOT NULL
+                      CHECK (type IN ('villa', 'appartement', 'studio', 'chambre', 'immeuble', 'terrain', 'boutique', 'salle', 'espace')),
+  intent              TEXT NOT NULL CHECK (intent IN ('acheter', 'louer', 'sejour')),
+  price               INTEGER NOT NULL DEFAULT 0,
+  price_period        TEXT NOT NULL DEFAULT '',
+  country             TEXT NOT NULL DEFAULT 'Bénin',
+  department          TEXT NOT NULL DEFAULT '',
+  commune             TEXT NOT NULL DEFAULT '',
+  city                TEXT NOT NULL DEFAULT '',
+  district            TEXT NOT NULL DEFAULT '',
+  address             TEXT NOT NULL DEFAULT '',
+  bedrooms            INTEGER NOT NULL DEFAULT 0,
+  bathrooms           INTEGER NOT NULL DEFAULT 0,
+  surface             INTEGER NOT NULL DEFAULT 0,
+  rooms               INTEGER,
+  floor               TEXT NOT NULL DEFAULT '',
+  land_title          TEXT,
+  min_nights          INTEGER,
+  description         TEXT NOT NULL DEFAULT '',
+  conditions          TEXT NOT NULL DEFAULT '',
+  furnished           INTEGER NOT NULL DEFAULT 0,
+  availability        TEXT NOT NULL DEFAULT 'disponible'
+                      CHECK (availability IN ('disponible', 'indisponible', 'suspendu')),
+  unavailable_until   TEXT,
+  availability_note   TEXT NOT NULL DEFAULT '',
+  publication_status  TEXT NOT NULL DEFAULT 'publie'
+                      CHECK (publication_status IN ('brouillon', 'soumis', 'en-verification', 'publie', 'suspendu', 'loue', 'vendu', 'archive')),
+  verification_status TEXT NOT NULL DEFAULT 'non-verifie'
+                      CHECK (verification_status IN ('non-verifie', 'en-cours', 'verifie', 'refuse', 'suspendu')),
+  verified_on         TEXT,
+  owner_id            TEXT REFERENCES users(id) ON DELETE SET NULL,
+  agency_id           TEXT REFERENCES agencies(id) ON DELETE SET NULL,
+  main_photo_id       TEXT,
+  latitude            REAL,
+  longitude           REAL,
+  published_at        TEXT,
+  created_at          TEXT NOT NULL,
+  updated_at          TEXT NOT NULL
+);
+INSERT INTO properties_new SELECT * FROM properties;
+DROP TABLE properties;
+ALTER TABLE properties_new RENAME TO properties;
+CREATE INDEX IF NOT EXISTS idx_properties_status ON properties(publication_status, verification_status);
+CREATE INDEX IF NOT EXISTS idx_properties_owner ON properties(owner_id);
+CREATE INDEX IF NOT EXISTS idx_properties_intent ON properties(intent, type);
+`;
+
 export const MIGRATIONS: Migration[] = [
   {
     id: "001",
@@ -702,5 +759,10 @@ export const MIGRATIONS: Migration[] = [
     id: "006",
     name: "taxonomie-boutique-immeuble-chambre",
     sql: M006,
+  },
+  {
+    id: "007",
+    name: "taxonomie-salle-espace",
+    sql: M007,
   },
 ];

@@ -462,7 +462,7 @@ await test('HOMERA : le catalogue couvre les familles de biens des trois projets
   // filtre affiche honnêtement zéro plutôt qu’une annonce inventée.
   const families = {
     acheter: ['villa', 'appartement', 'immeuble', 'terrain', 'boutique'],
-    louer: ['villa', 'appartement', 'studio', 'immeuble', 'boutique'],
+    louer: ['villa', 'appartement', 'studio', 'immeuble', 'boutique', 'salle', 'espace'],
     sejour: ['villa', 'appartement', 'studio'],
   };
   for (const [intent, types] of Object.entries(families)) {
@@ -472,27 +472,32 @@ await test('HOMERA : le catalogue couvre les familles de biens des trois projets
   }
 });
 
-await test('HOMERA : taxonomie boutique / immeuble / chambre et panneau façon maquette', async () => {
+await test('HOMERA : taxonomie (boutique, immeuble, chambre, salle, espace) et panneau façon maquette', async () => {
   assert.equal(format.TYPE_LABELS.villa, 'Maison');
   assert.equal(format.TYPE_LABELS.boutique, 'Boutique');
   assert.equal(format.TYPE_LABELS.immeuble, 'Immeuble');
   assert.equal(format.TYPE_LABELS.chambre, 'Chambre meublée');
+  assert.equal(format.TYPE_LABELS.salle, 'Salle de fête');
+  assert.equal(format.TYPE_LABELS.espace, 'Espace louable');
   assert.ok(!('local' in format.TYPE_LABELS), 'plus de type local');
   assert.deepEqual(catalog.TYPES_BY_INTENT.acheter, ['villa', 'appartement', 'immeuble', 'terrain', 'boutique']);
-  assert.deepEqual(catalog.TYPES_BY_INTENT.louer, ['villa', 'appartement', 'studio', 'chambre', 'immeuble', 'boutique']);
+  assert.deepEqual(catalog.TYPES_BY_INTENT.louer, ['villa', 'appartement', 'studio', 'chambre', 'immeuble', 'boutique', 'salle', 'espace']);
   assert.deepEqual(catalog.TYPES_BY_INTENT.sejour, ['villa', 'appartement', 'studio', 'chambre']);
   assert.ok(!('local' in format.SEARCH_TYPE_TO_PROPERTY_TYPE), 'aucun alias vers l’ancien local');
   assert.deepEqual(nav.findCategory('acheter', 'locaux').category.filter.types, ['boutique', 'immeuble']);
   assert.deepEqual(nav.findCategory('louer', 'locaux').category.filter.types, ['boutique', 'immeuble']);
+  assert.deepEqual(nav.findCategory('louer', 'salles').category.filter.types, ['salle', 'espace']);
   const validation = await readFile(new URL('../lib/server/validation.ts', import.meta.url), 'utf8');
   assert.ok(validation.includes('"chambre", "immeuble", "terrain", "boutique"'), 'schéma serveur aligné sur la taxonomie');
+  assert.ok(validation.includes('"terrain", "boutique", "salle", "espace"'), 'nouveaux types acceptés par le schéma');
   const migrations = await readFile(new URL('../lib/server/db/migrations.ts', import.meta.url), 'utf8');
   assert.ok(migrations.includes('id: "006"') && migrations.includes('taxonomie-boutique-immeuble-chambre'), 'migration de taxonomie versionnée');
+  assert.ok(migrations.includes('id: "007"') && migrations.includes('taxonomie-salle-espace'), 'migration salle / espace versionnée');
   const panel = await readFile(new URL('../components/catalog/CatalogFilters.tsx', import.meta.url), 'utf8');
-  for (const marker of ['Appliquer les filtres', 'Toutes les villes', 'Tous les équipements', 'TYPE_ICONS', 'type="checkbox"', 'aria-multiselectable']) {
+  for (const marker of ['Appliquer les filtres', 'Toutes les villes', 'Tous les types', 'Tous les équipements', 'TYPE_ICONS', 'type="checkbox"', 'aria-multiselectable']) {
     assert.ok(panel.includes(marker), `panneau incomplet : ${marker}`);
   }
-  for (const marker of ['Quartiers', 'Critères complémentaires', 'Votre projet', '<Count', 'countOf']) {
+  for (const marker of ['Quartiers', 'Critères complémentaires', 'Votre projet', '<Count', 'countOf', 'aria-pressed']) {
     assert.ok(!panel.includes(marker), `panneau non conforme à la maquette : ${marker}`);
   }
   const explorer = await readFile(new URL('../components/catalog/CatalogExplorer.tsx', import.meta.url), 'utf8');

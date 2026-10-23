@@ -155,6 +155,15 @@ export const PROJECT_PAGES: PublicProjectPage[] = [
         filter: { intent: "louer", types: ["boutique", "immeuble"] },
         hint: "Location · Professionnel",
       },
+      {
+        slug: "salles",
+        label: "Salles & espaces",
+        title: "Salles de fête et espaces à louer",
+        intro:
+          "Salles de réception et espaces louables pour cérémonies, événements et activités : capacité et conditions affichées sur chaque fiche.",
+        filter: { intent: "louer", types: ["salle", "espace"] },
+        hint: "Location · Événementiel",
+      },
     ],
   },
   {

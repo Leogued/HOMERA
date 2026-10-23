@@ -162,7 +162,7 @@ for (const table of [
 }
 
 const seeded = db.prepare<[], { count: number }>("SELECT COUNT(*) AS count FROM properties").get()!;
-check("les 36 biens du catalogue sont amorcés", seeded.count === 36, `reçu ${seeded.count}`);
+check("les 38 biens du catalogue sont amorcés", seeded.count === 38, `reçu ${seeded.count}`);
 const migrations = db.prepare<[], { id: string }>("SELECT id FROM schema_migrations").all();
 check("la migration 001 est enregistrée", migrations.some((row) => row.id === "001"));
 
@@ -258,9 +258,10 @@ const draft = properties.createProperty(
 );
 check("le propriétaire crée son bien", draft.ok);
 
-/* Taxonomie : boutique, immeuble et chambre acceptés ; l’ancien type
-   « local » est refusé par le schéma comme par la contrainte SQL. */
-for (const type of ["boutique", "immeuble", "chambre"] as const) {
+/* Taxonomie : boutique, immeuble, chambre, salle et espace acceptés ;
+   l’ancien type « local » est refusé par le schéma comme par la
+   contrainte SQL. */
+for (const type of ["boutique", "immeuble", "chambre", "salle", "espace"] as const) {
   const created = properties.createProperty(db, owner, {
     title: `Bien de démonstration (${type})`,
     intent: "louer",
@@ -739,7 +740,7 @@ section("9. Cohérence entre espaces");
 
 check("le propriétaire retrouve ses biens", properties.propertiesOfOwner(db, ownerId).some((property) => property.id === propertyId));
 check("l’agent ne voit pas les biens d’un autre propriétaire", !properties.propertiesOfAgent(db, agentId).some((property) => property.id === "villa-fidjrosse"));
-check("les biens du catalogue public restent lisibles", properties.listProperties(db, {}).length >= 36);
+check("les biens du catalogue public restent lisibles", properties.listProperties(db, {}).length >= 38);
 
 const notifications = notificationsModule.listNotifications(db, ownerId, { unreadOnly: true });
 check("les notifications du propriétaire sont persistantes", notifications.length > 0);

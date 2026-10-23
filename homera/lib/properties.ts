@@ -49,7 +49,7 @@ export const INTENT_IDS: PropertyIntent[] = ["acheter", "louer", "sejour"];
 /** Catégories proposées par projet — « studios » n’existent qu’à la location et au séjour. */
 export const TYPES_BY_INTENT: Record<PropertyIntent, PropertyType[]> = {
   acheter: ["villa", "appartement", "immeuble", "terrain", "boutique"],
-  louer: ["villa", "appartement", "studio", "chambre", "immeuble", "boutique"],
+  louer: ["villa", "appartement", "studio", "chambre", "immeuble", "boutique", "salle", "espace"],
   sejour: ["villa", "appartement", "studio", "chambre"],
 };
 

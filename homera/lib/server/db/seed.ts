@@ -10,7 +10,7 @@ import { ensureVerification } from "../services/verifications";
 /* ==================================================================
    HOMERA — AMORÇAGE DE LA BASE
    ------------------------------------------------------------------
-   Le catalogue public (`lib/content.ts`, 36 biens) n’est plus la source
+   Le catalogue public (`lib/content.ts`, 38 biens) n’est plus la source
    de vérité : il sert à remplir la base au premier démarrage. Ensuite,
    c’est la base qui commande — ajouter un bien dans `content.ts` ne
    change plus rien une fois la base amorcée.

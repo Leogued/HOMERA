@@ -13,7 +13,7 @@ import { useServerResource } from "@/lib/use-server-resource";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY, DemoNotice, EmptyPanel, INPUT_CLASS } from "@/components/workspace/Primitives";
 
 const PAGE_SIZE = 9;
-const TYPE_ORDER: PropertyType[] = ["villa", "appartement", "studio", "chambre", "immeuble", "terrain", "boutique"];
+const TYPE_ORDER: PropertyType[] = ["villa", "appartement", "studio", "chambre", "immeuble", "terrain", "boutique", "salle", "espace"];
 const TYPE_PLURALS: Record<PropertyType, string> = {
   villa: "Maisons",
   appartement: "Appartements",
@@ -22,6 +22,8 @@ const TYPE_PLURALS: Record<PropertyType, string> = {
   immeuble: "Immeubles",
   terrain: "Terrains",
   boutique: "Boutiques",
+  salle: "Salles de fête",
+  espace: "Espaces louables",
 };
 const INTENT_ORDER: PropertyIntent[] = ["acheter", "louer", "sejour"];
 const INTENT_SHORT: Record<PropertyIntent, string> = {

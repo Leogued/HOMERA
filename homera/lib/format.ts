@@ -40,6 +40,8 @@ export const TYPE_LABELS: Record<PropertyType, string> = {
   immeuble: "Immeuble",
   terrain: "Terrain",
   boutique: "Boutique",
+  salle: "Salle de fête",
+  espace: "Espace louable",
 };
 
 /** Normalise pour comparer sans accents ni casse (Cotonou / cotonou / Cadjèhoun). */
@@ -61,6 +63,8 @@ export const SEARCH_TYPE_TO_PROPERTY_TYPE: Record<string, PropertyType[]> = {
   terrain: ["terrain"],
   parcelle: ["terrain"],
   boutique: ["boutique"],
+  salle: ["salle"],
+  espace: ["espace"],
 };
 
 export type SearchCriteria = {

@@ -410,6 +410,8 @@ const PROPERTY_KIND_OPTIONS: readonly FieldOption[] = [
   { value: "immeuble", label: "Immeuble" },
   { value: "terrain", label: "Terrain / parcelle" },
   { value: "boutique", label: "Boutique" },
+  { value: "salle", label: "Salle de fête" },
+  { value: "espace", label: "Espace louable" },
   { value: "plusieurs", label: "Plusieurs types" },
 ];
 
