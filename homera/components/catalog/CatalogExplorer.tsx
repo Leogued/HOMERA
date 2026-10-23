@@ -36,6 +36,7 @@ export function CatalogExplorer({
   initialPriceBounds,
   locked = [],
   emptyHint,
+  hideTotal = false,
 }: {
   basePath?: string;
   initialQuery: CatalogQuery;
@@ -45,6 +46,8 @@ export function CatalogExplorer({
   initialPriceBounds?: { min: number; max: number } | null;
   locked?: HiddenFilter[];
   emptyHint?: string;
+  /** Masque le compteur « N biens » (page Explorateur). */
+  hideTotal?: boolean;
 }) {
   const catalog = useCatalog({ basePath, initialQuery, initialPage, initialFacets, initialPriceBounds, perPage: PER_PAGE });
   const { query, facets, priceBounds, items, total, pages, page, loading, loadingMore, error, patch, reset, loadMore } = catalog;
@@ -249,11 +252,13 @@ export function CatalogExplorer({
           {" "}
           <div className="flex flex-wrap items-center justify-between gap-3">
             {" "}
+            {(!hideTotal || !isPristine(query)) && (
             <p role="status" aria-live="polite" className="text-body-sm text-foreground">
               {" "}
-              <span className="homera-num font-semibold">{countLabel(total)}</span>{" "}
-              {!isPristine(query) && <span className="text-muted"> · {summaryLabel(query)}</span>}{" "}
-            </p>{" "}
+              {!hideTotal && <span className="homera-num font-semibold">{countLabel(total)}</span>}{" "}
+              {!isPristine(query) && <span className="text-muted">{hideTotal ? summaryLabel(query) : "· " + summaryLabel(query)}</span>}{" "}
+            </p>
+            )}{" "}
             <p className="text-caption text-muted">
               {" "}
               {remaining > 0
