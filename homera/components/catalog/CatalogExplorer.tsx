@@ -36,7 +36,7 @@ export function CatalogExplorer({
   initialPriceBounds,
   locked = [],
   emptyHint,
-  hideTotal = false,
+  slim = false,
 }: {
   basePath?: string;
   initialQuery: CatalogQuery;
@@ -46,8 +46,8 @@ export function CatalogExplorer({
   initialPriceBounds?: { min: number; max: number } | null;
   locked?: HiddenFilter[];
   emptyHint?: string;
-  /** Masque le compteur « N biens » (page Explorateur). */
-  hideTotal?: boolean;
+  /** Variante dépouillée : ni compteur, ni progression, ni enregistrement (page Explorateur). */
+  slim?: boolean;
 }) {
   const catalog = useCatalog({ basePath, initialQuery, initialPage, initialFacets, initialPriceBounds, perPage: PER_PAGE });
   const { query, facets, priceBounds, items, total, pages, page, loading, loadingMore, error, patch, reset, loadMore } = catalog;
@@ -252,19 +252,21 @@ export function CatalogExplorer({
           {" "}
           <div className="flex flex-wrap items-center justify-between gap-3">
             {" "}
-            {(!hideTotal || !isPristine(query)) && (
+            {(!slim || !isPristine(query)) && (
             <p role="status" aria-live="polite" className="text-body-sm text-foreground">
               {" "}
-              {!hideTotal && <span className="homera-num font-semibold">{countLabel(total)}</span>}{" "}
-              {!isPristine(query) && <span className="text-muted">{hideTotal ? summaryLabel(query) : "· " + summaryLabel(query)}</span>}{" "}
+              {!slim && <span className="homera-num font-semibold">{countLabel(total)}</span>}{" "}
+              {!isPristine(query) && <span className="text-muted">{slim ? summaryLabel(query) : "· " + summaryLabel(query)}</span>}{" "}
             </p>
             )}{" "}
+            {!slim && (
             <p className="text-caption text-muted">
               {" "}
               {remaining > 0
                 ? `${results.length} affichés sur ${total}`
                 : `Tous les résultats affichés`}{" "}
-            </p>{" "}
+            </p>
+            )}{" "}
           </div>{" "}
           {/* Filtres actifs — chacun se retire d’un clic */}{" "}
           {filterCount > 0 && (
@@ -354,10 +356,12 @@ export function CatalogExplorer({
               </li>{" "}
             </ul>
           )}{" "}
+          {!slim && (
           <div className="mt-4">
             {" "}
             <SaveSearchButton query={query} basePath={basePath} resultCount={results.length} />{" "}
-          </div>{" "}
+          </div>
+          )}{" "}
           {results.length === 0 ? (
             <div className="mt-10 flex flex-col items-center gap-4 rounded-card border border-dashed border-border bg-card/60 px-6 py-16 text-center">
               {" "}

@@ -604,7 +604,7 @@ await test("11. aucun paiement n’est simulé : seul le dû contractuel est aff
 await test("12. une recherche filtrée reste servie et retrouvable", async () => {
   const html = await call(null, "/explorer?departement=Littoral&meuble=1&tri=prix-asc");
   assert.equal(html.status, 200, "l’explorateur filtré est servi");
-  assert.ok(/affichés sur|affiché/.test(html.text), "le compteur de résultats est rendu côté serveur");
+  assert.ok(html.text.includes("HOM-"), "les résultats filtrés sont rendus côté serveur");
   assert.ok(html.text.includes("departement=Littoral"), "les filtres actifs sont dans l’URL, donc partageables");
 
   const empty = await call(null, "/api/properties?prix-max=1");

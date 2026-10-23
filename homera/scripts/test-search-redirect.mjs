@@ -78,8 +78,8 @@ const CASES = [
     name: '6. Sans projet -> explorateur global',
     criteria: { project: '', location: 'Cotonou', propertyType: '', budget: '' },
     url: '/explorer?ville=Cotonou',
-    present: ['HOM-', 'affichés'],
-    absent: ['intention=', 'Aucun bien ne correspond', 'font-semibold">23 biens'],
+    present: ['HOM-'],
+    absent: ['intention=', 'Aucun bien ne correspond', 'font-semibold">23 biens', 'affichés sur', 'Tous les résultats affichés', 'Enregistrer cette recherche', 'Ajoutez un filtre'],
   },
   {
     name: '7. Aucun bien (budget 1 000)',
