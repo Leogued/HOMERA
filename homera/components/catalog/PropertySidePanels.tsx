@@ -26,22 +26,31 @@ export function PropertyGallery({
   title,
   fallbackKey,
   fallbackAlt,
-  sizes = "(min-width: 1024px) 44vw, 92vw",
+  sizes = "(min-width: 1024px) 58vw, 92vw",
+  typeLabel,
 }: {
   gallery: { mediaKey: string; alt: string }[];
   title: string;
   fallbackKey: string;
   fallbackAlt: string;
   sizes?: string;
+  /** Pastille posée sur le visuel principal (type de bien). */
+  typeLabel?: string;
 }) {
   const photos = gallery.length ? gallery : [{ mediaKey: fallbackKey, alt: fallbackAlt }];
   const [index, setIndex] = useState(0);
+  const [stripOpen, setStripOpen] = useState(false);
   const safeIndex = Math.min(index, photos.length - 1);
   const current = photos[safeIndex];
+  const at = (offset: number) => photos[(safeIndex + offset + photos.length) % photos.length];
 
-  return (
-    <div>
-      <div className="relative overflow-hidden rounded-media border border-border bg-surface-hover">
+  /* Un seul visuel déposé : on le montre en grand, sans navigation factice. */
+  if (photos.length === 1) {
+    return (
+      <div
+        id="fiche-galerie"
+        className="relative scroll-mt-24 overflow-hidden rounded-media border border-border bg-surface-hover"
+      >
         <Visual
           mediaKey={current.mediaKey}
           alt={current.alt}
@@ -49,39 +58,106 @@ export function PropertyGallery({
           quality={80}
           priority
           veil="none"
-          className="aspect-[16/10] w-full"
+          className="aspect-[16/9] w-full"
         />
-        {photos.length > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={() => setIndex((safeIndex - 1 + photos.length) % photos.length)}
-              aria-label="Visuel précédent"
-              className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/85 text-foreground shadow-sm transition-colors hover:bg-background"
-            >
-              <ChevronLeft className="h-5 w-5" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setIndex((safeIndex + 1) % photos.length)}
-              aria-label="Visuel suivant"
-              className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/85 text-foreground shadow-sm transition-colors hover:bg-background"
-            >
-              <ChevronRight className="h-5 w-5" aria-hidden="true" />
-            </button>
-            <p className="absolute bottom-3 right-3 rounded-full bg-background/85 px-3 py-1 text-micro font-semibold tabular-nums text-foreground">
-              {safeIndex + 1} / {photos.length}
-            </p>
-          </>
-        )}
+        {typeLabel ? (
+          <p className="absolute bottom-4 left-4 rounded-full bg-background/85 px-3.5 py-1.5 text-caption font-semibold text-foreground backdrop-blur-sm">
+            {typeLabel}
+          </p>
+        ) : null}
       </div>
-      {photos.length > 1 && (
-        <ul className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label={`Visuels du bien : ${title}`}>
-          {photos.map((photo, photoIndex) => (
-            <li key={`${photo.mediaKey}-${photoIndex}`}>
+    );
+  }
+
+  const sideOffsets = photos.length === 2 ? [1] : [1, 2];
+  return (
+    <div id="fiche-galerie" className="scroll-mt-24">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-5 sm:grid-rows-2">
+        <div className="relative overflow-hidden rounded-media border border-border bg-surface-hover sm:col-span-3 sm:row-span-2">
+          <Visual
+            mediaKey={current.mediaKey}
+            alt={current.alt}
+            sizes={sizes}
+            quality={80}
+            priority
+            veil="none"
+            className="aspect-[16/10] w-full sm:aspect-auto sm:h-full sm:min-h-[22rem]"
+          />
+          <button
+            type="button"
+            onClick={() => setIndex((safeIndex - 1 + photos.length) % photos.length)}
+            aria-label="Visuel précédent"
+            className="absolute left-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/85 text-foreground shadow-sm transition-colors hover:bg-background"
+          >
+            <ChevronLeft className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setIndex((safeIndex + 1) % photos.length)}
+            aria-label="Visuel suivant"
+            className="absolute right-3 top-1/2 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-background/85 text-foreground shadow-sm transition-colors hover:bg-background"
+          >
+            <ChevronRight className="h-5 w-5" aria-hidden="true" />
+          </button>
+          <div className="absolute inset-x-4 bottom-4 flex items-end justify-between gap-3">
+            {typeLabel ? (
+              <p className="rounded-full bg-background/85 px-3.5 py-1.5 text-caption font-semibold text-foreground backdrop-blur-sm">
+                {typeLabel}
+              </p>
+            ) : (
+              <span />
+            )}
+            <div className="flex items-center gap-2">
+              <p className="rounded-full bg-background/85 px-3 py-1.5 text-micro font-semibold tabular-nums text-foreground backdrop-blur-sm">
+                {safeIndex + 1} / {photos.length}
+              </p>
               <button
                 type="button"
-                onClick={() => setIndex(photoIndex)}
+                onClick={() => setStripOpen((open) => !open)}
+                aria-expanded={stripOpen}
+                className="homera-press rounded-full bg-background/85 px-3.5 py-1.5 text-caption font-semibold text-foreground backdrop-blur-sm transition-colors hover:bg-background"
+              >
+                {stripOpen ? "Masquer les photos" : `Voir les ${photos.length} photos`}
+              </button>
+            </div>
+          </div>
+        </div>
+        {sideOffsets.map((offset) => {
+          const photo = at(offset);
+          const photoNumber = ((safeIndex + offset) % photos.length) + 1;
+          return (
+            <button
+              key={`${photo.mediaKey}-${offset}`}
+              type="button"
+              onClick={() => setIndex((safeIndex + offset) % photos.length)}
+              aria-label={`Voir le visuel ${photoNumber} sur ${photos.length}`}
+              className={
+                "relative block overflow-hidden rounded-media border border-border bg-surface-hover transition-opacity hover:opacity-90 sm:col-span-2 " +
+                (sideOffsets.length === 1 ? "sm:row-span-2" : "")
+              }
+            >
+              <Visual
+                mediaKey={photo.mediaKey}
+                alt=""
+                sizes="(min-width: 1024px) 30vw, 92vw"
+                quality={70}
+                veil="none"
+                className="aspect-[16/10] w-full sm:aspect-auto sm:h-full sm:min-h-[10rem]"
+              />
+            </button>
+          );
+        })}
+      </div>
+      {stripOpen && (
+        <ul className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label={`Tous les visuels : ${title}`}>
+          {photos.map((photo, photoIndex) => (
+            <li key={`${photo.mediaKey}-${photoIndex}`} className="shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setIndex(photoIndex);
+                  document.getElementById("fiche-galerie")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                }}
                 aria-current={photoIndex === safeIndex}
                 className={`block overflow-hidden rounded-lg border-2 transition-colors ${photoIndex === safeIndex ? "border-homera-terracotta" : "border-transparent hover:border-border"}`}
               >
@@ -166,7 +242,7 @@ export type VerifiedOwner = {
   emailVerified: boolean;
 };
 
-export function VerifiedOwnerCard({ owner, verifiedOn }: { owner: VerifiedOwner | null; verifiedOn: string }) {
+export function VerifiedOwnerCard({ owner, verifiedOn }: { owner: VerifiedOwner | null; verifiedOn: string | null }) {
   if (!owner) return null;
   const since = new Intl.DateTimeFormat("fr-FR", { month: "long", year: "numeric", timeZone: "UTC" }).format(
     new Date(owner.memberSince.length <= 10 ? `${owner.memberSince}T00:00:00Z` : owner.memberSince),
@@ -196,7 +272,7 @@ export function VerifiedOwnerCard({ owner, verifiedOn }: { owner: VerifiedOwner 
         </li>
         <li className="flex items-center gap-2">
           <Check className="h-3.5 w-3.5 shrink-0 text-success" aria-hidden="true" />
-          Bien contrôlé le {verifiedOn}
+          {verifiedOn ? `Bien contrôlé le ${verifiedOn}` : "Bien en cours de contrôle"}
         </li>
       </ul>
       <p className="mt-4 text-micro leading-relaxed text-muted">
