@@ -302,15 +302,6 @@ export function PropertyDetail({
                             })}
                           </ul>
                         )}
-                        {features.length > 4 && (
-                          <a
-                            href="#fiche-equipements"
-                            className="homera-underline mt-5 inline-flex min-h-10 items-center gap-2 text-note font-medium homera-accent-ink"
-                          >
-                            Voir les {features.length} équipements{" "}
-                            <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
-                          </a>
-                        )}
                       </div>
                       <div className="space-y-6">
                         <section

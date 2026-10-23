@@ -7,7 +7,7 @@ import { useEffect, useState, type ReactNode } from "react";
    ------------------------------------------------------------------
    Les panneaux sont rendus côté serveur et transmis tout prêts : seul
    l’onglet actif est visible. L’ancre (#fiche-…) active l’onglet visé
-   pour que les liens internes (« Voir les équipements ») aboutissent
+   pour que les liens internes (« Voir la localisation », …) aboutissent
    vraiment, y compris depuis la colonne latérale.
    ================================================================== */
 
