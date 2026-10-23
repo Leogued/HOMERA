@@ -216,7 +216,7 @@ explicite (`ServiceResult`), jamais d’exception, jamais d’état inventé.
 | `verifications.ts` | dossier de vérification et ses 8 étapes |
 | `admin.ts` | indicateurs, comptes, signalements, journal |
 | `documents.ts` | pièces déclarées d’un bien |
-| `applications.ts` | candidatures : visite effectuée exigée, ou réservation directe sur bien explicitement éligible (`rental_mode = 'direct'`) ; disponibilité, période souhaitée et doublons vérifiés ; instruction motivée |
+| `applications.ts` | candidatures : visite effectuée exigée pour les locations ordinaires ; séjour (tous types), espaces et salles de fête loués en réservation directe ; disponibilité, période souhaitée et doublons vérifiés ; instruction motivée |
 | `contracts.ts` | contrats : référence `CTR-<année>-<n>`, rédaction après acceptation, signature par le locataire désigné |
 | `messaging.ts` | conversations adossées à un bien, lecture, envoi, marquage comme lu, compteur de non-lus |
 
@@ -360,14 +360,14 @@ le fichier.
 | 4 | Visite : demande, conflit, confirmation, reprogrammation, annulation | créneau déjà réservé refusé ; refus sans motif refusé ; annulation motivée acceptée ; client notifié |
 | 5 | Candidature → contrat → signature | candidature impossible avant visite effectuée, contrat impossible avant acceptation, signature refusée à l’administration et avec un nom trop court, contrat signé non annulable |
 | 6 | Explorateur | `meuble=1` restreint et chaque bien déclare l’équipement ; `departement=` filtre et restreint les communes ; pagination sans doublon |
-| 7 | Favoris et fiche | ajout et retrait réellement écrits ; la fiche ne porte aucune navigation |
+| 7 | Favoris et fiche | ajout et retrait réellement écrits ; bouton « Retour » en tête de fiche, sans fil d’Ariane |
 | 8 | Messagerie | conversation ouverte sur un bien, message vide refusé, bien inexistant refusé |
 | 9 | Contrôle public d’un mandat | actif / expiré / inconnu, jamais de réponse inventée |
 | 10 | Historique public | étapes réelles du journal, `404` sur une référence inconnue |
 | 11 | Paiements | aucune route d’encaissement (`404`/`405`), aucun état de paiement sur les contrats |
 | 12 | Contexte de recherche | recherche filtrée servie et partageable, résultat vide rend une liste vide |
 | 13 | Photo propriétaire | vrai fichier accepté, texte déguisé refusé, retrait effectif |
-| 14 | Parcours de location | la fiche propose « Réserver » ou « Demander une visite » selon le bien, jamais les deux |
+| 14 | Parcours de location | séjour (tous types), espaces et salles de fête loués : « Réserver » ; tout le reste : « Demander une visite » ; une seule voie par fiche |
 | Agent mandaté (portée « location ») sur un dossier | `canDecide = true`, « étudier » puis « accepter » → dossier `acceptee`, motif conservé, candidat notifié |
 | Agent mandaté (portée « visite ») | confirme puis constate la visite ; le client peut alors déposer son dossier |
 | Second dépôt sur un créneau déjà réservé | `409` — « Ce créneau vient d’être réservé. » (incrément atomique) |

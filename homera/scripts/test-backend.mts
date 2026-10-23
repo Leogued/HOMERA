@@ -979,6 +979,9 @@ section("13. Location : réservation directe ou visite préalable obligatoire");
 const directBien = "espace-evenementiel-cadjehoun";
 const directRow = db.prepare<[string], { rental_mode: string }>("SELECT rental_mode FROM properties WHERE id = ?").get(directBien);
 check("l’espace événementiel est déclaré réservable sans visite", directRow?.rental_mode === "direct");
+const directCount = db.prepare<[], { n: number }>("SELECT COUNT(*) AS n FROM properties WHERE intent = 'sejour' OR type IN ('espace', 'salle')").get()!.n;
+const correctlyDirect = db.prepare<[], { n: number }>("SELECT COUNT(*) AS n FROM properties WHERE (intent = 'sejour' OR (intent = 'louer' AND type IN ('espace', 'salle'))) AND rental_mode = 'direct'").get()!.n;
+equal("séjours, espaces et salles sont tous en réservation directe", correctlyDirect, directCount);
 const visitRow = db.prepare<[string], { rental_mode: string }>("SELECT rental_mode FROM properties WHERE id = ?").get(propertyId);
 check("la visite préalable reste le parcours par défaut", visitRow?.rental_mode === "visite");
 
@@ -998,6 +1001,11 @@ check(
   "la période souhaitée est conservée",
   directView?.desiredStart === isoDate(60) && directView?.desiredEnd === isoDate(62),
 );
+const stayClient = user(await makeUser("client", "sejour.test@homera.demo", { prenom: "Séjour", nom: "Client" }));
+const stayBooking = applicationsModule.createApplication(db, stayClient, { propertyId: "villa-piscine-fidjrosse-sejour" });
+check("un bien proposé en séjour se réserve sans visite préalable", stayBooking.ok, stayBooking.ok ? "" : stayBooking.message);
+const visitForDirect = visits.requestVisit(db, stayClient, { propertyId: directBien, date: isoDate(61), time: "10:00" });
+check("un bien réservable directement n’accepte pas de demande de visite", !visitForDirect.ok);
 const directClient2 = user(await makeUser("client", "direct2.test@homera.demo", { prenom: "Directe", nom: "Seconde" }));
 const directNoDates = applicationsModule.createApplication(db, directClient2, { propertyId: directBien });
 check("la période souhaitée reste facultative", directNoDates.ok, directNoDates.ok ? "" : directNoDates.message);

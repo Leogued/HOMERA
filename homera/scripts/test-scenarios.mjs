@@ -454,7 +454,7 @@ await test("6. l’explorateur filtre réellement et conserve le contexte", asyn
 /* ------------------------------------------------------------------ */
 /* 7. Favoris suivis par compte, fiche sans navigation                 */
 /* ------------------------------------------------------------------ */
-await test("7. les favoris suivent le compte, et la fiche ne porte aucune navigation", async () => {
+await test("7. les favoris suivent le compte, et la fiche propose un bouton Retour", async () => {
   await session("user");
   const added = await call("user", "/api/favorites", {
     method: "POST",
@@ -479,10 +479,8 @@ await test("7. les favoris suivent le compte, et la fiche ne porte aucune naviga
 
   const page = await call(null, "/biens/villa-fidjrosse");
   assert.equal(page.status, 200, "la fiche est servie");
-  assert.ok(
-    !page.text.includes(">Retour<") && !page.text.includes("Voir tous les biens"),
-    "la fiche ne propose aucun lien de retour",
-  );
+  assert.ok(page.text.includes(">Retour<"), "la fiche propose le bouton de retour");
+  assert.ok(page.text.indexOf(">Retour<") < page.text.indexOf("<h1"), "le bouton de retour est en tête de fiche");
   assert.ok(
     !page.text.includes('<nav aria-label="Fil d'),
     "la fiche ne porte aucun fil d’Ariane rendu",
@@ -686,7 +684,7 @@ await test("14. la fiche propose le parcours du bien (réservation directe ou vi
     "« Réserver » ouvre le parcours de réservation du bien",
   );
   assert.ok(!direct.text.includes("Demander une visite"), "jamais les deux parcours à la fois");
-  assert.ok(!direct.text.includes("Planifier une visite"), "la barre mobile suit le parcours direct");
+  assert.ok(!direct.text.includes("Demander une visite"), "la barre mobile suit le parcours direct");
 
   const visit = await call(null, "/biens/villa-fidjrosse");
   assert.equal(visit.status, 200, "la fiche du bien à visiter est servie");
@@ -700,4 +698,16 @@ await test("14. la fiche propose le parcours du bien (réservation directe ou vi
     !visit.text.includes("/client/demandes/nouvelle?bien="),
     "aucun accès direct au dépôt de dossier depuis cette fiche",
   );
+
+  /* Séjour (quel que soit le bien), espaces et salles : « Réserver ». */
+  for (const id of ["villa-piscine-fidjrosse-sejour", "salle-fete-akpakpa"]) {
+    const fiche = await call(null, `/biens/${id}`);
+    assert.equal(fiche.status, 200, `la fiche ${id} est servie`);
+    assert.ok(fiche.text.includes(">Réserver"), `le bien ${id} propose « Réserver »`);
+    assert.ok(
+      fiche.text.includes(`/client/demandes/nouvelle?bien=${id}`),
+      `« Réserver » ouvre le parcours de réservation de ${id}`,
+    );
+    assert.ok(!fiche.text.includes("Demander une visite"), `jamais les deux parcours à la fois sur ${id}`);
+  }
 });

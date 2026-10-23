@@ -316,7 +316,20 @@ export function createApplication(
     }
   }
 
-  if (property.intent !== "louer") {
+  /* Une seule voie par bien, jamais les deux : les biens réservables
+     (séjour, espaces, salles) ne reçoivent que des réservations
+     directes ; les autres ne reçoivent que des dossiers après visite. */
+  if (visit) {
+    if (property.rental_mode === "direct") {
+      return {
+        ok: false,
+        message: "Ce bien se réserve directement, sans visite préalable : déposez votre demande depuis sa fiche.",
+      };
+    }
+    if (property.intent !== "louer") {
+      return { ok: false, message: "Ce bien n’est pas proposé à la location." };
+    }
+  } else if (property.intent !== "louer" && property.intent !== "sejour") {
     return { ok: false, message: "Ce bien n’est pas proposé à la location." };
   }
   /* Un bien indisponible ou sorti du catalogue ne reçoit aucune demande,

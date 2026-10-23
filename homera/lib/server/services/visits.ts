@@ -302,6 +302,14 @@ export function requestVisit(
   if (property.publication_status !== "publie") {
     return { ok: false, message: "Ce bien n’est pas ouvert aux demandes de visite." };
   }
+  /* Les biens réservables (séjour, espaces, salles) ne se visitent pas :
+     la réservation directe est leur seule voie, depuis la fiche. */
+  if (property.rental_mode === "direct") {
+    return {
+      ok: false,
+      message: "Ce bien se réserve directement, sans visite préalable : déposez votre demande depuis sa fiche.",
+    };
+  }
   if (property.owner_id === actor.id) {
     return { ok: false, message: "Vous êtes le propriétaire de ce bien : la demande de visite n’est pas nécessaire." };
   }

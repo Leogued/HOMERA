@@ -47,6 +47,7 @@ import {
   recencyLabel,
 } from "@/lib/format";
 import { LATEST_PUBLISHED_AT } from "@/lib/properties";
+import { BackToResults } from "@/components/catalog/BackToResults";
 import {
   PropertyAvailability, PropertyGallery, ReportListing, VerifiedOwnerCard,
   type AvailabilityWindow, type VerifiedOwner,
@@ -158,6 +159,14 @@ export function PropertyDetail({
   return (
     <article className="bg-background text-foreground">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Le lien ne promet un retour aux résultats que s’il vient vraiment
+            d’une recherche : sinon il mène à la page du projet. */}
+        <div className="mb-6">
+          <BackToResults
+            fallbackHref={PROJECT_HREF[property.intent]}
+            label={`Voir tous les biens ${INTENT_LABELS[property.intent].toLowerCase()}`}
+          />
+        </div>
         {/* ---------------- Galerie ---------------- */}
         <Reveal y={0} blur={0} clip clipRadius={24} duration={900} immediate>
           <PropertyGallery

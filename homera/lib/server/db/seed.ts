@@ -1,6 +1,6 @@
 import type { Db } from "../db/client";
 import { nowIso, queryOne } from "../db/client";
-import { GALLERY_EXTRA_ALT, GALLERY_VIEWS, PROPERTIES } from "../../content";
+import { GALLERY_EXTRA_ALT, GALLERY_VIEWS, PROPERTIES, rentalModeFor } from "../../content";
 import { hashPasswordSync } from "../security/password";
 import { newId } from "../db/client";
 import { writeAudit } from "../audit";
@@ -243,7 +243,7 @@ function seedProperties(db: Db): void {
       (property.features ?? []).includes("meuble") ? 1 : 0,
       verified ? "publie" : "en-verification",
       verified ? "verifie" : "en-cours",
-      property.rentalMode === "direct" ? "direct" : "visite",
+      rentalModeFor(property.type, property.intent),
       verifiedOn,
       owner,
       property.coordinates?.lat ?? null,

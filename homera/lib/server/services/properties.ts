@@ -10,7 +10,7 @@ import type {
   PropertyType,
   PropertyVerificationStatus,
 } from "../../content";
-import { FEATURE_LABELS } from "../../content";
+import { FEATURE_LABELS, rentalModeFor } from "../../content";
 import { canEditProperty, canModerate, type UserContext } from "../authz";
 import { writeAudit } from "../audit";
 import { notify } from "../notifications";
@@ -817,10 +817,10 @@ export function createProperty(
       `INSERT INTO properties (id, reference, title, type, intent, price, price_period, country, department, commune,
           city, district, address, bedrooms, bathrooms, surface, rooms, floor, land_title, min_nights, description,
           conditions, furnished, availability, unavailable_until, availability_note, publication_status,
-          verification_status, verified_on, owner_id, agency_id, main_photo_id, latitude, longitude, published_at,
+          verification_status, verified_on, rental_mode, owner_id, agency_id, main_photo_id, latitude, longitude, published_at,
           created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'disponible', NULL, '',
-               'brouillon', 'non-verifie', NULL, ?, NULL, NULL, ?, ?, NULL, ?, ?)`,
+               'brouillon', 'non-verifie', NULL, ?, ?, NULL, NULL, ?, ?, NULL, ?, ?)`,
     ).run(
       propertyId,
       reference,
@@ -845,6 +845,7 @@ export function createProperty(
       input.description ?? "",
       input.conditions ?? "",
       input.furnished ? 1 : 0,
+      rentalModeFor(input.type as PropertyType, input.intent as PropertyIntent),
       actor.id,
       input.latitude ?? null,
       input.longitude ?? null,
@@ -914,6 +915,14 @@ export function updateProperty(
     if (patch.title !== undefined) push("title", patch.title);
     if (patch.intent !== undefined) push("intent", patch.intent);
     if (patch.type !== undefined) push("type", patch.type);
+    /* Le parcours suit le bien : un changement de type ou d’intention
+       recalcule la voie (réservation directe ou visite préalable). */
+    if (patch.intent !== undefined || patch.type !== undefined) {
+      push(
+        "rental_mode",
+        rentalModeFor((patch.type ?? row.type) as PropertyType, (patch.intent ?? row.intent) as PropertyIntent),
+      );
+    }
     if (patch.price !== undefined) push("price", patch.price);
     if (patch.pricePeriod !== undefined) push("price_period", patch.pricePeriod);
     if (patch.city !== undefined) push("city", patch.city);

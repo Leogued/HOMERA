@@ -760,6 +760,17 @@ ALTER TABLE rental_applications ADD COLUMN desired_end TEXT;
 UPDATE properties SET rental_mode = 'direct' WHERE id = 'espace-evenementiel-cadjehoun';
 `;
 
+/* ------------------------------------------------------------------
+   009 — PARCOURS : séjour, espaces et salles en réservation directe
+   ------------------------------------------------------------------ */
+
+const M009 = `
+/* Tout bien de séjour (quel que soit son type), plus les espaces et
+   les salles de fête, se réserve sans visite préalable. */
+UPDATE properties SET rental_mode = 'direct'
+  WHERE intent = 'sejour' OR (intent = 'louer' AND type IN ('espace', 'salle'));
+`;
+
 export const MIGRATIONS: Migration[] = [
   {
     id: "001",
@@ -800,5 +811,10 @@ export const MIGRATIONS: Migration[] = [
     id: "008",
     name: "parcours-location-reservation-directe",
     sql: M008,
+  },
+  {
+    id: "009",
+    name: "parcours-location-sejour-espaces-salles",
+    sql: M009,
   },
 ];

@@ -298,6 +298,23 @@ export const GALLERY_VIEWS: Record<PropertyType, string[]> = {
 /** Texte de repli des vues complémentaires : illustratif, jamais descriptif d’un lieu précis. */
 export const GALLERY_EXTRA_ALT = "Vue complémentaire (visuel illustratif)";
 
+/* ------------------------------------------------------------------
+   PARCOURS DE LOCATION — source unique de la règle
+   ------------------------------------------------------------------
+   « Réserver » (réservation directe, sans visite préalable) :
+   tout bien proposé en séjour quel que soit son type, plus les
+   espaces et les salles de fête. Tout le reste passe par
+   « Demander une visite ». L’amorçage, le dépôt d’un bien et la
+   migration 009 appliquent cette même fonction : la fiche, les
+   formulaires et les gardes serveur lisent le `rental_mode` écrit.
+   ------------------------------------------------------------------ */
+
+export function rentalModeFor(type: PropertyType, intent: PropertyIntent): "visite" | "direct" {
+  return intent === "sejour" || (intent === "louer" && (type === "espace" || type === "salle"))
+    ? "direct"
+    : "visite";
+}
+
 /** Nature du document foncier présenté dans le dossier du bien. */
 export const LAND_TITLE_LABELS = {
   "titre-foncier": "Titre foncier",
@@ -1217,7 +1234,6 @@ export const PROPERTIES: Property[] = [
     title: "Espace extérieur clôturé pour événements",
     type: "espace",
     intent: "louer",
-    rentalMode: "direct",
     price: 150_000,
     pricePeriod: "/ jour",
     city: "Cotonou",
