@@ -159,18 +159,16 @@ export function PropertyDetail({
   return (
     <article className="bg-background text-foreground">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Galerie, données de la fiche et tarif sont réunis dès le haut :
-            la carte reste visible à côté des images, comme sur la maquette. */}
-        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-10">
-          <div className="min-w-0">
-            {/* Le lien ne promet un retour aux résultats que s’il vient vraiment
-                d’une recherche : sinon il mène à la page du projet. */}
-            <div className="mb-6">
+        {/* Le retour est une vraie action visible avant la fiche ; la grille
+            commence ensuite avec galerie et tarif alignés sur la même ligne. */}
+        <div className="mb-6">
           <BackToResults
             fallbackHref={PROJECT_HREF[property.intent]}
-            label={`Voir tous les biens ${INTENT_LABELS[property.intent].toLowerCase()}`}
+            label={`Retour aux résultats ${INTENT_LABELS[property.intent].toLowerCase()}`}
           />
         </div>
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-10">
+          <div className="min-w-0">
             {/* ---------------- Galerie ---------------- */}
             <Reveal y={0} blur={0} clip clipRadius={24} duration={900} immediate>
           <PropertyGallery
