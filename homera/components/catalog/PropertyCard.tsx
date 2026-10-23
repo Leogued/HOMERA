@@ -4,7 +4,7 @@ import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight, Bath, Bed, CalendarCheck, Clock, MapPin, Maximize, ShieldCheck } from "lucide-react";
 import type { Property } from "@/lib/content";
-import { FEATURE_LABELS, INTENT_LABELS, TYPE_LABELS, formatPropertyPrice, formatSurface } from "@/lib/format";
+import { INTENT_LABELS, TYPE_LABELS, formatPropertyPrice, formatSurface } from "@/lib/format";
 import { Reveal } from "@/components/ui/Reveal";
 import { Visual } from "@/components/ui/Visual";
 import { FavoriteButton } from "@/components/catalog/FavoriteButton";
@@ -47,7 +47,6 @@ export function PropertyCard(props: {
   const router = useRouter();
   const { property, layout = "grid" } = props;
   const href = `/biens/${property.id}`;
-  const features = (property.features ?? []).slice(0, 3);
 
   const badges = (
     <div className="pointer-events-none absolute inset-x-4 top-4 z-2 flex flex-wrap items-start justify-between gap-2 text-micro text-white sm:inset-x-5 sm:top-5">
@@ -274,7 +273,7 @@ export function PropertyCard(props: {
         {reference}
       </div>
 
-      <div className="flex flex-1 flex-col gap-4 p-5">
+      <div className="flex flex-1 flex-col gap-3 p-5">
         {location}
         {/* Pas de lien ici : le titre reste du texte, la carte entière est le lien. */}
         <h3 className="font-serif text-display-xs leading-snug text-foreground transition-colors duration-300 group-hover/card:text-homera-terracotta">
@@ -286,19 +285,7 @@ export function PropertyCard(props: {
             {property.surface >= 300 && property.type === "terrain" ? "Terrain" : TYPE_LABELS[property.type]}
           </span>
         </div>
-        {features.length > 0 && (
-          <ul className="flex flex-wrap gap-1.5">
-            {features.map((feature) => (
-              <li
-                key={feature}
-                className="rounded-full border border-border bg-background/60 px-2.5 py-1 text-caption text-muted"
-              >
-                {FEATURE_LABELS[feature]}
-              </li>
-            ))}
-          </ul>
-        )}
-        <div className="mt-auto space-y-3 border-t border-border pt-4">
+        <div className="mt-auto space-y-2 border-t border-border pt-3">
           {specs}
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="flex items-center gap-2 text-caption text-muted">
