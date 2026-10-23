@@ -403,11 +403,13 @@ const ZONE_OPTIONS: readonly FieldOption[] = [
 ];
 
 const PROPERTY_KIND_OPTIONS: readonly FieldOption[] = [
-  { value: "villa", label: "Maison / villa" },
+  { value: "villa", label: "Maison" },
   { value: "appartement", label: "Appartement" },
   { value: "studio", label: "Studio" },
+  { value: "chambre", label: "Chambre meublée" },
+  { value: "immeuble", label: "Immeuble" },
   { value: "terrain", label: "Terrain / parcelle" },
-  { value: "local", label: "Local commercial" },
+  { value: "boutique", label: "Boutique" },
   { value: "plusieurs", label: "Plusieurs types" },
 ];
 

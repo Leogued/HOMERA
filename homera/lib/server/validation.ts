@@ -33,7 +33,7 @@ export type Parsed<T> = { ok: true; data: T } | { ok: false; message: string; fi
 const FEATURES = Object.keys(FEATURE_LABELS) as [PropertyFeature, ...PropertyFeature[]];
 const LAND_TITLES = Object.keys(LAND_TITLE_LABELS) as [string, ...string[]];
 
-export const propertyTypes = ["villa", "appartement", "studio", "terrain", "local"] as const;
+export const propertyTypes = ["villa", "appartement", "studio", "chambre", "immeuble", "terrain", "boutique"] as const;
 export const propertyIntents = ["acheter", "louer", "sejour"] as const;
 
 export const propertyDraftSchema = z.object({

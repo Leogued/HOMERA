@@ -496,7 +496,7 @@ function isPropertyIntent(value: unknown): value is PropertyIntent {
 }
 
 function isPropertyType(value: unknown): value is PropertyType {
-  return value === "villa" || value === "appartement" || value === "studio" || value === "terrain" || value === "local";
+  return value === "villa" || value === "appartement" || value === "studio" || value === "chambre" || value === "immeuble" || value === "terrain" || value === "boutique";
 }
 
 function isListingStatus(value: unknown): value is ListingStatus {

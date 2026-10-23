@@ -36,18 +36,27 @@ export function applyMigrations(db: Db): string[] {
     db.prepare<[], { id: string }>("SELECT id FROM schema_migrations").all().map((row) => row.id),
   );
   const executed: string[] = [];
-  for (const migration of MIGRATIONS) {
-    if (applied.has(migration.id)) continue;
-    const run = db.transaction(() => {
-      db.exec(migration.sql);
-      db.prepare("INSERT INTO schema_migrations (id, name, applied_at) VALUES (?, ?, ?)").run(
-        migration.id,
-        migration.name,
-        new Date().toISOString(),
-      );
-    });
-    run();
-    executed.push(migration.id);
+  /* Une reconstruction de table (DROP + RENAME) casserait les clés
+     étrangères filles : les migrations tournent hors contraintes, puis
+     l’état précédent est restauré. Chaque migration reste atomique. */
+  const foreignKeys = (db.pragma("foreign_keys") as { foreign_keys: number }[])[0]?.foreign_keys === 1;
+  db.pragma("foreign_keys = OFF");
+  try {
+    for (const migration of MIGRATIONS) {
+      if (applied.has(migration.id)) continue;
+      const run = db.transaction(() => {
+        db.exec(migration.sql);
+        db.prepare("INSERT INTO schema_migrations (id, name, applied_at) VALUES (?, ?, ?)").run(
+          migration.id,
+          migration.name,
+          new Date().toISOString(),
+        );
+      });
+      run();
+      executed.push(migration.id);
+    }
+  } finally {
+    db.pragma(`foreign_keys = ${foreignKeys ? "ON" : "OFF"}`);
   }
   return executed;
 }

@@ -33,8 +33,10 @@ const STEPS = [
 ];
 
 const PROPERTY_TYPES: { id: PropertyType; label: string }[] = [
-  { id: "villa", label: "Maison / villa" }, { id: "appartement", label: "Appartement" },
-  { id: "studio", label: "Studio" }, { id: "terrain", label: "Terrain / parcelle" }, { id: "local", label: "Local commercial" },
+  { id: "villa", label: "Maison" }, { id: "appartement", label: "Appartement" },
+  { id: "studio", label: "Studio" }, { id: "chambre", label: "Chambre meublée" },
+  { id: "immeuble", label: "Immeuble" }, { id: "terrain", label: "Terrain / parcelle" },
+  { id: "boutique", label: "Boutique" },
 ];
 
 const INTENTS: { id: PropertyIntent; label: string }[] = [

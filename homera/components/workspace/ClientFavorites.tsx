@@ -13,13 +13,15 @@ import { useServerResource } from "@/lib/use-server-resource";
 import { BUTTON_PRIMARY, BUTTON_SECONDARY, DemoNotice, EmptyPanel, INPUT_CLASS } from "@/components/workspace/Primitives";
 
 const PAGE_SIZE = 9;
-const TYPE_ORDER: PropertyType[] = ["villa", "appartement", "studio", "terrain", "local"];
+const TYPE_ORDER: PropertyType[] = ["villa", "appartement", "studio", "chambre", "immeuble", "terrain", "boutique"];
 const TYPE_PLURALS: Record<PropertyType, string> = {
   villa: "Maisons",
   appartement: "Appartements",
   studio: "Studios",
+  chambre: "Chambres meublées",
+  immeuble: "Immeubles",
   terrain: "Terrains",
-  local: "Locaux commerciaux",
+  boutique: "Boutiques",
 };
 const INTENT_ORDER: PropertyIntent[] = ["acheter", "louer", "sejour"];
 const INTENT_SHORT: Record<PropertyIntent, string> = {
@@ -82,7 +84,7 @@ export function ClientFavorites() {
   const loading = !visitor.ready || (account != null && accountFavorites.loading);
 
   const typeCounts = useMemo(() => {
-    const counts = { villa: 0, appartement: 0, studio: 0, terrain: 0, local: 0 } as Record<PropertyType, number>;
+    const counts = { villa: 0, appartement: 0, studio: 0, chambre: 0, immeuble: 0, terrain: 0, boutique: 0 } as Record<PropertyType, number>;
     for (const property of favorites) counts[property.type] += 1;
     return counts;
   }, [favorites]);

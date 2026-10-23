@@ -89,13 +89,14 @@ export const SEARCH_SELECTS = {
     { value: "Ouidah", label: "Ouidah", hint: "Atlantique" },
   ] satisfies SelectOption[],
   propertyType: [
+    { value: "maison", label: "Maison", hint: "Familiale, cour, étage" },
     { value: "appartement", label: "Appartement", hint: "F2 → F5, duplex" },
     { value: "studio", label: "Studio", hint: "Meublé ou vide" },
-    { value: "villa", label: "Villa", hint: "Standing, jardin, piscine" },
-    { value: "maison", label: "Maison", hint: "Familiale, cour, étage" },
+    { value: "chambre", label: "Chambre meublée", hint: "Idéale étudiant, meublée" },
+    { value: "immeuble", label: "Immeuble", hint: "Rapport, plusieurs lots" },
     { value: "terrain", label: "Terrain nu", hint: "Parcelle, lotissement" },
     { value: "parcelle", label: "Parcelle", hint: "Avec titre ou ACD" },
-    { value: "local", label: "Local commercial", hint: "Boutique, bureau" },
+    { value: "boutique", label: "Boutique", hint: "Vitrine, pas-de-porte" },
   ] satisfies SelectOption[],
 } as const;
 
@@ -266,7 +267,7 @@ export const INTENTS: Intent[] = [
    BIENS — jeu de démonstration de la sélection certifiée
    ------------------------------------------------------------------ */
 
-export type PropertyType = "villa" | "appartement" | "studio" | "terrain" | "local";
+export type PropertyType = "villa" | "appartement" | "studio" | "chambre" | "immeuble" | "terrain" | "boutique";
 export type PropertyIntent = "acheter" | "louer" | "sejour";
 export type PropertyAvailability = "disponible" | "indisponible";
 export type PropertyVerificationStatus = "verifie" | "en-verification";
@@ -509,7 +510,7 @@ export const PROPERTIES: Property[] = [
     id: "local-ganhi",
     homeraId: "HOM-CTN-000590",
     title: "Local commercial en rez-de-chaussée, forte visibilité",
-    type: "local",
+    type: "boutique",
     intent: "louer",
     price: 320_000,
     pricePeriod: "/ mois",
@@ -726,7 +727,7 @@ export const PROPERTIES: Property[] = [
     id: "immeuble-bureaux-ganhi",
     homeraId: "HOM-CTN-000690",
     title: "Immeuble de bureaux, trois niveaux loués",
-    type: "local",
+    type: "immeuble",
     intent: "acheter",
     price: 185_000_000,
     city: "Cotonou",
@@ -746,7 +747,7 @@ export const PROPERTIES: Property[] = [
     id: "local-vitrine-akpakpa",
     homeraId: "HOM-CTN-000703",
     title: "Local commercial de 85 m² avec vitrine sur rue",
-    type: "local",
+    type: "boutique",
     intent: "acheter",
     price: 48_000_000,
     city: "Cotonou",
@@ -900,7 +901,7 @@ export const PROPERTIES: Property[] = [
     id: "bureaux-haie-vive",
     homeraId: "HOM-CTN-000767",
     title: "Plateau de bureaux de 140 m², prêt à occuper",
-    type: "local",
+    type: "immeuble",
     intent: "louer",
     price: 550_000,
     pricePeriod: "/ mois",
@@ -921,7 +922,7 @@ export const PROPERTIES: Property[] = [
     id: "boutique-dantokpa",
     homeraId: "HOM-CTN-000770",
     title: "Boutique de 25 m² à deux pas du marché",
-    type: "local",
+    type: "boutique",
     intent: "louer",
     price: 190_000,
     pricePeriod: "/ mois",

@@ -22,6 +22,7 @@ const { getDb, closeDb } = await import("../lib/server/db/client");
 const { loadUserContext } = await import("../lib/server/authz");
 const accounts = await import("../lib/server/services/accounts");
 const properties = await import("../lib/server/services/properties");
+const { propertyDraftSchema } = await import("../lib/server/validation");
 const authorizations = await import("../lib/server/services/authorizations");
 const visits = await import("../lib/server/services/visits");
 const verifications = await import("../lib/server/services/verifications");
@@ -256,6 +257,25 @@ const draft = properties.createProperty(
   },
 );
 check("le propriétaire crée son bien", draft.ok);
+
+/* Taxonomie : boutique, immeuble et chambre acceptés ; l’ancien type
+   « local » est refusé par le schéma comme par la contrainte SQL. */
+for (const type of ["boutique", "immeuble", "chambre"] as const) {
+  const created = properties.createProperty(db, owner, {
+    title: `Bien de démonstration (${type})`,
+    intent: "louer",
+    type,
+    price: 100000,
+    city: "Cotonou",
+    district: "Fidjrossè",
+  });
+  check(`un bien de type ${type} est accepté`, created.ok);
+}
+/* Le schéma zod, appliqué à la frontière HTTP, refuse l’ancien type. */
+const legacyDraft = { title: "Ancien local commercial", intent: "louer", type: "local", price: 100000, city: "Cotonou", district: "Fidjrossè" };
+check("l’ancien type local est refusé par le schéma", !propertyDraftSchema.safeParse(legacyDraft).success);
+const boutiqueDraft = { title: "Boutique sur rue", intent: "louer", type: "boutique", price: 100000, city: "Cotonou", district: "Fidjrossè" };
+check("le type boutique passe le schéma", propertyDraftSchema.safeParse(boutiqueDraft).success);
 const propertyId = draft.ok ? draft.data.property.id : "";
 equal("un bien déposé commence en brouillon", db.prepare<[string], { publication_status: string }>("SELECT publication_status FROM properties WHERE id = ?").get(propertyId)!.publication_status, "brouillon");
 equal("la référence HOMERA est attribuée", db.prepare<[string], { reference: string }>("SELECT reference FROM properties WHERE id = ?").get(propertyId)!.reference.startsWith("HOM-CTN-"), true);

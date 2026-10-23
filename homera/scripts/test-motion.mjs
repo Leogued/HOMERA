@@ -451,16 +451,18 @@ await test('HOMERA : aucune teinte hors palette ni courbe recopiée dans les com
    CATALOGUE PUBLIC — modèle, filtres, tri, pagination, facettes
    ------------------------------------------------------------------ */
 
-await test('HOMERA : le catalogue couvre les quatre familles de biens et trois projets', () => {
+await test('HOMERA : le catalogue couvre les familles de biens des trois projets', () => {
   const byIntent = (intent) => data.PROPERTIES.filter((property) => property.intent === intent);
   assert.ok(data.PROPERTIES.length >= 30, 'assez de biens pour une grille réaliste');
   for (const intent of ['acheter', 'louer', 'sejour']) {
     assert.ok(byIntent(intent).length >= 8, `projet trop maigre : ${intent}`);
   }
   // Chaque projet couvre les familles annoncées dans le menu.
+  // « chambre » existe dans la taxonomie mais sans annonce amorcée : le
+  // filtre affiche honnêtement zéro plutôt qu’une annonce inventée.
   const families = {
-    acheter: ['villa', 'appartement', 'terrain', 'local'],
-    louer: ['villa', 'appartement', 'studio', 'local'],
+    acheter: ['villa', 'appartement', 'immeuble', 'terrain', 'boutique'],
+    louer: ['villa', 'appartement', 'studio', 'immeuble', 'boutique'],
     sejour: ['villa', 'appartement', 'studio'],
   };
   for (const [intent, types] of Object.entries(families)) {
@@ -468,6 +470,33 @@ await test('HOMERA : le catalogue couvre les quatre familles de biens et trois p
       assert.ok(byIntent(intent).some((property) => property.type === type), `${intent} sans ${type}`);
     }
   }
+});
+
+await test('HOMERA : taxonomie boutique / immeuble / chambre et panneau façon maquette', async () => {
+  assert.equal(format.TYPE_LABELS.villa, 'Maison');
+  assert.equal(format.TYPE_LABELS.boutique, 'Boutique');
+  assert.equal(format.TYPE_LABELS.immeuble, 'Immeuble');
+  assert.equal(format.TYPE_LABELS.chambre, 'Chambre meublée');
+  assert.ok(!('local' in format.TYPE_LABELS), 'plus de type local');
+  assert.deepEqual(catalog.TYPES_BY_INTENT.acheter, ['villa', 'appartement', 'immeuble', 'terrain', 'boutique']);
+  assert.deepEqual(catalog.TYPES_BY_INTENT.louer, ['villa', 'appartement', 'studio', 'chambre', 'immeuble', 'boutique']);
+  assert.deepEqual(catalog.TYPES_BY_INTENT.sejour, ['villa', 'appartement', 'studio', 'chambre']);
+  assert.ok(!('local' in format.SEARCH_TYPE_TO_PROPERTY_TYPE), 'aucun alias vers l’ancien local');
+  assert.deepEqual(nav.findCategory('acheter', 'locaux').category.filter.types, ['boutique', 'immeuble']);
+  assert.deepEqual(nav.findCategory('louer', 'locaux').category.filter.types, ['boutique', 'immeuble']);
+  const validation = await readFile(new URL('../lib/server/validation.ts', import.meta.url), 'utf8');
+  assert.ok(validation.includes('"chambre", "immeuble", "terrain", "boutique"'), 'schéma serveur aligné sur la taxonomie');
+  const migrations = await readFile(new URL('../lib/server/db/migrations.ts', import.meta.url), 'utf8');
+  assert.ok(migrations.includes('id: "006"') && migrations.includes('taxonomie-boutique-immeuble-chambre'), 'migration de taxonomie versionnée');
+  const panel = await readFile(new URL('../components/catalog/CatalogFilters.tsx', import.meta.url), 'utf8');
+  for (const marker of ['Appliquer les filtres', 'Toutes les villes', 'Tous les équipements', 'TYPE_ICONS']) {
+    assert.ok(panel.includes(marker), `panneau incomplet : ${marker}`);
+  }
+  for (const marker of ['Quartiers', 'Critères complémentaires', 'Votre projet']) {
+    assert.ok(!panel.includes(marker), `panneau non conforme à la maquette : ${marker}`);
+  }
+  const explorer = await readFile(new URL('../components/catalog/CatalogExplorer.tsx', import.meta.url), 'utf8');
+  assert.ok(explorer.includes('Choisir un projet'), 'intention portée par les onglets de l’explorateur');
 });
 
 await test('HOMERA : données de fiche cohérentes (références, prix, dates, médias)', () => {
@@ -598,7 +627,7 @@ await test('HOMERA : bornes de prix, résumé et compteur de filtres', () => {
   const query = parseCatalogQuery('intention=louer&type=villa&ville=Cotonou&prix-min=100000&nouveautes=1');
   assert.equal(activeFilterCount(query), 5);
   const label = summaryLabel(query);
-  for (const fragment of ['à louer', 'villa', 'Cotonou', 'nouveautés']) assert.ok(label.includes(fragment), label);
+  for (const fragment of ['à louer', 'maison', 'Cotonou', 'nouveautés']) assert.ok(label.includes(fragment), label);
 });
 
 await test('HOMERA : la recherche de l’accueil ouvre la même recherche dans l’explorateur', () => {
@@ -713,7 +742,7 @@ await test('HOMERA : une recherche enregistrée reprend l’adresse exacte', () 
   const search = visitor.describeSearch(query, '/explorer');
   assert.ok(!search.href.includes('page='), 'la pagination ne fait pas partie de la recherche');
   assert.ok(search.href.startsWith('/explorer?'));
-  assert.ok(search.label.includes('villa'), search.label);
+  assert.ok(search.label.includes('maison'), search.label);
   assert.equal(search.count, searchCatalog({ ...query, page: 1 }).length);
   // Deux ordres de paramètres différents décrivent la même recherche.
   const other = visitor.describeSearch(parseCatalogQuery('ville=Cotonou&intention=louer&tri=prix-asc&type=villa'), '/explorer');

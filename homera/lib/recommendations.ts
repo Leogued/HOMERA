@@ -17,7 +17,7 @@ import { parseCatalogQuery } from "@/lib/properties";
    ont compté : aucune note, aucun pourcentage, aucun « score IA ».
    ================================================================== */
 
-export const PROPERTY_TYPES: readonly PropertyType[] = ["villa", "appartement", "studio", "terrain", "local"];
+export const PROPERTY_TYPES: readonly PropertyType[] = ["villa", "appartement", "studio", "chambre", "immeuble", "terrain", "boutique"];
 export const PROPERTY_INTENTS: readonly PropertyIntent[] = ["acheter", "louer", "sejour"];
 
 type RecommendationBasis = {

@@ -97,11 +97,11 @@ export const PROJECT_PAGES: PublicProjectPage[] = [
       },
       {
         slug: "locaux",
-        label: "Locaux commerciaux",
-        title: "Locaux commerciaux à acheter",
+        label: "Boutiques & immeubles",
+        title: "Boutiques & immeubles à acheter",
         intro:
-          "Boutiques, plateaux de bureaux et immeubles de rapport : investir dans un bien qui produit déjà un revenu.",
-        filter: { intent: "acheter", types: ["local"] },
+          "Boutiques sur rue et immeubles de rapport : investir dans un bien qui produit déjà un revenu.",
+        filter: { intent: "acheter", types: ["boutique", "immeuble"] },
         hint: "Achat · Professionnel",
       },
     ],
@@ -148,11 +148,11 @@ export const PROJECT_PAGES: PublicProjectPage[] = [
       },
       {
         slug: "locaux",
-        label: "Locaux commerciaux",
-        title: "Locaux commerciaux à louer",
+        label: "Boutiques & immeubles",
+        title: "Boutiques & immeubles à louer",
         intro:
-          "Boutiques sur rue et plateaux de bureaux : s’installer vite à une adresse qui fonctionne.",
-        filter: { intent: "louer", types: ["local"] },
+          "Boutiques sur rue et surfaces d’immeuble : s’installer vite à une adresse qui fonctionne.",
+        filter: { intent: "louer", types: ["boutique", "immeuble"] },
         hint: "Location · Professionnel",
       },
     ],

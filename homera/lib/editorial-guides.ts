@@ -228,6 +228,7 @@ export function buildPropertyEditorialSynthesis(property: Property): string[] {
   }
 
   const typeLabel = TYPE_LABELS[property.type].toLowerCase();
+  const article = property.type === "boutique" || property.type === "chambre" ? "cette" : property.type === "immeuble" ? "cet" : "ce";
   const intentLabel = INTENT_LABELS[property.intent].toLowerCase();
   const featureList = (property.features ?? []).map((f) => FEATURE_LABELS[f].toLowerCase());
 
@@ -240,9 +241,9 @@ export function buildPropertyEditorialSynthesis(property: Property): string[] {
           : "Sa configuration régulière permet d’envisager une construction résidentielle ou patrimoniale après validation technique."
       }`,
     );
-  } else if (property.type === "local") {
+  } else if (property.type === "boutique" || property.type === "immeuble") {
     paragraphs.push(
-      `D’une surface utile de ${property.surface} m²${property.floor ? ` (${property.floor})` : ""}, ce ${typeLabel} implanté à ${property.district} (${property.city}) répond aux besoins d’une activité professionnelle, commerciale ou de services recherchant une adresse lisible et facilement repérable par la clientèle.`,
+      `D’une surface utile de ${property.surface} m²${property.floor ? ` (${property.floor})` : ""}, ${article} ${typeLabel} implanté à ${property.district} (${property.city}) répond aux besoins d’une activité professionnelle, commerciale ou de services recherchant une adresse lisible et facilement repérable par la clientèle.`,
     );
   } else {
     const roomsPart = property.rooms ? `${property.rooms} pièce${property.rooms > 1 ? "s" : ""}` : `${property.surface} m²`;
@@ -257,7 +258,7 @@ export function buildPropertyEditorialSynthesis(property: Property): string[] {
         ? ` Les équipements déclarés incluent : ${featureList.slice(0, 5).join(", ")}.`
         : "";
     paragraphs.push(
-      `Ce ${typeLabel} développe ${property.surface} m² (${roomsPart}${bedBathPart})${
+      `${article === "ce" ? "Ce" : article === "cet" ? "Cet" : "Cette"} ${typeLabel} développe ${property.surface} m² (${roomsPart}${bedBathPart})${
         property.floor ? `, situé au ${property.floor.toLowerCase()}` : ""
       }, au sein du secteur ${property.district} à ${property.city}.${equipPart} Le dossier a fait l’objet d’un contrôle documentaire HOMERA le ${property.verifiedOn} sous la référence ${property.homeraId}.`,
     );

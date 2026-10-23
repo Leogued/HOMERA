@@ -33,11 +33,13 @@ export const INTENT_LABELS: Record<PropertyIntent, string> = {
 };
 
 export const TYPE_LABELS: Record<PropertyType, string> = {
-  villa: "Villa",
+  villa: "Maison",
   appartement: "Appartement",
   studio: "Studio",
+  chambre: "Chambre meublée",
+  immeuble: "Immeuble",
   terrain: "Terrain",
-  local: "Local commercial",
+  boutique: "Boutique",
 };
 
 /** Normalise pour comparer sans accents ni casse (Cotonou / cotonou / Cadjèhoun). */
@@ -53,11 +55,12 @@ function normalize(value: string): string {
 export const SEARCH_TYPE_TO_PROPERTY_TYPE: Record<string, PropertyType[]> = {
   appartement: ["appartement"],
   studio: ["studio"],
-  villa: ["villa"],
   maison: ["villa"],
+  chambre: ["chambre"],
+  immeuble: ["immeuble"],
   terrain: ["terrain"],
   parcelle: ["terrain"],
-  local: ["local"],
+  boutique: ["boutique"],
 };
 
 export type SearchCriteria = {

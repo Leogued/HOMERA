@@ -2,7 +2,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { ArrowRight, Compass, RotateCcw, Search, SlidersHorizontal, X } from "lucide-react";
-import { countLabel } from "@/lib/format";
+import { INTENT_LABELS, countLabel } from "@/lib/format";
 import {
   EMPTY_QUERY, PER_PAGE, SORTS, activeFilterCount, isPristine, summaryLabel,
   type CatalogQuery,
@@ -15,7 +15,7 @@ import { CommuneMapExplorer } from "@/components/catalog/CommuneMapExplorer";
 import { AssetPlaceholder } from "@/components/catalog/AssetPlaceholder";
 import { SaveSearchButton } from "@/components/catalog/SaveSearchButton";
 import { TextRoll } from "@/components/ui/TextRoll";
-import type { Property } from "@/lib/content";
+import type { Property, PropertyIntent } from "@/lib/content";
 /* ==================================================================
    HOMERA — EXPLORATEUR
    ------------------------------------------------------------------
@@ -92,11 +92,44 @@ export function CatalogExplorer({
   };
   const removeChip = (chip: Partial<CatalogQuery>) => patch(chip);
 
+  /* L’intention vit dans la barre d’outils, pas dans le panneau : changer
+     de projet remet à zéro les critères qui n’ont plus de sens. */
+  const setIntent = (intent: PropertyIntent | "") =>
+    patch({
+      intent,
+      types: [],
+      features: [],
+      stayNights: intent === "sejour" ? query.stayNights : null,
+      bedroomsMin: null,
+      bathroomsMin: null,
+      roomsMin: null,
+      priceMin: null,
+      priceMax: null,
+    });
+
   return (
     <div className="homera-explorer">
       {" "}
       {/* ---------------- Barre d’outils ---------------- */}{" "}
       <div className="sticky top-[4.25rem] z-40 -mx-4 border-y border-border bg-background/95 px-4 py-3 backdrop-blur sm:-mx-6 sm:px-6 lg:static lg:mx-0 lg:rounded-card lg:border lg:bg-card lg:px-4 lg:backdrop-blur-none">
+        {!locked.includes("intent") && (
+          <nav aria-label="Choisir un projet" className="mb-3 flex flex-wrap gap-2">
+            {(["", "acheter", "louer", "sejour"] as (PropertyIntent | "")[]).map((intent) => {
+              const active = query.intent === intent;
+              return (
+                <button
+                  key={intent || "tout"}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setIntent(active ? "" : intent)}
+                  className={`inline-flex min-h-10 items-center rounded-full border px-4 text-caption font-semibold transition-colors ${active ? "border-homera-terracotta bg-homera-terracotta/[0.10] text-homera-terracotta" : "border-border bg-card text-muted hover:text-foreground"}`}
+                >
+                  {intent === "" ? "Tous les projets" : INTENT_LABELS[intent]}
+                </button>
+              );
+            })}
+          </nav>
+        )}
         {" "}
         <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           {" "}
@@ -208,7 +241,6 @@ export function CatalogExplorer({
               onChange={patch}
               onReset={resetFilters}
               hidden={locked}
-              intentLocked={locked.includes("intent")}
             />{" "}
           </div>{" "}
         </aside>{" "}
@@ -453,7 +485,6 @@ export function CatalogExplorer({
               onChange={patch}
               onReset={resetFilters}
               hidden={locked}
-              intentLocked={locked.includes("intent")}
             />{" "}
           </div>{" "}
           <div className="border-t border-border px-5 py-4">
