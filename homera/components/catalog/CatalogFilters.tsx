@@ -11,7 +11,6 @@ import { TYPES_BY_INTENT } from "@/lib/properties";
 import type { PropertyFeature, PropertyType } from "@/lib/content";
 import type { CatalogQuery } from "@/lib/properties";
 import type { CatalogFacets } from "@/lib/use-catalog";
-import { TextRoll } from "@/components/ui/TextRoll";
 
 /* ==================================================================
    HOMERA — FILTRES DE L’EXPLORATEUR
@@ -93,8 +92,6 @@ export function CatalogFilters({
   };
 
   const typeValues = query.intent ? TYPES_BY_INTENT[query.intent] : (Object.keys(TYPE_LABELS) as PropertyType[]);
-  const countOf = (list: { value: string; count: number }[] | undefined, value: string) =>
-    list?.find((entry) => entry.value === value)?.count ?? 0;
   const budgetUnit = query.intent === "louer" ? "/ mois" : query.intent === "sejour" ? "/ nuit" : "";
 
   const cityOptions = facets?.cities.map((entry) => entry.value) ?? [];
@@ -120,7 +117,7 @@ export function CatalogFilters({
       <div className="space-y-6 p-5">
         {!hidden.includes("types") && (
           <Group label="Type de bien" icon={Tag}>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {typeValues.map((type) => {
                 const active = draft.types.includes(type);
                 const Icon = TYPE_ICONS[type];
@@ -132,9 +129,8 @@ export function CatalogFilters({
                     onClick={() => setDraft((current) => ({ ...current, types: toggle(current.types, type) }))}
                     className={chipClass(active)}
                   >
-                    <Icon className="h-4 w-4" aria-hidden="true" />
+                    <Icon className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
                     {TYPE_LABELS[type]}
-                    <Count value={countOf(facets?.types, type)} />
                   </button>
                 );
               })}
@@ -214,17 +210,9 @@ export function CatalogFilters({
    ================================================================== */
 
 function chipClass(active: boolean): string {
-  return `inline-flex min-h-10 items-center gap-1.5 rounded-xl border px-3 text-caption font-semibold transition-colors ${active ? "border-homera-terracotta bg-homera-terracotta/[0.10] text-homera-terracotta" : "border-border bg-background text-muted hover:text-foreground"}`;
+  return `inline-flex min-h-9 items-center gap-1.5 rounded-xl border px-2.5 py-1 text-caption font-semibold transition-colors ${active ? "border-homera-terracotta bg-homera-terracotta/[0.10] text-homera-terracotta" : "border-border bg-background text-muted hover:text-foreground"}`;
 }
 
-function Count({ value }: { value?: number }) {
-  if (value === undefined) return null;
-  return (
-    <span className="homera-num rounded-full bg-surface-hover px-1.5 py-0.5 text-micro text-muted">
-      <TextRoll>{String(value)}</TextRoll>
-    </span>
-  );
-}
 
 function Group({ label, icon: Icon, children }: { label: string; icon: LucideIcon; children: React.ReactNode }) {
   return (

@@ -492,7 +492,7 @@ await test('HOMERA : taxonomie boutique / immeuble / chambre et panneau façon m
   for (const marker of ['Appliquer les filtres', 'Toutes les villes', 'Tous les équipements', 'TYPE_ICONS']) {
     assert.ok(panel.includes(marker), `panneau incomplet : ${marker}`);
   }
-  for (const marker of ['Quartiers', 'Critères complémentaires', 'Votre projet']) {
+  for (const marker of ['Quartiers', 'Critères complémentaires', 'Votre projet', '<Count', 'countOf']) {
     assert.ok(!panel.includes(marker), `panneau non conforme à la maquette : ${marker}`);
   }
   const explorer = await readFile(new URL('../components/catalog/CatalogExplorer.tsx', import.meta.url), 'utf8');
