@@ -48,7 +48,7 @@ export function PageHero({
   compact = false,
   center = false,
 }: {
-  crumbs: Crumb[];
+  crumbs?: Crumb[];
   eyebrow?: string;
   title: string;
   intro?: string;
@@ -95,10 +95,12 @@ export function PageHero({
       )}{" "}
       <div className={"mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 " + shellPad}>
         {" "}
+        {crumbs && (
         <div className={onMedia ? "[&_a]:text-white/80 [&_span]:text-white/80" : ""}>
           {" "}
           <Breadcrumbs items={crumbs} center={center} />{" "}
-        </div>{" "}
+        </div>
+        )}{" "}
         <div className={stackGap + " max-w-3xl" + (center ? " mx-auto text-center" : "")}>
           {" "}
           {eyebrow && <Reveal y={14} blur={3} duration={620} immediate className={"flex items-center gap-3" + (center ? " justify-center" : "")}>
