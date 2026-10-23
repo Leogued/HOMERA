@@ -17,7 +17,8 @@ import type { CatalogFacets } from "@/lib/use-catalog";
    ------------------------------------------------------------------
    Quatre critères, comme sur la maquette : le type de bien (pastilles
    à icônes), la ville (liste unique), le budget (minimum et maximum)
-   et les équipements (pastilles à choix multiples). Le bouton
+   et les équipements (menu déroulant à cases à cocher, choix
+   multiples). Le bouton
    brouillon : tant qu’on n’a pas appliqué, l’adresse et les résultats
    ne bougent pas ; « Réinitialiser » repart de zéro.
 
@@ -177,25 +178,16 @@ export function CatalogFilters({
         </Group>
 
         <Group label="Équipements" icon={Settings2}>
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Équipements, plusieurs choix possibles">
-            {featureOptions.length === 0 && (
-              <p className="text-caption text-muted">Aucun équipement proposé pour cette recherche.</p>
-            )}
-            {featureOptions.map((feature) => {
-              const active = draft.features.includes(feature as PropertyFeature);
-              return (
-                <button
-                  key={feature}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setDraft((current) => ({ ...current, features: toggle(current.features, feature as PropertyFeature) }))}
-                  className={chipClass(active)}
-                >
-                  {FEATURE_LABELS[feature as PropertyFeature] ?? feature}
-                </button>
-              );
-            })}
-          </div>
+          {featureOptions.length === 0 ? (
+            <p className="text-caption text-muted">Aucun équipement proposé pour cette recherche.</p>
+          ) : (
+            <MultiDrop
+              id={`${panelId}-equipements`}
+              options={featureOptions}
+              values={draft.features}
+              onToggle={(feature) => setDraft((current) => ({ ...current, features: toggle(current.features, feature) }))}
+            />
+          )}
         </Group>
 
         <button
@@ -219,6 +211,82 @@ function chipClass(active: boolean): string {
   return `inline-flex min-h-9 items-center gap-1.5 rounded-xl border px-2.5 py-1 text-caption font-semibold transition-colors ${active ? "border-homera-terracotta bg-homera-terracotta/[0.10] text-homera-terracotta" : "border-border bg-background text-muted hover:text-foreground"}`;
 }
 
+
+function MultiDrop({
+  id,
+  options,
+  values,
+  onToggle,
+}: {
+  id: string;
+  options: string[];
+  values: PropertyFeature[];
+  onToggle: (feature: PropertyFeature) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+  /* Fermeture au clic hors menu et à Échap, comme tout menu. */
+  useEffect(() => {
+    if (!open) return;
+    const onPointer = (event: PointerEvent) => {
+      if (boxRef.current && !boxRef.current.contains(event.target as Node)) setOpen(false);
+    };
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointer);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("pointerdown", onPointer);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open ]);
+  const summary =
+    values.length === 0
+      ? "Tous les équipements"
+      : values.length === 1
+        ? "1 équipement choisi"
+        : `${values.length} équipements choisis`;
+  return (
+    <div ref={boxRef} className="relative">
+      <button
+        type="button"
+        id={id}
+        aria-expanded={open}
+        aria-haspopup="listbox"
+        onClick={() => setOpen((current) => !current)}
+        className="inline-flex min-h-11 w-full items-center justify-between gap-2 rounded-xl border border-border bg-background px-3.5 text-body-sm text-foreground outline-none transition-colors focus:border-homera-terracotta/60"
+      >
+        <span className="truncate">{summary}</span>
+        <ChevronDown className={`h-4 w-4 shrink-0 text-muted transition-transform ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+      </button>
+      {open && (
+        <div role="listbox" aria-multiselectable="true" aria-labelledby={id} className="absolute inset-x-0 top-full z-20 mt-1.5 max-h-56 overflow-y-auto rounded-xl border border-border bg-card p-1.5 shadow-[var(--shadow-card)]">
+          {options.map((option) => {
+            const feature = option as PropertyFeature;
+            const checked = values.includes(feature);
+            return (
+              <label
+                key={option}
+                role="option"
+                aria-selected={checked}
+                className={`flex cursor-pointer items-center gap-2.5 rounded-lg px-2.5 py-2 text-body-sm transition-colors ${checked ? "bg-homera-terracotta/[0.08] font-medium text-foreground" : "text-muted hover:bg-surface-hover hover:text-foreground"}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={checked}
+                  onChange={() => onToggle(feature)}
+                  className="h-4 w-4 shrink-0 accent-homera-terracotta"
+                />
+                {FEATURE_LABELS[feature] ?? option}
+              </label>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
 
 function Group({ label, icon: Icon, children }: { label: string; icon: LucideIcon; children: React.ReactNode }) {
   return (

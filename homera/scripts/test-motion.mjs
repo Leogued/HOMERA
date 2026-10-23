@@ -489,7 +489,7 @@ await test('HOMERA : taxonomie boutique / immeuble / chambre et panneau façon m
   const migrations = await readFile(new URL('../lib/server/db/migrations.ts', import.meta.url), 'utf8');
   assert.ok(migrations.includes('id: "006"') && migrations.includes('taxonomie-boutique-immeuble-chambre'), 'migration de taxonomie versionnée');
   const panel = await readFile(new URL('../components/catalog/CatalogFilters.tsx', import.meta.url), 'utf8');
-  for (const marker of ['Appliquer les filtres', 'Toutes les villes', 'plusieurs choix possibles', 'TYPE_ICONS']) {
+  for (const marker of ['Appliquer les filtres', 'Toutes les villes', 'Tous les équipements', 'TYPE_ICONS', 'type="checkbox"', 'aria-multiselectable']) {
     assert.ok(panel.includes(marker), `panneau incomplet : ${marker}`);
   }
   for (const marker of ['Quartiers', 'Critères complémentaires', 'Votre projet', '<Count', 'countOf']) {
