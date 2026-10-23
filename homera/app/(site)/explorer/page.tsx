@@ -35,21 +35,15 @@ export default async function ExplorerPage({
   const firstPage = searchProperties(db, filters, { page: 1, perPage: Math.min(4, Math.max(1, query.page)) * PER_PAGE });
   const facets = catalogFacets(db, filters);
   const priceBounds = catalogPriceBounds(db, filters);
-  const results = { length: firstPage.total };
-  const cities = new Set(facets.cities.map((entry) => entry.value));
   return (
     <>
       {" "}
       <PageHero
+        compact
         crumbs={[{ label: "Accueil", href: "/" }, { label: "Explorer" }]}
         eyebrow="Recherche"
         title="Explorer les biens vérifiés"
         intro="Tous les biens publiés par HOMERA : filtrez par projet, commune, budget, surface ou équipements. Chaque fiche indique ce qui a été contrôlé, par qui et à quelle date."
-        facts={[
-          { label: "Biens disponibles", value: String(results.length) },
-          { label: "Communes", value: String(cities.size) },
-          { label: "Type de recherche", value: "Sans compte" },
-        ]}
         actions={
           <>
             {" "}

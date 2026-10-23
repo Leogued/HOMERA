@@ -45,6 +45,7 @@ export function PageHero({
   facts,
   actions,
   children,
+  compact = false,
 }: {
   crumbs: Crumb[];
   eyebrow: string;
@@ -56,8 +57,15 @@ export function PageHero({
   facts?: { label: string; value: string }[];
   actions?: React.ReactNode;
   children?: React.ReactNode;
+  /** Bannière fine : mêmes contenus, hauteur réduite (explorateur). */
+  compact?: boolean;
 }) {
   const onMedia = tone === "media" && mediaKey;
+  const shellPad = compact ? "pb-7 pt-6 sm:pb-8 sm:pt-7" : "pb-12 pt-8 sm:pb-16 sm:pt-10";
+  const stackGap = compact ? "mt-5" : "mt-8";
+  const titleGap = compact ? "mt-4" : "mt-5";
+  const introGap = compact ? "mt-3" : "mt-4";
+  const actionsGap = compact ? "mt-5" : "mt-7";
   return (
     <header
       className={`homera-scene relative isolate overflow-hidden ${onMedia ? "homera-on-dark bg-homera-night text-white" : "border-b border-border bg-background text-foreground"}`}
@@ -82,13 +90,13 @@ export function PageHero({
           />{" "}
         </>
       )}{" "}
-      <div className="mx-auto max-w-7xl px-4 pb-12 pt-8 sm:px-6 sm:pb-16 sm:pt-10 lg:px-8">
+      <div className={"mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 " + shellPad}>
         {" "}
         <div className={onMedia ? "[&_a]:text-white/80 [&_span]:text-white/80" : ""}>
           {" "}
           <Breadcrumbs items={crumbs} />{" "}
         </div>{" "}
-        <div className="mt-8 max-w-3xl">
+        <div className={stackGap + " max-w-3xl"}>
           {" "}
           <Reveal y={14} blur={3} duration={620} immediate className="flex items-center gap-3">
             {" "}
@@ -115,7 +123,7 @@ export function PageHero({
             delay={70}
             immediate
             as="h1"
-            className={`mt-5 font-serif text-display-md sm:text-display-lg ${onMedia ? "text-white" : "text-foreground"}`}
+            className={titleGap + " font-serif text-display-md sm:text-display-lg " + (onMedia ? "text-white" : "text-foreground")}
           >
             {" "}
             {title}{" "}
@@ -126,13 +134,13 @@ export function PageHero({
             delay={140}
             immediate
             as="p"
-            className={`mt-4 text-body-sm leading-relaxed sm:text-body ${onMedia ? "text-homera-cream-dark" : "text-muted"}`}
+            className={introGap + " text-body-sm leading-relaxed sm:text-body " + (onMedia ? "text-homera-cream-dark" : "text-muted")}
           >
             {" "}
             {intro}{" "}
           </Reveal>{" "}
           {actions && (
-            <Reveal y={16} duration={620} delay={200} immediate className="mt-7 flex flex-wrap items-center gap-3">
+            <Reveal y={16} duration={620} delay={200} immediate className={actionsGap + " flex flex-wrap items-center gap-3"}>
               {" "}
               {actions}{" "}
             </Reveal>
