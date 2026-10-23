@@ -219,7 +219,7 @@ const firstPage = countCards(unfiltered);
 const secondPage = countCards(await (await fetchOk('/explorer?page=2')).text());
 assert.ok(firstPage >= 9, `Premier écran trop maigre : ${firstPage} biens`);
 assert.equal(secondPage, firstPage * 2, '?page=2 doit rendre deux écrans, sans JavaScript');
-assert.match(render(unfiltered), /\d+ affichés sur \d+/, 'Le compteur de résultats doit être visible');
+assert.doesNotMatch(render(unfiltered), /\d+ affichés sur \d+/, 'La variante dépouillée ne montre pas de compteur');
 
 // Un filtre restreint réellement la liste, et reste plus étroit qu’un autre.
 const sejour = await (await fetchOk('/explorer?intention=sejour')).text();

@@ -26,9 +26,11 @@ import { TextRoll } from "@/components/ui/TextRoll";
    • un seul arrêt de tabulation pour consulter le bien ;
    • un seul bouton « Favori » (aria-pressed), hors du lien, avec
      retour visuel immédiat et annonce réservée aux lecteurs d’écran ;
-   • le libellé d’action (« Voir la fiche » / « Voir le bien ») reste
-     toujours lisible, sans devenir un second piège au clavier ;
-   • la date de vérification et la référence sont lisibles d’emblée.
+   • la galerie garde son libellé (« Voir le bien ») lisible sans
+     devenir un second piège au clavier ; la grille, silencieuse, mise
+     sur le titre, le prix, les mesures et le badge « Vérifié HOMERA »,
+     le reste vivant sur la fiche que toute la carte ouvre ;
+   • la référence est lisible d’emblée, sur la photo.
 
    Aucun badge d’ancienneté : la donnée reste vérifiable telle quelle.
    ================================================================== */
@@ -98,13 +100,6 @@ export function PropertyCard(props: {
       </li>
       {property.rooms ? <li className="homera-num inline-flex items-center gap-2">{property.rooms} pièces</li> : null}
     </ul>
-  );
-
-  const location = (
-    <p className="flex items-center gap-1.5 text-caption text-muted">
-      <MapPin className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />
-      {property.district}, {property.city}
-    </p>
   );
 
   /* Légende incrustée (galerie) : mêmes contenus que la grille, teintes
@@ -274,7 +269,6 @@ export function PropertyCard(props: {
       </div>
 
       <div className="flex flex-1 flex-col gap-3 p-5">
-        {location}
         {/* Pas de lien ici : le titre reste du texte, la carte entière est le lien. */}
         <h3 className="font-serif text-display-xs leading-snug text-foreground transition-colors duration-300 group-hover/card:text-homera-terracotta">
           {property.title}
@@ -285,21 +279,8 @@ export function PropertyCard(props: {
             {property.surface >= 300 && property.type === "terrain" ? "Terrain" : TYPE_LABELS[property.type]}
           </span>
         </div>
-        <div className="mt-auto space-y-2 border-t border-border pt-3">
+        <div className="mt-auto border-t border-border pt-3">
           {specs}
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="flex items-center gap-2 text-caption text-muted">
-              <CalendarCheck className="h-3.5 w-3.5 text-homera-terracotta" aria-hidden="true" />
-              {property.verificationStatus === "en-verification" ? "Vérification en cours" : <>Vérifié le {property.verifiedOn}</>}
-            </p>
-            <span className="homera-underline inline-flex min-h-10 items-center gap-2 homera-accent-ink text-note font-medium">
-              <TextRoll>Voir la fiche</TextRoll>
-              <ArrowRight
-                className="h-3.5 w-3.5 transition-transform duration-300 ease-standard group-hover/card:translate-x-0.5"
-                aria-hidden="true"
-              />
-            </span>
-          </div>
         </div>
       </div>
 
