@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { CatalogExplorer } from "@/components/catalog/CatalogExplorer";
 import { PageHero } from "@/components/catalog/PageHero";
-import { PROJECT_PAGES } from "@/lib/nav";
 import { PER_PAGE, parseCatalogQuery, queryToCatalogFilters } from "@/lib/properties";
 import { searchParamsToQuery } from "@/lib/search-params";
 import { catalogFacets, catalogPriceBounds, searchProperties } from "@/lib/server/services/properties";
@@ -44,21 +42,6 @@ export default async function ExplorerPage({
         eyebrow="Recherche"
         title="Explorer les biens vérifiés"
         intro="Tous les biens publiés par HOMERA : filtrez par projet, commune, budget, surface ou équipements. Chaque fiche indique ce qui a été contrôlé, par qui et à quelle date."
-        actions={
-          <>
-            {" "}
-            {PROJECT_PAGES.map((project) => (
-              <Link
-                key={project.slug}
-                href={`/${project.slug}`}
-                className="homera-press inline-flex min-h-11 items-center gap-2 rounded-btn border border-border bg-card px-4 text-note font-medium text-foreground transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
-              >
-                {" "}
-                {project.navLabel}{" "}
-              </Link>
-            ))}{" "}
-          </>
-        }
       />{" "}
       <div className="mx-auto max-w-7xl px-4 pb-24 pt-10 sm:px-6 lg:px-8">
         {" "}
