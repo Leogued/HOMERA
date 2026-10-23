@@ -51,7 +51,7 @@ export function PageHero({
   crumbs: Crumb[];
   eyebrow?: string;
   title: string;
-  intro: string;
+  intro?: string;
   tone?: "plain" | "media";
   mediaKey?: string;
   mediaAlt?: string;
@@ -131,7 +131,7 @@ export function PageHero({
             {" "}
             {title}{" "}
           </Reveal>{" "}
-          <Reveal
+          {intro && <Reveal
             y={18}
             duration={640}
             delay={140}
@@ -141,7 +141,7 @@ export function PageHero({
           >
             {" "}
             {intro}{" "}
-          </Reveal>{" "}
+          </Reveal>}{" "}
           {actions && (
             <Reveal y={16} duration={620} delay={200} immediate className={actionsGap + " flex flex-wrap items-center gap-3"}>
               {" "}

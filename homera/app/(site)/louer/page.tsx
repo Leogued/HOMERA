@@ -11,5 +11,5 @@ export const metadata: Metadata = {
 export default async function LouerPage({ searchParams }: { searchParams: Promise<NextSearchParams> }) {
   const project = findProject("louer");
   if (!project) notFound();
-  return <ProjectPageView project={project} searchParams={await searchParams} />;
+  return <ProjectPageView project={project} searchParams={await searchParams} slim />;
 }

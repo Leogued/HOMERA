@@ -16,14 +16,19 @@ import { Visual } from "@/components/ui/Visual";
    ------------------------------------------------------------------
    Une page de projet n’est pas un simple filtre : elle explique ce que le visiteur vient
    chercher, montre les catégories réellement disponibles (avec leur nombre de biens), puis
-   affiche le catalogue complet du projet, filtrable sur place.
+   affiche le catalogue complet du projet, filtrable sur place. La variante `slim`
+   (page Louer) va à l’essentiel : héros réduit au titre, pas de chiffres ni de
+   catégories — le catalogue et le guide restent.
    ================================================================== */
 export async function ProjectPageView({
   project,
   searchParams,
+  slim = false,
 }: {
   project: PublicProjectPage;
   searchParams: NextSearchParams;
+  /** Héros réduit (titre seul) et pas de catégories : l’essentiel d’abord. */
+  slim?: boolean;
 }) {
   const query = parseCatalogQuery(searchParamsToQuery(searchParams));
   const initialQuery = { ...projectQuery(project.slug), ...query, intent: project.slug };
@@ -46,13 +51,13 @@ export async function ProjectPageView({
         crumbs={[{ label: "Accueil", href: "/" }, { label: project.navLabel }]}
         eyebrow={project.eyebrow}
         title={project.title}
-        intro={project.intro}
-        facts={[
+        intro={slim ? undefined : project.intro}
+        facts={slim ? undefined : [
           { label: "Biens disponibles", value: String(results.length) },
           { label: "Communes couvertes", value: String(cities.size) },
           { label: "Prix d’appel", value: prices.length ? formatFCFA(Math.min(...prices)) : "—" },
         ]}
-        actions={
+        actions={slim ? undefined : (
           <>
             {" "}
             <Link
@@ -70,9 +75,10 @@ export async function ProjectPageView({
               Parler à un conseiller{" "}
             </Link>{" "}
           </>
-        }
+        )}
       />{" "}
       {/* ---------------- Catégories ---------------- */}{" "}
+      {!slim && (
       <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8" aria-labelledby="projet-categories">
         {" "}
         <h2 id="projet-categories" className="font-serif text-display-sm">
@@ -112,7 +118,8 @@ export async function ProjectPageView({
             );
           })}{" "}
         </ul>{" "}
-      </section>{" "}
+      </section>
+      )}{" "}
       {/* ---------------- Ce que garantit le projet ---------------- */}{" "}
       <section className="border-y border-border bg-card/40" aria-labelledby="projet-points">
         {" "}
