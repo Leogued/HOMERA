@@ -1,6 +1,6 @@
 import type { Db } from "../db/client";
 import { nowIso, queryOne } from "../db/client";
-import { PROPERTIES } from "../../content";
+import { GALLERY_EXTRA_ALT, GALLERY_VIEWS, PROPERTIES } from "../../content";
 import { hashPasswordSync } from "../security/password";
 import { newId } from "../db/client";
 import { writeAudit } from "../audit";
@@ -208,6 +208,9 @@ function seedProperties(db: Db): void {
   const insertPhoto = db.prepare(
     "INSERT OR IGNORE INTO property_photos (id, property_id, media_key, alt, position, is_main, approved, created_by, created_at) VALUES (?, ?, ?, ?, ?, 1, 1, 'HOM-DEMO-ADMIN', ?)",
   );
+  const insertExtraPhoto = db.prepare(
+    "INSERT OR IGNORE INTO property_photos (id, property_id, media_key, alt, position, is_main, approved, created_by, created_at) VALUES (?, ?, ?, ?, ?, 0, 1, 'HOM-DEMO-ADMIN', ?)",
+  );
   const insertDocument = db.prepare(
     "INSERT OR IGNORE INTO documents (id, entity_type, entity_id, kind, filename, storage_path, status, uploaded_by, created_at) VALUES (?, 'bien', ?, ?, ?, '', 'declare', 'HOM-DEMO-PROP', ?)",
   );
@@ -254,6 +257,12 @@ function seedProperties(db: Db): void {
       const photoId = newId("PHO");
       insertPhoto.run(photoId, property.id, property.media, property.alt, 0, CREATED_AT);
       setMain.run(photoId, property.id);
+      /* Mosaïque de la fiche : le visuel principal puis deux vues de la
+         même famille typologique, jamais deux fois le même visuel. */
+      const extras = (GALLERY_VIEWS[property.type] ?? []).filter((key) => key !== property.media).slice(0, 2);
+      extras.forEach((key, extraIndex) => {
+        insertExtraPhoto.run(newId("PHO"), property.id, key, GALLERY_EXTRA_ALT, extraIndex + 1, CREATED_AT);
+      });
     }
     insertDocument.run(newId("DOC"), property.id, "propriete", "Pièce de propriété (déclarée au pilote)", CREATED_AT);
 

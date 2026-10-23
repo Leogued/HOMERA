@@ -73,6 +73,13 @@ const RECIPES = [
   { key: "prop-immeuble-bureaux", width: 1440, height: 900, quality: 74 },
   { key: "prop-duplex-terrasse", width: 1440, height: 900, quality: 74 },
 
+  // Fiche bien — vues complémentaires de la mosaïque (16:10)
+  // (chaque fiche montre son visuel principal + deux vues de la même
+  // famille typologique ; visuels illustratifs du pilote DEMO_DATA)
+  { key: "prop-espace-evenementiel", width: 1440, height: 900, quality: 74 },
+  { key: "prop-salle-fete", width: 1440, height: 900, quality: 74 },
+  { key: "prop-salon-sejour", width: 1440, height: 900, quality: 74 },
+
   // Pages publiques — bandeau éditorial (21:9)
   { key: "page-cotonou", width: 1920, height: 823, quality: 74 },
 ];

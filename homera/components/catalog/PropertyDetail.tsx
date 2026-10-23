@@ -732,12 +732,6 @@ export function PropertyDetail({
               <p className="mt-3 flex items-start gap-2 border-t border-border pt-3 text-caption leading-relaxed text-muted">
                 <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" aria-hidden="true" /> {feeLine}
               </p>
-              <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border pt-4">
-                <span className="rounded-full border border-border px-3 py-1.5 text-caption font-medium text-muted">
-                  {TYPE_LABELS[property.type]}
-                </span>
-                {statusPill}
-              </div>
               <dl className="mt-4 space-y-2.5 border-t border-border pt-4 text-note">
                 <div className="flex items-center justify-between gap-3">
                   <dt className="text-muted">Référence</dt>

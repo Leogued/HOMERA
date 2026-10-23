@@ -274,6 +274,30 @@ export type PropertyIntent = "acheter" | "louer" | "sejour";
 export type PropertyAvailability = "disponible" | "indisponible";
 export type PropertyVerificationStatus = "verifie" | "en-verification";
 
+/* ------------------------------------------------------------------
+   VUES COMPLÉMENTAIRES DE LA FICHE — par famille typologique
+   ------------------------------------------------------------------
+   La mosaïque de la fiche montre le visuel principal du bien puis deux
+   vues de la même famille (jamais le même visuel deux fois : l’amorçage
+   retient les deux premières clés différentes du visuel principal).
+   Visuels illustratifs du pilote : la fiche le dit (DEMO_DATA).
+   ------------------------------------------------------------------ */
+
+export const GALLERY_VIEWS: Record<PropertyType, string[]> = {
+  villa: ["prop-villa", "prop-villa-cour", "prop-villa-piscine", "prop-salon-sejour"],
+  appartement: ["prop-appartement", "prop-appartement-sejour", "prop-salon-sejour", "prop-duplex-terrasse"],
+  studio: ["prop-studio-meuble", "prop-appartement-sejour", "prop-salon-sejour", "prop-duplex-terrasse"],
+  chambre: ["prop-studio-meuble", "prop-salon-sejour", "prop-appartement-sejour", "prop-appartement"],
+  immeuble: ["prop-immeuble-bureaux", "prop-local-commerce", "prop-duplex", "prop-salon-sejour"],
+  terrain: ["prop-terrain", "prop-terrain-borne", "prop-espace-evenementiel", "prop-villa-cour"],
+  boutique: ["prop-local-commerce", "prop-immeuble-bureaux", "prop-salon-sejour", "prop-appartement"],
+  salle: ["prop-salle-fete", "prop-espace-evenementiel", "prop-duplex-terrasse", "prop-villa-cour"],
+  espace: ["prop-espace-evenementiel", "prop-terrain", "prop-terrain-borne", "prop-villa-cour"],
+};
+
+/** Texte de repli des vues complémentaires : illustratif, jamais descriptif d’un lieu précis. */
+export const GALLERY_EXTRA_ALT = "Vue complémentaire (visuel illustratif)";
+
 /** Nature du document foncier présenté dans le dossier du bien. */
 export const LAND_TITLE_LABELS = {
   "titre-foncier": "Titre foncier",
@@ -1184,7 +1208,7 @@ export const PROPERTIES: Property[] = [
       "Salle de réception avec cuisine traiteur, loge et cour de stationnement : sonorisation sur place, groupe de secours et gardiennage pendant l’événement.",
     verifiedOn: "18/10/2026",
     publishedAt: "2026-10-18",
-    media: "prop-immeuble-bureaux",
+    media: "prop-salle-fete",
     alt: "Grande salle de réception avec tables dressées pour une cérémonie",
   },
   {
@@ -1206,7 +1230,7 @@ export const PROPERTIES: Property[] = [
       "Terrain plat et clôturé, accessible aux camions, avec point d’eau et branchement électrique : mariages, concerts et manifestations en plein air.",
     verifiedOn: "18/10/2026",
     publishedAt: "2026-10-18",
-    media: "prop-terrain",
+    media: "prop-espace-evenementiel",
     alt: "Grand terrain plat et clôturé préparé pour un événement en plein air",
   },
 ];
