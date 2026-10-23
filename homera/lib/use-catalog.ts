@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { rememberResultsPage } from "@/lib/results-return";
 import {
   EMPTY_QUERY, PER_PAGE, buildCatalogParams, catalogHref, isPristine, parseCatalogQuery,
   type CatalogFacets, type CatalogQuery,
@@ -160,11 +161,14 @@ export function useCatalog({
   }, [basePath, loadedPages, loadingMore, meta.pages, perPage, query]);
 
   /* Adresse : miroir de la recherche, sans rechargement de page.
-     `replaceState` évite d’empiler une entrée d’historique par frappe. */
+     `replaceState` évite d’empiler une entrée d’historique par frappe.
+     L’adresse est aussi mémorisée : le bouton « Retour » d’une fiche y
+     ramène, filtres compris, au lieu de deviner l’historique. */
   useEffect(() => {
     const href = catalogHref(query, basePath);
     const current = `${window.location.pathname}${window.location.search}`;
     if (href !== current) window.history.replaceState(null, "", href);
+    rememberResultsPage(href);
   }, [basePath, query]);
 
   /* Retour arrière : on relit l’adresse au lieu de réafficher l’état précédent. */

@@ -504,6 +504,23 @@ await test('HOMERA : taxonomie (boutique, immeuble, chambre, salle, espace) et p
   assert.ok(explorer.includes('Choisir un projet'), 'intention portée par les onglets de l’explorateur');
 });
 
+await test('HOMERA : le retour d’une fiche ramène à la page de résultats mémorisée', async () => {
+  const back = await readFile(new URL('../components/catalog/BackToResults.tsx', import.meta.url), 'utf8');
+  for (const marker of ['takeResultsPage', 'router.push', 'fallbackHref']) {
+    assert.ok(back.includes(marker), `retour incomplet : ${marker}`);
+  }
+  for (const marker of ['history.back', 'document.referrer', 'communes']) {
+    assert.ok(!back.includes(marker), `retour imprévisible : ${marker}`);
+  }
+  const hook = await readFile(new URL('../lib/use-catalog.ts', import.meta.url), 'utf8');
+  assert.ok(hook.includes('rememberResultsPage(href)'), 'les résultats ne sont plus mémorisés');
+  const memory = await readFile(new URL('../lib/results-return.ts', import.meta.url), 'utf8');
+  assert.ok(memory.includes('/(explorer|acheter|louer|sejour)/') || memory.includes('(explorer|acheter|louer|sejour)'), 'pages de résultats non validées');
+  for (const marker of ['communes', 'history.back']) {
+    assert.ok(!memory.includes(marker), `mémorisation fautive : ${marker}`);
+  }
+});
+
 await test('HOMERA : données de fiche cohérentes (références, prix, dates, médias)', () => {
   const ids = new Set();
   const references = new Set();
