@@ -17,7 +17,7 @@ import type { CatalogFacets } from "@/lib/use-catalog";
    ------------------------------------------------------------------
    Quatre critères, comme sur la maquette : le type de bien (pastilles
    à icônes), la ville (liste unique), le budget (minimum et maximum)
-   et un équipement (liste unique). Le bouton « Appliquer » valide un
+   et les équipements (pastilles à choix multiples). Le bouton
    brouillon : tant qu’on n’a pas appliqué, l’adresse et les résultats
    ne bougent pas ; « Réinitialiser » repart de zéro.
 
@@ -97,7 +97,9 @@ export function CatalogFilters({
   const cityOptions = facets?.cities.map((entry) => entry.value) ?? [];
   if (draft.cities[0] && !cityOptions.includes(draft.cities[0])) cityOptions.unshift(draft.cities[0]);
   const featureOptions = facets?.features.map((entry) => entry.value) ?? [];
-  if (draft.features[0] && !featureOptions.includes(draft.features[0])) featureOptions.unshift(draft.features[0]);
+  for (const kept of [...draft.features].reverse()) {
+    if (kept && !featureOptions.includes(kept)) featureOptions.unshift(kept);
+  }
 
   return (
     <section aria-labelledby={`${panelId}-titre`} className="rounded-3xl border border-border bg-card shadow-[var(--shadow-card)]">
@@ -175,21 +177,25 @@ export function CatalogFilters({
         </Group>
 
         <Group label="Équipements" icon={Settings2}>
-          <label htmlFor={`${panelId}-equipement`} className="sr-only">Équipement</label>
-          <span className="relative block">
-            <select
-              id={`${panelId}-equipement`}
-              value={draft.features[0] ?? ""}
-              onChange={(event) => setDraft((current) => ({ ...current, features: event.target.value ? [event.target.value as PropertyFeature] : [] }))}
-              className="min-h-11 w-full appearance-none rounded-xl border border-border bg-background px-3.5 pr-10 text-body-sm text-foreground outline-none transition-colors focus:border-homera-terracotta/60"
-            >
-              <option value="">Tous les équipements</option>
-              {featureOptions.map((feature) => (
-                <option key={feature} value={feature}>{FEATURE_LABELS[feature as PropertyFeature] ?? feature}</option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
-          </span>
+          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Équipements, plusieurs choix possibles">
+            {featureOptions.length === 0 && (
+              <p className="text-caption text-muted">Aucun équipement proposé pour cette recherche.</p>
+            )}
+            {featureOptions.map((feature) => {
+              const active = draft.features.includes(feature as PropertyFeature);
+              return (
+                <button
+                  key={feature}
+                  type="button"
+                  aria-pressed={active}
+                  onClick={() => setDraft((current) => ({ ...current, features: toggle(current.features, feature as PropertyFeature) }))}
+                  className={chipClass(active)}
+                >
+                  {FEATURE_LABELS[feature as PropertyFeature] ?? feature}
+                </button>
+              );
+            })}
+          </div>
         </Group>
 
         <button
