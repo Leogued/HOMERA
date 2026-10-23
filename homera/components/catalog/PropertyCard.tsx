@@ -2,9 +2,9 @@
 import Link from "next/link";
 import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Bath, Bed, CalendarCheck, Clock, MapPin, Maximize, ShieldCheck } from "lucide-react";
+import { ArrowRight, Bath, Bed, CalendarCheck, MapPin, Maximize } from "lucide-react";
 import type { Property } from "@/lib/content";
-import { INTENT_LABELS, TYPE_LABELS, formatPropertyPrice, formatSurface } from "@/lib/format";
+import { TYPE_LABELS, formatPropertyPrice, formatSurface } from "@/lib/format";
 import { Reveal } from "@/components/ui/Reveal";
 import { Visual } from "@/components/ui/Visual";
 import { FavoriteButton } from "@/components/catalog/FavoriteButton";
@@ -28,8 +28,8 @@ import { TextRoll } from "@/components/ui/TextRoll";
      retour visuel immédiat et annonce réservée aux lecteurs d’écran ;
    • la galerie garde son libellé (« Voir le bien ») lisible sans
      devenir un second piège au clavier ; la grille, silencieuse, mise
-     sur le titre, le prix, les mesures et le badge « Vérifié HOMERA »,
-     le reste vivant sur la fiche que toute la carte ouvre ;
+     sur le titre, le prix et les mesures, le reste vivant sur la fiche
+     que toute la carte ouvre ; seule l’indisponibilité marque la photo ;
    • la référence est lisible d’emblée, sur la photo.
 
    Aucun badge d’ancienneté : la donnée reste vérifiable telle quelle.
@@ -50,25 +50,11 @@ export function PropertyCard(props: {
   const { property, layout = "grid" } = props;
   const href = `/biens/${property.id}`;
 
-  const badges = (
-    <div className="pointer-events-none absolute inset-x-4 top-4 z-2 flex flex-wrap items-start justify-between gap-2 text-micro text-white sm:inset-x-5 sm:top-5">
-      <span className="flex flex-wrap gap-2">
-        <span className="rounded-full border border-white/30 bg-homera-brown/70 px-3 py-1.5 font-semibold uppercase tracking-[.12em]">
-          {INTENT_LABELS[property.intent]} · {TYPE_LABELS[property.type]}
-        </span>
-        {property.availabilityStatus === "indisponible" && <span className="rounded-full border border-white/35 bg-error/85 px-3 py-1.5 font-semibold">Indisponible</span>}
-      </span>
-      {property.verificationStatus === "en-verification" ? (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-homera-amber/50 bg-homera-night/70 px-3 py-1.5 text-homera-amber">
-          <Clock className="h-3.5 w-3.5" aria-hidden="true" />
-          En cours de vérification
-        </span>
-      ) : (
-        <span className="inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-homera-brown/70 px-3 py-1.5">
-          <ShieldCheck className="h-3.5 w-3.5 text-homera-amber" aria-hidden="true" />
-          Vérifié HOMERA
-        </span>
-      )}
+  /* Photo propre : seul un bien indisponible reste marqué — c’est une
+     alerte, pas un label. Le statut de vérification vit sur la fiche. */
+  const badges = property.availabilityStatus === "indisponible" && (
+    <div className="pointer-events-none absolute inset-x-4 top-4 z-2 flex flex-wrap items-start gap-2 text-micro text-white sm:inset-x-5 sm:top-5">
+      <span className="rounded-full border border-white/35 bg-error/85 px-3 py-1.5 font-semibold">Indisponible</span>
     </div>
   );
 

@@ -1276,8 +1276,8 @@ await test('HOMERA : la page favoris — maquette, filtres réels, comparateur',
   assert.ok(!favorites.includes('À étudier'), 'dossiers remplacés par les filtres maquette');
   const service = await readFile(new URL('../lib/server/services/favorites.ts', import.meta.url), 'utf8');
   assert.ok(service.includes('ORDER BY created_at DESC'), 'ordre d’ajout garanti côté serveur');
-  const card = await readFile(new URL('../components/catalog/PropertyCard.tsx', import.meta.url), 'utf8');
-  assert.ok(card.includes('En cours de vérification'), 'pastille honnête pour les biens en vérification');
+  const detail = await readFile(new URL('../components/catalog/PropertyDetail.tsx', import.meta.url), 'utf8');
+  assert.ok(detail.includes('En cours de vérification'), 'statut honnête affiché sur la fiche');
 });
 
 await test('HOMERA : l’espace client — recherches, recommandations, dossiers suivis', async () => {

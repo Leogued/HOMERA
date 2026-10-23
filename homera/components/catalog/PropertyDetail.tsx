@@ -6,6 +6,7 @@ import {
   Building2,
   CalendarCheck,
   Check,
+  Clock,
   FileText,
   Layers,
   MapPin,
@@ -126,10 +127,17 @@ export function PropertyDetail({
               <span className="rounded-full border border-border px-3 py-1.5 text-muted">
                 {TYPE_LABELS[property.type]}
               </span>{" "}
-              <span className="inline-flex items-center gap-1.5 rounded-full border border-homera-terracotta/30 bg-homera-terracotta/[0.08] px-3 py-1.5 homera-accent-ink">
-                {" "}
-                <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" /> Vérifié HOMERA{" "}
-              </span>{" "}
+              {property.verificationStatus === "en-verification" ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-homera-amber/50 bg-homera-amber/10 px-3 py-1.5 text-homera-night">
+                  {" "}
+                  <Clock className="h-3.5 w-3.5" aria-hidden="true" /> En cours de vérification{" "}
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-homera-terracotta/30 bg-homera-terracotta/[0.08] px-3 py-1.5 homera-accent-ink">
+                  {" "}
+                  <ShieldCheck className="h-3.5 w-3.5" aria-hidden="true" /> Vérifié HOMERA{" "}
+                </span>
+              )}{" "}
               {property.availabilityStatus === "indisponible" && <span className="rounded-full border border-error/25 bg-error/[0.08] px-3 py-1.5 text-error">Indisponible</span>}{" "}
               {fresh <= 7 && (
                 <span className="rounded-full bg-homera-amber px-3 py-1.5 text-homera-night">Nouveau</span>
