@@ -38,10 +38,8 @@ import {
 } from "@/components/catalog/PropertySidePanels";
 import { CopyReference } from "@/components/ui/CopyReference";
 import { AskQuestionLink } from "@/components/catalog/AskQuestionLink";
-import { BackToResults } from "@/components/catalog/BackToResults";
 import { FavoriteButton } from "@/components/catalog/FavoriteButton";
 import { Reveal } from "@/components/ui/Reveal";
-import { Breadcrumbs } from "@/components/catalog/PageHero";
 import { PropertyCard } from "@/components/catalog/PropertyCard";
 /* ================================================================== HOMERA — FICHE D’UN BIEN ------------------------------------------------------------------ Ce qu’un visiteur doit pouvoir lire sans compte : ce qu’est le bien, ce qu’il coûte, où il se trouve, et — surtout — ce qui a été contrôlé, par qui et quand. Aucune promesse juridique : la fiche décrit un dossier, elle ne le garantit pas. ================================================================== */ const PROJECT_HREF: Record<
   Property["intent"],
@@ -98,21 +96,6 @@ export function PropertyDetail({
     <article className="bg-background text-foreground">
       {" "}
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {" "}
-        <Breadcrumbs
-          items={[
-            { label: "Accueil", href: "/" },
-            { label: "Explorer", href: "/explorer" },
-            { label: INTENT_LABELS[property.intent], href: PROJECT_HREF[property.intent] },
-            { label: property.title },
-          ]}
-        />{" "}
-        {/* Le lien ne promet un retour aux résultats que s’il vient vraiment
-            d’une recherche : sinon il mène à la page du projet. */}
-        <div className="mt-6">
-          {" "}
-          <BackToResults fallbackHref={PROJECT_HREF[property.intent]} label={`Voir tous les biens ${INTENT_LABELS[property.intent].toLowerCase()}`} />{" "}
-        </div>{" "}
         {/* ---------------- En-tête du bien ---------------- */}{" "}
         <header className="mt-6 grid grid-cols-1 gap-10 lg:grid-cols-[1.35fr_1fr]">
           {" "}

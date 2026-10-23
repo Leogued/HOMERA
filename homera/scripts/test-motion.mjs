@@ -504,14 +504,12 @@ await test('HOMERA : taxonomie (boutique, immeuble, chambre, salle, espace) et p
   assert.ok(explorer.includes('Choisir un projet'), 'intention portée par les onglets de l’explorateur');
 });
 
-await test('HOMERA : le retour d’une fiche ramène à la page de résultats mémorisée', async () => {
-  const back = await readFile(new URL('../components/catalog/BackToResults.tsx', import.meta.url), 'utf8');
-  for (const marker of ['takeResultsPage', 'router.push', 'fallbackHref']) {
-    assert.ok(back.includes(marker), `retour incomplet : ${marker}`);
+await test('HOMERA : la fiche ne porte aucune navigation (ni fil d’Ariane ni retour)', async () => {
+  const detail = await readFile(new URL('../components/catalog/PropertyDetail.tsx', import.meta.url), 'utf8');
+  for (const marker of ['Breadcrumbs', 'BackToResults', 'Fil d’Ariane', 'Voir tous les biens']) {
+    assert.ok(!detail.includes(marker), `navigation résiduelle sur la fiche : ${marker}`);
   }
-  for (const marker of ['history.back', 'document.referrer', 'communes']) {
-    assert.ok(!back.includes(marker), `retour imprévisible : ${marker}`);
-  }
+  assert.ok(!existsSync(new URL('../components/catalog/BackToResults.tsx', import.meta.url)), 'composant de retour orphelin conservé');
   const hook = await readFile(new URL('../lib/use-catalog.ts', import.meta.url), 'utf8');
   assert.ok(hook.includes('rememberResultsPage(href)'), 'les résultats ne sont plus mémorisés');
   const memory = await readFile(new URL('../lib/results-return.ts', import.meta.url), 'utf8');

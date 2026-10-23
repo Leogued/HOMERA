@@ -452,9 +452,9 @@ await test("6. l’explorateur filtre réellement et conserve le contexte", asyn
 });
 
 /* ------------------------------------------------------------------ */
-/* 7. Favoris et navigation sans perte de contexte                     */
+/* 7. Favoris suivis par compte, fiche sans navigation                 */
 /* ------------------------------------------------------------------ */
-await test("7. les favoris suivent le compte, et la fiche garde le contexte de recherche", async () => {
+await test("7. les favoris suivent le compte, et la fiche ne porte aucune navigation", async () => {
   await session("user");
   const added = await call("user", "/api/favorites", {
     method: "POST",
@@ -480,12 +480,12 @@ await test("7. les favoris suivent le compte, et la fiche garde le contexte de r
   const page = await call(null, "/biens/villa-fidjrosse");
   assert.equal(page.status, 200, "la fiche est servie");
   assert.ok(
-    page.text.includes(">Retour<"),
-    "la fiche propose un retour qui reste valable sans JavaScript",
+    !page.text.includes(">Retour<") && !page.text.includes("Voir tous les biens"),
+    "la fiche ne propose aucun lien de retour",
   );
   assert.ok(
-    /href="\/(explorer|acheter|louer|sejour)/.test(page.text),
-    "le retour pointe vers une page de résultats réelle",
+    !page.text.includes('<nav aria-label="Fil d'),
+    "la fiche ne porte aucun fil d’Ariane rendu",
   );
 });
 
