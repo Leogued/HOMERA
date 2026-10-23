@@ -40,8 +40,8 @@ export default async function ExplorerPage({
         compact
         crumbs={[{ label: "Accueil", href: "/" }, { label: "Explorer" }]}
         eyebrow="Recherche"
-        title="Explorer les biens vérifiés"
-        intro="Tous les biens publiés par HOMERA : filtrez par projet, commune, budget, surface ou équipements. Chaque fiche indique ce qui a été contrôlé, par qui et à quelle date."
+        title="Voyez plus grand. Explorez autrement."
+        intro="Parcourez les biens immobiliers et trouvez de nouvelles perspectives pour vos projets."
       />{" "}
       <div className="mx-auto max-w-7xl px-4 pb-24 pt-10 sm:px-6 lg:px-8">
         {" "}
