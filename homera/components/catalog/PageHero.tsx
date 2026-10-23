@@ -4,11 +4,11 @@ import { Reveal } from "@/components/ui/Reveal";
 import { Visual } from "@/components/ui/Visual";
 /* ================================================================== HOMERA — EN-TÊTE DE PAGE PUBLIQUE ------------------------------------------------------------------ Un même rythme pour toutes les pages intérieures : fil d’Ariane, surtitre, titre, chapeau, puis éventuellement des repères chiffrés. Deux tons : « media » quand la page ouvre sur une image, « plain » quand elle commence directement sur le contenu. ================================================================== */ export type Crumb =
   { label: string; href?: string };
-export function Breadcrumbs({ items }: { items: Crumb[] }) {
+export function Breadcrumbs({ items, center = false }: { items: Crumb[]; center?: boolean }) {
   return (
     <nav aria-label="Fil d’Ariane">
       {" "}
-      <ol className="flex flex-wrap items-center gap-1.5 text-caption text-muted">
+      <ol className={"flex flex-wrap items-center gap-1.5 text-caption text-muted" + (center ? " justify-center" : "")}>
         {" "}
         {items.map((item, index) => {
           const last = index === items.length - 1;
@@ -46,6 +46,7 @@ export function PageHero({
   actions,
   children,
   compact = false,
+  center = false,
 }: {
   crumbs: Crumb[];
   eyebrow: string;
@@ -59,6 +60,8 @@ export function PageHero({
   children?: React.ReactNode;
   /** Bannière fine : mêmes contenus, hauteur réduite (explorateur). */
   compact?: boolean;
+  /** Textes centrés (héros avec image de fond). */
+  center?: boolean;
 }) {
   const onMedia = tone === "media" && mediaKey;
   const shellPad = compact ? "pb-7 pt-6 sm:pb-8 sm:pt-7" : "pb-12 pt-8 sm:pb-16 sm:pt-10";
@@ -94,11 +97,11 @@ export function PageHero({
         {" "}
         <div className={onMedia ? "[&_a]:text-white/80 [&_span]:text-white/80" : ""}>
           {" "}
-          <Breadcrumbs items={crumbs} />{" "}
+          <Breadcrumbs items={crumbs} center={center} />{" "}
         </div>{" "}
-        <div className={stackGap + " max-w-3xl"}>
+        <div className={stackGap + " max-w-3xl" + (center ? " mx-auto text-center" : "")}>
           {" "}
-          <Reveal y={14} blur={3} duration={620} immediate className="flex items-center gap-3">
+          <Reveal y={14} blur={3} duration={620} immediate className={"flex items-center gap-3" + (center ? " justify-center" : "")}>
             {" "}
             <span
               className={`homera-num text-caption font-semibold tracking-[0.3em] ${onMedia ? "text-homera-amber" : "homera-accent-ink"}`}
