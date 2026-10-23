@@ -159,16 +159,20 @@ export function PropertyDetail({
   return (
     <article className="bg-background text-foreground">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        {/* Le lien ne promet un retour aux résultats que s’il vient vraiment
-            d’une recherche : sinon il mène à la page du projet. */}
-        <div className="mb-6">
+        {/* Galerie, données de la fiche et tarif sont réunis dès le haut :
+            la carte reste visible à côté des images, comme sur la maquette. */}
+        <div className="grid grid-cols-1 items-start gap-8 lg:grid-cols-[minmax(0,1fr)_22rem] lg:gap-10">
+          <div className="min-w-0">
+            {/* Le lien ne promet un retour aux résultats que s’il vient vraiment
+                d’une recherche : sinon il mène à la page du projet. */}
+            <div className="mb-6">
           <BackToResults
             fallbackHref={PROJECT_HREF[property.intent]}
             label={`Voir tous les biens ${INTENT_LABELS[property.intent].toLowerCase()}`}
           />
         </div>
-        {/* ---------------- Galerie ---------------- */}
-        <Reveal y={0} blur={0} clip clipRadius={24} duration={900} immediate>
+            {/* ---------------- Galerie ---------------- */}
+            <Reveal y={0} blur={0} clip clipRadius={24} duration={900} immediate>
           <PropertyGallery
             gallery={property.gallery ?? []}
             title={property.title}
@@ -177,8 +181,8 @@ export function PropertyDetail({
             typeLabel={TYPE_LABELS[property.type]}
           />
         </Reveal>
-        {/* ---------------- Titre du bien ---------------- */}
-        <div className="mt-8">
+            {/* ---------------- Titre du bien ---------------- */}
+            <div className="mt-8">
           <p className="flex items-center gap-2 text-label uppercase text-homera-terracotta">
             <MapPin className="h-4 w-4" aria-hidden="true" /> {TYPE_LABELS[property.type]}
           </p>
@@ -234,8 +238,8 @@ export function PropertyDetail({
             })}
           </ul>
         </div>
-        {/* ---------------- Garanties ---------------- */}
-        {verified ? (
+            {/* ---------------- Garanties ---------------- */}
+            {verified ? (
           <dl className="mt-6 grid grid-cols-1 gap-4 rounded-card border border-border bg-card p-5 sm:grid-cols-3 sm:p-6">
             <div className="flex items-start gap-3 sm:border-l sm:border-border sm:pl-5 sm:first:border-l-0 sm:first:pl-0">
               <ShieldCheck className="mt-0.5 h-5 w-5 shrink-0 text-homera-terracotta" aria-hidden="true" />
@@ -272,8 +276,7 @@ export function PropertyDetail({
             une fois le contrôle terminé.
           </p>
         )}
-        {/* ---------------- Contenu & réservation ---------------- */}
-        <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_22rem]">
+            <div className="mt-10">
           <div>
             <PropertyDetailTabs
               tabs={[
@@ -722,8 +725,9 @@ export function PropertyDetail({
             <div className="mt-10">
               <ReportListing propertyId={property.id} reference={property.homeraId} />
             </div>
+            </div>
           </div>
-          {/* ---------------- Colonne de réservation ---------------- */}
+          </div>
           <aside className="space-y-6 lg:sticky lg:top-24 lg:self-start">
             <div className="rounded-card border border-border bg-card p-6">
               <p className="text-label uppercase text-muted">{priceEyebrow}</p>
@@ -889,7 +893,7 @@ export function PropertyDetail({
             href={directBooking ? `/client/demandes/nouvelle?bien=${property.id}` : `/client/visites/nouvelle?bien=${property.id}`}
             className="homera-cta inline-flex min-h-11 shrink-0 items-center gap-2 rounded-btn px-4 py-2.5 text-caption font-semibold"
           >
-            {directBooking ? "Réserver" : "Planifier une visite"}
+            {directBooking ? "Réserver" : "Demander une visite"}
             <ArrowRight className="h-3.5 w-3.5" aria-hidden="true" />
           </Link>
         </div>

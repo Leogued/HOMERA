@@ -20,8 +20,8 @@ import { takeResultsPage } from "@/lib/results-return";
    la fiche, stockage indisponible), le lien suit son repli naturel.
 
    Aucun état n’est deviné au rendu — le serveur ne connaît pas la page
-   précédente — donc aucune étiquette n’est annoncée à tort : c’est
-   « Retour », et le retour est réel dans les deux cas. On n’utilise ni
+   précédente — donc le retour a un intitulé explicite dans les deux
+   cas. On n’utilise ni
    le referrer (obsolète en navigation applicative) ni l’historique
    (dont le contenu précédent est imprévisible) : seule compte la
    dernière page de résultats explicitement mémorisée.
@@ -44,10 +44,10 @@ export function BackToResults({ fallbackHref, label }: { fallbackHref: string; l
       href={fallbackHref}
       onClick={onClick}
       aria-label={label}
-      className="homera-press inline-flex min-h-10 items-center gap-2 rounded-full border border-border bg-card px-4 text-caption font-semibold text-muted transition-colors hover:border-homera-terracotta hover:text-homera-terracotta"
+      className="homera-press inline-flex min-h-11 items-center gap-2 rounded-full border border-homera-terracotta/50 bg-card px-5 text-note font-semibold text-foreground shadow-sm transition-colors hover:border-homera-terracotta hover:bg-homera-terracotta/5"
     >
       <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-      Retour
+      Retour aux résultats
     </Link>
   );
 }

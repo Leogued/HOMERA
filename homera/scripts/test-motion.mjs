@@ -506,7 +506,7 @@ await test('HOMERA : taxonomie (boutique, immeuble, chambre, salle, espace) et p
 
 await test('HOMERA : la fiche ne porte que le bouton « Retour » (ni fil d’Ariane ni liens annexes)', async () => {
   const detail = await readFile(new URL('../components/catalog/PropertyDetail.tsx', import.meta.url), 'utf8');
-  for (const marker of ['BackToResults', 'fallbackHref={PROJECT_HREF[property.intent]}']) {
+  for (const marker of ['BackToResults', 'fallbackHref={PROJECT_HREF[property.intent]}', 'lg:grid-cols-[minmax(0,1fr)_22rem]', 'PropertyGallery']) {
     assert.ok(detail.includes(marker), `bouton de retour absent de la fiche : ${marker}`);
   }
   for (const marker of ['Breadcrumbs', 'Fil d’Ariane']) {
@@ -515,6 +515,7 @@ await test('HOMERA : la fiche ne porte que le bouton « Retour » (ni fil d’Ar
   assert.ok(existsSync(new URL('../components/catalog/BackToResults.tsx', import.meta.url)), 'composant de retour manquant');
   const back = await readFile(new URL('../components/catalog/BackToResults.tsx', import.meta.url), 'utf8');
   assert.ok(back.includes('takeResultsPage()'), 'le retour ne relit pas les résultats mémorisés');
+  assert.ok(back.includes('Retour aux résultats'), 'le bouton de retour est explicitement visible');
   const hook = await readFile(new URL('../lib/use-catalog.ts', import.meta.url), 'utf8');
   assert.ok(hook.includes('rememberResultsPage(href)'), 'les résultats ne sont plus mémorisés');
   const memory = await readFile(new URL('../lib/results-return.ts', import.meta.url), 'utf8');

@@ -479,7 +479,7 @@ await test("7. les favoris suivent le compte, et la fiche propose un bouton Reto
 
   const page = await call(null, "/biens/villa-fidjrosse");
   assert.equal(page.status, 200, "la fiche est servie");
-  assert.ok(page.text.includes(">Retour<"), "la fiche propose le bouton de retour");
+  assert.ok(page.text.includes("Retour aux résultats"), "la fiche propose le bouton de retour");
   assert.ok(page.text.indexOf(">Retour<") < page.text.indexOf("<h1"), "le bouton de retour est en tête de fiche");
   assert.ok(
     !page.text.includes('<nav aria-label="Fil d'),
@@ -684,7 +684,7 @@ await test("14. la fiche propose le parcours du bien (réservation directe ou vi
     "« Réserver » ouvre le parcours de réservation du bien",
   );
   assert.ok(!direct.text.includes("Demander une visite"), "jamais les deux parcours à la fois");
-  assert.ok(!direct.text.includes("Demander une visite"), "la barre mobile suit le parcours direct");
+  assert.ok(direct.text.includes("Retour aux résultats"), "le bouton retour reste visible sur les fiches");
 
   const visit = await call(null, "/biens/villa-fidjrosse");
   assert.equal(visit.status, 200, "la fiche du bien à visiter est servie");
