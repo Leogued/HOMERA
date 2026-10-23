@@ -43,7 +43,6 @@ export default async function ExplorerPage({
         mediaKey="page-cotonou"
         mediaAlt="Vue de Cotonou au coucher du soleil, toitures, cocotiers et lagune à l’horizon"
         crumbs={[{ label: "Accueil", href: "/" }, { label: "Explorer" }]}
-        eyebrow="Recherche"
         title="Voyez plus grand. Explorez autrement."
         intro="Parcourez les biens immobiliers et trouvez de nouvelles perspectives pour vos projets."
       />{" "}

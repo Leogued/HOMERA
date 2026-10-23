@@ -49,7 +49,7 @@ export function PageHero({
   center = false,
 }: {
   crumbs: Crumb[];
-  eyebrow: string;
+  eyebrow?: string;
   title: string;
   intro: string;
   tone?: "plain" | "media";
@@ -101,7 +101,7 @@ export function PageHero({
         </div>{" "}
         <div className={stackGap + " max-w-3xl" + (center ? " mx-auto text-center" : "")}>
           {" "}
-          <Reveal y={14} blur={3} duration={620} immediate className={"flex items-center gap-3" + (center ? " justify-center" : "")}>
+          {eyebrow && <Reveal y={14} blur={3} duration={620} immediate className={"flex items-center gap-3" + (center ? " justify-center" : "")}>
             {" "}
             <span
               className={`homera-num text-caption font-semibold tracking-[0.3em] ${onMedia ? "text-homera-amber" : "homera-accent-ink"}`}
@@ -119,7 +119,7 @@ export function PageHero({
               {" "}
               {eyebrow}{" "}
             </span>{" "}
-          </Reveal>{" "}
+          </Reveal>}{" "}
           <Reveal
             y={22}
             duration={680}
